@@ -1,0 +1,40 @@
+{
+    "name": "repair2",
+    "version": "1.0.0",
+    "description": "An Electron application with Svelte",
+    "main": "./out/main/index.js",
+    "author": "example.com",
+    "homepage": "https://electron-vite.org",
+    "scripts": {
+        "format": "prettier --plugin prettier-plugin-svelte --write .",
+        "start": "electron-vite preview",
+        "dev:editor": "vite --config editor.vite.config.mjs",
+        "dev:play": "vite --config play.vite.config.mjs",
+        "dev": "npx concurrently --kill-others \"electron-vite dev\" \"npm run dev:editor\" \"npm run dev:play\"",
+        "build:main": "electron-vite build",
+        "build:editor": "vite build --config editor.vite.config.mjs",
+        "build:play": "vite build --config play.vite.config.mjs",
+        "build": "npm run build:main && npm run build:editor && npm run build:play",
+        "postinstall": "electron-builder install-app-deps",
+        "build:unpack": "npm run build && electron-builder --dir",
+        "build:win": "npm run build && electron-builder --win",
+        "build:mac": "npm run build && electron-builder --mac",
+        "build:linux": "npm run build && electron-builder --linux"
+    },
+    "dependencies": {
+        "@electron-toolkit/preload": "^3.0.1",
+        "@electron-toolkit/utils": "^4.0.0"
+    },
+    "devDependencies": {
+        "@sveltejs/vite-plugin-svelte": "^5.0.3",
+        "concurrently": "^9.1.2",
+        "electron": "^34.2.0",
+        "electron-builder": "^25.1.8",
+        "electron-vite": "^3.0.0",
+        "prettier": "^3.5.1",
+        "prettier-plugin-svelte": "^3.3.3",
+        "svelte": "^5.20.1",
+        "vite": "^6.1.0",
+        "vite-plugin-electron-renderer": "^0.14.6"
+    }
+}

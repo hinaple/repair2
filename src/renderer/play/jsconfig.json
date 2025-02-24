@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@classes/*": ["../classes/*"]
+        }
+    },
+    "exclude": ["node_modules", "dist"]
+}
