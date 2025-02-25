@@ -68,10 +68,9 @@
 
                     const floatingCenter = floatingItemInfo.top + floatingItemInfo.size.height / 2;
 
-                    if (lastZone && floatingCenter > lastZone[0] && floatingCenter < lastZone[1]) {
-                        console.log(1);
+                    if (lastZone && floatingCenter > lastZone[0] && floatingCenter < lastZone[1])
                         return;
-                    } else if (lastZone) lastZone = null;
+                    else if (lastZone) lastZone = null;
 
                     let checkingHeight = 0,
                         targetIdx;
