@@ -17,6 +17,9 @@
         <rect class="fill" width="10" height="2" fill="black" />
         <rect class="fill" y="4" width="10" height="2" fill="black" />
         <rect class="fill" y="8" width="10" height="2" fill="black" />
+    {:else if icon === "arrow"}
+        <path class="stroke" d="M0 5H8" stroke="black" />
+        <path class="stroke" d="M4 1L8 5L4 9" stroke="black" />
     {/if}
 </svg>
 

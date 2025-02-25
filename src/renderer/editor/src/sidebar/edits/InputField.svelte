@@ -1,27 +1,15 @@
 <script>
     import { addHistory } from "../../lib/workHistory";
     import Checkbox from "./Checkbox.svelte";
+    import HistoryInput from "./HistoryInput.svelte";
+    import Position from "./Position.svelte";
 
     let { label = null, value, setter, type = "input", manual = false, ...props } = $props();
 
     let valueBeforeFocus;
-    let updateHistory;
     function onfocus() {
         valueBeforeFocus = value;
     }
-    function oninput() {
-        if (!updateHistory) {
-            updateHistory = addHistory({ doFn: setter, doData: value, undoData: valueBeforeFocus });
-        } else {
-            updateHistory(value);
-            setter(value);
-        }
-    }
-    function onblur() {
-        updateHistory = null;
-        valueBeforeFocus = null;
-    }
-
     function selectChange() {
         if (manual) {
             setter(value);
@@ -29,6 +17,10 @@
         }
         addHistory({ doFn: setter, doData: value, undoData: valueBeforeFocus });
         valueBeforeFocus = value;
+    }
+
+    function typeChanged(evt) {
+        value.changeTypeWithHistory(addHistory, evt.target.value);
     }
 
     function checkboxClick() {
@@ -47,32 +39,24 @@
         <Checkbox {value} />
     {/if}
     {#if label}<div class="label">{label}</div>{/if}
-    {#if type === "input"}
-        <input
-            type="text"
-            placeholder={props.placeholder}
-            bind:value
-            {oninput}
-            {onfocus}
-            {onblur}
-            spellcheck="false"
-        />
-    {:else if type === "textarea"}
-        <textarea
-            placeholder={props.placeholder}
-            bind:value
-            {oninput}
-            {onfocus}
-            {onblur}
-            spellcheck="false"
-        ></textarea>
+    {#if type === "input" || type === "number" || type === "textarea"}
+        <HistoryInput {value} {type} {setter} {...props} />
     {:else if type === "select"}
         <select bind:value {onfocus} onchange={selectChange}>
-            <option value={null}>선택 안함</option>
+            <option value={null} hidden>선택 안함</option>
             {#each Object.entries(props.options) as [value, label]}
                 <option {value}>{label}</option>
             {/each}
         </select>
+    {:else if type === "type"}
+        <select value={value.type} {onfocus} onchange={typeChanged}>
+            <option value={null} hidden>선택 안함</option>
+            {#each Object.entries(props.options) as [value, label]}
+                <option {value}>{label}</option>
+            {/each}
+        </select>
+    {:else if type === "position"}
+        <Position position={value} />
     {/if}
 </div>
 
@@ -94,7 +78,6 @@
         font-size: 16px;
         padding-left: 5px;
     }
-    input,
     select {
         padding: 2px 5px;
         border: none;

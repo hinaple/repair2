@@ -7,66 +7,91 @@
     import { grabbing, reload } from "../../lib/stores";
     import { addHistory } from "../../lib/workHistory";
     import { currentFocus, focusData } from "../../sidebar/editUtils";
-    import { outClicked } from "../../lib/contextMenu/contextUtils";
+    import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
+    import { onDestroy } from "svelte";
 
-    let { value, pre, rightBorder = false, onmousedown } = $props();
+    let { value, pre, rightBorder = false } = $props();
 
     $effect(() => {
         value.baseValue;
         reload("nodeMoved");
     });
 
-    function addProcess() {
+    function addProcess(evt) {
         if (get(grabbing)) return;
-        value.process.addWithHistory(addHistory, () => reload("nodeMoved"));
+        evt.stopPropagation();
+        focusData(
+            "valueProcess",
+            value.process.addWithHistory(addHistory, () => reload("nodeMoved"))
+        );
     }
 
     function clickBase(evt) {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
-        focusData("baseValue", value);
+        focusData("value", value);
         outClicked();
     }
+
+    onDestroy(() => {
+        if (get(currentFocus).obj === value) focusData("project");
+    });
+
+    const contextmenu = [
+        { label: "복사", click: () => {} },
+        { label: "붙여넣기", click: () => {} }
+    ];
 </script>
 
-<div class={["value", rightBorder && "right-border"]}>
-    <div class={["base-value", $currentFocus.obj === value && "focus"]} onmousedown={clickBase}>
-        <div class="text">
-            {pre}<b
-                >{value.baseType === "string" && value.baseValue?.length
-                    ? value.baseValue
-                    : (BaseValueTypes[value.baseType] ?? "알 수 없는 값")}</b
-            >
+<div class={["value-wrapper", rightBorder && "right-border"]}>
+    <div
+        class={["value", $currentFocus.obj === value && "focus"]}
+        onmousedown={clickBase}
+        use:rightclick={contextmenu}
+    >
+        <div class={["base-value"]}>
+            <div class="text">
+                {pre}<b
+                    >{value.baseType === "string" && value.baseValue?.length
+                        ? value.baseValue
+                        : (BaseValueTypes[value.baseType] ?? "알 수 없는 값")}</b
+                >
+            </div>
         </div>
+        <Sortable
+            Component={ValueProcess}
+            sortable={value.process}
+            pretty
+            resized={() => {
+                reload("nodeMoved");
+            }}
+        />
+        <div class="add" onmousedown={addProcess}>
+            <Icon color="#000" lineWidth={2} />
+        </div>
+        <div class="empty-space"></div>
     </div>
-    <Sortable
-        Component={ValueProcess}
-        sortable={value.process}
-        resized={() => {
-            reload("nodeMoved");
-        }}
-    />
-    <div class="add" onclick={addProcess}>
-        <Icon color="#000" lineWidth={2} />
-    </div>
-    <div class="empty-space" {onmousedown}></div>
 </div>
 
 <style>
-    .value {
+    .value-wrapper {
         width: 50%;
         flex: 1 1 auto;
+    }
+    .value-wrapper.right-border {
+        border-right: solid #000 2px;
+    }
+    .value {
+        height: 100%;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
         background-color: rgba(238, 238, 238, 0.4);
     }
-    .value.right-border {
-        border-right: solid #000 2px;
-    }
     .base-value {
-        padding-inline: 5px;
         height: 30px;
+        border-bottom: solid #000 2px;
+        padding-inline: 5px;
         width: 100%;
         font-weight: 600;
         display: flex;
@@ -74,7 +99,6 @@
         justify-content: center;
         box-sizing: border-box;
         background-color: rgba(0, 0, 0, 0.2);
-        border-bottom: solid #000 2px;
         flex: 0 0 auto;
     }
     .text {

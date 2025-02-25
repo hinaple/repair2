@@ -6,7 +6,6 @@ import Sortable from "./sortable.svelte";
 export default class Component {
     alias = $state();
     zIndex = $state();
-    pos = $state();
     visible = $state();
     unbreakable = $state();
     style = $state();
@@ -34,7 +33,7 @@ export default class Component {
             ...this,
             alias: this.alias,
             zIndex: this.zIndex,
-            pos: this.pos,
+            pos: this.pos.storeData,
             unbreakable: this.unbreakable,
             visible: this.visible,
             style: this.style,

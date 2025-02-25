@@ -8,9 +8,11 @@
     import StepEdit from "./edits/StepEdit.svelte";
     import BranchEdit from "./edits/BranchEdit.svelte";
     import ValueProcessEdit from "./edits/ValueProcessEdit.svelte";
-    import BaseValueEdit from "./edits/BaseValueEdit.svelte";
+    import ValueEdit from "./edits/ValueEdit.svelte";
     import ComponentEdit from "./edits/ComponentEdit.svelte";
     import { get } from "svelte/store";
+    import ElementEdit from "./edits/ElementEdit.svelte";
+    import ListenerEdit from "./edits/ListenerEdit.svelte";
 
     const EditComponents = {
         project: ProjectEdit,
@@ -18,8 +20,10 @@
         step: StepEdit,
         branch: BranchEdit,
         valueProcess: ValueProcessEdit,
-        baseValue: BaseValueEdit,
-        component: ComponentEdit
+        value: ValueEdit,
+        component: ComponentEdit,
+        element: ElementEdit,
+        listener: ListenerEdit
     };
     let CurrentEditComponent = $state();
     let currentFocus = $state();

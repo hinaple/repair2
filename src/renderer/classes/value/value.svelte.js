@@ -1,5 +1,5 @@
 import Sortable from "@classes/sortable.svelte";
-import ValueProcess from "./valueProcess.svelte";
+import ValueProcess from "./valueProcess";
 
 export default class Value {
     baseType = $state();

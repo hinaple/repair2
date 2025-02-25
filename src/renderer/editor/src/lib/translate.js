@@ -28,3 +28,18 @@ export const ComparisonOperatorTypes = {
     equals: "A와 B가 동일",
     includes: "A가 B를 포함"
 };
+
+export const ElementTypes = {
+    empty: "빈 요소",
+    image: "이미지",
+    video: "영상",
+    input: "입력",
+    plugin: "플러그인"
+};
+
+export const ElementListenerTypes = {
+    nothing: "발동하지 않음",
+    click: "마우스 클릭",
+    videoEnd: "영상 종료",
+    keyPress: "키보드 입력"
+};

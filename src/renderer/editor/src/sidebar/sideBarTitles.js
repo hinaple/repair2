@@ -4,8 +4,10 @@ const SideBarTitles = {
     step: "Step",
     branch: "Branch Point",
     valueProcess: "Value Process",
-    baseValue: "Base Value",
-    component: "Component"
+    value: "Value",
+    component: "Component",
+    element: "Element",
+    listener: "Listener"
 };
 
 export default SideBarTitles;

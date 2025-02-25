@@ -8,10 +8,12 @@
     import { get } from "svelte/store";
     import { rightclick } from "../lib/contextMenu/contextUtils";
     import outputNode from "./lines/output";
+    import FrameUpdater from "../lib/frameUpdater";
 
     let {
         node,
         outputs,
+        innerOutputs = null,
         title,
         isLastHold,
         onmousedown: bubbleMouseDown,
@@ -29,10 +31,13 @@
     let nodeEl, handleEl;
     let grabber;
 
-    function applyNodePos() {
+    const frameUpdater = new FrameUpdater(async () => {
         if (!nodeEl) return;
         nodeEl.style.left = `${node.nodePos.x}px`;
         nodeEl.style.top = `${node.nodePos.y}px`;
+    }, 0);
+    function applyNodePos() {
+        frameUpdater.draw();
     }
     const unsub = sequenceMovedReloader.subscribe(() => {
         applyNodePos();
@@ -89,7 +94,11 @@
     use:rightclick={contextmenu}
 >
     <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
-        <div class="head" class:folded use:inputNode={node.id}>
+        <div
+            class="head"
+            class:folded={folded && (!innerOutputs || !innerOutputs.length)}
+            use:inputNode={node.id}
+        >
             <div class="handle" bind:this={handleEl}>
                 <span>
                     {title}
@@ -99,6 +108,14 @@
         </div>
         {#if !folded}
             {@render body()}
+        {:else if innerOutputs}
+            <div class="inner-outputs">
+                {#each innerOutputs as output}
+                    <div class="right-output-wrapper">
+                        <div class="output right" use:outputNode={output}></div>
+                    </div>
+                {/each}
+            </div>
         {/if}
         <div class="start-circle" use:inputNode={node.id}></div>
         <div class={"outputs"}>
@@ -200,5 +217,24 @@
         font-size: 12px;
         font-weight: 700;
         pointer-events: none;
+    }
+    .inner-outputs {
+        display: flex;
+        flex-direction: column;
+        background-color: #000;
+        border-radius: 0 0 10px 10px;
+        width: 100%;
+        gap: 10px;
+        padding-bottom: 10px;
+        margin-top: -1px;
+    }
+    .right-output-wrapper {
+        position: relative;
+        height: 14px;
+    }
+    .output.right {
+        position: absolute;
+        right: -14px;
+        border-radius: 0 7px 7px 0;
     }
 </style>

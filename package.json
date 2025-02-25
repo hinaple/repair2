@@ -1,10 +1,10 @@
 {
     "name": "repair2",
-    "version": "1.0.0",
-    "description": "An Electron application with Svelte",
+    "version": "2.0.0",
+    "description": "Room Escape Pc App InteRface v2",
     "main": "./out/main/index.js",
-    "author": "example.com",
-    "homepage": "https://electron-vite.org",
+    "author": "beyondspace.com",
+    "homepage": "https://beyond-space.kr",
     "scripts": {
         "format": "prettier --plugin prettier-plugin-svelte --write .",
         "start": "electron-vite preview",

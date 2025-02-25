@@ -1,26 +1,12 @@
 <script>
     import InputField from "./InputField.svelte";
     import { StepTypes } from "../../lib/translate";
-    import { addHistory } from "../../lib/workHistory";
 
     const { data } = $props();
 </script>
 
 <InputField label="스텝 이름" value={data.title} setter={(d) => (data.title = d)} />
-<InputField
-    label="스텝 종류"
-    type="select"
-    value={data.type}
-    setter={(d) => {
-        addHistory({
-            doFn: ({ type, payload = {} }) => data.changeType(type, payload),
-            doData: { type: d },
-            undoData: { type: data.type, payload: data.payload }
-        });
-    }}
-    options={StepTypes}
-    manual
-/>
+<InputField label="스텝 종류" type="type" value={data} options={StepTypes} />
 <hr />
 {#if data.type === "RemoveComponent"}
     <InputField

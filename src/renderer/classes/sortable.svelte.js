@@ -5,7 +5,7 @@ export default class Sortable {
         this.list = payloads.map((p) => new elementClass(p));
     }
     add(v) {
-        this.list.push(v);
+        this.list = [...this.list, v];
     }
     insert(v, idx) {
         this.list = this.list.toSpliced(idx, 0, v);
@@ -34,6 +34,7 @@ export default class Sortable {
             doData: { tempEl, that: this },
             undoData: { idx: this.list.length, that: this }
         });
+        return tempEl;
     }
     removeWithHistory(el, addHistory, afterChange) {
         const tempIdx = this.getIdxById(el.id);

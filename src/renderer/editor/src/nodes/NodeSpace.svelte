@@ -106,6 +106,7 @@
             label: "새 시퀀스",
             click: ({ pos: { x, y } }) => {
                 const seq = new SequenceClass({ nodePos: getOriginalPos(x, y) });
+                focusData("sequence", seq);
                 addHistory({
                     doFn: (d) => {
                         appData.nodes.push(d);
@@ -122,6 +123,7 @@
             label: "새 분기점",
             click: ({ pos: { x, y } }) => {
                 const branch = new BranchClass({ nodePos: getOriginalPos(x, y) });
+                focusData("branch", branch);
                 addHistory({
                     doFn: (d) => {
                         appData.nodes.push(d);

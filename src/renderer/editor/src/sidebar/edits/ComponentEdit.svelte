@@ -17,3 +17,5 @@
     type="checkbox"
 />
 <InputField label="표시" value={data.visible} setter={(d) => (data.visible = d)} type="checkbox" />
+<InputField label="위치" value={data.pos} type="position" />
+<hr />

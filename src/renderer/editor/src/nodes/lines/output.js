@@ -4,8 +4,8 @@ import Grabber from "../../lib/grabber";
 import { get } from "svelte/store";
 import { getNodeById } from "../../lib/utils";
 import { addHistory } from "../../lib/workHistory";
-import { nodeMovedReloader } from "../../lib/stores";
-import { tick } from "svelte";
+import { nodeMovedReloader, reload } from "../../lib/stores";
+import FrameUpdater from "../../lib/frameUpdater";
 
 export default function outputNode(node, { id, output }) {
     function drawOutputLine() {
@@ -33,8 +33,7 @@ export default function outputNode(node, { id, output }) {
                 addHistory({
                     doFn: (d) => {
                         output.to = d;
-                        console.log(output);
-                        drawOutputLine();
+                        reload("nodeMoved");
                     },
                     doData: targetEnd,
                     undoData: output.to
@@ -48,18 +47,18 @@ export default function outputNode(node, { id, output }) {
 
     let endPos;
     let fromCoord;
-    function update() {
+
+    const frameUpdater = new FrameUpdater(async () => {
         if (destroyed) return;
         const rect = node.getBoundingClientRect();
         const originalPos = getOriginalPos(rect.x, rect.y);
         fromCoord = { x: originalPos.x + 14 / 2, y: originalPos.y + 14 / 2 };
 
         drawOutputLine(id, output);
-    }
+    }, 1);
 
-    const unsub = nodeMovedReloader.subscribe(async () => {
-        await tick();
-        update();
+    const unsub = nodeMovedReloader.subscribe(() => {
+        frameUpdater.draw();
     });
 
     let destroyed = false;

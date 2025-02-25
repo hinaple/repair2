@@ -1,25 +1,11 @@
 <script>
     import InputField from "./InputField.svelte";
     import { ValueProcessTypes } from "../../lib/translate";
-    import { addHistory } from "../../lib/workHistory";
 
     const { data } = $props();
 </script>
 
-<InputField
-    label="처리 형태"
-    type="select"
-    value={data.type}
-    setter={(d) => {
-        addHistory({
-            doFn: ({ type, payload = {} }) => data.changeType(type, payload),
-            doData: { type: d },
-            undoData: { type: data.type, payload: data.payload }
-        });
-    }}
-    options={ValueProcessTypes}
-    manual
-/>
+<InputField label="처리 형태" type="type" value={data} options={ValueProcessTypes} />
 <hr />
 {#if data.type === "replaceAll"}
     <InputField

@@ -1,6 +1,7 @@
 <script>
     import { onDestroy, onMount } from "svelte";
     import { viewport, rInfo } from "./viewport";
+    import FrameUpdater from "../lib/frameUpdater";
 
     let canvas = $state(null);
     let ctx;
@@ -9,36 +10,7 @@
         WIDTH,
         HEIGHT;
 
-    function setCanvas() {
-        if (!canvas) return;
-
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
-
-        draw();
-    }
-
-    const unsubs = [
-        viewport.screen.subscribe(({ width, height }) => {
-            WIDTH = width;
-            HEIGHT = height;
-            setCanvas();
-        }),
-        viewport.pos.subscribe(({ x, y }) => {
-            vpPos = { x, y };
-            draw();
-        })
-    ];
-
-    onDestroy(() => {
-        unsubs.forEach((u) => u());
-    });
-
-    const dotGap = 40,
-        dotSize = 1.5,
-        RGlimit = 25;
-
-    function draw() {
+    const frameUpdater = new FrameUpdater(() => {
         if (!ctx) return;
 
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -68,7 +40,36 @@
                 ctx.fill();
             }
         }
+    });
+
+    function setCanvas() {
+        if (!canvas) return;
+
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+
+        frameUpdater.draw();
     }
+
+    const unsubs = [
+        viewport.screen.subscribe(({ width, height }) => {
+            WIDTH = width;
+            HEIGHT = height;
+            setCanvas();
+        }),
+        viewport.pos.subscribe(({ x, y }) => {
+            vpPos = { x, y };
+            frameUpdater.draw();
+        })
+    ];
+
+    onDestroy(() => {
+        unsubs.forEach((u) => u());
+    });
+
+    const dotGap = 40,
+        dotSize = 1.5,
+        RGlimit = 25;
 
     onMount(() => {
         ctx = canvas.getContext("2d");

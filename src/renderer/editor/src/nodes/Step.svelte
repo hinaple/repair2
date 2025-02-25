@@ -2,19 +2,25 @@
     import { get } from "svelte/store";
     import Icon from "../assets/icons/Icon.svelte";
     import { currentFocus, focusData } from "../sidebar/editUtils";
-    import { grabbing } from "../lib/stores";
+    import { grabbing, reload } from "../lib/stores";
     import { StepTypes } from "../lib/translate";
     import Component from "./component/Component.svelte";
     import { outClicked, rightclick } from "../lib/contextMenu/contextUtils";
     import { onDestroy } from "svelte";
-    import { addHistory } from "../lib/workHistory";
 
-    let { item: step, handle = $bindable(null), el = $bindable(null), remove, resized } = $props();
+    let {
+        item: step,
+        handle = $bindable(null),
+        el = $bindable(null),
+        remove,
+        noGrab = false,
+        nodeCountChanged
+    } = $props();
 
     $effect(() => {
         step.type;
         step.title;
-        if (resized) resized();
+        reload("nodeMoved");
     });
 
     onDestroy(() => {
@@ -36,7 +42,8 @@
             click: () => {
                 remove();
                 return true;
-            }
+            },
+            action: "remove"
         }
     ];
 </script>
@@ -61,7 +68,7 @@
         </span>
     </div>
     {#if step.type === "CreateComponent"}
-        <Component payload={step.payload} {resized} />
+        <Component payload={step.payload} {noGrab} {nodeCountChanged} />
     {/if}
 </div>
 

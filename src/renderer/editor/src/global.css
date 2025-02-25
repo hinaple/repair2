@@ -1,6 +1,9 @@
 body {
     --viewport-ratio: 1;
 }
+body.grabbing * {
+    cursor: grabbing !important;
+}
 
 html,
 body,
@@ -13,11 +16,8 @@ body,
     font-family: "Pretend";
 }
 
-#app:has(.grabbing) * {
-    cursor: grabbing !important;
-}
-
-img {
+img,
+svg {
     display: block;
     -webkit-user-drag: none;
 }

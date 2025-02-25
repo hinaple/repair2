@@ -1,16 +1,15 @@
-import { genId } from "@classes/utils";
+import TypePayload from "../typePayload.svelte";
 
-export default class ValueProcess {
-    type = $state();
-    payload = $state();
+const PayloadTemplate = {
+    replaceAll: { from: "", to: "" },
+    removeAll: { removing: "" },
+    replaceAllRegex: { regex: "", to: "" }
+};
+
+export default class ValueProcess extends TypePayload {
     constructor({ type = null, payload = {} } = {}) {
-        this.type = type;
-        this.payload = payload;
+        super({ type, payload, template: PayloadTemplate });
         this.id = Symbol();
-    }
-    changeType(type, payload = {}) {
-        this.type = type;
-        this.payload = payload;
     }
     process(before) {
         if (this.type === "replaceAll")
@@ -23,8 +22,5 @@ export default class ValueProcess {
         if (this.type === "trim") return before.trim();
 
         return before;
-    }
-    get storeData() {
-        return { type: this.type, payload: $state.snapshot(this.payload) };
     }
 }

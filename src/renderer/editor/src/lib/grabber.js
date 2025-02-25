@@ -36,7 +36,7 @@ export default class Grabber {
             prvMouse = currentMouse;
         };
         this.mouseup = (evt) => {
-            if (get(grabbing) !== myGrab || evt.button) return;
+            if (get(grabbing) !== myGrab || (evt && evt.button)) return;
             grabbing.set(null);
             this.container.classList.remove("grabbing");
             if (onMoveEnd) onMoveEnd(actuallyMoved);
@@ -47,6 +47,7 @@ export default class Grabber {
         document.body.addEventListener("mouseup", this.mouseup);
     }
     destroy() {
+        this.mouseup();
         document.body.removeEventListener("mousemove", this.mousemove);
         document.body.removeEventListener("mouseup", this.mouseup);
     }

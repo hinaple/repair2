@@ -1,4 +1,5 @@
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
+import { grabbing } from "../stores";
 
 export const contextMenu = writable();
 
@@ -22,6 +23,7 @@ function clearContextMenuClass() {
 }
 export function rightclick(node, items) {
     node.addEventListener("contextmenu", (evt) => {
+        if (get(grabbing)) return;
         showContextMenu({ pos: { x: evt.clientX, y: evt.clientY }, items });
         evt.stopPropagation();
         clearContextMenuClass();

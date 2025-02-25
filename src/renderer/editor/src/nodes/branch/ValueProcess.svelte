@@ -25,7 +25,8 @@
             click: () => {
                 remove();
                 return true;
-            }
+            },
+            action: "remove"
         }
     ];
 </script>

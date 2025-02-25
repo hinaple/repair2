@@ -32,7 +32,8 @@
             click: () => {
                 removeNodeWithHistory(branch);
                 return true;
-            }
+            },
+            action: "remove"
         }
     ];
 </script>
@@ -82,6 +83,7 @@
         display: flex;
         flex-direction: row;
         width: 100%;
+        z-index: 2;
     }
     .operator {
         width: 100%;

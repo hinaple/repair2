@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script>
     import ContextMenu from "./lib/contextMenu/ContextMenu.svelte";
     import { appData } from "./lib/syncData.svelte";
@@ -25,6 +27,20 @@
 </script>
 
 <svelte:window {onkeydown} />
+<div class="info">REPAIR v2.0.0</div>
 <NodeSpace />
 <ContextMenu />
 <SideBar />
+
+<style>
+    .info {
+        position: fixed;
+        right: 5px;
+        bottom: 5px;
+        color: #fff;
+        font-size: 12px;
+        opacity: 0.8;
+        pointer-events: none;
+        z-index: 99999;
+    }
+</style>

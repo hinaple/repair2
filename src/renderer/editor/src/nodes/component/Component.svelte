@@ -6,12 +6,14 @@
     import Icon from "../../assets/icons/Icon.svelte";
     import { addHistory } from "../../lib/workHistory";
     import Sortable from "../../lib/Sortable.svelte";
+    import Element from "./Element.svelte";
+    import { onDestroy } from "svelte";
 
-    let { payload: comp, resized } = $props();
+    let { payload: comp, noGrab = false, nodeCountChanged } = $props();
 
     $effect(() => {
         comp.alias;
-        if (resized) resized();
+        reload("nodeMoved");
     });
 
     function onmousedown(evt) {
@@ -21,10 +23,18 @@
         outClicked();
     }
 
-    function addElement() {
+    function addElement(evt) {
         if (get(grabbing)) return;
-        comp.elements.addWithHistory(addHistory, () => reload("nodeMoved"));
+        focusData(
+            "element",
+            comp.elements.addWithHistory(addHistory, () => reload("nodeMoved"))
+        );
+        evt.stopPropagation();
     }
+
+    onDestroy(() => {
+        if (get(currentFocus).obj === comp) focusData("project");
+    });
 </script>
 
 <div class={["component", $currentFocus.obj === comp && "focus"]} {onmousedown}>
@@ -37,10 +47,15 @@
         </div>
     </div>
     <div class="elements">
-        <Sortable />
-        {#each comp.elements.list as element}
-            <div class="element">{element}</div>
-        {/each}
+        <Sortable
+            sortable={comp.elements}
+            Component={Element}
+            style="enum"
+            resized={() => reload("nodeMoved")}
+            onmoved={() => reload("nodeMoved")}
+            {noGrab}
+            {nodeCountChanged}
+        />
     </div>
 </div>
 
@@ -48,10 +63,10 @@
     .component {
         width: 100%;
         box-sizing: border-box;
-        padding-left: 10px;
         background-color: rgba(0, 0, 0, 0.2);
     }
     .head {
+        padding-left: 10px;
         height: 25px;
         font-size: 12px;
         display: flex;

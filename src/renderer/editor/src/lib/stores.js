@@ -1,6 +1,10 @@
 import { writable } from "svelte/store";
 
 export const grabbing = writable(null);
+grabbing.subscribe((g) => {
+    if (g) document.body.classList.add("grabbing");
+    else document.body.classList.remove("grabbing");
+});
 
 export const sequenceMovedReloader = writable();
 export const nodeMovedReloader = writable();

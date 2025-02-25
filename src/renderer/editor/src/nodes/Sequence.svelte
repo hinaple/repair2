@@ -11,9 +11,13 @@
 
     let { sequence, isLastHold, onmousedown: bubbleMouseDown } = $props();
 
-    function addStep() {
+    function addStep(evt) {
         if (get(grabbing)) return;
-        sequence.steps.addWithHistory(addHistory, () => reload("nodeMoved"));
+        focusData(
+            "step",
+            sequence.steps.addWithHistory(addHistory, () => reload("nodeMoved"))
+        );
+        evt.stopPropagation();
     }
 
     function onmousedown(evt) {
@@ -33,14 +37,29 @@
             click: () => {
                 removeNodeWithHistory(sequence);
                 return true;
-            }
+            },
+            action: "remove"
         }
     ];
+
+    let innerOutputs = $state([]);
+    function nodeCountChanged() {
+        innerOutputs = [];
+        sequence.steps.list
+            .filter((s) => s.type === "CreateComponent")
+            .forEach((s) => {
+                s.payload.elements.list.forEach(
+                    (e) => (innerOutputs = [...innerOutputs, ...e.listeners.list])
+                );
+            });
+    }
+    nodeCountChanged();
 </script>
 
 <Node
     node={sequence}
     outputs={[{ output: sequence.output, id: sequence.id }]}
+    {innerOutputs}
     title={sequence.alias?.length ? sequence.alias : "이름 없는 시퀀스"}
     {isLastHold}
     {onmousedown}
@@ -52,9 +71,12 @@
             <Sortable
                 Component={Step}
                 sortable={sequence.steps}
+                pretty
                 resized={() => {
                     reload("nodeMoved");
                 }}
+                onmoved={() => reload("nodeMoved")}
+                {nodeCountChanged}
             />
             <div class="add" onclick={addStep}>
                 <Icon color="#fff" lineWidth={2} />

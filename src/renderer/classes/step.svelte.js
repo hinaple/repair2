@@ -1,34 +1,31 @@
+import TypePayload from "./typePayload.svelte";
 import Component from "./component.svelte";
-import * as StepPayloads from "./stepPayloads";
 import { genId } from "./utils";
 
-export default class Step {
-    type = $state();
+const PayloadTemplates = {
+    CreateComponent: { isClass: true, class: Component },
+    RemoveComponent: { componentAlias: null, ignoreUnbreakable: false },
+    ModifyComponent: { componentAlias: null, modifyKey: null, modifyValue: null },
+    ClearComponent: { ignoreUnbreakable: false },
+    PlayAudio: { resourceId: null, channel: "default" },
+    PauseAudio: { channel: "default" }
+};
+
+export default class Step extends TypePayload {
     title = $state();
-    payload = $state();
     constructor({ id = genId(), type = null, title = null, payload = {} } = {}) {
+        super({ type, payload, template: PayloadTemplates });
         this.id = id;
         this.title = title;
-        this.payload = payload;
-        this.changeType(type, this.payload);
-    }
-    changeType(type, payload = {}) {
-        this.type = type;
-        if (type === "CreateComponent") this.payload = new Component(payload);
-        else if (StepPayloads[type]) this.payload = new StepPayloads[type](payload);
     }
     changePayloadValue(key, value) {
-        this.payload = { ...this.payload, [key]: value };
+        super.payload = { ...this.payload, [key]: value };
     }
     get storeData() {
         return {
             ...this,
-            type: this.type,
-            title: this.title,
-            payload:
-                this.type === "CreateComponent"
-                    ? this.payload.storeData
-                    : $state.snapshot(this.payload)
+            ...super.storeData,
+            title: this.title
         };
     }
 }
