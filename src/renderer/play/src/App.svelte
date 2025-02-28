@@ -1,5 +1,5 @@
 <script>
-    import { appData } from "./lib/data";
+    // import { appData } from "./lib/data";
 
-    console.log(appData);
+    // console.log(appData);
 </script>

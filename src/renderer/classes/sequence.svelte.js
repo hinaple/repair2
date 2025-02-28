@@ -4,10 +4,9 @@ import Output from "./output";
 import Sortable from "./sortable.svelte";
 
 export default class Sequence extends Node {
-    constructor({ steps = [], currentStepIdx = -1, output = {}, ...nodeData } = {}) {
+    constructor({ steps = [], output = {}, ...nodeData } = {}) {
         super("sequence", nodeData);
         this.steps = new Sortable(steps, Step);
-        this.currentStepIdx = -1;
         this.output = new Output(output);
     }
     async execute() {

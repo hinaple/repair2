@@ -94,11 +94,7 @@
     use:rightclick={contextmenu}
 >
     <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
-        <div
-            class="head"
-            class:folded={folded && (!innerOutputs || !innerOutputs.length)}
-            use:inputNode={node.id}
-        >
+        <div class="head" class:folded={folded && !innerOutputs?.length} use:inputNode={node.id}>
             <div class="handle" bind:this={handleEl}>
                 <span>
                     {title}
@@ -108,7 +104,7 @@
         </div>
         {#if !folded}
             {@render body()}
-        {:else if innerOutputs}
+        {:else if innerOutputs?.length}
             <div class="inner-outputs">
                 {#each innerOutputs as output}
                     <div class="right-output-wrapper">

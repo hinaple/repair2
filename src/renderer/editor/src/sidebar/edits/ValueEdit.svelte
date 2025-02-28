@@ -20,10 +20,9 @@
     options={BaseValueTypes}
     manual
 />
-<hr />
 {#if data.baseType === "string"}
     <InputField
-        label="문자열 직접 입력"
+        label="기본값 직접 입력"
         value={data.baseValue}
         setter={(d) => (data.baseValue = d)}
     />

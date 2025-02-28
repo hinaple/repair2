@@ -153,12 +153,14 @@ app.whenReady().then(async () => {
     await loadData();
 
     createMainWindow();
-    if (is.dev) createEditorWindow();
+    // if (is.dev)
+    createEditorWindow();
 
     app.on("activate", function () {
         if (BrowserWindow.getAllWindows().length === 0) {
             createMainWindow();
-            if (is.dev) createEditorWindow();
+            // if (is.dev)
+            createEditorWindow();
         }
     });
 });

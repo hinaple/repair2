@@ -2,7 +2,7 @@
 
 Room Escape Pc App InteRface
 
-> by [Beyond Space](https://beyond-space.com)
+> by [Beyond Space](https://beyond-space.kr)
 
 ---
 
@@ -13,5 +13,6 @@ Room Escape Pc App InteRface
     - [ ] Management Variables
     - [ ] Resource Control
     - [ ] Copy/Cut/Paste
+    - [ ] Categorize Sidebar
 - **Player**
     - [ ] Everything
