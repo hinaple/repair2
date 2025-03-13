@@ -9,6 +9,7 @@
     import { currentFocus, focusData } from "../../sidebar/editUtils";
     import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
     import { onDestroy } from "svelte";
+    import registerHighlight from "../../lib/highlight";
 
     let { value, pre, rightBorder = false } = $props();
 
@@ -41,6 +42,11 @@
         { label: "복사", click: () => {} },
         { label: "붙여넣기", click: () => {} }
     ];
+
+    let hlActive = $state(false);
+    $effect(() => {
+        hlActive = !!(value.baseType === "variable" && value.baseValue);
+    });
 </script>
 
 <div class={["value-wrapper", rightBorder && "right-border"]}>
@@ -48,8 +54,9 @@
         class={["value", $currentFocus.obj === value && "focus"]}
         onmousedown={clickBase}
         use:rightclick={contextmenu}
+        use:registerHighlight={{ type: "variable", data: value.baseValue, active: hlActive }}
     >
-        <div class={["base-value"]}>
+        <div class="base-value">
             <div class="text">
                 {pre}<b
                     >{value.baseType === "string" && value.baseValue?.length

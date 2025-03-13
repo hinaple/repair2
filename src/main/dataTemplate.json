@@ -1,5 +1,6 @@
 {
     "config": {},
-    "nodes": [],
-    "resources": []
+    "nodes": [{"type": "entry"}],
+    "resources": [],
+    "variables": []
 }

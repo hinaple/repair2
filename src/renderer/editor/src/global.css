@@ -1,5 +1,6 @@
 body {
     --viewport-ratio: 1;
+    --outline-width: max(calc(4px / var(--viewport-ratio)), 3px);
 }
 body.grabbing * {
     cursor: grabbing !important;
@@ -26,6 +27,22 @@ svg {
     outline: none;
 }
 
+*::-webkit-scrollbar {
+    width: 14px;
+}
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.7);
+    background-clip: padding-box;
+    border: solid 4px transparent;
+    border-radius: 7px;
+}
+*::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 1);
+}
+
 hr {
     box-sizing: border-box;
     margin-block: 20px;
@@ -34,10 +51,13 @@ hr {
     border: solid #fff 1px;
 }
 .focus {
-    outline: solid max(calc(4px / var(--viewport-ratio)), 3px) #2b6eff;
+    outline: solid var(--outline-width) #2b6eff;
 }
 .contextmenu {
-    outline: dashed max(calc(4px / var(--viewport-ratio)), 3px) #ff8000;
+    outline: dashed var(--outline-width) #ff8000;
+}
+.hl-variable {
+    outline: solid var(--outline-width) #efff09;
 }
 
 @font-face {

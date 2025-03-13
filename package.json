@@ -10,7 +10,7 @@
         "start": "electron-vite preview",
         "dev:editor": "vite --config editor.vite.config.mjs",
         "dev:play": "vite --config play.vite.config.mjs",
-        "dev": "npx concurrently --kill-others \"electron-vite dev\" \"npm run dev:editor\" \"npm run dev:play\"",
+        "dev": "npx concurrently --kill-others \"electron-vite dev --inspect=9229\" \"npm run dev:editor\" \"npm run dev:play\"",
         "build:main": "electron-vite build",
         "build:editor": "vite build --config editor.vite.config.mjs",
         "build:play": "vite build --config play.vite.config.mjs",
@@ -22,7 +22,6 @@
         "build:linux": "npm run build && electron-builder --linux"
     },
     "dependencies": {
-        "@electron-toolkit/preload": "^3.0.1",
         "@electron-toolkit/utils": "^4.0.0"
     },
     "devDependencies": {

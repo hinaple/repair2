@@ -11,6 +11,8 @@
         WIDTH,
         HEIGHT;
 
+    const BEZIER_OFFSET = 50;
+
     const frameUpdater = new FrameUpdater(async () => {
         if (!ctx) return;
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -23,7 +25,25 @@
             const from = posFromViewport(l.fromCoord.x, l.fromCoord.y);
             const to = posFromViewport(l.toCoord.x, l.toCoord.y);
             ctx.moveTo(from.x, from.y);
-            ctx.lineTo(to.x, to.y);
+            if (l.noBezier) ctx.lineTo(to.x, to.y);
+            else if (l.isHeadingBottom) {
+                ctx.bezierCurveTo(
+                    from.x,
+                    from.y + BEZIER_OFFSET * rInfo.ratio,
+                    to.x - BEZIER_OFFSET * rInfo.ratio,
+                    to.y,
+                    to.x,
+                    to.y
+                );
+            } else
+                ctx.bezierCurveTo(
+                    from.x + BEZIER_OFFSET * rInfo.ratio,
+                    from.y,
+                    to.x - BEZIER_OFFSET * rInfo.ratio,
+                    to.y,
+                    to.x,
+                    to.y
+                );
             ctx.stroke();
         });
     }, 2);

@@ -1,5 +1,7 @@
 import { get, writable } from "svelte/store";
 import { outClicked } from "../lib/contextMenu/contextUtils";
+import { ipcRenderer } from "electron";
+import { appData } from "../lib/syncData.svelte";
 
 export const rInfo = {
     ratio: 0,
@@ -55,20 +57,97 @@ export function moveViewport(dx, dy) {
 }
 
 const sizeLimit = [-0.7, 0.5];
-export function setViewportSize(size) {
-    viewport.size.set(size);
-    calcRatio();
+export function setViewportSize(size, considerLimit = true) {
+    const newSize = considerLimit ? Math.min(Math.max(size, sizeLimit[0]), sizeLimit[1]) : size;
+    
     outClicked();
+    viewport.size.set(newSize);
+    calcRatio();
 }
-export function resizeViewport(step) {
-    viewport.size.update((s) => {
-        const result = s + step * 0.1;
-        return sizeLimit[0] > result || sizeLimit[1] < result ? s : result;
+
+export function resizeViewport(step, mousePos = null) {
+    const prevSize = get(viewport.size);
+    const newSize = get(viewport.size) + step * 0.1;
+    
+    if (mousePos && prevSize !== newSize) {
+        const realPos = getOriginalPos(mousePos.x, mousePos.y);
+        
+        setViewportSize(newSize, true);
+        
+        const newRealPos = getOriginalPos(mousePos.x, mousePos.y);
+        
+        viewport.pos.update(p => ({
+            x: p.x + (realPos.x - newRealPos.x),
+            y: p.y + (realPos.y - newRealPos.y)
+        }));
+    } else {
+        setViewportSize(newSize, true);
+    }
+}
+
+export function fitViewportToNodes(nodes) {
+    if (!nodes || nodes.length === 0) {
+        setViewportSize(0);
+        viewport.pos.set({ x: 0, y: 0 });
+        return;
+    }
+
+    // Calculate bounds
+    const bounds = {
+        minX: Infinity,
+        minY: Infinity,
+        maxX: -Infinity,
+        maxY: -Infinity
+    };
+
+    nodes.forEach(node => {
+        const pos = node.nodePos;
+        bounds.minX = Math.min(bounds.minX, pos.x);
+        bounds.minY = Math.min(bounds.minY, pos.y);
+        bounds.maxX = Math.max(bounds.maxX, pos.x);
+        bounds.maxY = Math.max(bounds.maxY, pos.y);
     });
-    calcRatio();
-    outClicked();
+
+    // Add padding
+    const padding = 100;
+    const sideBarWidth = 300;
+    bounds.minX -= padding;
+    bounds.minY -= padding;
+    bounds.maxX += padding + sideBarWidth;
+    bounds.maxY += padding;
+
+    // Calculate center position
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+
+    // Calculate required scale
+    const width = bounds.maxX - bounds.minX;
+    const height = bounds.maxY - bounds.minY;
+    const screenSize = get(viewport.screen);
+    const scaleX = Math.log10(screenSize.width / width);
+    const scaleY = Math.log10(screenSize.height / height);
+    const scale = Math.min(scaleX, scaleY, sizeLimit[1]);
+
+    // Apply new viewport settings
+    setViewportSize(scale, false);
+    viewport.pos.set({ x: centerX, y: centerY });
 }
 
 window.onresize = () => {
     calcRatio();
 };
+
+export function initViewport(data) {
+    appData = data;
+}
+
+ipcRenderer.on("zoom", (_, step) => {
+    const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    resizeViewport(step, center);
+});
+
+ipcRenderer.on("zoom-fit", () => {
+    if (appData) {
+        fitViewportToNodes(appData.nodes);
+    }
+});

@@ -1,5 +1,5 @@
 <script>
-    import InputField from "./InputField.svelte";
+    import InputField from "../InputField.svelte";
     import { BaseValueTypes } from "../../lib/translate";
     import { addHistory } from "../../lib/workHistory";
 
@@ -26,4 +26,11 @@
         value={data.baseValue}
         setter={(d) => (data.baseValue = d)}
     />
-{:else if data.baseType === "variable"}{/if}
+{:else if data.baseType === "variable"}
+    <InputField
+        label="변수 할당"
+        value={data.baseValue}
+        setter={(d) => (data.baseValue = d)}
+        type="variable"
+    />
+{/if}

@@ -56,7 +56,14 @@
             {ElementListenerTypes[listener.type] ?? "리스너"}
         </div>
         {#if !hidden}
-            <div class="output" use:outputNode={{ id: listener.id, output: listener.output }}></div>
+            <div
+                class="output"
+                use:outputNode={{
+                    id: listener.id,
+                    output: listener.output,
+                    isHeadingBottom: false
+                }}
+            ></div>
         {/if}
     </div>
 </div>

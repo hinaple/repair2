@@ -43,3 +43,8 @@ export const ElementListenerTypes = {
     videoEnd: "영상 종료",
     keyPress: "키보드 입력"
 };
+
+export const EntryTypes = {
+    startup: "프로그램 시작",
+    event: "이벤트",
+};

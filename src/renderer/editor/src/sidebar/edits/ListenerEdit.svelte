@@ -1,5 +1,5 @@
 <script>
-    import InputField from "./InputField.svelte";
+    import InputField from "../InputField.svelte";
     import { ElementListenerTypes } from "../../lib/translate";
 
     const { data } = $props();

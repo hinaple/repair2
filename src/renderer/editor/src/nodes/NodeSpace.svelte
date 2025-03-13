@@ -8,7 +8,8 @@
         moveViewport,
         posFromViewport,
         setViewportSize,
-        getOriginalPos
+        getOriginalPos,
+        fitViewportToNodes
     } from "./viewport";
     import Sequence from "./Sequence.svelte";
     import { grabbing } from "../lib/stores";
@@ -19,19 +20,17 @@
     import { rightclick } from "../lib/contextMenu/contextUtils";
     import SequenceClass from "@classes/sequence.svelte";
     import BranchClass from "@classes/branch.svelte";
+    import EntryClass from "@classes/entry.svelte";
     import { addHistory } from "../lib/workHistory";
     import Branch from "./branch/Branch.svelte";
+    import Entry from "./Entry.svelte";
 
     let readyToGrab = $state(false);
     function keydown(evt) {
+        if (evt.target.tagName === "INPUT" || evt.target.tagName === "TEXTAREA") return;
         if (evt.key === " " && !get(grabbing)) {
             readyToGrab = true;
             grabbing.set(myGrab);
-        }
-        if (!evt.ctrlKey) return;
-        if (evt.key === "0") {
-            setViewportSize(0);
-            viewport.pos.set({ x: 0, y: 0 });
         }
     }
     function keyup(evt) {
@@ -71,8 +70,8 @@
         const dir = Math.abs(evt.deltaY) / evt.deltaY;
         if (evt.ctrlKey || evt.shiftKey) {
             moveViewport(evt.ctrlKey ? dir * 15 : 0, evt.shiftKey ? dir * 15 : 0);
-        } else if (evt.altKey) {
-            resizeViewport(-dir);
+        } else {
+            resizeViewport(-dir, { x: evt.clientX, y: evt.clientY });
         }
     }
 
@@ -136,6 +135,23 @@
                 return true;
             }
         },
+        {
+            label: "새 진입점",
+            click: ({ pos: { x, y } }) => {
+                const entry = new EntryClass({ nodePos: getOriginalPos(x, y) });
+                focusData("entry", entry);
+                addHistory({
+                    doFn: (d) => {
+                        appData.nodes.push(d);
+                    },
+                    undoFn: () => {
+                        appData.nodes.pop();
+                    },
+                    doData: entry
+                });
+                return true;
+            }
+        },
         { type: "seperator" },
         {
             label: "붙여넣기",
@@ -167,6 +183,12 @@
             {:else if node.type === "branch"}
                 <Branch
                     branch={node}
+                    isLastHold={node.id === lastHold}
+                    onmousedown={() => (lastHold = node.id)}
+                />
+            {:else if node.type === "entry"}
+                <Entry
+                    entry={node}
                     isLastHold={node.id === lastHold}
                     onmousedown={() => (lastHold = node.id)}
                 />

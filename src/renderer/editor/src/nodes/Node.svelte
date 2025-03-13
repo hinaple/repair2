@@ -20,7 +20,8 @@
         isFocused,
         contextmenu,
         body,
-        minWidth = 200
+        minWidth = 200,
+        isEntry = false
     } = $props();
 
     $effect(() => {
@@ -89,6 +90,7 @@
 <div
     class="wrapper"
     class:last-hold={isLastHold}
+    class:entry={isEntry}
     bind:this={nodeEl}
     {onmousedown}
     use:rightclick={contextmenu}
@@ -100,21 +102,28 @@
                     {title}
                 </span>
             </div>
-            <FoldArrow bind:folded toggle={() => reload("nodeMoved")} />
+            {#if !isEntry}
+                <FoldArrow bind:folded toggle={() => reload("nodeMoved")} />
+            {/if}
         </div>
-        {#if !folded}
+        {#if !folded && !isEntry}
             {@render body()}
         {:else if innerOutputs?.length}
             <div class="inner-outputs">
                 {#each innerOutputs as output}
                     <div class="right-output-wrapper">
-                        <div class="output right" use:outputNode={output}></div>
+                        <div
+                            class="output right"
+                            use:outputNode={{ isHeadingBottom: false, ...output }}
+                        ></div>
                     </div>
                 {/each}
             </div>
         {/if}
-        <div class="start-circle" use:inputNode={node.id}></div>
-        <div class={"outputs"}>
+        {#if !isEntry}
+            <div class="start-circle" use:inputNode={node.id}></div>
+        {/if}
+        <div class="outputs">
             {#each outputs as output}
                 <div class="output" use:outputNode={output}>
                     {#if !folded && output.label}
@@ -158,6 +167,10 @@
         box-sizing: border-box;
         border-radius: 10px 10px 0 0;
     }
+    .entry .head {
+        border-radius: 10px;
+        height: 45px;
+    }
     .head.folded {
         border-radius: 10px;
     }
@@ -170,6 +183,12 @@
         flex: 1 1 auto;
         overflow: hidden;
         white-space: pre;
+    }
+    .entry .handle {
+        padding-inline: 13px;
+        text-align: center;
+        font-weight: 700;
+        font-size: 20px;
     }
     .start-circle {
         position: absolute;
@@ -193,12 +212,15 @@
         padding-inline: 10px;
         box-sizing: border-box;
     }
+    .entry .outputs {
+        justify-content: center;
+    }
     .output {
         background-color: #000;
         width: 14px;
         height: 14px;
         border-radius: 0 0 7px 7px;
-        cursor: pointer;
+        cursor: grab;
         position: relative;
     }
     .output-label {

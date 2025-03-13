@@ -7,7 +7,8 @@ const SideBarTitles = {
     value: "Value",
     component: "Component",
     element: "Element",
-    listener: "Listener"
+    listener: "Listener",
+    entry: "Entry"
 };
 
 export default SideBarTitles;

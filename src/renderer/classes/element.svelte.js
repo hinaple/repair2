@@ -5,10 +5,10 @@ import TypePayload from "./typePayload.svelte";
 import { genId } from "./utils";
 
 const PayloadTemplates = {
-    image: { resource: null },
-    video: { resource: null },
-    input: { variable: null, placeholder: null, autofocus: false, allowedRegex: null },
-    empty: { content: null }
+    image: { resource: null, removePreload: true },
+    video: { resource: null, removePreload: true, loop: false },
+    input: { variableId: null, placeholder: null, autofocus: false, allowedRegex: null },
+    empty: { content: null, isHtml: false }
 };
 
 export default class Element extends TypePayload {

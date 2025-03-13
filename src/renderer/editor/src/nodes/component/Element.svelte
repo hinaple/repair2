@@ -9,6 +9,7 @@
     import Sortable from "../../lib/Sortable.svelte";
     import Listener from "./Listener.svelte";
     import { addHistory } from "../../lib/workHistory";
+    import registerHighlight from "../../lib/highlight";
 
     let {
         item: element,
@@ -52,6 +53,11 @@
             })
         );
     }
+
+    let hlActive = $state(false);
+    $effect(() => {
+        hlActive = !!(element.type === "input" && element.payload?.variableId);
+    });
 </script>
 
 <div
@@ -64,6 +70,11 @@
         outClicked();
     }}
     use:rightclick={contextmenu}
+    use:registerHighlight={{
+        type: "variable",
+        data: element.payload.variableId,
+        active: hlActive
+    }}
 >
     <div class="info">
         <div class="handle" bind:this={handle}>

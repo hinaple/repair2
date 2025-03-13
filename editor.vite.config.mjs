@@ -21,5 +21,8 @@ export default defineConfig({
         alias: {
             "@classes": resolve(__dirname, "src/renderer/classes")
         }
+    },
+    define: {
+        __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
     }
 });

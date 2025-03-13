@@ -1,7 +1,7 @@
 <script>
     import { ElementTypes } from "../../lib/translate";
-    import InputField from "./InputField.svelte";
-    import Position from "./Position.svelte";
+    import InputField from "../InputField.svelte";
+    import Position from "../Position.svelte";
 
     const { data } = $props();
 </script>
@@ -34,3 +34,11 @@
     setter={(d) => (data.width = +d ? +d : null)}
 />
 <hr />
+{#if data.type === "input"}
+    <InputField
+        label="변수 할당"
+        value={data.payload.variableId}
+        setter={(d) => (data.payload.variableId = d)}
+        type="variable"
+    />
+{/if}

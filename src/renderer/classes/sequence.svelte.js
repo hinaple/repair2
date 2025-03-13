@@ -1,9 +1,9 @@
 import Step from "./step.svelte";
-import Node from "./node.svelte";
 import Output from "./output";
 import Sortable from "./sortable.svelte";
+import AdvancedNode from "./advancedNode";
 
-export default class Sequence extends Node {
+export default class Sequence extends AdvancedNode {
     constructor({ steps = [], output = {}, ...nodeData } = {}) {
         super("sequence", nodeData);
         this.steps = new Sortable(steps, Step);

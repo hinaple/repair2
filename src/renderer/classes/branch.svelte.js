@@ -1,15 +1,19 @@
-import Node from "./node.svelte";
 import Output from "./output";
 import Value from "./value/value.svelte";
+import AdvancedNode from "./advancedNode";
 
-export default class Branch extends Node {
+export default class Branch extends AdvancedNode {
     operator = $state();
+    disableAfterTrue = $state();
+    disableAfterFalse = $state();
     constructor({
         valueA = {},
         valueB = {},
         operator = "equals",
         trueOutput = {},
         falseOutput = {},
+        disableAfterTrue = false,
+        disableAfterFalse = false,
         ...nodeData
     }) {
         super("branch", nodeData);
@@ -17,7 +21,10 @@ export default class Branch extends Node {
         this.valueB = new Value(valueB);
         this.trueOutput = new Output(trueOutput);
         this.falseOutput = new Output(falseOutput);
+
         this.operator = operator;
+        this.disableAfterTrue = disableAfterTrue;
+        this.disableAfterFalse = disableAfterFalse;
     }
     compare(a, b) {
         if (this.operator === "equals") return a == b;
@@ -34,7 +41,9 @@ export default class Branch extends Node {
             ...super.storeData,
             valueA: this.valueA.storeData,
             valueB: this.valueB.storeData,
-            operator: this.operator
+            operator: this.operator,
+            disableAfterTrue: this.disableAfterTrue,
+            disableAfterFalse: this.disableAfterFalse
         };
     }
 }

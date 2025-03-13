@@ -2,14 +2,14 @@
     import { get } from "svelte/store";
     import { grabbing } from "./stores";
 
-    let { folded = $bindable(false), toggle } = $props();
+    let { folded = $bindable(false), toggle = null } = $props();
 </script>
 
 <div
     onclick={() => {
         if (get(grabbing)) return;
         folded = !folded;
-        toggle();
+        toggle?.();
     }}
     class:folded
 >

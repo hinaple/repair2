@@ -7,7 +7,7 @@ import { addHistory } from "../../lib/workHistory";
 import { nodeMovedReloader, reload } from "../../lib/stores";
 import FrameUpdater from "../../lib/frameUpdater";
 
-export default function outputNode(node, { id, output }) {
+export default function outputNode(node, { id, output, isHeadingBottom = true }) {
     function drawOutputLine() {
         if (!output.to) {
             removeLine(id);
@@ -16,7 +16,7 @@ export default function outputNode(node, { id, output }) {
         }
         const tempPos = getNodeById(output.to).nodePos;
         endPos = { x: tempPos.x, y: tempPos.y + 14 };
-        syncLine(fromCoord, endPos, id, output);
+        syncLine({ fromCoord, toCoord: endPos, fromId: id, output, isHeadingBottom });
     }
 
     const grabber = new Grabber({
@@ -24,7 +24,7 @@ export default function outputNode(node, { id, output }) {
         onMoved: ({ dx, dy }) => {
             endPos.x += dx;
             endPos.y += dy;
-            syncLine(fromCoord, endPos, id, output);
+            syncLine({ fromCoord, toCoord: endPos, fromId: id, output, noBezier: true });
         },
         onMoveStart: () => (endPos = { x: fromCoord.x, y: fromCoord.y }),
         onMoveEnd: () => {
