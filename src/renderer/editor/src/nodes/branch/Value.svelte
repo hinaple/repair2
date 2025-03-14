@@ -43,10 +43,7 @@
         { label: "붙여넣기", click: () => {} }
     ];
 
-    let hlActive = $state(false);
-    $effect(() => {
-        hlActive = !!(value.baseType === "variable" && value.baseValue);
-    });
+    let hlActive = $derived(!!(value.baseType === "variable" && value.baseValue));
 </script>
 
 <div class={["value-wrapper", rightBorder && "right-border"]}>

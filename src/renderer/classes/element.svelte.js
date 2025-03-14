@@ -5,9 +5,15 @@ import TypePayload from "./typePayload.svelte";
 import { genId } from "./utils";
 
 const PayloadTemplates = {
-    image: { resource: null, removePreload: true },
-    video: { resource: null, removePreload: true, loop: false },
-    input: { variableId: null, placeholder: null, autofocus: false, allowedRegex: null },
+    image: { resourceId: null, removePreload: true },
+    video: { resourceId: null, removePreload: true, loop: false },
+    input: {
+        variableId: null,
+        placeholder: null,
+        autofocus: false,
+        allowedType: null,
+        allowedRegex: null
+    },
     empty: { content: null, isHtml: false }
 };
 
@@ -16,6 +22,7 @@ export default class Element extends TypePayload {
     width = $state();
     height = $state();
     style = $state();
+    className = $state();
     absolute = $state();
     constructor({
         id = genId(),
@@ -27,6 +34,7 @@ export default class Element extends TypePayload {
         width = null,
         height = null,
         style = null,
+        className = null,
         listeners = []
     } = {}) {
         super({ type, payload, template: PayloadTemplates });
@@ -37,6 +45,7 @@ export default class Element extends TypePayload {
         this.width = width;
         this.height = height;
         this.style = style;
+        this.className = className;
         this.listeners = new Sortable(listeners, Listener);
     }
     get storeData() {
@@ -47,6 +56,7 @@ export default class Element extends TypePayload {
             width: this.width,
             height: this.height,
             style: this.style,
+            className: this.className,
             pos: this.pos.storeData,
             absolute: this.absolute,
             listeners: this.listeners.storeData

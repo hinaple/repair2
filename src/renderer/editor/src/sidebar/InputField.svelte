@@ -4,6 +4,8 @@
     import Checkbox from "./Checkbox.svelte";
     import HistoryInput from "./HistoryInput.svelte";
     import Position from "./Position.svelte";
+    import ResourceSelector from "./ResourceSelector.svelte";
+    import TypeInput from "./TypeInput.svelte";
 
     let {
         label = null,
@@ -12,6 +14,7 @@
         type = "input",
         manual = false,
         small = false,
+        row = false,
         ...props
     } = $props();
 
@@ -28,10 +31,6 @@
         valueBeforeFocus = value;
     }
 
-    function typeChanged(evt) {
-        value.changeTypeWithHistory(addHistory, evt.target.value);
-    }
-
     function checkboxClick() {
         value = !value;
         addHistory({ doFn: setter, doData: value, undoData: !value });
@@ -39,7 +38,7 @@
 </script>
 
 <div
-    class={["field", type === "checkbox" && "row", small && "small"]}
+    class={["field", (type === "checkbox" || row) && "row", small && "small"]}
     onclick={() => {
         if (type === "checkbox") checkboxClick();
     }}
@@ -67,14 +66,16 @@
             {/each}
         </select>
     {:else if type === "type"}
-        <select value={value.type} {onfocus} onchange={typeChanged}>
-            <option value={null} hidden>선택 안함</option>
-            {#each Object.entries(props.options) as [value, label]}
-                <option {value}>{label}</option>
-            {/each}
-        </select>
+        <TypeInput type={value} {...props} />
     {:else if type === "position"}
         <Position position={value} />
+    {:else if type === "resource"}
+        <ResourceSelector
+            bind:resourceId={value}
+            type={props.elType}
+            {onfocus}
+            onchange={selectChange}
+        />
     {/if}
 </div>
 
@@ -92,12 +93,19 @@
         padding-left: 5px;
         box-sizing: border-box;
     }
+    .field.small {
+        padding-left: 0;
+    }
     .label {
         font-size: 16px;
         padding-left: 5px;
     }
     .small .label {
         font-size: 14px;
+        padding: 0;
+    }
+    .row .label {
+        flex: 0 0 auto;
     }
     select {
         padding: 2px 5px;
@@ -107,5 +115,9 @@
         font-size: 20px;
         color: #000;
         font-weight: 600;
+    }
+    .row.small :global(input) {
+        flex: 1 1 auto;
+        width: 100%;
     }
 </style>

@@ -54,9 +54,12 @@
         );
     }
 
-    let hlActive = $state(false);
-    $effect(() => {
-        hlActive = !!(element.type === "input" && element.payload?.variableId);
+    let hlData = $derived.by(() => {
+        if (element.type === "input")
+            return { type: "variable", data: element.payload?.variableId, active: true };
+        if (element.type === "image" || element.type === "video")
+            return { type: "resource", data: element.payload?.resourceId, active: true };
+        return { active: false };
     });
 </script>
 
@@ -70,11 +73,7 @@
         outClicked();
     }}
     use:rightclick={contextmenu}
-    use:registerHighlight={{
-        type: "variable",
-        data: element.payload.variableId,
-        active: hlActive
-    }}
+    use:registerHighlight={hlData}
 >
     <div class="info">
         <div class="handle" bind:this={handle}>

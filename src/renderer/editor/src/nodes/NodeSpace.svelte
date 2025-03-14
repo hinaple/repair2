@@ -7,9 +7,7 @@
         resizeViewport,
         moveViewport,
         posFromViewport,
-        setViewportSize,
-        getOriginalPos,
-        fitViewportToNodes
+        getOriginalPos
     } from "./viewport";
     import Sequence from "./Sequence.svelte";
     import { grabbing } from "../lib/stores";
@@ -18,9 +16,9 @@
     import { appData } from "../lib/syncData.svelte";
     import { focusData } from "../sidebar/editUtils";
     import { rightclick } from "../lib/contextMenu/contextUtils";
-    import SequenceClass from "@classes/sequence.svelte";
-    import BranchClass from "@classes/branch.svelte";
-    import EntryClass from "@classes/entry.svelte";
+    import SequenceClass from "@classes/nodes/sequence.svelte";
+    import BranchClass from "@classes/nodes/branch.svelte";
+    import EntryClass from "@classes/nodes/entry.svelte";
     import { addHistory } from "../lib/workHistory";
     import Branch from "./branch/Branch.svelte";
     import Entry from "./Entry.svelte";

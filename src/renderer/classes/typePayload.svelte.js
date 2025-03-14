@@ -1,31 +1,75 @@
 export default class TypePayload {
-    type = $state();
+    types = $state([]);
+    type = $derived(this.types.join("."));
     payload = $state();
     #template = {};
-    constructor({ type, payload, template }) {
+    constructor({ type = [], payload, template }) {
         this.#template = template;
         this.changeType(type, payload);
     }
-    genPayload(type, payload = {}) {
-        if (!this.#template[type]) return payload;
-        else if (this.#template[type].isClass) return new this.#template[type].class(payload);
-        return { ...this.#template[type], ...payload };
+    getTemplateWithTypes(steps = this.types) {
+        if (!steps.length) return this.#template;
+        return steps.reduce(
+            (currentObj, currentStep) => currentObj[currentStep] ?? {},
+            this.#template
+        );
     }
-    changeType(type, payload = {}, raw = false) {
-        this.type = type;
-        this.payload = raw ? payload : this.genPayload(type, payload);
+    get currentTemplate() {
+        return this.getTemplateWithTypes();
     }
-    changeTypeWithHistory(addHistory, type) {
-        const newPayload = this.genPayload(type);
+    get typeTree() {
+        const tree = [Object.keys(this.#template)];
+        this.types.reduce((currentObj, currentStep, i) => {
+            const nextObj = currentObj[currentStep];
+            if (nextObj?.isTypeObj) {
+                const keys = Object.keys(nextObj);
+                tree.push(keys.toSpliced(keys.indexOf("isTypeObj"), 1));
+            }
+            return nextObj;
+        }, this.#template);
+        return tree;
+    }
+    genPayload(payload = {}, currentTemplate = this.currentTemplate) {
+        if (currentTemplate?.isTypeObj) return;
+
+        if (!currentTemplate) return payload;
+        else if (currentTemplate.isClass) return new currentTemplate.class(payload);
+        return { ...currentTemplate, ...payload };
+    }
+    changeType(types = [], payload = {}, raw = false) {
+        if (!Array.isArray(types)) this.types = [types];
+        else this.types = [...types];
+
+        if (raw) {
+            this.payload = payload;
+            return;
+        }
+
+        const currentTemplate = this.currentTemplate;
+        if (currentTemplate?.isTypeObj) {
+            this.payload = null;
+            return;
+        }
+
+        this.payload = this.genPayload(payload, currentTemplate);
+    }
+    changeTypeWithHistory(addHistory, type, typeDepth = this.types.length) {
+        const newTypes = [...this.types];
+        newTypes.splice(typeDepth);
+        newTypes.push(type);
+
+        const tempTemplate = this.getTemplateWithTypes(newTypes);
+        const newPayload = tempTemplate?.isTypeObj ? null : this.genPayload({}, tempTemplate);
+
         addHistory({
-            doFn: ({ type, payload = {}, that }) => that.changeType(type, payload, true),
-            doData: { type: type, payload: newPayload, that: this },
-            undoData: { type: this.type, payload: this.payload, that: this }
+            doFn: ({ types, payload = {}, that }) => that.changeType(types, payload, true),
+            doData: { types: newTypes, payload: newPayload, that: this },
+            undoData: { types: this.types.map((t) => t), payload: this.payload, that: this }
         });
     }
     get storeData() {
         return {
-            type: this.type,
+            type: this.types.map((t) => t),
             payload: this.payload.storeData ?? $state.snapshot(this.payload)
         };
     }

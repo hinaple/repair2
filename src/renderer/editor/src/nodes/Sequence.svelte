@@ -46,7 +46,7 @@
     function nodeCountChanged() {
         innerOutputs = [];
         sequence.steps.list
-            .filter((s) => s.type === "CreateComponent")
+            .filter((s) => s.type === "Component.create")
             .forEach((s) => {
                 s.payload.elements.list.forEach(
                     (e) => (innerOutputs = [...innerOutputs, ...e.listeners.list])

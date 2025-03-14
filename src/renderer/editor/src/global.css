@@ -56,8 +56,10 @@ hr {
 .contextmenu {
     outline: dashed var(--outline-width) #ff8000;
 }
-.hl-variable {
-    outline: solid var(--outline-width) #efff09;
+.hl-variable,
+.hl-resource {
+    outline: solid var(--outline-width) #ffe734;
+    outline-offset: 3px;
 }
 
 @font-face {

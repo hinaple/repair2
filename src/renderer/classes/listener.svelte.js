@@ -2,7 +2,10 @@ import Output from "./output";
 import TypePayload from "./typePayload.svelte";
 
 const PayloadTemplates = {
-    keyPress: { key: null }
+    keyPress: { key: null },
+    nothing: null,
+    click: null,
+    videoEnd: null
 };
 
 export default class Listener extends TypePayload {

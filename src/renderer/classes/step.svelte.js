@@ -3,12 +3,19 @@ import Component from "./component.svelte";
 import { genId } from "./utils";
 
 const PayloadTemplates = {
-    CreateComponent: { isClass: true, class: Component },
-    RemoveComponent: { componentAlias: null, ignoreUnbreakable: false },
-    ModifyComponent: { componentAlias: null, modifyKey: null, modifyValue: null },
-    ClearComponent: { ignoreUnbreakable: false },
-    PlayAudio: { resourceId: null, channel: "default" },
-    PauseAudio: { channel: "default" }
+    Component: {
+        isTypeObj: true,
+        create: { isClass: true, class: Component },
+        remove: { componentAlias: null, ignoreUnbreakable: false },
+        modify: { componentAlias: null, modifyKey: null, modifyValue: null },
+        clear: { ignoreUnbreakable: false }
+    },
+    Audio: {
+        isTypeObj: true,
+        play: { resourceId: null, channel: "default" },
+        pause: { channel: "default" }
+    },
+    delay: { delayMs: 0 }
 };
 
 export default class Step extends TypePayload {
@@ -20,6 +27,11 @@ export default class Step extends TypePayload {
     }
     changePayloadValue(key, value) {
         super.payload = { ...this.payload, [key]: value };
+    }
+    execute() {
+        return new Promise((res) => {
+            res();
+        });
     }
     get storeData() {
         return {

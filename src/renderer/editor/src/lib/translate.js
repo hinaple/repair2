@@ -1,13 +1,25 @@
 export const StepTypes = {
-    Delay: "딜레이",
-    CreateComponent: "컴포넌트 생성",
-    RemoveComponent: "컴포넌트 제거",
-    ModifyComponent: "컴포넌트 수정",
-    ClearComponent: "컴포넌트 전체 삭제",
-    PlayAudio: "오디오 재생",
-    PauseAudio: "오디오 일시정지",
-    ResumeAudio: "오디오 재개",
-    ModifyAudioChannel: "오디오 속성 변경"
+    delay: "딜레이",
+
+    Component: "컴포넌트",
+    create: "생성",
+    remove: "제거",
+    modify: "수정",
+    clear: "전체 삭제",
+    "Component.create": "컴포넌트 생성",
+    "Component.remove": "컴포넌트 제거",
+    "Component.modify": "컴포넌트 수정",
+    "Component.clear": "컴포넌트 전체 삭제",
+
+    Audio: "오디오",
+    play: "재생",
+    pause: "일시정지",
+    resume: "재개",
+    modifyChannel: "속성 변경",
+    "Audio.play": "오디오 재생",
+    "Audio.pause": "오디오 일시정지",
+    "Audio.resume": "오디오 재개",
+    "Audio.modifyChannel": "오디오 속성 변경"
 };
 
 export const ValueProcessTypes = {
@@ -26,7 +38,8 @@ export const BaseValueTypes = {
 
 export const ComparisonOperatorTypes = {
     equals: "A와 B가 동일",
-    includes: "A가 B를 포함"
+    includes: "A가 B를 포함",
+    script: "스크립트"
 };
 
 export const ElementTypes = {
@@ -46,5 +59,12 @@ export const ElementListenerTypes = {
 
 export const EntryTypes = {
     startup: "프로그램 시작",
-    event: "이벤트",
+    event: "이벤트"
+};
+
+export const InputAllowedTypes = {
+    english: "영문",
+    number: "숫자",
+    korean: "한글",
+    regex: "정규표현식 직접 입력"
 };

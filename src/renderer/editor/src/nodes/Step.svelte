@@ -67,7 +67,7 @@
             {step.title?.length ? step.title : (StepTypes[step.type] ?? "빈 스텝")}
         </span>
     </div>
-    {#if step.type === "CreateComponent"}
+    {#if step.type === "Component.create"}
         <Component payload={step.payload} {noGrab} {nodeCountChanged} />
     {/if}
 </div>

@@ -1,9 +1,9 @@
 import Config from "./config.svelte";
 import Resource from "./resource.svelte";
 import Variable from "./variable.svelte";
-import Sequence from "./sequence.svelte";
-import Branch from "./branch.svelte";
-import Entry from "./entry.svelte";
+import Sequence from "./nodes/sequence.svelte";
+import Branch from "./nodes/branch.svelte";
+import Entry from "./nodes/entry.svelte";
 
 export default class AppData {
     resources = $state([]);

@@ -1,4 +1,5 @@
 import { genId } from "./utils";
+import { basename } from "path";
 
 const FileTypes = {
     image: ["jpg", "jpeg", "gif", "svg", "webp", "png", "bmp", "ico"],
@@ -17,7 +18,7 @@ export default class Resource {
     src = $state();
     alias = $state();
     folded = $state();
-    constructor({ id = genId(), src = null, alias = null, folded = false } = {}) {
+    constructor({ id = genId(), src = null, alias = null, folded = true } = {}) {
         this.id = id;
         this.src = src;
         this.alias = alias;
@@ -29,12 +30,14 @@ export default class Resource {
     get fileType() {
         return fileTypeMap[this.extension] ?? null;
     }
+    get title() {
+        return this.alias?.length ? this.alias : this.src ? basename(this.src) : "이름 없는 자원";
+    }
     get storeData() {
         return {
-            ...this,
+            id: this.id,
             src: this.src,
-            alias: this.alias,
-            folded: this.folded
+            alias: this.alias
         };
     }
 }

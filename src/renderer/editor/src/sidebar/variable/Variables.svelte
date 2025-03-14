@@ -34,18 +34,20 @@
 </script>
 
 <div class="variables">
-    {#each appData.variables as variable, index}
-        <Variable
-            {variable}
-            isEditing={currentEdit === index}
-            edit={(evt) => {
-                evt.stopPropagation();
-                currentEdit = index;
-            }}
-            blur={() => (currentEdit = -1)}
-            remove={() => remove(index)}
-        />
-    {/each}
+    <div class="list">
+        {#each appData.variables as variable, index}
+            <Variable
+                {variable}
+                isEditing={currentEdit === index}
+                edit={(evt) => {
+                    evt.stopPropagation();
+                    currentEdit = index;
+                }}
+                blur={() => (currentEdit = -1)}
+                remove={() => remove(index)}
+            />
+        {/each}
+    </div>
     <div class="add" onclick={addVariable}>변수 선언</div>
 </div>
 
@@ -53,16 +55,29 @@
     .variables {
         width: 100%;
         height: 100%;
-        overflow-y: auto;
-        padding: 20px 6px 20px 20px;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
         gap: 10px;
+        overflow: hidden;
+        padding-block: 30px;
+        align-items: center;
+    }
+    .list {
+        border-radius: 10px;
+        width: 100%;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding-inline: 20px 6px;
         scrollbar-gutter: stable;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-sizing: border-box;
     }
     .add {
-        width: 100%;
+        flex: 0 0 auto;
+        width: calc(100% - 40px);
         background-color: #fff;
         color: #000;
         border-radius: 10px;

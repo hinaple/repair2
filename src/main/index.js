@@ -1,32 +1,16 @@
-import { app, shell, BrowserWindow, ipcMain, Menu, protocol, dialog } from "electron";
-import { join } from "path";
+import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from "electron";
+import { basename, extname, join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import fs from "fs/promises";
-import { pathToFileURL } from "url";
 
 import DataTemplate from "./dataTemplate.json";
-
-protocol.registerSchemesAsPrivileged([
-    {
-        scheme: "asset",
-        privileges: {
-            standard: true,
-            secure: true,
-            supportFetchAPI: true,
-            corsEnabled: true,
-            stream: true,
-            bypassCSP: true,
-            allowServiceWorkers: true,
-            codeCache: true
-        }
-    }
-]);
 
 let mainWindow, editorWindow;
 
 let data;
 
 const dataDir = is.dev ? join(__dirname, "../../data") : join(app.getPath("exe"), "..", "data");
+const assetDir = join(dataDir, "assets");
 
 async function saveData(tempData) {
     data = { ...tempData, updatedAt: new Date().getTime() };
@@ -201,27 +185,6 @@ function createEditorWindow() {
 app.whenReady().then(async () => {
     electronApp.setAppUserModelId("com.repair2");
 
-    protocol.handle("asset", async (request) => {
-        try {
-            const url = new URL(request.url);
-            const filePath = join(dataDir, "assets", decodeURIComponent(url.host + url.pathname));
-            const fileExists = await fs
-                .access(filePath)
-                .then(() => true)
-                .catch(() => false);
-
-            if (!fileExists) {
-                return new Response("File not found", { status: 404 });
-            }
-
-            const fileContent = await fs.readFile(filePath);
-            return new Response(fileContent);
-        } catch (error) {
-            console.error("Asset protocol error:", error);
-            return new Response("Error loading file", { status: 500 });
-        }
-    });
-
     app.on("browser-window-created", (_, window) => {
         optimizer.watchWindowShortcuts(window);
     });
@@ -272,4 +235,32 @@ ipcMain.on("getDataDir", (evt) => {
 });
 ipcMain.on("selectFile", async (event, opt) => {
     event.returnValue = await dialog.showOpenDialogSync(opt);
+});
+ipcMain.on("dialogue", async (event, opt) => {
+    event.returnValue = await dialog.showMessageBoxSync(opt);
+});
+
+ipcMain.on("copyInfoAsset", async (event, srcs) => {
+    event.returnValue = await Promise.all(
+        srcs.map(
+            (s) =>
+                new Promise(async (res) => {
+                    const ext = extname(s);
+                    const bn = basename(s, ext);
+                    let filename = basename(s);
+                    for (let duplicatedCount = 2; ; duplicatedCount++) {
+                        if (
+                            await fs
+                                .access(join(assetDir, filename), fs.constants.F_OK)
+                                .then(() => false)
+                                .catch(() => true)
+                        )
+                            break;
+                        filename = `${bn}(${duplicatedCount})${ext}`;
+                    }
+                    await fs.copyFile(s, join(assetDir, filename));
+                    res(filename);
+                })
+        )
+    );
 });

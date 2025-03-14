@@ -3,17 +3,43 @@
     import ResourceClass from "@classes/resource.svelte";
     import { addHistory } from "../../lib/workHistory";
     import Resource from "./Resource.svelte";
+    import { AssetDir, selectMany, splitPath } from "./selectResourceFile";
+    import { ipcRenderer } from "electron";
 
-    function addResource(evt) {
+    async function addResource(evt) {
         evt.stopPropagation();
+        const srcs = await selectMany();
+        if (!srcs?.length) return;
+
+        const inAssets = [];
+        let outAssets = [];
+        srcs.forEach((s) =>
+            s.includes(AssetDir) ? inAssets.push(splitPath(s)) : outAssets.push(s)
+        );
+        let doCopy = false;
+        if (outAssets.length) {
+            const result = await ipcRenderer.sendSync("dialogue", {
+                type: "question",
+                title: "다른 폴더의 파일이 있습니다.",
+                message: `${outAssets.join("\n")}\n\n위 파일들을 자원 폴더에 복사하시겠습니까?`,
+                buttons: ["자원 폴더에 복사", "건너뛰기"]
+            });
+            doCopy = result === 0;
+        }
+        if (doCopy) outAssets = await ipcRenderer.sendSync("copyInfoAsset", outAssets);
+        const resourceArr = [...inAssets, ...(doCopy ? outAssets : [])].map(
+            (s) => new ResourceClass({ src: s, folded: false })
+        );
+
         addHistory({
-            doFn: (v) => {
-                appData.resources.push(v);
+            doFn: (resources) => {
+                appData.resources.push(...resources);
             },
-            undoFn: () => {
-                appData.resources.pop();
+            undoFn: (deleteCount) => {
+                appData.resources.splice(-deleteCount, deleteCount);
             },
-            doData: new ResourceClass({})
+            doData: resourceArr,
+            undoData: resourceArr.length
         });
     }
 
@@ -32,26 +58,41 @@
 </script>
 
 <div class="resources">
-    {#each appData.resources as resource, index}
-        <Resource {resource} remove={() => remove(index)} />
-    {/each}
-    <div class="add" onclick={addResource}>리소스 추가</div>
+    <div class="list">
+        {#each appData.resources as resource, index}
+            <Resource {resource} remove={() => remove(index)} />
+        {/each}
+    </div>
+    <div class="add" onclick={addResource}>자원 추가</div>
 </div>
 
 <style>
     .resources {
         width: 100%;
         height: 100%;
-        overflow-y: auto;
-        padding: 20px 6px 20px 20px;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
         gap: 10px;
+        overflow: hidden;
+        padding-block: 30px;
+        align-items: center;
+    }
+    .list {
+        border-radius: 10px;
+        width: 100%;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding-inline: 20px 6px;
         scrollbar-gutter: stable;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-sizing: border-box;
     }
     .add {
-        width: 100%;
+        flex: 0 0 auto;
+        width: calc(100% - 40px);
         background-color: #fff;
         color: #000;
         border-radius: 10px;
