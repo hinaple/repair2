@@ -15,8 +15,11 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
 }
 updateData();
 
-ipcRenderer.on("data", (data) => {
+ipcRenderer.on("data", (event, data) => {
+    console.log(data);
     updateData(data);
 });
 
-export default appdata;
+export function getAppData() {
+    return appdata;
+}

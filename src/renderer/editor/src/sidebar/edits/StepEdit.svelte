@@ -47,4 +47,6 @@
         setter={(d) => (data.payload.value = d)}
         type="input"
     />
+{:else if data.types[0] === "executePlugin"}
+    <InputField label="플러그인" value={data.payload} type="plugin" pluginType="functions" />
 {/if}

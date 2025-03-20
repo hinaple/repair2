@@ -25,3 +25,5 @@ export default class ExampleElement extends HTMLElement {
         this.render();
     }
 }
+
+customElements.define("example-element", ExampleElement);

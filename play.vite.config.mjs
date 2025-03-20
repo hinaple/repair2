@@ -1,10 +1,11 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
 import renderer from "vite-plugin-electron-renderer";
+import vanillizer from "./vanillizer";
 
 export default defineConfig({
     root: "src/renderer/play",
-    plugins: [renderer()],
+    plugins: [renderer(), vanillizer],
     server: {
         port: 3100
     },

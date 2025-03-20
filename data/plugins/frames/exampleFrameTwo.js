@@ -1,4 +1,4 @@
-export default class ExampleFrame extends HTMLElement {
+export default class ExampleFrameTwo extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: "open" });
@@ -14,3 +14,5 @@ export default class ExampleFrame extends HTMLElement {
         this.render();
     }
 }
+
+customElements.define("example-frame-two", ExampleFrameTwo);

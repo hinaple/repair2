@@ -65,6 +65,15 @@
         type="checkbox"
         setter={(d) => (data.payload.loop = d)}
     />
+    <InputField
+        label="음량"
+        value={data.payload.volume}
+        setter={(d) => (data.payload.volume = d)}
+        type="number"
+        placeholder="0-100 사이의 실수"
+        min="0"
+        max="100"
+    />
 {:else if data.type === "empty"}
     <InputField
         label="내용"
@@ -122,7 +131,7 @@
                 type="number"
                 placeholder="자동"
                 value={data.height}
-                setter={(d) => (data.width = +d ? +d : null)}
+                setter={(d) => (data.height = +d ? +d : null)}
             />
         {/if}
         <hr />

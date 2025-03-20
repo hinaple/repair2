@@ -5,6 +5,9 @@ export default class Coord {
         this.x = new Position(x);
         this.y = new Position(y);
     }
+    get styleString() {
+        return `${this.x.styleStringWhenX} ${this.y.styleStringWhenY}`;
+    }
     get storeData() {
         return { x: this.x.storeData, y: this.y.storeData };
     }

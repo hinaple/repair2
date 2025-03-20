@@ -1,6 +1,7 @@
 export const StepTypes = {
     delay: "딜레이",
     setVariable: "변수 값 설정",
+    executePlugin: "플러그인 실행",
 
     Component: "컴포넌트",
     create: "생성",
@@ -95,6 +96,7 @@ export const EntryTypes = {
 };
 
 export const InputAllowedTypes = {
+    any: "모든 문자",
     english: "영문",
     number: "숫자",
     korean: "한글",

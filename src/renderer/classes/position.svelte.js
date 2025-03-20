@@ -7,6 +7,20 @@ export default class Position {
         this.origin = origin;
         this.relative = relative;
     }
+    get styleStringWhenX() {
+        if (this.origin === "center") return "";
+        return (
+            `${this.origin === "start" ? "left" : "right"}: ` +
+            `${this.distance ?? 0}${this.relative ? "%;" : "px;"}`
+        );
+    }
+    get styleStringWhenY() {
+        if (this.origin === "center") return "";
+        return (
+            `${this.origin === "start" ? "top" : "bottom"}: ` +
+            `${this.distance ?? 0}${this.relative ? "%;" : "px;"}`
+        );
+    }
     get storeData() {
         return { distance: this.distance, origin: this.origin, relative: this.relative };
     }

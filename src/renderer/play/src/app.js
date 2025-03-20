@@ -1,18 +1,18 @@
 import Output from "@classes/output";
-import appdata from "./lib/appdata";
+import { getAppData } from "./lib/appdata";
 import Step from "@classes/step.svelte";
-import stepExecute from "./stepActions";
+import stepExecute from "./lib/stepActions";
 import { ipcRenderer } from "electron";
 
-console.log(appdata);
+console.log(getAppData());
 
 const gamezone = document.getElementById("gamezone");
-gamezone.setAttribute("style", appdata.config.styleString);
+gamezone.setAttribute("style", getAppData().config.styleString);
 
 Output.prototype.goto = function () {
     if (!this.to) return;
     console.log("GOTO: ", this.to);
-    const outputNode = appdata.findNodeById(this.to);
+    const outputNode = getAppData().findNodeById(this.to);
     console.log(outputNode);
     if (outputNode) outputNode.execute();
 };
@@ -23,12 +23,12 @@ Step.prototype.execute = function () {
 };
 
 window.addEventListener("load", () => {
-    appdata.executeEntry("start");
+    getAppData().executeEntry("start");
 });
 
 ipcRenderer.on("request-execute", (event, { type, id }) => {
     if (type === "node") {
-        const outputNode = appdata.findNodeById(id);
+        const outputNode = getAppData().findNodeById(id);
         if (outputNode) outputNode.execute();
     }
 });

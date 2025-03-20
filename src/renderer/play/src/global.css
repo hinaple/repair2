@@ -18,6 +18,10 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #preloads {
@@ -29,4 +33,34 @@ body {
 #preloads * {
     max-width: var(--gamezone-width);
     max-height: var(--gamezone-height);
+}
+
+img,
+video {
+    display: block;
+    -webkit-user-drag: none;
+}
+
+input {
+    margin: 0;
+    display: block;
+    -webkit-user-drag: none;
+}
+input:focus {
+    outline: none;
+}
+
+* {
+    user-select: none;
+}
+
+repair-component {
+    display: block;
+    width: fit-content;
+    height: fit-content;
+}
+repair-element {
+    display: block;
+    width: fit-content;
+    height: fit-content;
 }

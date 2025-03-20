@@ -19,6 +19,9 @@ export default class AppData {
             else if (node.type === "entry") return new Entry(node);
         });
     }
+    findResourceByTitle(title) {
+        return this.resources.find((r) => r.title === title);
+    }
     findResourceById(id) {
         return this.resources.find((r) => r.id === id);
     }

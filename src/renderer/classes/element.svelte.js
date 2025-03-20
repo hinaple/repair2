@@ -8,12 +8,12 @@ import { genId } from "./utils";
 const PayloadTemplates = {
     empty: { content: null, isHtml: false },
     image: { resourceId: null, removePreload: true },
-    video: { resourceId: null, removePreload: true, loop: false },
+    video: { resourceId: null, removePreload: true, loop: false, volume: 100 },
     input: {
         variableId: null,
         placeholder: null,
         autofocus: false,
-        allowedType: null,
+        allowedType: "any",
         allowedRegex: null
     },
     plugin: { isClass: true, class: PluginPointer, argument: "elements" }
@@ -52,6 +52,18 @@ export default class Element extends TypePayload {
         this.style = style;
         this.className = className;
         this.listeners = new Sortable(listeners, Listener);
+    }
+    get styleString() {
+        if (this.fullscreen)
+            return (
+                "position: absolute;" +
+                "width: var(--gamezone-width); height: var(--gamezone-height);" +
+                "left: 0; top: 0;" +
+                (this.style ?? "")
+            );
+        return (
+            (this.absolute ? `position: absolute;${this.pos.styleString}` : "") + (this.style ?? "")
+        );
     }
     get storeData() {
         return {

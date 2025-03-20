@@ -20,7 +20,7 @@ export default class Component {
         unbreakable = false,
         visible = true,
         style = null,
-        framePlugin = {},
+        frame = {},
         introTransition = {},
         outroTransition = {}
     } = {}) {
@@ -32,9 +32,15 @@ export default class Component {
         this.unbreakable = unbreakable;
         this.visible = visible;
         this.style = style;
-        this.frame = new PluginPointer(framePlugin, "frames");
+        this.frame = new PluginPointer(frame, "frames");
         this.introTransition = new Transition(introTransition);
         this.outroTransition = new Transition(outroTransition);
+    }
+    get styleString() {
+        return `${this.pos.styleString} z-index: ${this.zIndex ?? 0}; ${this.style ?? ""};`;
+    }
+    get aliasOrId() {
+        return this.alias || this.id;
     }
     get storeData() {
         return {

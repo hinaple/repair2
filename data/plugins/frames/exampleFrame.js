@@ -1,28 +1,30 @@
 export default class ExampleFrame extends HTMLElement {
-    static attributes = ["title"];
-    static observedAttributes = ["title"];
+    static attributes = ["header"];
+    static observedAttributes = ["header"];
 
-    title = "Example Frame";
+    header = "Example Frame";
     constructor() {
         super();
         this.attachShadow({ mode: "open" });
     }
     attributeChangedCallback(name, oldVal, newVal) {
-        if (name === "title") {
-            this.title = newVal;
+        if (name === "header") {
+            this.header = newVal;
             this.render();
         }
     }
     render() {
         this.shadowRoot.innerHTML = `
             <div>
-                ${this.title}
+                <span>${this.header}</span>
                 <slot>No content</slot>
             </div>
         `;
     }
     connectedCallback() {
-        this.title = this.getAttribute("title");
+        this.header = this.getAttribute("header");
         this.render();
     }
 }
+
+customElements.define("example-frame", ExampleFrame);

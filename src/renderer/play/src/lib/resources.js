@@ -1,11 +1,13 @@
 import { getAssetDir } from "@classes/utils";
-import appdata from "./appdata";
+import { getAppData } from "./appdata";
 
 let preloads = {};
 
 const preloadsEl = document.getElementById("preloads");
 
-function genElement(resource) {
+export function genElement(resource) {
+    if (!resource) return null;
+
     if (preloads[resource.id]) return preloads[resource.id].el;
     if (resource.fileType === "image") {
         const img = document.createElement("img");
@@ -25,7 +27,7 @@ function genElement(resource) {
 function addPreload(resourceId) {
     if (preloads[resourceId]) return;
 
-    const resource = appdata.findResourceById(resourceId);
+    const resource = getAppData().findResourceById(resourceId);
     if (!resource) return;
 
     preloads[resourceId] = {

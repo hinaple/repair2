@@ -1,14 +1,15 @@
 import TypePayload from "./typePayload.svelte";
 import Component from "./component.svelte";
 import { genId } from "./utils";
+import PluginPointer from "./pluginPointer.svelte";
 
 const PayloadTemplates = {
     Component: {
         isTypeObj: true,
         create: { isClass: true, class: Component },
-        modify: { componentAlias: null, modifyKey: null, modifyValue: null },
-        remove: { componentAlias: null, ignoreUnbreakable: false },
-        clear: { ignoreUnbreakable: false }
+        remove: { componentAlias: null, ignoreUnbreakable: true },
+        clear: { ignoreUnbreakable: false },
+        modify: { componentAlias: null, modifyKey: null, modifyValue: null }
     },
     Audio: {
         isTypeObj: true,
@@ -23,8 +24,9 @@ const PayloadTemplates = {
         release: { resourceArr: [] },
         releaseAll: null
     },
+    delay: { delayMs: 0 },
     setVariable: { variableId: null, value: null },
-    delay: { delayMs: 0 }
+    executePlugin: { isClass: true, class: PluginPointer, argument: "functions" }
 };
 
 export default class Step extends TypePayload {
