@@ -3,9 +3,11 @@
     import { addHistory } from "../lib/workHistory";
     import Checkbox from "./Checkbox.svelte";
     import HistoryInput from "./HistoryInput.svelte";
+    import PluginSelector from "./PluginSelector.svelte";
     import Position from "./Position.svelte";
     import ResourceSelector from "./ResourceSelector.svelte";
     import TypeInput from "./TypeInput.svelte";
+    import TransitionInput from "./TransitionInput.svelte";
 
     let {
         label = null,
@@ -15,20 +17,18 @@
         manual = false,
         small = false,
         row = false,
+        children = null,
         ...props
     } = $props();
 
-    let valueBeforeFocus;
-    function onfocus() {
-        valueBeforeFocus = value;
-    }
-    function selectChange() {
+    function selectChange(newData) {
         if (manual) {
-            setter(value);
+            setter(newData);
             return;
         }
-        addHistory({ doFn: setter, doData: value, undoData: valueBeforeFocus });
-        valueBeforeFocus = value;
+        addHistory({ doFn: setter, doData: newData, undoData: value });
+
+        props.onchange?.();
     }
 
     function checkboxClick() {
@@ -47,17 +47,19 @@
         <Checkbox {value} />
     {/if}
     {#if label}<div class="label">{label}</div>{/if}
-    {#if type === "input" || type === "number" || type === "textarea"}
+    {#if children}
+        {@render children()}
+    {:else if type === "input" || type === "number" || type === "textarea"}
         <HistoryInput {value} {type} {setter} {small} {...props} />
     {:else if type === "select"}
-        <select bind:value {onfocus} onchange={selectChange}>
+        <select {value} onchange={(evt) => selectChange(evt.target.value)}>
             <option value={null} hidden>선택 안함</option>
             {#each Object.entries(props.options) as [value, label]}
                 <option {value}>{label}</option>
             {/each}
         </select>
     {:else if type === "variable"}
-        <select bind:value {onfocus} onchange={selectChange}>
+        <select {value} onchange={(evt) => selectChange(evt.target.value)}>
             <option value={null}>변수 할당 없음</option>
             {#each appData.variables as variable}
                 <option value={variable.id}>
@@ -68,14 +70,18 @@
     {:else if type === "type"}
         <TypeInput type={value} {...props} />
     {:else if type === "position"}
-        <Position position={value} />
+        <Position position={value} {...props} />
     {:else if type === "resource"}
         <ResourceSelector
-            bind:resourceId={value}
+            resourceId={value}
             type={props.elType}
-            {onfocus}
             onchange={selectChange}
+            {...props}
         />
+    {:else if type === "plugin"}
+        <PluginSelector plugin={value} type={props.pluginType} {...props} />
+    {:else if type === "transition"}
+        <TransitionInput transition={value} {...props} />
     {/if}
 </div>
 

@@ -9,7 +9,8 @@
     import Element from "./Element.svelte";
     import { onDestroy } from "svelte";
 
-    let { payload: comp, noGrab = false, nodeCountChanged } = $props();
+    let { payload: compTemp, noGrab = false, nodeCountChanged } = $props();
+    const comp = compTemp;
 
     $effect(() => {
         comp.alias;

@@ -2,16 +2,18 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title>REPAIR2</title>
-        <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-        />
+        <title>REPAIRv2</title>
     </head>
 
     <body>
-        <div id="app"></div>
-        <script type="module" src="./src/main.js"></script>
+        <script type="module" src="./src/app.js"></script>
     </body>
+    <script>
+        function $state(v = null) {
+            return v;
+        }
+        function $derived(v = null) {
+            return v;
+        }
+    </script>
 </html>

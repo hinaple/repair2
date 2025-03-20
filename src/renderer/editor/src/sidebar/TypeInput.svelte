@@ -7,21 +7,23 @@
 </script>
 
 <div class="types">
-    {#each typeTree as tt, i}
-        <select
-            value={type.types[i]}
-            onchange={(e) => {
-                type.changeTypeWithHistory(addHistory, e.target.value, i);
-                onchange?.();
-            }}
-            {...props}
-        >
-            <option value={null} hidden>유형 선택</option>
-            {#each tt as t}
-                <option value={t}>{options[t] ?? t}</option>
-            {/each}
-        </select>
-    {/each}
+    {#key typeTree}
+        {#each typeTree as tt, i}
+            <select
+                value={type.types[i]}
+                onchange={(e) => {
+                    type.changeTypeWithHistory(addHistory, e.target.value, i);
+                    onchange?.();
+                }}
+                {...props}
+            >
+                <option value={null} hidden selected>유형 선택</option>
+                {#each tt as t}
+                    <option value={t}>{options[t] ?? t}</option>
+                {/each}
+            </select>
+        {/each}
+    {/key}
 </div>
 
 <style>

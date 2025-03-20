@@ -2,9 +2,11 @@ import Coord from "./coord";
 import Listener from "./listener.svelte";
 import Sortable from "./sortable.svelte";
 import TypePayload from "./typePayload.svelte";
+import PluginPointer from "./pluginPointer.svelte";
 import { genId } from "./utils";
 
 const PayloadTemplates = {
+    empty: { content: null, isHtml: false },
     image: { resourceId: null, removePreload: true },
     video: { resourceId: null, removePreload: true, loop: false },
     input: {
@@ -14,11 +16,12 @@ const PayloadTemplates = {
         allowedType: null,
         allowedRegex: null
     },
-    empty: { content: null, isHtml: false }
+    plugin: { isClass: true, class: PluginPointer, argument: "elements" }
 };
 
 export default class Element extends TypePayload {
     alias = $state();
+    fullscreen = $state();
     width = $state();
     height = $state();
     style = $state();
@@ -35,6 +38,7 @@ export default class Element extends TypePayload {
         height = null,
         style = null,
         className = null,
+        fullscreen = false,
         listeners = []
     } = {}) {
         super({ type, payload, template: PayloadTemplates });
@@ -42,6 +46,7 @@ export default class Element extends TypePayload {
         this.alias = alias;
         this.pos = new Coord(pos);
         this.absolute = absolute;
+        this.fullscreen = fullscreen;
         this.width = width;
         this.height = height;
         this.style = style;
@@ -59,6 +64,7 @@ export default class Element extends TypePayload {
             className: this.className,
             pos: this.pos.storeData,
             absolute: this.absolute,
+            fullscreen: this.fullscreen,
             listeners: this.listeners.storeData
         };
     }

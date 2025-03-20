@@ -4,8 +4,8 @@ import { basename } from "path";
 const FileTypes = {
     image: ["jpg", "jpeg", "gif", "svg", "webp", "png", "bmp", "ico"],
     video: ["mp4", "webm"],
-    audio: ["mp3", "wav", "ogg", "m4a", "weba"],
-    script: ["js"]
+    audio: ["mp3", "wav", "ogg", "m4a", "weba"]
+    // script: ["js"]
 };
 const fileTypeMap = {};
 Object.entries(FileTypes).forEach(([type, exts]) => {

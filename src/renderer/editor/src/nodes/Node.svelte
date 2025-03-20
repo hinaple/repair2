@@ -9,6 +9,7 @@
     import { rightclick } from "../lib/contextMenu/contextUtils";
     import outputNode from "./lines/output";
     import FrameUpdater from "../lib/frameUpdater";
+    import { currentFocus, focusData } from "../sidebar/editUtils";
 
     let {
         node,
@@ -45,6 +46,9 @@
     });
     onDestroy(() => {
         unsub();
+        if (get(currentFocus).obj === node) {
+            focusData("project");
+        }
     });
 
     onMount(() => {

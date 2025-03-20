@@ -1,7 +1,7 @@
 export default class TypePayload {
     types = $state([]);
     type = $derived(this.types.join("."));
-    payload = $state();
+    payload = $state(null);
     #template = {};
     constructor({ type = [], payload, template }) {
         this.#template = template;
@@ -33,7 +33,8 @@ export default class TypePayload {
         if (currentTemplate?.isTypeObj) return;
 
         if (!currentTemplate) return payload;
-        else if (currentTemplate.isClass) return new currentTemplate.class(payload);
+        else if (currentTemplate.isClass)
+            return new currentTemplate.class(payload, currentTemplate.argument ?? null);
         return { ...currentTemplate, ...payload };
     }
     changeType(types = [], payload = {}, raw = false) {
@@ -70,7 +71,7 @@ export default class TypePayload {
     get storeData() {
         return {
             type: this.types.map((t) => t),
-            payload: this.payload.storeData ?? $state.snapshot(this.payload)
+            payload: this.payload?.storeData ?? $state.snapshot(this.payload)
         };
     }
 }

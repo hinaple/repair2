@@ -7,6 +7,7 @@
     import Component from "./component/Component.svelte";
     import { outClicked, rightclick } from "../lib/contextMenu/contextUtils";
     import { onDestroy } from "svelte";
+    import registerHighlight from "../lib/highlight";
 
     let {
         item: step,
@@ -46,6 +47,12 @@
             action: "remove"
         }
     ];
+
+    let hlData = $derived.by(() => {
+        if (step.type === "setVariable")
+            return { type: "variable", data: step.payload?.variableId, active: true };
+        return { active: false };
+    });
 </script>
 
 <div
@@ -58,13 +65,14 @@
         outClicked();
     }}
     use:rightclick={contextmenu}
+    use:registerHighlight={hlData}
 >
     <div class="info">
         <div class="handle" bind:this={handle}>
             <Icon icon="hamburger" color="rgba(0, 0, 0, 0.5)" size={8} />
         </div>
         <span>
-            {step.title?.length ? step.title : (StepTypes[step.type] ?? "빈 스텝")}
+            {step.displayTitle ?? StepTypes[step.type] ?? "빈 스텝"}
         </span>
     </div>
     {#if step.type === "Component.create"}

@@ -11,6 +11,7 @@ let data;
 
 const dataDir = is.dev ? join(__dirname, "../../data") : join(app.getPath("exe"), "..", "data");
 const assetDir = join(dataDir, "assets");
+const pluginDir = join(dataDir, "plugins");
 
 async function saveData(tempData) {
     data = { ...tempData, updatedAt: new Date().getTime() };
@@ -31,7 +32,8 @@ async function loadData() {
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        fullscreen: true,
+        width: 1920,
+        height: 1080,
         show: false,
         webPreferences: {
             sandbox: false,
@@ -263,4 +265,28 @@ ipcMain.on("copyInfoAsset", async (event, srcs) => {
                 })
         )
     );
+});
+
+const PluginTypes = ["elements", "frames", "functions", "transitions"];
+
+let pluginList = {};
+export async function updatePluginList() {
+    pluginList = {};
+    await Promise.all(
+        PluginTypes.map((type) => {
+            return new Promise((res) => {
+                fs.readdir(join(pluginDir, type)).then((files) => {
+                    pluginList[type] = files;
+                    res();
+                });
+            });
+        })
+    );
+    return pluginList;
+}
+updatePluginList();
+
+ipcMain.on("getPluginList", async (event, update) => {
+    if (update) await updatePluginList();
+    event.returnValue = pluginList;
 });

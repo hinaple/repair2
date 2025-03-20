@@ -4,8 +4,16 @@
     import outClickAction from "../lib/outclickaction";
     import outScrollAction from "../lib/outscrollaction";
     import { tick } from "svelte";
+    import Icon from "../assets/icons/Icon.svelte";
 
-    let { resourceId = $bindable(null), type, onfocus, onchange } = $props();
+    let {
+        resourceId = $bindable(null),
+        type,
+        onchange,
+        removable = false,
+        onremove = null
+    } = $props();
+
     let resource = $derived(appData.resources.find((r) => r.id === resourceId));
 
     let isSelecting = $state(false);
@@ -14,7 +22,6 @@
     let listEl = $state(null);
 
     async function opened() {
-        onfocus();
         const selectBtnRect = selectBtnEl.getBoundingClientRect();
         await tick();
         listEl.style.width = `${selectBtnRect.width}px`;
@@ -35,19 +42,21 @@
         use:outClickAction={() => (isSelecting = false)}
         use:outScrollAction={() => (isSelecting = false)}
     >
-        {#each appData.resources.filter((r) => r.fileType === type) as option}
+        {#each appData.resources.filter((r) => (type ? r.fileType === type : true)) as option}
             <div
                 class="resource"
                 onclick={() => {
                     resourceId = option.id;
                     isSelecting = false;
-                    onchange();
+                    onchange(option.id);
                 }}
             >
                 <div class="preview">
                     <ResourcePreview resource={option} controls={false} />
                 </div>
-                <div class="file-name">{option.title}</div>
+                <div class="file-name">
+                    <span>{option.title}</span>
+                </div>
             </div>
         {/each}
     </div>
@@ -69,7 +78,20 @@
             <div class="question-mark">?</div>
         {/if}
     </div>
-    <div class="file-name">{resource?.title || "할당된 자원 없음"}</div>
+    <div class={["file-name", removable && "removable"]}>
+        <span>{resource?.title || "할당된 자원 없음"}</span>
+        {#if removable}
+            <div
+                class="remove"
+                onclick={(evt) => {
+                    evt.stopPropagation();
+                    onremove();
+                }}
+            >
+                <Icon icon="bin" color="#fff" size={13} />
+            </div>
+        {/if}
+    </div>
 </div>
 
 <style>
@@ -145,6 +167,25 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+    .file-name.removable {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: end;
+        padding-block: 2px;
+        box-sizing: border-box;
+    }
+    .remove {
+        padding: 8px;
+        border-radius: 10px;
+        background-color: #ff3939;
+        cursor: pointer;
+        opacity: 0.8;
+    }
+    .remove:hover {
+        opacity: 1;
     }
     .preview:has(.question-mark) {
         flex: 0 0 auto;

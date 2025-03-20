@@ -2,6 +2,9 @@
     import InputField from "../InputField.svelte";
     import { StepTypes } from "../../lib/translate";
     import { focusData } from "../editUtils";
+    import Components from "./stepEdits/Components.svelte";
+    import Audios from "./stepEdits/Audios.svelte";
+    import Preloads from "./stepEdits/Preloads.svelte";
 
     const { data } = $props();
 </script>
@@ -17,16 +20,31 @@
     }}
 />
 <hr />
-{#if data.type === "Component.remove"}
+{#if data.types[0] === "Component"}
+    <Components {data} />
+{:else if data.types[0] === "Audio"}
+    <Audios {data} />
+{:else if data.types[0] === "Preload"}
+    <Preloads {data} />
+{:else if data.types[0] === "delay"}
     <InputField
-        label="삭제할 컴포넌트 이름"
-        value={data.payload.componentAlias}
-        setter={(d) => data.changePayloadValue("componentAlias", d)}
+        label="딜레이(ms)"
+        value={data.payload.delayMs}
+        setter={(d) => (data.payload.delayMs = d)}
+        type="number"
+        min="0"
+    />
+{:else if data.types[0] === "setVariable"}
+    <InputField
+        label="수정할 변수"
+        value={data.payload.variableId}
+        setter={(d) => (data.payload.variableId = d)}
+        type="variable"
     />
     <InputField
-        label="보호돼있어도 삭제"
-        value={data.payload.ignoreUnbreakable}
-        setter={(d) => data.changePayloadValue("ignoreUnbreakable", d)}
-        type="checkbox"
+        label="수정할 값"
+        value={data.payload.value}
+        setter={(d) => (data.payload.value = d)}
+        type="input"
     />
 {/if}

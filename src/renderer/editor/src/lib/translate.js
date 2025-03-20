@@ -1,25 +1,54 @@
 export const StepTypes = {
     delay: "딜레이",
+    setVariable: "변수 값 설정",
 
     Component: "컴포넌트",
     create: "생성",
     remove: "제거",
     modify: "수정",
-    clear: "전체 삭제",
+    clear: "전체 제거",
     "Component.create": "컴포넌트 생성",
     "Component.remove": "컴포넌트 제거",
     "Component.modify": "컴포넌트 수정",
-    "Component.clear": "컴포넌트 전체 삭제",
+    "Component.clear": "컴포넌트 전체 제거",
 
     Audio: "오디오",
     play: "재생",
     pause: "일시정지",
     resume: "재개",
-    modifyChannel: "속성 변경",
+    changeVolume: "음량 변경",
     "Audio.play": "오디오 재생",
     "Audio.pause": "오디오 일시정지",
     "Audio.resume": "오디오 재개",
-    "Audio.modifyChannel": "오디오 속성 변경"
+    "Audio.changeVolume": "오디오 음량 변경",
+
+    Preload: "프리로드",
+    add: "추가",
+    release: "해제",
+    releaseAll: "모두 해제",
+    "Preload.add": "프리로드 추가",
+    "Preload.release": "프리로드 해제",
+    "Preload.releaseAll": "프리로드 모두 해제"
+};
+
+export const ComponentModifyTypes = {
+    visible: "표시 여부",
+    unbreakable: "보호",
+    zIndex: "Z축 위치",
+    style: "스타일",
+    className: "CSS 클래스"
+};
+export const ComponentModifyInputData = {
+    visible: { type: "checkbox" },
+    unbreakable: { type: "checkbox" },
+    zIndex: { type: "number", placeholder: "값이 클수록 앞에 보임" },
+    style: {
+        type: "textarea",
+        code: true,
+        autoResizeOpt: { minHeight: 50 },
+        placeholder: "inline CSS code"
+    },
+    className: { type: "input" }
 };
 
 export const ValueProcessTypes = {
@@ -39,7 +68,8 @@ export const BaseValueTypes = {
 export const ComparisonOperatorTypes = {
     equals: "A와 B가 동일",
     includes: "A가 B를 포함",
-    script: "스크립트"
+    jsFunction: "JS 콜백 함수"
+    // scriptFile: "스크립트 파일"
 };
 
 export const ElementTypes = {
@@ -51,10 +81,12 @@ export const ElementTypes = {
 };
 
 export const ElementListenerTypes = {
-    nothing: "발동하지 않음",
+    custom: "사용자 정의",
     click: "마우스 클릭",
     videoEnd: "영상 종료",
-    keyPress: "키보드 입력"
+    keyPress: "키보드 입력",
+    jsFunction: "JS 콜백 함수",
+    plugin: "플러그인"
 };
 
 export const EntryTypes = {

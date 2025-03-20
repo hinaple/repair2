@@ -81,34 +81,50 @@
         type="checkbox"
         setter={(d) => (data.payload.isHtml = d)}
     />
+{:else if data.type === "plugin"}
+    <InputField
+        label="플러그인"
+        value={data.payload}
+        setter={(d) => (data.payload = d)}
+        type="plugin"
+        pluginType="elements"
+    />
 {/if}
 <hr />
 <ToggleZone label="모양 설정">
     {#snippet children()}
         <InputField
-            label="위치 지정"
-            value={data.absolute}
+            label="전체화면"
+            value={data.fullscreen}
             type="checkbox"
-            setter={(d) => (data.absolute = d)}
+            setter={(d) => (data.fullscreen = d)}
         />
-        {#if data.absolute}
-            <Position position={data.pos} />
-            <hr />
+        {#if !data.fullscreen}
+            <InputField
+                label="위치 지정"
+                value={data.absolute}
+                type="checkbox"
+                setter={(d) => (data.absolute = d)}
+            />
+            {#if data.absolute}
+                <Position position={data.pos} />
+                <hr />
+            {/if}
+            <InputField
+                label="가로 크기(px)"
+                type="number"
+                placeholder="자동"
+                value={data.width}
+                setter={(d) => (data.width = +d ? +d : null)}
+            />
+            <InputField
+                label="세로 크기(px)"
+                type="number"
+                placeholder="자동"
+                value={data.height}
+                setter={(d) => (data.width = +d ? +d : null)}
+            />
         {/if}
-        <InputField
-            label="가로 크기(px)"
-            type="number"
-            placeholder="자동"
-            value={data.width}
-            setter={(d) => (data.width = +d ? +d : null)}
-        />
-        <InputField
-            label="세로 크기(px)"
-            type="number"
-            placeholder="자동"
-            value={data.height}
-            setter={(d) => (data.width = +d ? +d : null)}
-        />
         <hr />
         <InputField
             label="CSS 클래스명"

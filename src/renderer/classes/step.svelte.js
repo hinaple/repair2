@@ -6,15 +6,24 @@ const PayloadTemplates = {
     Component: {
         isTypeObj: true,
         create: { isClass: true, class: Component },
-        remove: { componentAlias: null, ignoreUnbreakable: false },
         modify: { componentAlias: null, modifyKey: null, modifyValue: null },
+        remove: { componentAlias: null, ignoreUnbreakable: false },
         clear: { ignoreUnbreakable: false }
     },
     Audio: {
         isTypeObj: true,
-        play: { resourceId: null, channel: "default" },
-        pause: { channel: "default" }
+        play: { resourceId: null, channel: "default", volume: 100, loop: false },
+        pause: { channel: "default" },
+        resume: { channel: "default" },
+        changeVolume: { channel: "default", volume: 100 }
     },
+    Preload: {
+        isTypeObj: true,
+        add: { resourceArr: [] },
+        release: { resourceArr: [] },
+        releaseAll: null
+    },
+    setVariable: { variableId: null, value: null },
     delay: { delayMs: 0 }
 };
 
@@ -25,8 +34,10 @@ export default class Step extends TypePayload {
         this.id = id;
         this.title = title;
     }
-    changePayloadValue(key, value) {
-        super.payload = { ...this.payload, [key]: value };
+    get displayTitle() {
+        if (this.title?.length) return this.title;
+        if (this.type === "delay") return `딜레이 ${this.payload.delayMs}ms`;
+        return null;
     }
     execute() {
         return new Promise((res) => {

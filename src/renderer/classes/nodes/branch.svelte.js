@@ -4,12 +4,14 @@ import AdvancedNode from "./advancedNode";
 
 export default class Branch extends AdvancedNode {
     operator = $state();
+    scriptData = $state();
     disableAfterTrue = $state();
     disableAfterFalse = $state();
     constructor({
         valueA = {},
         valueB = {},
         operator = "equals",
+        scriptData = null,
         trueOutput = {},
         falseOutput = {},
         disableAfterTrue = false,
@@ -23,6 +25,7 @@ export default class Branch extends AdvancedNode {
         this.falseOutput = new Output(falseOutput);
 
         this.operator = operator;
+        this.scriptData = scriptData;
         this.disableAfterTrue = disableAfterTrue;
         this.disableAfterFalse = disableAfterFalse;
     }
@@ -43,7 +46,8 @@ export default class Branch extends AdvancedNode {
             valueB: this.valueB.storeData,
             operator: this.operator,
             disableAfterTrue: this.disableAfterTrue,
-            disableAfterFalse: this.disableAfterFalse
+            disableAfterFalse: this.disableAfterFalse,
+            scriptData: this.scriptData
         };
     }
 }

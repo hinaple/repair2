@@ -2,11 +2,11 @@ import TypePayload from "../typePayload.svelte";
 
 const PayloadTemplate = {
     trim: null,
-    toLowerCase: null,
-    toUpperCase: null,
     replaceAll: { from: "", to: "" },
     removeAll: { removing: "" },
-    replaceAllRegex: { regex: "", to: "" }
+    replaceAllRegex: { regex: "", to: "" },
+    toLowerCase: null,
+    toUpperCase: null
 };
 
 export default class ValueProcess extends TypePayload {
