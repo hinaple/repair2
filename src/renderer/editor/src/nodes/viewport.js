@@ -59,7 +59,7 @@ export function moveViewport(dx, dy) {
 const sizeLimit = [-0.7, 0.5];
 export function setViewportSize(size, considerLimit = true) {
     const newSize = considerLimit ? Math.min(Math.max(size, sizeLimit[0]), sizeLimit[1]) : size;
-    
+
     outClicked();
     viewport.size.set(newSize);
     calcRatio();
@@ -68,15 +68,15 @@ export function setViewportSize(size, considerLimit = true) {
 export function resizeViewport(step, mousePos = null) {
     const prevSize = get(viewport.size);
     const newSize = get(viewport.size) + step * 0.1;
-    
+
     if (mousePos && prevSize !== newSize) {
         const realPos = getOriginalPos(mousePos.x, mousePos.y);
-        
+
         setViewportSize(newSize, true);
-        
+
         const newRealPos = getOriginalPos(mousePos.x, mousePos.y);
-        
-        viewport.pos.update(p => ({
+
+        viewport.pos.update((p) => ({
             x: p.x + (realPos.x - newRealPos.x),
             y: p.y + (realPos.y - newRealPos.y)
         }));
@@ -100,7 +100,7 @@ export function fitViewportToNodes(nodes) {
         maxY: -Infinity
     };
 
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
         const pos = node.nodePos;
         bounds.minX = Math.min(bounds.minX, pos.x);
         bounds.minY = Math.min(bounds.minY, pos.y);
@@ -136,10 +136,6 @@ export function fitViewportToNodes(nodes) {
 window.onresize = () => {
     calcRatio();
 };
-
-export function initViewport(data) {
-    appData = data;
-}
 
 ipcRenderer.on("zoom", (_, step) => {
     const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };

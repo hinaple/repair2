@@ -1,3 +1,11 @@
+const styleMap = {
+    width: ["width: ", "px"],
+    height: ["height: ", "px"],
+    filter: ["filter: ", ""],
+    sizeRatio: ["transform: scale(", ")"],
+    style: ["", ""]
+};
+
 export default class Config {
     title = $state();
     width = $state();
@@ -10,8 +18,8 @@ export default class Config {
         width = null,
         height = null,
         sizeRatio = 1,
-        filter = "",
-        style = ""
+        filter = null,
+        style = null
     } = {}) {
         this.title = title;
         this.width = width;
@@ -19,6 +27,21 @@ export default class Config {
         this.sizeRatio = sizeRatio;
         this.filter = filter;
         this.style = style;
+    }
+    get styleString() {
+        return (
+            Object.entries(styleMap)
+                .reduce((acc, [key, [prefix, suffix]]) => {
+                    if (
+                        this[key] !== null &&
+                        (typeof this[key] === "number" || this[key].trim().length)
+                    ) {
+                        acc.push(`${prefix}${this[key]}${suffix}`);
+                    }
+                    return acc;
+                }, [])
+                .join("; ") + ";"
+        );
     }
     get storeData() {
         return {

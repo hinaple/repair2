@@ -8,9 +8,9 @@
     "scripts": {
         "format": "prettier --plugin prettier-plugin-svelte --write .",
         "start": "electron-vite preview",
-        "dev:editor": "vite --config editor.vite.config.mjs",
-        "dev:play": "vite --config play.vite.config.mjs",
-        "dev": "npx concurrently --kill-others \"electron-vite dev --inspect=9229\" \"npm run dev:editor\" \"npm run dev:play\"",
+        "dev:editor": "vite --config editor.vite.config.mjs --force",
+        "dev:play": "vite --config play.vite.config.mjs --force",
+        "dev": "npx concurrently --kill-others \"electron-vite dev --inspect=9229\" \"npm run dev:play\" \"npm run dev:editor\"",
         "build:main": "electron-vite build",
         "build:editor": "vite build --config editor.vite.config.mjs",
         "build:play": "vite build --config play.vite.config.mjs",

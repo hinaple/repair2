@@ -1,0 +1,32 @@
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: repeating-conic-gradient(#e7e7e7 0% 25%, #bababa 0% 50%) 50% / 16px 16px;
+}
+
+body {
+    --gamezone-width: 100vw;
+    --gamezone-height: 100vh;
+}
+
+#gamezone {
+    display: block;
+    background-color: #000;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#preloads {
+    position: fixed;
+    left: 150vw;
+    top: 150vh;
+    display: flex;
+}
+#preloads * {
+    max-width: var(--gamezone-width);
+    max-height: var(--gamezone-height);
+}

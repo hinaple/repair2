@@ -3,6 +3,7 @@
     import { currentFocus, focusData } from "../sidebar/editUtils";
     import { removeNodeWithHistory } from "../lib/syncData.svelte";
     import { EntryTypes } from "../lib/translate";
+    import { ipcRenderer } from "electron";
 
     let { entry, isLastHold, onmousedown: bubbleMouseDown } = $props();
 
@@ -12,7 +13,13 @@
     }
 
     const contextmenu = [
-        { label: "플로우 실행", click: () => {} },
+        {
+            label: "실행",
+            click: () => {
+                ipcRenderer.send("request-execute", { type: "node", id: entry.id });
+                return true;
+            }
+        },
         { type: "seperator" },
         { label: "복사", click: () => {} },
         { label: "붙여넣기", click: () => {} },
@@ -46,6 +53,3 @@
     {contextmenu}
     isEntry
 />
-
-<style>
-</style>

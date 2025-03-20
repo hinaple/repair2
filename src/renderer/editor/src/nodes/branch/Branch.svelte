@@ -7,6 +7,7 @@
     import Value from "./Value.svelte";
     import { ComparisonOperatorTypes } from "../../lib/translate";
     import { outClicked } from "../../lib/contextMenu/contextUtils";
+    import { ipcRenderer } from "electron";
 
     let { branch, onmousedown: bubbleMouseDown, ...nodeData } = $props();
 
@@ -22,7 +23,13 @@
     }
 
     const contextmenu = [
-        { label: "플로우 실행", click: () => {} },
+        {
+            label: "실행",
+            click: () => {
+                ipcRenderer.send("request-execute", { type: "node", id: branch.id });
+                return true;
+            }
+        },
         { type: "seperator" },
         { label: "복사", click: () => {} },
         { label: "붙여넣기", click: () => {} },

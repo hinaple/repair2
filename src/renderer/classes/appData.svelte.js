@@ -19,14 +19,28 @@ export default class AppData {
             else if (node.type === "entry") return new Entry(node);
         });
     }
+    findResourceById(id) {
+        return this.resources.find((r) => r.id === id);
+    }
+    findVariableById(id) {
+        return this.variables.find((v) => v.id === id);
+    }
     findNodeById(id) {
         return this.nodes.find((node) => node.id === id);
     }
     findAllEntry(entryType, channel = null) {
         return this.nodes.filter(
             (node) =>
-                node.type === "entry" && node.entryType === entryType && node.channel === channel
+                node.type === "entry" &&
+                (node.entryType !== "event" ||
+                    (node.entryType === entryType && node.channel === channel))
         );
+    }
+    executeEntry(entryType, channel = null) {
+        const entries = this.findAllEntry(entryType, channel);
+        entries.forEach((entry) => {
+            entry.output.goto();
+        });
     }
     findSequence(id) {
         return this.nodes.find((node) => node.type === "sequence" && node.id === id);

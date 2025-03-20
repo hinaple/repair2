@@ -58,7 +58,6 @@ function createMainWindow() {
     } else {
         mainWindow.loadFile(join(__dirname, "../play/index.html"));
     }
-    mainWindow.webContents.toggleDevTools();
 
     mainWindow.on("closed", () => {
         app.quit();
@@ -162,8 +161,6 @@ function createEditorWindow() {
     const menu = Menu.buildFromTemplate(template);
     editorWindow.setMenu(menu);
 
-    if (is.dev) editorWindow.webContents.toggleDevTools();
-
     editorWindow.on("ready-to-show", () => {
         editorWindow.show();
     });
@@ -184,7 +181,7 @@ function createEditorWindow() {
     });
 }
 
-app.whenReady().then(async () => {
+app.on("ready", async () => {
     electronApp.setAppUserModelId("com.repair2");
 
     app.on("browser-window-created", (_, window) => {
@@ -193,17 +190,12 @@ app.whenReady().then(async () => {
 
     await loadData();
 
-    createMainWindow();
-    // if (is.dev)
-    createEditorWindow();
-
-    app.on("activate", function () {
-        if (BrowserWindow.getAllWindows().length === 0) {
+    if (is.dev) {
+        setTimeout(() => {
             createMainWindow();
-            // if (is.dev)
             createEditorWindow();
-        }
-    });
+        }, 1000);
+    } else createMainWindow();
 });
 
 // app.on("window-all-closed", () => {
@@ -289,4 +281,8 @@ updatePluginList();
 ipcMain.on("getPluginList", async (event, update) => {
     if (update) await updatePluginList();
     event.returnValue = pluginList;
+});
+
+ipcMain.on("request-execute", (event, { type, id }) => {
+    mainWindow.webContents.send("request-execute", { type, id });
 });

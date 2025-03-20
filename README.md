@@ -9,10 +9,10 @@ Room Escape Pc App InteRface
 ## Todo
 
 - **Editor**
-    - [ ] Add Entry Node
-    - [ ] Management Variables
-    - [ ] Resource Control
+    - [x] Add Entry Node
+    - [x] Management Variables
+    - [x] Resource Control
     - [ ] Copy/Cut/Paste
-    - [ ] Categorize Sidebar
+    - [x] Categorize Sidebar
 - **Player**
     - [ ] Everything

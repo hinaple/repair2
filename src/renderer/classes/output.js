@@ -3,5 +3,4 @@ export default class Output {
         this.to = to;
         this.color = color;
     }
-    goto() {}
 }

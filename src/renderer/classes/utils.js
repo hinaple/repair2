@@ -19,7 +19,10 @@ export async function getPluginList(update = false) {
 }
 
 export async function importPlugin(type, name) {
-    return await import(join(pluginDir, type, name)).then((module) => module.default);
+    return await import(
+        /* @vite-ignore */
+        join(pluginDir, type, name)
+    ).then((module) => module.default);
 }
 export async function importAllPluginsIn(type) {
     return await Promise.all((await getPluginList())[type].map((name) => importPlugin(type, name)));

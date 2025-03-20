@@ -5,7 +5,14 @@ import renderer from "vite-plugin-electron-renderer";
 
 export default defineConfig({
     root: "src/renderer/editor",
-    plugins: [svelte(), renderer()],
+    plugins: [
+        svelte({
+            onwarn: (warning, handler) => {
+                if (!warning.code.startsWith("a11y")) handler(warning);
+            }
+        }),
+        renderer()
+    ],
     server: {
         port: 3101
     },

@@ -8,6 +8,7 @@
     import { grabbing, reload } from "../lib/stores";
     import { currentFocus, focusData } from "../sidebar/editUtils";
     import { removeNodeWithHistory } from "../lib/syncData.svelte";
+    import { ipcRenderer } from "electron";
 
     let { sequence, isLastHold, onmousedown: bubbleMouseDown } = $props();
 
@@ -26,8 +27,13 @@
     }
 
     const contextmenu = [
-        { label: "플로우 실행", click: () => {} },
-        { label: "단독 실행", click: () => {} },
+        {
+            label: "실행",
+            click: () => {
+                ipcRenderer.send("request-execute", { type: "node", id: sequence.id });
+                return true;
+            }
+        },
         { type: "seperator" },
         { label: "복사", click: () => {} },
         { label: "붙여넣기", click: () => {} },
