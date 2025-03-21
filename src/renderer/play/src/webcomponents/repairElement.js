@@ -60,7 +60,7 @@ export default class RepairElement extends HTMLElement {
             else if (tempPlugin) this.realEl = tempPlugin;
         } else if (this.type === "image" || this.type === "video") {
             const resource = getAppData().findResourceById(element.payload.resourceId);
-            this.realEl = genElement(resource);
+            this.realEl = genElement(resource, !element.payload.removePreload);
         }
 
         if (this.type === "video" && this.realEl) {
@@ -71,6 +71,8 @@ export default class RepairElement extends HTMLElement {
 
         if (!this.realEl) return;
 
+        this.realEl.setAttribute("style", element.childStyle ?? "");
+
         if (element.fullscreen) {
             this.realEl.style.width = "var(--gamezone-width)";
             this.realEl.style.height = "var(--gamezone-height)";
@@ -78,6 +80,33 @@ export default class RepairElement extends HTMLElement {
             this.realEl.style.width = element.width ? `${element.width}px` : "auto";
             this.realEl.style.height = element.height ? `${element.height}px` : "auto";
         }
+
+        const deadListenerIdx = [];
+        (element.listeners.list ?? []).forEach((l, idx) => {
+            this.realEl.addEventListener(l.realEventChannel, (evt) => {
+                if (deadListenerIdx.includes(idx)) return;
+
+                if (
+                    l.types[0] === "keyPress" &&
+                    l.payload.key?.length &&
+                    !l.payload.key.split(/\s*,\s*/).includes(evt.key)
+                )
+                    return;
+                else if (l.types[0] === "jsFunction") {
+                    try {
+                        if (!new Function("event", l.payload.scriptData)(evt)) return;
+                    } catch (e) {
+                        return;
+                    }
+                } else if (l.types[0] === "plugin") {
+                    const plugin = l.payload.use();
+                    if (!plugin || !plugin({ event: evt })) return;
+                }
+
+                if (l.once) deadListenerIdx.push(idx);
+                l.output.goto();
+            });
+        });
     }
     render() {
         if (!this.isConnected || !this.realEl) return;

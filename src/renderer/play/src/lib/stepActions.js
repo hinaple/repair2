@@ -22,7 +22,12 @@ const actions = {
     },
 
     delay: (s) => new Promise((res) => setTimeout(res, s.payload.delayMs)),
-    setVariable: (s) => setVar(s.payload.variableId, s.payload.value)
+    setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
+    executePlugin: (s) => {
+        const plugin = s.payload.use();
+        if (plugin === "importing") s.payload.promise.then(() => s.payload.use()?.());
+        else plugin?.();
+    }
 };
 
 export default function stepExecute(step) {

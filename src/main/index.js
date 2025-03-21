@@ -32,8 +32,7 @@ async function loadData() {
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        width: 1920,
-        height: 1080,
+        fullscreen: true,
         show: false,
         webPreferences: {
             sandbox: false,
@@ -72,7 +71,6 @@ function createEditorWindow() {
         width: 1200,
         height: 800,
         show: false,
-        alwaysOnTop: !is.dev,
         webPreferences: {
             sandbox: false,
             nodeIntegration: true,
@@ -195,7 +193,10 @@ app.on("ready", async () => {
             createMainWindow();
             createEditorWindow();
         }, 1000);
-    } else createMainWindow();
+    } else {
+        createMainWindow();
+        createEditorWindow();
+    }
 });
 
 // app.on("window-all-closed", () => {
@@ -285,4 +286,12 @@ ipcMain.on("getPluginList", async (event, update) => {
 
 ipcMain.on("request-execute", (event, { type, id }) => {
     mainWindow.webContents.send("request-execute", { type, id });
+});
+
+ipcMain.on("layout-preview", (event, { compData }) => {
+    mainWindow.webContents.send("layout-preview", { compData });
+});
+
+ipcMain.on("stop-preview", () => {
+    mainWindow.webContents.send("stop-preview");
 });

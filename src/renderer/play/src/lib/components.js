@@ -4,18 +4,20 @@ const gamezone = document.getElementById("gamezone");
 
 let components = [];
 
-function getComponentIdxById(id) {
-    return components.findIndex((c) => c.realId === id);
+function getDuplicatedComponentIdx(component) {
+    return components.findIndex(
+        (c) => c.realId === component.id || c.componentId === component.aliasOrId
+    );
 }
 function getComponentIdx(aliasOrId) {
-    return components.findIndex((c) => c.aliasOrId === aliasOrId);
+    return components.findIndex((c) => c.componentId === aliasOrId);
 }
 // function findComponent(aliasOrId) {
 //     return components.find((c) => c.id === aliasOrId);
 // }
 
 export function addComponent(component) {
-    const idx = getComponentIdxById(component.id);
+    const idx = getDuplicatedComponentIdx(component);
     if (idx !== -1) removeComponentByIdx(idx, false);
     const newComponent = new RepairComponent(component);
     if (newComponent.visible) gamezone.appendChild(newComponent);
@@ -31,11 +33,14 @@ function removeComponentByIdx(idx, doSplice = true) {
 
 export function removeComponent(alias, ignoreUnbreakable = false) {
     const idx = getComponentIdx(alias);
-    if (components[idx].unbreakable && !ignoreUnbreakable) return;
+    if (!ignoreUnbreakable && components[idx]?.unbreakable) return;
     removeComponentByIdx(idx);
 }
 export function clearComponents(ignoreUnbreakable = false) {
     components
-        .filter((c) => !c.unbreakable || !ignoreUnbreakable)
-        .forEach((c, idx) => removeComponentByIdx(idx, true));
+        .filter((c) => ignoreUnbreakable || (!c?.unbreakable && c.visible))
+        .forEach((c) => gamezone.removeChild(c));
+
+    if (ignoreUnbreakable) components = [];
+    else components = components.filter((c) => c?.unbreakable);
 }

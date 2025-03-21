@@ -25,6 +25,7 @@ export default class Element extends TypePayload {
     width = $state();
     height = $state();
     style = $state();
+    childStyle = $state();
     className = $state();
     absolute = $state();
     constructor({
@@ -37,6 +38,7 @@ export default class Element extends TypePayload {
         width = null,
         height = null,
         style = null,
+        childStyle = null,
         className = null,
         fullscreen = false,
         listeners = []
@@ -50,6 +52,7 @@ export default class Element extends TypePayload {
         this.width = width;
         this.height = height;
         this.style = style;
+        this.childStyle = childStyle;
         this.className = className;
         this.listeners = new Sortable(listeners, Listener);
     }
@@ -73,6 +76,7 @@ export default class Element extends TypePayload {
             width: this.width,
             height: this.height,
             style: this.style,
+            childStyle: this.childStyle,
             className: this.className,
             pos: this.pos.storeData,
             absolute: this.absolute,

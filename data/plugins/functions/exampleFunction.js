@@ -1,6 +1,7 @@
 export default {
     attributes: ["name"],
     function: ({ attributes }) => {
-        return `Hello, ${attributes.name}!`;
+        console.log(`Hello, ${attributes.name}!`);
+        return true;
     }
 };

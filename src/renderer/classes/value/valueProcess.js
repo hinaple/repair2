@@ -6,7 +6,8 @@ const PayloadTemplate = {
     removeAll: { removing: "" },
     replaceAllRegex: { regex: "", to: "" },
     toLowerCase: null,
-    toUpperCase: null
+    toUpperCase: null,
+    length: null
 };
 
 export default class ValueProcess extends TypePayload {
@@ -15,14 +16,16 @@ export default class ValueProcess extends TypePayload {
         this.id = Symbol();
     }
     process(before) {
-        if (this.type === "replaceAll")
-            return before.replaceAll(this.payload.from, this.payload.to);
-        if (this.type === "removeAll") return before.replaceAll(this.payload.removing, "");
-        if (this.type === "replaceAllRegex")
-            return before.replace(new RegExp(this.payload.regex, "g"), this.payload.to);
-        if (this.type === "toLowerCase") return before.toLowerCase();
-        if (this.type === "toUpperCase") return before.toUpperCase();
-        if (this.type === "trim") return before.trim();
+        if (this.types[0] === "replaceAll")
+            return before.toString().replaceAll(this.payload.from, this.payload.to);
+        if (this.types[0] === "removeAll")
+            return before.toString().replaceAll(this.payload.removing, "");
+        if (this.types[0] === "replaceAllRegex")
+            return before.toString().replace(new RegExp(this.payload.regex, "g"), this.payload.to);
+        if (this.types[0] === "toLowerCase") return before.toString().toLowerCase();
+        if (this.types[0] === "toUpperCase") return before.toString().toUpperCase();
+        if (this.types[0] === "trim") return before.toString().trim();
+        if (this.types[0] === "length") return before.toString().length;
 
         return before;
     }

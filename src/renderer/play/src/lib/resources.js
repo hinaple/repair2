@@ -5,10 +5,16 @@ let preloads = {};
 
 const preloadsEl = document.getElementById("preloads");
 
-export function genElement(resource) {
+export function genElement(resource, doClone = false, onlyNew = false) {
     if (!resource) return null;
 
-    if (preloads[resource.id]) return preloads[resource.id].el;
+    if (!onlyNew && preloads[resource.id]) {
+        const el = preloads[resource.id].el;
+        delete preloads[resource.id];
+
+        if (doClone) addPreload(resource.id);
+        return el;
+    }
     if (resource.fileType === "image") {
         const img = document.createElement("img");
         img.src = getAssetDir(resource.src);
@@ -34,7 +40,7 @@ function addPreload(resourceId) {
         type: resource.fileType,
         src: resource.src,
         alias: resource.alias,
-        el: genElement(resource)
+        el: genElement(resource, false, true)
     };
     if (preloads[resourceId].el) preloadsEl.appendChild(preloads[resourceId].el);
 }

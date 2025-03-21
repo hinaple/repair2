@@ -58,7 +58,8 @@ export const ValueProcessTypes = {
     trim: "앞뒤 공백 제거",
     replaceAllRegex: "정규표현식 기반 변경",
     toLowerCase: "소문자화",
-    toUpperCase: "대문자화"
+    toUpperCase: "대문자화",
+    length: "글자 개수"
 };
 
 export const BaseValueTypes = {
@@ -69,6 +70,10 @@ export const BaseValueTypes = {
 export const ComparisonOperatorTypes = {
     equals: "A와 B가 동일",
     includes: "A가 B를 포함",
+    gt: "A > B",
+    lt: "A < B",
+    gte: "A >= B",
+    lte: "A <= B",
     jsFunction: "JS 콜백 함수"
     // scriptFile: "스크립트 파일"
 };

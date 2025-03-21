@@ -1,6 +1,7 @@
 <script>
     import InputField from "../InputField.svelte";
     import ToggleZone from "./ToggleZone.svelte";
+    import { reloadPreview } from "../editUtils";
 
     const { data } = $props();
 </script>
@@ -18,7 +19,7 @@
     type="checkbox"
 />
 <InputField label="표시" value={data.visible} setter={(d) => (data.visible = d)} type="checkbox" />
-<InputField label="위치" value={data.pos} type="position" />
+<InputField label="위치" value={data.pos} type="position" oninput={reloadPreview} />
 <InputField
     label="Z축 위치"
     value={data.zIndex}

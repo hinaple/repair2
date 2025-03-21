@@ -1,20 +1,15 @@
 export default class ExampleElement extends HTMLElement {
     static attributes = ["content", "testData"];
-    static observedAttributes = ["content"];
 
     content = "Example Element Plugin";
-    constructor({ payloads = {} }) {
+    constructor() {
         super();
-        this.attachShadow({ mode: "open" });
-    }
-    attributeChangedCallback(name, oldVal, newVal) {
-        if (name === "content") {
-            this.content = newVal;
-            this.render();
-        }
+        this.addEventListener("click", () => {
+            this.dispatchEvent(new CustomEvent("eventChannel"));
+        });
     }
     render() {
-        this.shadowRoot.innerHTML = `
+        this.innerHTML = `
             <div>
                 ${this.content}
             </div>

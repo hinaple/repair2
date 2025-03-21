@@ -39,7 +39,7 @@
         setter={(d) => (data.scriptData = d)}
         type="textarea"
         code
-        placeholder="(valueA, valueB) => valueA === valueB"
+        placeholder="return valueA === valueB"
         autoResizeOpt={{ minHeight: 50 }}
     />
 {/if}

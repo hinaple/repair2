@@ -1,3 +1,5 @@
+import Value from "@classes/value/value.svelte";
+
 let variables = {};
 export default variables;
 
@@ -16,3 +18,9 @@ export function setVar(id, value) {
     if (!variables[id]) return;
     variables[id].value = value;
 }
+
+Value.prototype.getBase = function () {
+    if (this.baseType === "string") return this.baseValue;
+    if (this.baseType === "variable") return getVar(this.baseValue);
+    return "";
+};

@@ -23,7 +23,7 @@
 {#if data.type === "keyPress"}
     <hr />
     <InputField
-        label="감지할 버튼"
+        label="감지할 버튼(콤마로 구분)"
         value={data.payload.key}
         setter={(d) => (data.payload.key = d)}
         placeholder="모든 키 감지"

@@ -32,22 +32,37 @@ export default class Branch extends AdvancedNode {
     compare(a, b) {
         if (this.operator === "equals") return a == b;
         if (this.operator === "includes") return a.includes(b);
+        if (this.operator === "gt") return +a > +b;
+        if (this.operator === "lt") return +a < +b;
+        if (this.operator === "gte") return +a >= +b;
+        if (this.operator === "lte") return +a <= +b;
+        if (this.operator === "jsFunction") {
+            try {
+                return new Function("valueA", "valueB", this.scriptData)(a, b);
+            } catch (e) {
+                return false;
+            }
+        }
         return false;
     }
+    get isTrue() {
+        return this.compare(this.valueA.value, this.valueB.value);
+    }
     execute() {
-        if (this.compare(this.valueA.value, this.valueB.value)) this.trueOutput.goto();
+        if (this.isTrue) this.trueOutput.goto();
         else this.falseOutput.goto();
     }
     get storeData() {
         return {
-            ...this,
             ...super.storeData,
             valueA: this.valueA.storeData,
             valueB: this.valueB.storeData,
             operator: this.operator,
             disableAfterTrue: this.disableAfterTrue,
             disableAfterFalse: this.disableAfterFalse,
-            scriptData: this.scriptData
+            scriptData: this.scriptData,
+            trueOutput: this.trueOutput,
+            falseOutput: this.falseOutput
         };
     }
 }

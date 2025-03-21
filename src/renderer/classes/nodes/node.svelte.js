@@ -9,6 +9,6 @@ export default class Node {
         this.nodePos = nodePos;
     }
     get storeData() {
-        return { ...this, alias: this.alias };
+        return { type: this.type, id: this.id, alias: this.alias, nodePos: this.nodePos };
     }
 }

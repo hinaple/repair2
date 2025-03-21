@@ -3,6 +3,7 @@
     import InputField from "../InputField.svelte";
     import Position from "../Position.svelte";
     import ToggleZone from "./ToggleZone.svelte";
+    import { reloadPreview } from "../editUtils";
 
     const { data } = $props();
 </script>
@@ -106,17 +107,23 @@
             label="전체화면"
             value={data.fullscreen}
             type="checkbox"
-            setter={(d) => (data.fullscreen = d)}
+            setter={(d) => {
+                data.fullscreen = d;
+                reloadPreview();
+            }}
         />
         {#if !data.fullscreen}
             <InputField
                 label="위치 지정"
                 value={data.absolute}
                 type="checkbox"
-                setter={(d) => (data.absolute = d)}
+                setter={(d) => {
+                    data.absolute = d;
+                    reloadPreview();
+                }}
             />
             {#if data.absolute}
-                <Position position={data.pos} />
+                <Position position={data.pos} oninput={reloadPreview} />
                 <hr />
             {/if}
             <InputField
@@ -124,14 +131,20 @@
                 type="number"
                 placeholder="자동"
                 value={data.width}
-                setter={(d) => (data.width = +d ? +d : null)}
+                setter={(d) => {
+                    data.width = +d ? +d : null;
+                    reloadPreview();
+                }}
             />
             <InputField
                 label="세로 크기(px)"
                 type="number"
                 placeholder="자동"
                 value={data.height}
-                setter={(d) => (data.height = +d ? +d : null)}
+                setter={(d) => {
+                    data.height = +d ? +d : null;
+                    reloadPreview();
+                }}
             />
         {/if}
         <hr />
@@ -147,6 +160,15 @@
             type="textarea"
             code
             setter={(d) => (data.style = d)}
+            placeholder="inline CSS code"
+            autoResizeOpt={{ minHeight: 50 }}
+        />
+        <InputField
+            label="내부 CSS 코드"
+            value={data.childStyle}
+            type="textarea"
+            code
+            setter={(d) => (data.childStyle = d)}
             placeholder="inline CSS code"
             autoResizeOpt={{ minHeight: 50 }}
         />

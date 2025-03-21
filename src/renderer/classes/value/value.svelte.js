@@ -13,7 +13,13 @@ export default class Value {
         this.baseValue = value;
     }
     get value() {
-        return this.process.list.reduce((result, process) => process.process(result), this.base);
+        return this.process.list.reduce(
+            (result, process) => process.process(result),
+            this.getBase()
+        );
+    }
+    getBase() {
+        return this.baseValue;
     }
     get storeData() {
         return {

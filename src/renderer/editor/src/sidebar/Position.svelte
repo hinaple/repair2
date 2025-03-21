@@ -2,7 +2,7 @@
     import { addHistory } from "../lib/workHistory";
     import HistoryInput from "./HistoryInput.svelte";
 
-    let { position } = $props();
+    let { position, oninput = null } = $props();
 
     const Origin = ["start", "center", "end"];
 </script>
@@ -19,6 +19,7 @@
                         doFn: ({ xOrigin, yOrigin, position }) => {
                             position.x.origin = xOrigin;
                             position.y.origin = yOrigin;
+                            oninput?.();
                         },
                         doData: {
                             xOrigin: Origin[i % 3],
@@ -43,7 +44,10 @@
             {:else}
                 <HistoryInput
                     value={position.x.distance}
-                    setter={(d) => (position.x.distance = +d)}
+                    setter={(d) => {
+                        position.x.distance = +d;
+                        oninput?.();
+                    }}
                     type="number"
                     placeholder="0"
                 />
@@ -53,6 +57,7 @@
                         addHistory({
                             doFn: ({ value, position }) => {
                                 position.x.relative = value;
+                                oninput?.();
                             },
                             doData: { value: !position.x.relative, position },
                             undoData: { value: position.x.relative, position }
@@ -70,7 +75,10 @@
             {:else}
                 <HistoryInput
                     value={position.y.distance}
-                    setter={(d) => (position.y.distance = +d)}
+                    setter={(d) => {
+                        position.y.distance = +d;
+                        oninput?.();
+                    }}
                     type="number"
                     placeholder="0"
                 />
@@ -80,6 +88,7 @@
                         addHistory({
                             doFn: ({ value, position }) => {
                                 position.y.relative = value;
+                                oninput?.();
                             },
                             doData: { value: !position.y.relative, position },
                             undoData: { value: position.y.relative, position }

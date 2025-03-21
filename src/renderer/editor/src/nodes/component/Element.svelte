@@ -17,7 +17,8 @@
         el = $bindable(null),
         noGrab = false,
         remove,
-        nodeCountChanged
+        nodeCountChanged,
+        parent
     } = $props();
 
     onDestroy(() => {
@@ -46,7 +47,6 @@
         evt.stopPropagation();
         focusData(
             "listener",
-
             element.listeners.addWithHistory(addHistory, () => {
                 reload("nodeMoved");
                 if (nodeCountChanged) nodeCountChanged();
@@ -69,7 +69,7 @@
     onmousedown={(evt) => {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
-        focusData("element", element);
+        focusData("element", element, { preview: parent });
         outClicked();
     }}
     use:rightclick={contextmenu}

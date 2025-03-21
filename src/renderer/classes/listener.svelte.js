@@ -21,6 +21,11 @@ const PayloadTemplates = {
     plugin: { isClass: true, class: PluginListener }
 };
 
+const TypeMap = {
+    keyPress: "keydown",
+    videoEnd: "ended"
+};
+
 export default class Listener extends TypePayload {
     once = $state();
     constructor({ type = "custom", payload = {}, output = {}, once = false } = {}) {
@@ -30,10 +35,15 @@ export default class Listener extends TypePayload {
         this.id = Symbol();
     }
     get title() {
-        if (this.type === "custom" && this.payload.channel?.length) return this.payload.channel;
+        if (this.types[0] === "custom" && this.payload.channel?.length) return this.payload.channel;
         return null;
     }
     get storeData() {
         return { ...super.storeData, output: this.output, once: this.once };
+    }
+    get realEventChannel() {
+        return this.payload.channel?.length
+            ? this.payload.channel
+            : (TypeMap[this.types[0]] ?? this.types[0]);
     }
 }

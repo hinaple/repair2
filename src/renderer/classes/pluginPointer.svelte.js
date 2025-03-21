@@ -29,7 +29,8 @@ export default class PluginPointer {
             });
             return temp;
         }
-        if (this.#type === "functions") return () => this.imported({ attributes: this.payloads });
+        if (this.#type === "functions")
+            return (argument) => this.imported.function({ attributes: this.payloads, ...argument });
 
         return this.imported;
     }

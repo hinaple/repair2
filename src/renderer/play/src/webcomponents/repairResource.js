@@ -31,7 +31,7 @@ export default class RepairResource extends HTMLElement {
         this.innerHTML = "";
 
         if (this.resource) {
-            this.child = genElement(this.resource);
+            this.child = genElement(this.resource, !this.resource.removePreload);
             this.appendChild(this.child);
         }
     }

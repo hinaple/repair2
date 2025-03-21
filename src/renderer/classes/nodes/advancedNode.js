@@ -7,6 +7,6 @@ export default class AdvancedNode extends Node {
         this.inputColor = inputColor;
     }
     get storeData() {
-        return { ...this, ...super.storeData };
+        return { folded: this.folded, inputColor: this.inputColor, ...super.storeData };
     }
 }

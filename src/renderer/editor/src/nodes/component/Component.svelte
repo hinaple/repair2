@@ -20,7 +20,7 @@
     function onmousedown(evt) {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
-        focusData("component", comp);
+        focusData("component", comp, { preview: comp });
         outClicked();
     }
 
@@ -56,6 +56,7 @@
             onmoved={() => reload("nodeMoved")}
             {noGrab}
             {nodeCountChanged}
+            parent={comp}
         />
     </div>
 </div>
