@@ -45,6 +45,13 @@
         setter={(d) => (data.payload.placeholder = d)}
     />
     <InputField
+        label="글자 최대 길이"
+        type="number"
+        value={data.payload.maxLength}
+        setter={(d) => (data.payload.maxLength = d)}
+        placeholder="제한 없음"
+    />
+    <InputField
         label="입력 유형"
         value={data.payload.allowedType}
         setter={(d) => (data.payload.allowedType = d)}
@@ -121,9 +128,10 @@
                     data.absolute = d;
                     reloadPreview();
                 }}
+                previewer
             />
             {#if data.absolute}
-                <Position position={data.pos} oninput={reloadPreview} />
+                <Position position={data.pos} oninput={reloadPreview} previewer />
                 <hr />
             {/if}
             <InputField
@@ -135,6 +143,7 @@
                     data.width = +d ? +d : null;
                     reloadPreview();
                 }}
+                previewer
             />
             <InputField
                 label="세로 크기(px)"
@@ -145,13 +154,17 @@
                     data.height = +d ? +d : null;
                     reloadPreview();
                 }}
+                previewer
             />
         {/if}
         <hr />
         <InputField
             label="CSS 클래스명"
             value={data.className}
-            setter={(d) => (data.className = d)}
+            setter={(d) => {
+                data.className = d;
+                reloadPreview();
+            }}
             placeholder="띄어쓰기로 구분"
         />
         <InputField
@@ -159,7 +172,10 @@
             value={data.style}
             type="textarea"
             code
-            setter={(d) => (data.style = d)}
+            setter={(d) => {
+                data.style = d;
+                reloadPreview();
+            }}
             placeholder="inline CSS code"
             autoResizeOpt={{ minHeight: 50 }}
         />

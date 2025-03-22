@@ -8,6 +8,8 @@
     import Sortable from "../../lib/Sortable.svelte";
     import Element from "./Element.svelte";
     import { onDestroy } from "svelte";
+    import { pasted } from "../../lib/clipboard";
+    import { genClipboardFn } from "../../lib/clipboard";
 
     let { payload: compTemp, noGrab = false, nodeCountChanged } = $props();
     const comp = compTemp;
@@ -20,16 +22,24 @@
     function onmousedown(evt) {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
-        focusData("component", comp, { preview: comp });
+        focusData("component", comp, {
+            preview: comp,
+            clipboardFn: {
+                paste: (_, string) => pasted(string, { type: "component", obj: comp })
+            }
+        });
         outClicked();
     }
 
     function addElement(evt) {
         if (get(grabbing)) return;
-        focusData(
-            "element",
-            comp.elements.addWithHistory(addHistory, () => reload("nodeMoved"))
+        const newElement = comp.elements.addWithHistory(addHistory, {
+            afterChange: () => reload("nodeMoved")
+        });
+        const newClipboardFn = genClipboardFn("element", newElement, () =>
+            comp.elements.removeWithHistory(newElement, addHistory, () => reload("nodeMoved"))
         );
+        focusData("element", newElement, { clipboardFn: newClipboardFn, preview: comp });
         evt.stopPropagation();
     }
 

@@ -10,6 +10,7 @@
     import Listener from "./Listener.svelte";
     import { addHistory } from "../../lib/workHistory";
     import registerHighlight from "../../lib/highlight";
+    import { genClipboardFn } from "../../lib/clipboard";
 
     let {
         item: element,
@@ -27,10 +28,21 @@
         }
     });
 
+    const clipboardFn = genClipboardFn("element", element, () => remove());
+
     const contextmenu = [
-        { label: "잘라내기", click: () => {} },
-        { label: "복사", click: () => {} },
-        { label: "붙여넣기", click: () => {} },
+        {
+            label: "잘라내기",
+            click: clipboardFn.cut
+        },
+        {
+            label: "복사",
+            click: clipboardFn.copy
+        },
+        {
+            label: "붙여넣기",
+            click: clipboardFn.paste
+        },
         { type: "seperator" },
         {
             label: "삭제",
@@ -47,9 +59,11 @@
         evt.stopPropagation();
         focusData(
             "listener",
-            element.listeners.addWithHistory(addHistory, () => {
-                reload("nodeMoved");
-                if (nodeCountChanged) nodeCountChanged();
+            element.listeners.addWithHistory(addHistory, {
+                afterChange: () => {
+                    reload("nodeMoved");
+                    if (nodeCountChanged) nodeCountChanged();
+                }
             })
         );
     }
@@ -69,7 +83,7 @@
     onmousedown={(evt) => {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
-        focusData("element", element, { preview: parent });
+        focusData("element", element, { preview: parent, clipboardFn });
         outClicked();
     }}
     use:rightclick={contextmenu}

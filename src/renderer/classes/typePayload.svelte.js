@@ -68,10 +68,20 @@ export default class TypePayload {
             undoData: { types: this.types.map((t) => t), payload: this.payload, that: this }
         });
     }
+    get shortType() {
+        return this.types.join(".");
+    }
     get storeData() {
         return {
             type: this.types.map((t) => t),
             payload: this.payload?.storeData ?? $state.snapshot(this.payload)
+        };
+    }
+    get copyData() {
+        return {
+            type: this.types.map((t) => t),
+            payload:
+                this.payload?.copyData ?? this.payload?.storeData ?? $state.snapshot(this.payload)
         };
     }
 }

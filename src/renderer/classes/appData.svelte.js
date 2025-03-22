@@ -31,16 +31,21 @@ export default class AppData {
     findNodeById(id) {
         return this.nodes.find((node) => node.id === id);
     }
-    findAllEntry(entryType, channel = null) {
-        return this.nodes.filter(
-            (node) =>
-                node.type === "entry" &&
-                (node.entryType !== "event" ||
-                    (node.entryType === entryType && node.channel === channel))
-        );
+    findAllEntry(entryType, data = null) {
+        return this.nodes.filter((node) => {
+            if (node.type !== "entry" || entryType !== node.data.shortType) return false;
+            if (!node.data.payload) return true;
+
+            if (entryType === "Communication.serialData" && !node.data.payload.whenDataIs?.length)
+                return true;
+
+            return Object.entries(node.data.payload).every(
+                ([key, value]) => value.trim() === data[key].trim()
+            );
+        });
     }
-    executeEntry(entryType, channel = null) {
-        const entries = this.findAllEntry(entryType, channel);
+    executeEntry(entryType, data = null) {
+        const entries = this.findAllEntry(entryType, data);
         entries.forEach((entry) => {
             entry.output.goto();
         });
@@ -50,5 +55,16 @@ export default class AppData {
     }
     findBranch(id) {
         return this.nodes.find((node) => node.type === "branch" && node.id === id);
+    }
+    addNodeWithHistory(addHistory, node) {
+        addHistory({
+            doFn: (d) => {
+                this.nodes.push(d);
+            },
+            undoFn: () => {
+                this.nodes.pop();
+            },
+            doData: node
+        });
     }
 }

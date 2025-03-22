@@ -1,4 +1,5 @@
 import RepairElement from "./repairElement";
+import { packageLoader } from "../lib/plugin-package-loader.js";
 
 export default class RepairComponent extends HTMLElement {
     constructor(componentData) {
@@ -11,21 +12,14 @@ export default class RepairComponent extends HTMLElement {
         this.unbreakable = componentData.unbreakable;
 
         this.container = this;
-        const tempFrame = componentData.frame.use();
-        if (tempFrame === "importing") {
-            componentData.frame.promise.then(() => {
-                const tempFrame = componentData.frame.use();
-                if (!tempFrame) return;
-                this.container = tempFrame;
-                this.appendChild(this.container);
-
-                if (!this.isConnected) return;
-                this.render();
-            });
-        } else if (tempFrame) {
+        componentData.frame.use(packageLoader).then((tempFrame) => {
+            if (!tempFrame) return;
             this.container = tempFrame;
             this.appendChild(this.container);
-        }
+
+            if (!this.isConnected) return;
+            this.render();
+        });
 
         this.elements = componentData.elements.list.map((e) => new RepairElement(e));
     }

@@ -1,6 +1,7 @@
 import { ipcRenderer } from "electron";
 import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
+import { registerUtils } from "./globalUtils";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -26,3 +27,5 @@ ipcRenderer.on("data", (event, data) => {
 export function getAppData() {
     return appdata;
 }
+
+registerUtils("getAppData", getAppData);

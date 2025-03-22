@@ -13,6 +13,7 @@ const PayloadTemplates = {
         variableId: null,
         placeholder: null,
         autofocus: false,
+        maxLength: null,
         allowedType: "any",
         allowedRegex: null
     },
@@ -70,8 +71,8 @@ export default class Element extends TypePayload {
     }
     get storeData() {
         return {
-            ...this,
             ...super.storeData,
+            id: this.id,
             alias: this.alias,
             width: this.width,
             height: this.height,
@@ -82,6 +83,21 @@ export default class Element extends TypePayload {
             absolute: this.absolute,
             fullscreen: this.fullscreen,
             listeners: this.listeners.storeData
+        };
+    }
+    get copyData() {
+        return {
+            ...super.storeData,
+            alias: this.alias,
+            width: this.width,
+            height: this.height,
+            style: this.style,
+            childStyle: this.childStyle,
+            className: this.className,
+            pos: this.pos.copyData,
+            absolute: this.absolute,
+            fullscreen: this.fullscreen,
+            listeners: this.listeners.copyData
         };
     }
 }

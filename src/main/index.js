@@ -2,16 +2,61 @@ import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from "electron";
 import { basename, extname, join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import fs from "fs/promises";
+import PluginPackageManager from "./plugin-package-manager";
 
 import DataTemplate from "./dataTemplate.json";
 
+import SerialConnector from "./communication/serial";
+import SocketConnector from "./communication/socket";
+
 let mainWindow, editorWindow;
+let pluginManager;
 
 let data;
 
 const dataDir = is.dev ? join(__dirname, "../../data") : join(app.getPath("exe"), "..", "data");
 const assetDir = join(dataDir, "assets");
 const pluginDir = join(dataDir, "plugins");
+
+async function initializePluginSystem() {
+    pluginManager = new PluginPackageManager(pluginDir, join(app.getPath("userData"), "packages"));
+    await pluginManager.initialize();
+}
+
+const PluginTypes = ["elements", "frames", "functions", "transitions"];
+
+const socket = new SocketConnector((channel, data) => {
+    if (!mainWindow) return;
+
+    console.log("SOCKET INCOMING:", channel);
+
+    mainWindow.webContents.send("socket-income", channel, data);
+});
+
+const serial = new SerialConnector((data) => {
+    if (!mainWindow) return;
+
+    console.log("SERIAL INCOMING:", data);
+
+    mainWindow.webContents.send("serial-income", data);
+});
+
+let pluginList = {};
+async function updatePluginList() {
+    pluginList = {};
+    await Promise.all(
+        PluginTypes.map((type) => {
+            return new Promise((res) => {
+                fs.readdir(join(pluginDir, type)).then((files) => {
+                    pluginList[type] = files;
+                    res();
+                });
+            });
+        })
+    );
+    return pluginList;
+}
+updatePluginList();
 
 async function saveData(tempData) {
     data = { ...tempData, updatedAt: new Date().getTime() };
@@ -20,6 +65,7 @@ async function saveData(tempData) {
         return false;
     });
 }
+
 async function loadData() {
     try {
         const tempData = (await fs.readFile(join(dataDir, "data.json"))).toString();
@@ -32,7 +78,7 @@ async function loadData() {
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        fullscreen: true,
+        ...(is.dev ? { width: 1920, height: 1080 } : { fullscreen: true }),
         show: false,
         webPreferences: {
             sandbox: false,
@@ -188,6 +234,10 @@ app.on("ready", async () => {
 
     await loadData();
 
+    await initializePluginSystem();
+
+    setupIpcHandlers();
+
     if (is.dev) {
         setTimeout(() => {
             createMainWindow();
@@ -199,99 +249,129 @@ app.on("ready", async () => {
     }
 });
 
-// app.on("window-all-closed", () => {
-//     if (process.platform !== "darwin") {
-//         app.quit();
-//     }
-// });
+function setupIpcHandlers() {
+    //#region plugin IPCs
+    ipcMain.on("getPluginList", async (event, update) => {
+        if (update) await updatePluginList();
+        event.returnValue = pluginList;
+    });
 
-ipcMain.on("request-data", (evt) => {
-    evt.returnValue = data;
-});
-ipcMain.on("update-data", async (evt, tempData) => {
-    await saveData(tempData);
-    mainWindow.webContents.send("data", data);
-    evt.returnValue = true;
-});
-ipcMain.on("editor-on", () => {
-    if (!editorWindow) createEditorWindow();
-});
-ipcMain.on("unsaved", () => {
-    if (!editorWindow) return;
-    editorWindow.setTitle("Editor ●");
-});
-ipcMain.on("saved", () => {
-    if (!editorWindow) return;
-    editorWindow.setTitle("Editor");
-});
+    ipcMain.handle("plugin:install-package", async (event, { name, version }) => {
+        try {
+            const packageInfo = await pluginManager.installPackage(name, version);
+            return { success: true, packageInfo };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+    //#endregion
 
-ipcMain.on("getDataDir", (evt) => {
-    evt.returnValue = dataDir;
-});
-ipcMain.on("selectFile", async (event, opt) => {
-    event.returnValue = await dialog.showOpenDialogSync(opt);
-});
-ipcMain.on("dialogue", async (event, opt) => {
-    event.returnValue = await dialog.showMessageBoxSync(opt);
-});
+    //#region appdata IPCs
+    ipcMain.on("request-data", (evt) => {
+        evt.returnValue = data;
+    });
 
-ipcMain.on("copyInfoAsset", async (event, srcs) => {
-    event.returnValue = await Promise.all(
-        srcs.map(
-            (s) =>
-                new Promise(async (res) => {
-                    const ext = extname(s);
-                    const bn = basename(s, ext);
-                    let filename = basename(s);
-                    for (let duplicatedCount = 2; ; duplicatedCount++) {
-                        if (
-                            await fs
-                                .access(join(assetDir, filename), fs.constants.F_OK)
-                                .then(() => false)
-                                .catch(() => true)
-                        )
-                            break;
-                        filename = `${bn}(${duplicatedCount})${ext}`;
-                    }
-                    await fs.copyFile(s, join(assetDir, filename));
-                    res(filename);
-                })
-        )
-    );
-});
+    ipcMain.on("update-data", async (evt, tempData) => {
+        await saveData(tempData);
+        mainWindow.webContents.send("data", data);
+        evt.returnValue = true;
+    });
+    //#endregion
 
-const PluginTypes = ["elements", "frames", "functions", "transitions"];
+    //#region editor IPCs
+    ipcMain.on("editor-on", () => {
+        if (!editorWindow) createEditorWindow();
+    });
 
-let pluginList = {};
-export async function updatePluginList() {
-    pluginList = {};
-    await Promise.all(
-        PluginTypes.map((type) => {
-            return new Promise((res) => {
-                fs.readdir(join(pluginDir, type)).then((files) => {
-                    pluginList[type] = files;
-                    res();
-                });
-            });
-        })
-    );
-    return pluginList;
+    ipcMain.on("unsaved", () => {
+        if (!editorWindow) return;
+        editorWindow.setTitle("Editor ●");
+    });
+
+    ipcMain.on("saved", () => {
+        if (!editorWindow) return;
+        editorWindow.setTitle("Editor");
+    });
+    //#endregion
+
+    //#region asset IPCs
+    ipcMain.on("getDataDir", (evt) => {
+        evt.returnValue = dataDir;
+    });
+
+    ipcMain.on("selectFile", async (event, opt) => {
+        event.returnValue = await dialog.showOpenDialogSync(opt);
+    });
+
+    ipcMain.on("dialogue", async (event, opt) => {
+        event.returnValue = await dialog.showMessageBoxSync(opt);
+    });
+
+    ipcMain.on("copyInfoAsset", async (event, srcs) => {
+        event.returnValue = await Promise.all(
+            srcs.map(
+                (s) =>
+                    new Promise(async (res) => {
+                        const ext = extname(s);
+                        const bn = basename(s, ext);
+                        let filename = basename(s);
+                        for (let duplicatedCount = 2; ; duplicatedCount++) {
+                            if (
+                                await fs
+                                    .access(join(assetDir, filename), fs.constants.F_OK)
+                                    .then(() => false)
+                                    .catch(() => true)
+                            )
+                                break;
+                            filename = `${bn}(${duplicatedCount})${ext}`;
+                        }
+                        await fs.copyFile(s, join(assetDir, filename));
+                        res(filename);
+                    })
+            )
+        );
+    });
+    //#endregion
+
+    //#region preview IPCs
+    ipcMain.on("request-execute", (event, { type, id }) => {
+        mainWindow.webContents.send("request-execute", { type, id });
+    });
+
+    ipcMain.on("layout-preview", (event, { compData }) => {
+        mainWindow.webContents.send("layout-preview", { compData });
+    });
+
+    ipcMain.on("preview-content-visible", (event, visible) => {
+        mainWindow.webContents.send("preview-content-visible", visible);
+    });
+
+    ipcMain.on("stop-preview", () => {
+        mainWindow.webContents.send("stop-preview");
+    });
+    //#endregion
+
+    //#region communication IPCs
+
+    ipcMain.on("socket-connect", (event, url) => {
+        socket.connect(url);
+    });
+    ipcMain.on("socket-send", (event, channel, data) => {
+        socket.send(channel, data);
+    });
+    ipcMain.on("socket-disconnect", () => {
+        socket.disconnect();
+    });
+
+    ipcMain.on("serial-open", (event, alias, port, baudRate) => {
+        serial.open(alias, port, baudRate);
+    });
+    ipcMain.on("serial-send", (event, data) => {
+        serial.send(data);
+    });
+    ipcMain.on("serial-close", () => {
+        serial.close();
+    });
+
+    //#endregion
 }
-updatePluginList();
-
-ipcMain.on("getPluginList", async (event, update) => {
-    if (update) await updatePluginList();
-    event.returnValue = pluginList;
-});
-
-ipcMain.on("request-execute", (event, { type, id }) => {
-    mainWindow.webContents.send("request-execute", { type, id });
-});
-
-ipcMain.on("layout-preview", (event, { compData }) => {
-    mainWindow.webContents.send("layout-preview", { compData });
-});
-
-ipcMain.on("stop-preview", () => {
-    mainWindow.webContents.send("stop-preview");
-});

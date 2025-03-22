@@ -5,18 +5,26 @@
     import Components from "./stepEdits/Components.svelte";
     import Audios from "./stepEdits/Audios.svelte";
     import Preloads from "./stepEdits/Preloads.svelte";
+    import Communication from "./stepEdits/Communications.svelte";
+    import { pasted } from "../../lib/clipboard";
 
     const { data } = $props();
 </script>
 
 <InputField label="스텝 이름" value={data.title} setter={(d) => (data.title = d)} />
 <InputField
-    label="스텝 종류"
+    label="스텝 유형"
     type="type"
     value={data}
     options={StepTypes}
     onchange={() => {
-        if (data.type === "Component.create") focusData("component", data.payload);
+        if (data.type === "Component.create")
+            focusData("component", data.payload, {
+                preview: data.payload,
+                clipboardFn: {
+                    paste: (_, string) => pasted(string, { type: "component", obj: data.payload })
+                }
+            });
     }}
 />
 <hr />
@@ -26,6 +34,8 @@
     <Audios {data} />
 {:else if data.types[0] === "Preload"}
     <Preloads {data} />
+{:else if data.types[0] === "Communication"}
+    <Communication {data} />
 {:else if data.types[0] === "delay"}
     <InputField
         label="딜레이(ms)"
@@ -34,7 +44,19 @@
         type="number"
         min="0"
     />
-{:else if data.types[0] === "setVariable"}
+{:else if data.type === "Others.eventEmit"}
+    <InputField
+        label="이벤트 채널"
+        value={data.payload.channel}
+        setter={(d) => (data.payload.channel = d)}
+    />
+    <InputField
+        label="데이터"
+        value={data.payload.data}
+        setter={(d) => (data.payload.data = d)}
+        type="textarea"
+    />
+{:else if data.type === "Others.setVariable"}
     <InputField
         label="수정할 변수"
         value={data.payload.variableId}
@@ -47,6 +69,6 @@
         setter={(d) => (data.payload.value = d)}
         type="input"
     />
-{:else if data.types[0] === "executePlugin"}
+{:else if data.type === "Others.executePlugin"}
     <InputField label="플러그인" value={data.payload} type="plugin" pluginType="functions" />
 {/if}

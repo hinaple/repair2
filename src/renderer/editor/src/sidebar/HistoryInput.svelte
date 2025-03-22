@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { addHistory } from "../lib/workHistory";
     import autoResizeTextarea from "../lib/autoResizeTextarea";
+    import { setPreviewContentVisible } from "./editUtils";
 
     let {
         setter,
@@ -10,6 +11,7 @@
         autofocus = false,
         code = false,
         autoResizeOpt = {},
+        previewer = false,
         ...props
     } = $props();
 
@@ -17,6 +19,7 @@
     let updateHistory;
     function onfocus() {
         valueBeforeFocus = value;
+        if (previewer) setPreviewContentVisible(true);
     }
     function oninput() {
         if (!updateHistory) {
@@ -29,6 +32,7 @@
     function onblur() {
         updateHistory = null;
         valueBeforeFocus = null;
+        if (previewer) setPreviewContentVisible(false);
     }
 
     let el = $state(null);

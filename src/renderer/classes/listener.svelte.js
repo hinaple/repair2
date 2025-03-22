@@ -14,6 +14,7 @@ class PluginListener {
 
 const PayloadTemplates = {
     custom: { channel: null },
+    input: null,
     keyPress: { key: null },
     click: null,
     videoEnd: null,
@@ -38,12 +39,15 @@ export default class Listener extends TypePayload {
         if (this.types[0] === "custom" && this.payload.channel?.length) return this.payload.channel;
         return null;
     }
-    get storeData() {
-        return { ...super.storeData, output: this.output, once: this.once };
-    }
     get realEventChannel() {
         return this.payload.channel?.length
             ? this.payload.channel
             : (TypeMap[this.types[0]] ?? this.types[0]);
+    }
+    get storeData() {
+        return { ...super.storeData, output: this.output, once: this.once };
+    }
+    get copyData() {
+        return { ...super.storeData, once: this.once };
     }
 }

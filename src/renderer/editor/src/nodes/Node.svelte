@@ -26,7 +26,7 @@
     } = $props();
 
     $effect(() => {
-        node.alias;
+        title;
         reload("nodeMoved");
     });
 

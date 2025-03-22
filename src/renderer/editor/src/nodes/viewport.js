@@ -85,6 +85,8 @@ export function resizeViewport(step, mousePos = null) {
     }
 }
 
+const padding = 100;
+const sideBarWidth = 300;
 export function fitViewportToNodes(nodes) {
     if (!nodes || nodes.length === 0) {
         setViewportSize(0);
@@ -109,8 +111,6 @@ export function fitViewportToNodes(nodes) {
     });
 
     // Add padding
-    const padding = 100;
-    const sideBarWidth = 300;
     bounds.minX -= padding;
     bounds.minY -= padding;
     bounds.maxX += padding + sideBarWidth;
@@ -131,6 +131,11 @@ export function fitViewportToNodes(nodes) {
     // Apply new viewport settings
     setViewportSize(scale, false);
     viewport.pos.set({ x: centerX, y: centerY });
+}
+
+export function getViewportCenter() {
+    const vp = get(viewport.pos);
+    return { x: vp.x - sideBarWidth / 2 / rInfo.ratio, y: vp.y };
 }
 
 window.onresize = () => {

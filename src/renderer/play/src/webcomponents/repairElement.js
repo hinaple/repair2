@@ -1,6 +1,8 @@
 import { setVar } from "../lib/variables";
 import { genElement } from "../lib/resources";
 import { getAppData } from "../lib/appdata";
+import { packageLoader } from "../lib/plugin-package-loader.js";
+import { subscribe } from "../lib/variables";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -26,14 +28,22 @@ export default class RepairElement extends HTMLElement {
         } else if (this.type === "input") {
             this.realEl = document.createElement("input");
             if (element.payload.placeholder) this.realEl.placeholder = element.payload.placeholder;
+            if (element.payload.maxLength !== null)
+                this.realEl.maxlength = element.payload.maxLength;
 
             if (!element.payload.allowedType || element.payload.allowedType === "any")
                 this.allowedRegex = null;
             else if (element.payload.allowedType === "regex")
                 this.allowedRegex = new RegExp(element.payload.allowedRegex, "g");
             else this.allowedRegex = regexMap[element.payload.allowedType] ?? null;
+            if (element.payload.maxLength) this.realEl.maxLength = element.payload.maxLength;
 
             this.variableId = element.payload.variableId;
+            if (this.variableId)
+                this.unsubscribe = subscribe(
+                    this.variableId,
+                    (value) => (this.realEl.value = value)
+                );
             this.realEl.addEventListener("input", (evt) => {
                 let tempValue;
                 if (this.allowedRegex)
@@ -50,14 +60,11 @@ export default class RepairElement extends HTMLElement {
 
             this.willFocus = !!element.payload.autofocus;
         } else if (this.type === "plugin") {
-            const tempPlugin = element.payload.use();
-            if (tempPlugin === "importing")
-                element.payload.promise.then(() => {
-                    const tempPlugin = element.payload.use();
-                    if (!tempPlugin) return;
-                    this.realEl = tempPlugin;
-                });
-            else if (tempPlugin) this.realEl = tempPlugin;
+            element.payload.use(packageLoader).then((tempPlugin) => {
+                if (!tempPlugin) return;
+                this.realEl = tempPlugin;
+                this.render();
+            });
         } else if (this.type === "image" || this.type === "video") {
             const resource = getAppData().findResourceById(element.payload.resourceId);
             this.realEl = genElement(resource, !element.payload.removePreload);
@@ -83,7 +90,7 @@ export default class RepairElement extends HTMLElement {
 
         const deadListenerIdx = [];
         (element.listeners.list ?? []).forEach((l, idx) => {
-            this.realEl.addEventListener(l.realEventChannel, (evt) => {
+            this.realEl.addEventListener(l.realEventChannel, async (evt) => {
                 if (deadListenerIdx.includes(idx)) return;
 
                 if (
@@ -99,8 +106,8 @@ export default class RepairElement extends HTMLElement {
                         return;
                     }
                 } else if (l.types[0] === "plugin") {
-                    const plugin = l.payload.use();
-                    if (!plugin || !plugin({ event: evt })) return;
+                    if (await l.payload.use(packageLoader).then((func) => func?.({ event: evt })))
+                        return;
                 }
 
                 if (l.once) deadListenerIdx.push(idx);
@@ -116,6 +123,9 @@ export default class RepairElement extends HTMLElement {
     }
     connectedCallback() {
         this.render();
+    }
+    disconnectedCallback() {
+        if (this.unsubscribe) this.unsubscribe();
     }
 }
 

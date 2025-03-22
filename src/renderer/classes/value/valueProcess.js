@@ -7,7 +7,8 @@ const PayloadTemplate = {
     replaceAllRegex: { regex: "", to: "" },
     toLowerCase: null,
     toUpperCase: null,
-    length: null
+    length: null,
+    jsFunction: { scriptData: null }
 };
 
 export default class ValueProcess extends TypePayload {
@@ -16,17 +17,28 @@ export default class ValueProcess extends TypePayload {
         this.id = Symbol();
     }
     process(before) {
+        const string = before.toString();
         if (this.types[0] === "replaceAll")
-            return before.toString().replaceAll(this.payload.from, this.payload.to);
-        if (this.types[0] === "removeAll")
-            return before.toString().replaceAll(this.payload.removing, "");
+            return string.replaceAll(this.payload.from, this.payload.to);
+        if (this.types[0] === "removeAll") return string.replaceAll(this.payload.removing, "");
         if (this.types[0] === "replaceAllRegex")
-            return before.toString().replace(new RegExp(this.payload.regex, "g"), this.payload.to);
-        if (this.types[0] === "toLowerCase") return before.toString().toLowerCase();
-        if (this.types[0] === "toUpperCase") return before.toString().toUpperCase();
-        if (this.types[0] === "trim") return before.toString().trim();
-        if (this.types[0] === "length") return before.toString().length;
-
-        return before;
+            return string.replace(new RegExp(this.payload.regex, "g"), this.payload.to);
+        if (this.types[0] === "toLowerCase") return string.toLowerCase();
+        if (this.types[0] === "toUpperCase") return string.toUpperCase();
+        if (this.types[0] === "trim") return string.trim();
+        if (this.types[0] === "length") return string.length;
+        if (this.types[0] === "jsFunction") {
+            try {
+                return new Function("value", this.payload.scriptData)(before);
+            } catch {
+                return string;
+            }
+        }
+        return string;
+    }
+    get copyData() {
+        const sd = this.storeData;
+        delete sd.id;
+        return sd;
     }
 }

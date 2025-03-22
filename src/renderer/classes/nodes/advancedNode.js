@@ -9,4 +9,7 @@ export default class AdvancedNode extends Node {
     get storeData() {
         return { folded: this.folded, inputColor: this.inputColor, ...super.storeData };
     }
+    get copyData() {
+        return { folded: this.folded, inputColor: this.inputColor, ...super.copyData };
+    }
 }

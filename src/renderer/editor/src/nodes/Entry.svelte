@@ -4,13 +4,16 @@
     import { removeNodeWithHistory } from "../lib/syncData.svelte";
     import { EntryTypes } from "../lib/translate";
     import { ipcRenderer } from "electron";
+    import { genClipboardFn } from "../lib/clipboard";
 
     let { entry, isLastHold, onmousedown: bubbleMouseDown } = $props();
 
     function onmousedown(evt) {
         bubbleMouseDown(evt);
-        focusData("entry", entry);
+        focusData("entry", entry, { clipboardFn });
     }
+
+    const clipboardFn = genClipboardFn("entry", entry, () => removeNodeWithHistory(entry));
 
     const contextmenu = [
         {
@@ -21,8 +24,18 @@
             }
         },
         { type: "seperator" },
-        { label: "복사", click: () => {} },
-        { label: "붙여넣기", click: () => {} },
+        {
+            label: "잘라내기",
+            click: clipboardFn.cut
+        },
+        {
+            label: "복사",
+            click: clipboardFn.copy
+        },
+        {
+            label: "붙여넣기",
+            click: clipboardFn.paste
+        },
         { type: "seperator" },
         {
             label: "삭제",
@@ -33,20 +46,23 @@
             action: "remove"
         }
     ];
+
+    let title = $derived.by(() => {
+        if (entry.alias?.length) return entry.alias;
+        if (entry.data.type === "event" && entry.data.payload.channel?.length)
+            return entry.data.payload.channel;
+        if (entry.data.type === "Communication.serialData" && entry.data.payload.whenDataIs?.length)
+            return `시리얼 데이터 수신${entry.data.payload.whenDataIs?.length ? `(${entry.data.payload.whenDataIs})` : ""}`;
+        if (entry.data.type === "Communication.Socket.ondata" && entry.data.payload.channel?.length)
+            return `소켓 데이터 수신(${entry.data.payload.channel})`;
+        return EntryTypes[entry.data.type];
+    });
 </script>
 
 <Node
     node={entry}
     outputs={[{ output: entry.output, id: entry.id }]}
-    title={entry.alias?.length
-        ? entry.alias
-        : entry.entryType
-          ? entry.entryType === "event"
-              ? entry.channel?.length
-                  ? entry.channel
-                  : "진입점"
-              : EntryTypes[entry.entryType]
-          : "진입점"}
+    {title}
     {isLastHold}
     {onmousedown}
     isFocused={$currentFocus.obj === entry}

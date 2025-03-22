@@ -18,6 +18,7 @@
         small = false,
         row = false,
         children = null,
+        previewer = false,
         ...props
     } = $props();
 
@@ -50,7 +51,7 @@
     {#if children}
         {@render children()}
     {:else if type === "input" || type === "number" || type === "textarea"}
-        <HistoryInput {value} {type} {setter} {small} {...props} />
+        <HistoryInput {value} {type} {setter} {small} {previewer} {...props} />
     {:else if type === "select"}
         <select {value} onchange={(evt) => selectChange(evt.target.value)}>
             <option value={null} hidden>선택 안함</option>
@@ -70,7 +71,7 @@
     {:else if type === "type"}
         <TypeInput type={value} {...props} />
     {:else if type === "position"}
-        <Position position={value} {...props} />
+        <Position position={value} {previewer} {...props} />
     {:else if type === "resource"}
         <ResourceSelector
             resourceId={value}

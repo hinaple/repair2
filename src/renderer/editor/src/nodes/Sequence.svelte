@@ -9,22 +9,28 @@
     import { currentFocus, focusData } from "../sidebar/editUtils";
     import { removeNodeWithHistory } from "../lib/syncData.svelte";
     import { ipcRenderer } from "electron";
+    import { genClipboardFn } from "../lib/clipboard";
 
     let { sequence, isLastHold, onmousedown: bubbleMouseDown } = $props();
 
     function addStep(evt) {
         if (get(grabbing)) return;
-        focusData(
-            "step",
-            sequence.steps.addWithHistory(addHistory, () => reload("nodeMoved"))
+        const newStep = sequence.steps.addWithHistory(addHistory, {
+            afterChange: () => reload("nodeMoved")
+        });
+        const newClipboardFn = genClipboardFn("step", newStep, () =>
+            sequence.steps.removeWithHistory(newStep, addHistory, () => reload("nodeMoved"))
         );
+        focusData("step", newStep, { clipboardFn: newClipboardFn });
         evt.stopPropagation();
     }
 
     function onmousedown(evt) {
         bubbleMouseDown(evt);
-        focusData("sequence", sequence);
+        focusData("sequence", sequence, { clipboardFn });
     }
+
+    const clipboardFn = genClipboardFn("sequence", sequence, () => removeNodeWithHistory(sequence));
 
     const contextmenu = [
         {
@@ -35,8 +41,18 @@
             }
         },
         { type: "seperator" },
-        { label: "복사", click: () => {} },
-        { label: "붙여넣기", click: () => {} },
+        {
+            label: "잘라내기",
+            click: clipboardFn.cut
+        },
+        {
+            label: "복사",
+            click: clipboardFn.copy
+        },
+        {
+            label: "붙여넣기",
+            click: clipboardFn.paste
+        },
         { type: "seperator" },
         {
             label: "삭제",

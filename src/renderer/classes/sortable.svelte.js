@@ -20,21 +20,20 @@ export default class Sortable {
     reorder(fromIdx, toIdx) {
         this.list = this.list.toSpliced(toIdx, 0, this.list.splice(fromIdx, 1)[0]);
     }
-    addWithHistory(addHistory, afterChange = null) {
-        let tempEl = new this.elementClass();
+    addWithHistory(addHistory, { afterChange = null, addingEl = new this.elementClass() } = {}) {
         addHistory({
-            doFn: ({ tempEl, that }) => {
-                that.add(tempEl);
+            doFn: ({ addingEl, that }) => {
+                that.add(addingEl);
                 if (afterChange) afterChange();
             },
             undoFn: ({ idx, that }) => {
                 that.remove(idx);
                 if (afterChange) afterChange();
             },
-            doData: { tempEl, that: this },
+            doData: { addingEl, that: this },
             undoData: { idx: this.list.length, that: this }
         });
-        return tempEl;
+        return addingEl;
     }
     removeWithHistory(el, addHistory, afterChange) {
         const tempIdx = this.getIdxById(el.id);
@@ -63,5 +62,8 @@ export default class Sortable {
 
     get storeData() {
         return this.list.map((s) => s.storeData);
+    }
+    get copyData() {
+        return this.list.map((s) => s.copyData);
     }
 }

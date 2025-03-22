@@ -10,8 +10,10 @@
     import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
     import { onDestroy } from "svelte";
     import registerHighlight from "../../lib/highlight";
+    import { genClipboardFn } from "../../lib/clipboard";
+    import { removeNodeWithHistory } from "../../lib/syncData.svelte";
 
-    let { value, pre, rightBorder = false } = $props();
+    let { value, pre, isValueA = false, parent } = $props();
 
     $effect(() => {
         value.baseValue;
@@ -21,10 +23,13 @@
     function addProcess(evt) {
         if (get(grabbing)) return;
         evt.stopPropagation();
-        focusData(
-            "valueProcess",
-            value.process.addWithHistory(addHistory, () => reload("nodeMoved"))
+        const newProcess = value.process.addWithHistory(addHistory, {
+            afterChange: () => reload("nodeMoved")
+        });
+        const newClipboardFn = genClipboardFn("valueProcess", newProcess, () =>
+            value.process.removeWithHistory(newProcess, addHistory, () => reload("nodeMoved"))
         );
+        focusData("valueProcess", newProcess, { clipboardFn: newClipboardFn });
     }
 
     function clickBase(evt) {
@@ -38,19 +43,39 @@
         if (get(currentFocus).obj === value) focusData("project");
     });
 
-    const contextmenu = [
-        { label: "복사", click: () => {} },
-        { label: "붙여넣기", click: () => {} }
-    ];
+    // Too many bugs begin occurred, may be fix later
+    // let clipboardFn;
+    // function reloadClipboardFn() {
+    //     clipboardFn = genClipboardFn("value", value, () => removeNodeWithHistory(value), {
+    //         pasteData: {
+    //             parent,
+    //             isValueA
+    //         },
+    //         afterPasteChange: () => {
+    //             reloadClipboardFn();
+    //         }
+    //     });
+    // }
+    // reloadClipboardFn();
+
+    // const contextmenu = [
+    //     {
+    //         label: "복사",
+    //         click: () => clipboardFn.copy()
+    //     },
+    //     {
+    //         label: "붙여넣기",
+    //         click: () => clipboardFn.paste()
+    //     }
+    // ];
 
     let hlActive = $derived(!!(value.baseType === "variable" && value.baseValue));
 </script>
 
-<div class={["value-wrapper", rightBorder && "right-border"]}>
+<div class={["value-wrapper", isValueA && "right-border"]}>
     <div
         class={["value", $currentFocus.obj === value && "focus"]}
         onmousedown={clickBase}
-        use:rightclick={contextmenu}
         use:registerHighlight={{ type: "variable", data: value.baseValue, active: hlActive }}
     >
         <div class="base-value">

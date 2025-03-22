@@ -8,11 +8,7 @@ Room Escape Pc App InteRface
 
 ## Todo
 
-- **Editor**
-    - [x] Add Entry Node
-    - [x] Management Variables
-    - [x] Resource Control
-    - [ ] Copy/Cut/Paste
-    - [x] Categorize Sidebar
-- **Player**
-    - [ ] Everything
+- [ ] Refactor plugin system
+- [ ] Enhance preview feature
+- [ ] Add some guides in editor
+- [ ] Add real-time player state monitoring feature in editor

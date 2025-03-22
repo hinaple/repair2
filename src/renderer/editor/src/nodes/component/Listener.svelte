@@ -7,6 +7,7 @@
     import { grabbing } from "../../lib/stores";
     import { ElementListenerTypes } from "../../lib/translate";
     import outputNode from "../lines/output";
+    import { genClipboardFn } from "../../lib/clipboard";
 
     let {
         item: listener,
@@ -22,10 +23,21 @@
         }
     });
 
+    const clipboardFn = genClipboardFn("listener", listener, () => remove());
+
     const contextmenu = [
-        { label: "잘라내기", click: () => {} },
-        { label: "복사", click: () => {} },
-        { label: "붙여넣기", click: () => {} },
+        {
+            label: "잘라내기",
+            click: clipboardFn.cut
+        },
+        {
+            label: "복사",
+            click: clipboardFn.copy
+        },
+        {
+            label: "붙여넣기",
+            click: clipboardFn.paste
+        },
         { type: "seperator" },
         {
             label: "삭제",
@@ -45,7 +57,7 @@
         onmousedown={(evt) => {
             if (evt.button || get(grabbing)) return;
             evt.stopPropagation();
-            focusData("listener", listener);
+            focusData("listener", listener, { clipboardFn });
             outClicked();
         }}
     >
@@ -53,7 +65,10 @@
             <Icon icon="hamburger" color="rgba(255, 255, 255, 0.5)" size={8} />
         </div>
         <div class="title">
-            {listener.title ?? ElementListenerTypes[listener.type] ?? "리스너"}
+            {listener.title ??
+                listener.payload?.channel ??
+                ElementListenerTypes[listener.type] ??
+                "리스너"}
         </div>
         {#if !hidden}
             <div

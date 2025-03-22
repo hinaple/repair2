@@ -29,6 +29,16 @@ export default class Branch extends AdvancedNode {
         this.disableAfterTrue = disableAfterTrue;
         this.disableAfterFalse = disableAfterFalse;
     }
+    setValueWithHistory(addHistory, value, isValueA, afterChange = null) {
+        addHistory({
+            doFn: (value) => {
+                this[isValueA ? "valueA" : "valueB"] = value;
+                afterChange?.();
+            },
+            doData: value,
+            undoData: this[isValueA ? "valueA" : "valueB"]
+        });
+    }
     compare(a, b) {
         if (this.operator === "equals") return a == b;
         if (this.operator === "includes") return a.includes(b);
@@ -63,6 +73,17 @@ export default class Branch extends AdvancedNode {
             scriptData: this.scriptData,
             trueOutput: this.trueOutput,
             falseOutput: this.falseOutput
+        };
+    }
+    get copyData() {
+        return {
+            ...super.copyData,
+            valueA: this.valueA.copyData,
+            valueB: this.valueB.copyData,
+            operator: this.operator,
+            disableAfterTrue: this.disableAfterTrue,
+            disableAfterFalse: this.disableAfterFalse,
+            scriptData: this.scriptData
         };
     }
 }

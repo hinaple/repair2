@@ -8,12 +8,13 @@
     import { ComparisonOperatorTypes } from "../../lib/translate";
     import { outClicked } from "../../lib/contextMenu/contextUtils";
     import { ipcRenderer } from "electron";
+    import { genClipboardFn } from "../../lib/clipboard";
 
     let { branch, onmousedown: bubbleMouseDown, ...nodeData } = $props();
 
     function onmousedown(evt) {
         bubbleMouseDown(evt);
-        focusData("branch", branch);
+        focusData("branch", branch, { clipboardFn });
     }
     function focusZoneMouseDown(evt) {
         if (evt.button || get(grabbing)) return;
@@ -21,6 +22,8 @@
         outClicked();
         onmousedown();
     }
+
+    const clipboardFn = genClipboardFn("branch", branch, () => removeNodeWithHistory(branch));
 
     const contextmenu = [
         {
@@ -31,8 +34,18 @@
             }
         },
         { type: "seperator" },
-        { label: "복사", click: () => {} },
-        { label: "붙여넣기", click: () => {} },
+        {
+            label: "잘라내기",
+            click: clipboardFn.cut
+        },
+        {
+            label: "복사",
+            click: clipboardFn.copy
+        },
+        {
+            label: "붙여넣기",
+            click: clipboardFn.paste
+        },
         { type: "seperator" },
         {
             label: "삭제",
@@ -63,11 +76,17 @@
             <div class="values">
                 <Value
                     pre="값A: "
-                    rightBorder
+                    isValueA
                     value={branch.valueA}
                     onmousedown={focusZoneMouseDown}
+                    parent={branch}
                 />
-                <Value pre="값B: " value={branch.valueB} onmousedown={focusZoneMouseDown} />
+                <Value
+                    pre="값B: "
+                    value={branch.valueB}
+                    onmousedown={focusZoneMouseDown}
+                    parent={branch}
+                />
             </div>
             <div class="operator" onmousedown={focusZoneMouseDown}>
                 {ComparisonOperatorTypes[branch.operator] ?? "?"}

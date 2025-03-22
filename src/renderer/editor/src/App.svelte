@@ -27,7 +27,7 @@
 </script>
 
 <svelte:window {onkeydown} />
-<div class="info">REPAIR v2.0.0</div>
+<div class="info">REPAIR v{__APP_VERSION__}</div>
 <NodeSpace />
 <ContextMenu />
 <SideBar />

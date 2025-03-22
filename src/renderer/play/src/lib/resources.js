@@ -1,5 +1,6 @@
 import { getAssetDir } from "@classes/utils";
 import { getAppData } from "./appdata";
+import { registerUtils } from "./globalUtils";
 
 let preloads = {};
 
@@ -58,3 +59,18 @@ export function addPreloadsBulk(resourceIds) {
 export function removePreloadsBulk(resourceIds) {
     resourceIds.forEach(removePreload);
 }
+
+registerUtils("resources", {
+    getElement(resourceTitle) {
+        return genElement(getAppData().findResourceByTitle(resourceTitle));
+    },
+    addPreload(resourceTitle) {
+        addPreload(getAppData().findResourceByTitle(resourceTitle).id);
+    },
+    removePreload(resourceTitle) {
+        removePreload(getAppData().findResourceByTitle(resourceTitle).id);
+    },
+    getResourcePath(resourceTitle) {
+        return getAssetDir(getAppData().findResourceByTitle(resourceTitle).src);
+    }
+});

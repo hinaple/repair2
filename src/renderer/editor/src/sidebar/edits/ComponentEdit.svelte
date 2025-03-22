@@ -19,7 +19,7 @@
     type="checkbox"
 />
 <InputField label="표시" value={data.visible} setter={(d) => (data.visible = d)} type="checkbox" />
-<InputField label="위치" value={data.pos} type="position" oninput={reloadPreview} />
+<InputField label="위치" value={data.pos} type="position" previewer oninput={reloadPreview} />
 <InputField
     label="Z축 위치"
     value={data.zIndex}
@@ -32,7 +32,10 @@
     value={data.style}
     type="textarea"
     code
-    setter={(d) => (data.style = d)}
+    setter={(d) => {
+        data.style = d;
+        reloadPreview();
+    }}
     placeholder="inline CSS code"
     autoResizeOpt={{ minHeight: 50 }}
 />

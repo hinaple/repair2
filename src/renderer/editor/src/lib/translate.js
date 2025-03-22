@@ -1,7 +1,5 @@
 export const StepTypes = {
     delay: "딜레이",
-    setVariable: "변수 값 설정",
-    executePlugin: "플러그인 실행",
 
     Component: "컴포넌트",
     create: "생성",
@@ -29,7 +27,32 @@ export const StepTypes = {
     releaseAll: "모두 해제",
     "Preload.add": "프리로드 추가",
     "Preload.release": "프리로드 해제",
-    "Preload.releaseAll": "프리로드 모두 해제"
+    "Preload.releaseAll": "프리로드 모두 해제",
+
+    Communication: "통신",
+    Serial: "시리얼 통신",
+    Socket: "소켓 통신",
+    "Communication.Serial": "시리얼 통신",
+    "Communication.Socket": "소켓 통신",
+    open: "시작",
+    send: "전송",
+    close: " 종료",
+    connect: "연결",
+    disconnect: "연결 종료",
+    "Communication.Serial.open": "시리얼 통신 시작",
+    "Communication.Serial.send": "시리얼 통신 전송",
+    "Communication.Serial.close": "시리얼 통신 종료",
+    "Communication.Socket.connect": "소켓 통신 연결",
+    "Communication.Socket.send": "소켓 통신 전송",
+    "Communication.Socket.disconnect": "소켓 통신 종료",
+
+    Others: "기타",
+    setVariable: "변수 값 설정",
+    executePlugin: "플러그인 실행",
+    eventEmit: "이벤트 발생",
+    "Others.setVariable": "변수 값 설정",
+    "Others.executePlugin": "플러그인 실행",
+    "Others.eventEmit": "이벤트 발생"
 };
 
 export const ComponentModifyTypes = {
@@ -59,7 +82,8 @@ export const ValueProcessTypes = {
     replaceAllRegex: "정규표현식 기반 변경",
     toLowerCase: "소문자화",
     toUpperCase: "대문자화",
-    length: "글자 개수"
+    length: "글자 개수",
+    jsFunction: "함수"
 };
 
 export const BaseValueTypes = {
@@ -74,7 +98,7 @@ export const ComparisonOperatorTypes = {
     lt: "A < B",
     gte: "A >= B",
     lte: "A <= B",
-    jsFunction: "JS 콜백 함수"
+    jsFunction: "함수"
     // scriptFile: "스크립트 파일"
 };
 
@@ -89,15 +113,26 @@ export const ElementTypes = {
 export const ElementListenerTypes = {
     custom: "사용자 정의",
     click: "마우스 클릭",
+    input: "값 입력",
     videoEnd: "영상 종료",
-    keyPress: "키보드 입력",
-    jsFunction: "JS 콜백 함수",
+    keyPress: "키보드 누름",
+    jsFunction: "함수",
     plugin: "플러그인"
 };
 
 export const EntryTypes = {
     startup: "프로그램 시작",
-    event: "이벤트"
+    event: "이벤트",
+
+    Communication: "통신",
+    serialData: "시리얼 데이터 수신",
+    Socket: "소켓 통신",
+    "Communication.serialData": "시리얼 데이터 수신",
+    "Communication.Socket": "소켓 통신",
+    ondata: "데이터 수신",
+    connect: "연결",
+    "Communication.Socket.ondata": "소켓 데이터 수신",
+    "Communication.Socket.connect": "소켓 통신 연결"
 };
 
 export const InputAllowedTypes = {

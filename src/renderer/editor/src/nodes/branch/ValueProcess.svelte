@@ -6,6 +6,7 @@
     import { currentFocus, focusData } from "../../sidebar/editUtils";
     import { get } from "svelte/store";
     import { grabbing } from "../../lib/stores";
+    import { genClipboardFn } from "../../lib/clipboard";
 
     let { item: valueProcess, handle = $bindable(null), el = $bindable(null), remove } = $props();
 
@@ -15,10 +16,21 @@
         }
     });
 
+    const clipboardFn = genClipboardFn("valueProcess", valueProcess, () => remove());
+
     const contextmenu = [
-        { label: "잘라내기", click: () => {} },
-        { label: "복사", click: () => {} },
-        { label: "붙여넣기", click: () => {} },
+        {
+            label: "잘라내기",
+            click: clipboardFn.cut
+        },
+        {
+            label: "복사",
+            click: clipboardFn.copy
+        },
+        {
+            label: "붙여넣기",
+            click: clipboardFn.paste
+        },
         { type: "seperator" },
         {
             label: "삭제",
@@ -37,7 +49,7 @@
     onmousedown={(evt) => {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
-        focusData("valueProcess", valueProcess);
+        focusData("valueProcess", valueProcess, { clipboardFn });
         outClicked();
     }}
     use:rightclick={contextmenu}

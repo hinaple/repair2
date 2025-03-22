@@ -36,4 +36,14 @@
         setter={(d) => (data.payload.to = d)}
         placeholder="$&, $1 등 패턴 사용 가능"
     />
+{:else if data.type === "jsFunction"}
+    <InputField
+        label="함수"
+        value={data.payload.scriptData}
+        setter={(d) => (data.payload.scriptData = d)}
+        type="textarea"
+        placeholder="return value;"
+        autoResizeOpt={{ minHeight: 50 }}
+        code
+    />
 {/if}

@@ -24,9 +24,28 @@ const PayloadTemplates = {
         release: { resourceArr: [] },
         releaseAll: null
     },
+    Communication: {
+        isTypeObj: true,
+        Serial: {
+            isTypeObj: true,
+            open: { portAlias: null, port: null, baudRate: 9600 },
+            send: { data: null },
+            close: null
+        },
+        Socket: {
+            isTypeObj: true,
+            connect: { url: null },
+            send: { channel: null, data: null },
+            disconnect: null
+        }
+    },
     delay: { delayMs: 0 },
-    setVariable: { variableId: null, value: null },
-    executePlugin: { isClass: true, class: PluginPointer, argument: "functions" }
+    Others: {
+        isTypeObj: true,
+        eventEmit: { channel: null, data: null },
+        setVariable: { variableId: null, value: null },
+        executePlugin: { isClass: true, class: PluginPointer, argument: "functions" }
+    }
 };
 
 export default class Step extends TypePayload {
@@ -41,15 +60,17 @@ export default class Step extends TypePayload {
         if (this.type === "delay") return `딜레이 ${this.payload.delayMs}ms`;
         return null;
     }
-    execute() {
-        return new Promise((res) => {
-            res();
-        });
-    }
+    execute() {}
     get storeData() {
         return {
-            ...this,
+            id: this.id,
             ...super.storeData,
+            title: this.title
+        };
+    }
+    get copyData() {
+        return {
+            ...super.copyData,
             title: this.title
         };
     }

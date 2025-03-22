@@ -44,7 +44,7 @@ export default class Component {
     }
     get storeData() {
         return {
-            ...this,
+            id: this.id,
             alias: this.alias,
             zIndex: this.zIndex,
             pos: this.pos.storeData,
@@ -52,6 +52,20 @@ export default class Component {
             visible: this.visible,
             style: this.style,
             elements: this.elements.storeData,
+            frame: this.frame.storeData,
+            introTransition: this.introTransition.storeData,
+            outroTransition: this.outroTransition.storeData
+        };
+    }
+    get copyData() {
+        return {
+            alias: this.alias,
+            zIndex: this.zIndex,
+            pos: this.pos.storeData,
+            unbreakable: this.unbreakable,
+            visible: this.visible,
+            style: this.style,
+            elements: this.elements.copyData,
             frame: this.frame.storeData,
             introTransition: this.introTransition.storeData,
             outroTransition: this.outroTransition.storeData

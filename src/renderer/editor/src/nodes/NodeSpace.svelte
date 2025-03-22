@@ -22,6 +22,8 @@
     import { addHistory } from "../lib/workHistory";
     import Branch from "./branch/Branch.svelte";
     import Entry from "./Entry.svelte";
+    import { removeNodeWithHistory } from "../lib/syncData.svelte";
+    import { genClipboardFn } from "../lib/clipboard";
 
     let readyToGrab = $state(false);
     function keydown(evt) {
@@ -103,16 +105,11 @@
             label: "새 시퀀스",
             click: ({ pos: { x, y } }) => {
                 const seq = new SequenceClass({ nodePos: getOriginalPos(x, y) });
-                focusData("sequence", seq);
-                addHistory({
-                    doFn: (d) => {
-                        appData.nodes.push(d);
-                    },
-                    undoFn: () => {
-                        appData.nodes.pop();
-                    },
-                    doData: seq
-                });
+                const clipboardFn = genClipboardFn("sequence", seq, () =>
+                    removeNodeWithHistory(seq)
+                );
+                focusData("sequence", seq, { clipboardFn });
+                appData.addNodeWithHistory(addHistory, seq);
                 return true;
             }
         },
@@ -120,16 +117,11 @@
             label: "새 분기점",
             click: ({ pos: { x, y } }) => {
                 const branch = new BranchClass({ nodePos: getOriginalPos(x, y) });
-                focusData("branch", branch);
-                addHistory({
-                    doFn: (d) => {
-                        appData.nodes.push(d);
-                    },
-                    undoFn: () => {
-                        appData.nodes.pop();
-                    },
-                    doData: branch
-                });
+                const clipboardFn = genClipboardFn("branch", branch, () =>
+                    removeNodeWithHistory(branch)
+                );
+                focusData("branch", branch, { clipboardFn });
+                appData.addNodeWithHistory(addHistory, branch);
                 return true;
             }
         },
@@ -137,25 +129,18 @@
             label: "새 진입점",
             click: ({ pos: { x, y } }) => {
                 const entry = new EntryClass({ nodePos: getOriginalPos(x, y) });
-                focusData("entry", entry);
-                addHistory({
-                    doFn: (d) => {
-                        appData.nodes.push(d);
-                    },
-                    undoFn: () => {
-                        appData.nodes.pop();
-                    },
-                    doData: entry
-                });
+                const clipboardFn = genClipboardFn("entry", entry, () =>
+                    removeNodeWithHistory(entry)
+                );
+                focusData("entry", entry, { clipboardFn });
+                appData.addNodeWithHistory(addHistory, entry);
                 return true;
             }
         },
         { type: "seperator" },
         {
             label: "붙여넣기",
-            click: () => {
-                console.log(1);
-            }
+            click: () => {}
         }
     ];
 </script>

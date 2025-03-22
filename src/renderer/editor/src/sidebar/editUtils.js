@@ -16,7 +16,12 @@ export function focusData(type, obj = appData.config, data = null) {
     }
 }
 
-export function reloadPreview() {
+export function reloadPreview(showContents = false) {
     if (!previewing) return;
-    ipcRenderer.send("layout-preview", { compData: previewing.storeData });
+    ipcRenderer.send("layout-preview", { compData: previewing.storeData, showContents });
+}
+
+export function setPreviewContentVisible(visible) {
+    if (!previewing) return;
+    ipcRenderer.send("preview-content-visible", visible);
 }

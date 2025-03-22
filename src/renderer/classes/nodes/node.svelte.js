@@ -11,4 +11,7 @@ export default class Node {
     get storeData() {
         return { type: this.type, id: this.id, alias: this.alias, nodePos: this.nodePos };
     }
+    get copyData() {
+        return { type: this.type, alias: this.alias, nodePos: this.nodePos };
+    }
 }

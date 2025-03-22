@@ -2,7 +2,7 @@
     import { addHistory } from "../lib/workHistory";
     import HistoryInput from "./HistoryInput.svelte";
 
-    let { position, oninput = null } = $props();
+    let { position, oninput = null, previewer = false } = $props();
 
     const Origin = ["start", "center", "end"];
 </script>
@@ -50,6 +50,7 @@
                     }}
                     type="number"
                     placeholder="0"
+                    {previewer}
                 />
                 <div
                     class="unit"
@@ -81,6 +82,7 @@
                     }}
                     type="number"
                     placeholder="0"
+                    {previewer}
                 />
                 <div
                     class="unit"

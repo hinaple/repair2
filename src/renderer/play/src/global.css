@@ -84,20 +84,34 @@ repair-element {
     height: fit-content;
 }
 
-#preview-component {
+#preview-component:not(.show-content) {
+    outline: dashed #2b6eff 2px;
+    background: none !important;
+    backdrop-filter: blur(5px) none;
+}
+#preview-component.show-content {
     background: repeating-linear-gradient(
         -45deg,
         rgba(43, 110, 255, 0.8),
         rgba(43, 110, 255, 0.8) 5px,
         rgba(43, 110, 255, 0.4) 5px,
         rgba(43, 110, 255, 0.4) 10px
-    );
+    ) !important;
     overflow: visible;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px) !important;
 }
 .preview-element {
     outline: dashed #ff8000 2px;
 }
+.preview-element,
+.preview-element * {
+    background: none !important;
+}
 .preview-element video {
     pointer-events: all;
+}
+
+#preview-component:not(.show-content) img,
+#preview-component:not(.show-content) video {
+    opacity: 0 !important;
 }

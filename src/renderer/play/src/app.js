@@ -4,6 +4,7 @@ import Step from "@classes/step.svelte";
 import stepExecute from "./lib/stepActions";
 import { ipcRenderer } from "electron";
 import Branch from "@classes/nodes/branch.svelte";
+import "./lib/communication";
 
 console.log(getAppData());
 
@@ -31,7 +32,7 @@ Branch.prototype.execute = function () {
 };
 
 window.addEventListener("load", () => {
-    getAppData().executeEntry("start");
+    getAppData().executeEntry("startup");
 });
 
 ipcRenderer.on("request-execute", (event, { type, id }) => {

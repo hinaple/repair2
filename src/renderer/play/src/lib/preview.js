@@ -9,12 +9,14 @@ let currentPreview = null;
 let els = [];
 ipcRenderer.on("layout-preview", (event, { compData }) => {
     currentPreview = compData;
-    console.log(compData);
     render();
 });
 ipcRenderer.on("stop-preview", () => {
     currentPreview = null;
     render();
+});
+ipcRenderer.on("preview-content-visible", (event, visible) => {
+    previewComponent.classList.toggle("show-content", visible);
 });
 
 function elStyleString(elData) {
@@ -28,7 +30,8 @@ function elStyleString(elData) {
     return (
         (elData.absolute ? `position: absolute;${pos.styleString}` : "") +
         `width: ${elData.width ? `${elData.width}px` : "auto"};` +
-        `height: ${elData.height ? `${elData.height}px` : "auto"};`
+        `height: ${elData.height ? `${elData.height}px` : "auto"};` +
+        (elData.style ?? "")
     );
 }
 
@@ -41,7 +44,10 @@ function render() {
     }
 
     previewComponent.style.display = "block";
-    previewComponent.setAttribute("style", new Coord(currentPreview.pos).styleString);
+    previewComponent.setAttribute(
+        "style",
+        new Coord(currentPreview.pos).styleString + (currentPreview.style ?? "")
+    );
     if (currentPreview.elements.length > els.length) {
         els.splice(0, currentPreview.elements.length - els.length).forEach((el) => {
             previewComponent.removeChild(el.el);
@@ -83,6 +89,8 @@ function render() {
             currentEl.el.appendChild(child);
             currentEl.child = child;
         }
+
+        if (!currentEl.child) return;
 
         currentEl.child.style.width = el.fullscreen
             ? "var(--gamezone-width)"

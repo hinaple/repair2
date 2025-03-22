@@ -1,14 +1,26 @@
 import Node from "./node.svelte";
 import Output from "../output";
+import TypePayload from "@classes/typePayload.svelte";
+
+const EntryTemplate = {
+    startup: null,
+    Communication: {
+        isTypeObj: true,
+        Socket: {
+            isTypeObj: true,
+            ondata: { channel: null },
+            connect: null
+        },
+        serialData: { whenDataIs: null }
+    },
+    event: { channel: null }
+};
 
 export default class Entry extends Node {
-    entryType = $state();
-    channel = $state();
-    constructor({ output = {}, entryType = "startup", channel = null, ...nodeData } = {}) {
+    constructor({ output = {}, entryType = "startup", payload = null, ...nodeData } = {}) {
         super("entry", nodeData);
         this.output = new Output(output);
-        this.channel = channel;
-        this.entryType = entryType;
+        this.data = new TypePayload({ type: entryType, payload, template: EntryTemplate });
     }
 
     async execute() {
@@ -16,6 +28,11 @@ export default class Entry extends Node {
     }
 
     get storeData() {
-        return { ...this, channel: this.channel, entryType: this.entryType, ...super.storeData };
+        const { type: entryType, payload } = this.data.storeData;
+        return { ...super.storeData, entryType, payload, output: this.output };
+    }
+    get copyData() {
+        const { type: entryType, payload } = this.data.copyData;
+        return { ...super.copyData, entryType, payload };
     }
 }
