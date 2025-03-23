@@ -16,7 +16,7 @@ let pluginManager;
 
 let data;
 
-const dataDir = is.dev ? join(__dirname, "../../data") : join(app.getPath("exe"), "..", "data");
+const dataDir = join(app.getPath("userData"), is.dev ? "dev_project" : "project");
 const assetDir = join(dataDir, "assets");
 const pluginDir = join(dataDir, "plugins");
 const styleDir = join(dataDir, "styles");
@@ -306,29 +306,65 @@ function createEditorWindow() {
     });
 }
 
-app.on("ready", async () => {
-    electronApp.setAppUserModelId("com.repair2");
+async function appOpenedWithProject(argv) {
+    if (argv.length < 2) return false;
 
-    app.on("browser-window-created", (_, window) => {
-        optimizer.watchWindowShortcuts(window);
+    const filePath = argv.find((arg) => arg.endsWith(".repair"));
+    if (!filePath) return false;
+
+    const confirm = await dialog.showMessageBox({
+        type: "info",
+        title: "프로젝트 불러오기",
+        message: `프로젝트를 불러올까요?`,
+        detail: "기존에 편집 중이던 프로젝트의 정보가 삭제됩니다.",
+        buttons: ["취소", "확인"]
+    });
+    if (confirm.response !== 1) {
+        app.quit();
+        return false;
+    }
+    await projectFileManager.importProject(filePath);
+    if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
+
+    return true;
+}
+
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
+} else {
+    app.on("second-instance", async (event, argv) => {
+        if (!mainWindow) return;
+
+        if (await appOpenedWithProject(argv)) await loadData();
+        mainWindow.show();
     });
 
-    await loadData();
+    app.on("ready", async () => {
+        electronApp.setAppUserModelId("com.repair2");
 
-    await initializePluginSystem();
+        app.on("browser-window-created", (_, window) => {
+            optimizer.watchWindowShortcuts(window);
+        });
 
-    setupIpcHandlers();
+        await appOpenedWithProject(process.argv);
 
-    if (is.dev) {
-        setTimeout(() => {
+        await loadData();
+
+        await initializePluginSystem();
+
+        setupIpcHandlers();
+
+        if (is.dev) {
+            setTimeout(() => {
+                createMainWindow();
+                createEditorWindow();
+            }, 1000);
+        } else {
             createMainWindow();
-            createEditorWindow();
-        }, 1000);
-    } else {
-        createMainWindow();
-        // createEditorWindow();
-    }
-});
+            // createEditorWindow();
+        }
+    });
+}
 
 function setupIpcHandlers() {
     //#region plugin IPCs
@@ -357,7 +393,7 @@ function setupIpcHandlers() {
         afterSave?.();
         afterSave = null;
         mainWindow?.setTitle(data?.config?.title ?? "REPAIRv2");
-        mainWindow.webContents.send("data", data);
+        mainWindow.webContents.send("data", { ...data, globalStyles: globalCss });
         return true;
     });
     //#endregion

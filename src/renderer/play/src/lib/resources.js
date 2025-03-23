@@ -46,7 +46,7 @@ function addPreload(resourceId) {
     if (preloads[resourceId].el) preloadsEl.appendChild(preloads[resourceId].el);
 }
 
-function removePreload(resourceId) {
+export function removePreload(resourceId) {
     if (!preloads[resourceId]) return;
     if (preloads[resourceId].el) preloadsEl.removeChild(preloads[resourceId].el);
     delete preloads[resourceId];
@@ -58,6 +58,10 @@ export function addPreloadsBulk(resourceIds) {
 
 export function removePreloadsBulk(resourceIds) {
     resourceIds.forEach(removePreload);
+}
+
+export function removePreloadsAll() {
+    Object.keys(preloads).forEach(removePreload);
 }
 
 registerUtils("resources", {

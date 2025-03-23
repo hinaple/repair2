@@ -20,6 +20,13 @@ export default class RepairElement extends HTMLElement {
 
         this.type = element.types[0];
 
+        this.width = element.width;
+        this.height = element.height;
+        this.childStyle = element.childStyle;
+        this.fullscreen = !!element.fullscreen;
+
+        this.listeners = element.listeners.list ?? [];
+
         if (this.type === "empty") {
             this.realEl = document.createElement("div");
             if (element.payload.content)
@@ -75,21 +82,22 @@ export default class RepairElement extends HTMLElement {
             this.realEl.loop = !!element.payload.loop;
             this.realEl.muted = false;
         }
+    }
+    render() {
+        if (!this.isConnected || !this.realEl) return;
 
-        if (!this.realEl) return;
+        this.realEl.setAttribute("style", this.childStyle ?? "");
 
-        this.realEl.setAttribute("style", element.childStyle ?? "");
-
-        if (element.fullscreen) {
+        if (this.fullscreen) {
             this.realEl.style.width = "var(--gamezone-width)";
             this.realEl.style.height = "var(--gamezone-height)";
         } else {
-            this.realEl.style.width = element.width ? `${element.width}px` : "auto";
-            this.realEl.style.height = element.height ? `${element.height}px` : "auto";
+            this.realEl.style.width = this.width ? `${this.width}px` : "auto";
+            this.realEl.style.height = this.height ? `${this.height}px` : "auto";
         }
 
         const deadListenerIdx = [];
-        (element.listeners.list ?? []).forEach((l, idx) => {
+        this.listeners.forEach((l, idx) => {
             this.realEl.addEventListener(l.realEventChannel, async (evt) => {
                 if (deadListenerIdx.includes(idx)) return;
 
@@ -114,9 +122,7 @@ export default class RepairElement extends HTMLElement {
                 l.output.goto();
             });
         });
-    }
-    render() {
-        if (!this.isConnected || !this.realEl) return;
+
         this.appendChild(this.realEl);
         if (this.willFocus) this.realEl.focus();
         if (this.type === "video") this.realEl.play();
