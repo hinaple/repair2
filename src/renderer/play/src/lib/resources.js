@@ -46,7 +46,7 @@ function addPreload(resourceId) {
     if (preloads[resourceId].el) preloadsEl.appendChild(preloads[resourceId].el);
 }
 
-function removePreload(resourceId) {
+export function removePreload(resourceId) {
     if (!preloads[resourceId]) return;
     if (preloads[resourceId].el) preloadsEl.removeChild(preloads[resourceId].el);
     delete preloads[resourceId];
