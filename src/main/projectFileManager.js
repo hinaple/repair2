@@ -35,7 +35,7 @@ export default class ProjectFileManager {
 
     async selectImportProject() {
         const confirm = await dialog.showMessageBox({
-            type: "info",
+            type: "warning",
             title: "프로젝트 파일을 불러올까요?",
             message: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
             buttons: ["취소", "확인"]

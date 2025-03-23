@@ -115,3 +115,26 @@ repair-element {
 #preview-component:not(.show-content) video {
     opacity: 0 !important;
 }
+
+#repair-editor-password {
+    display: none;
+    position: fixed;
+    pointer-events: none;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "HelveticaExt";
+    font-size: 30px;
+    padding: 10px 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    color: #000;
+    z-index: 9999;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: "HelveticaExt";
+    src: url("./fonts/helveticaExt.woff") format("woff");
+}

@@ -13,13 +13,17 @@ export default class Config {
     sizeRatio = $state();
     filter = $state();
     style = $state();
+    editorShortcut = $state();
+    editorPassword = $state();
     constructor({
         title = "REPAIR v2",
         width = null,
         height = null,
         sizeRatio = 1,
         filter = null,
-        style = null
+        style = null,
+        editorShortcut = "E",
+        editorPassword = null
     } = {}) {
         this.title = title;
         this.width = width;
@@ -27,6 +31,8 @@ export default class Config {
         this.sizeRatio = sizeRatio;
         this.filter = filter;
         this.style = style;
+        this.editorShortcut = editorShortcut;
+        this.editorPassword = editorPassword;
     }
     get styleString() {
         return (
@@ -51,7 +57,9 @@ export default class Config {
             height: this.height,
             sizeRatio: this.sizeRatio,
             filter: this.filter,
-            style: this.style
+            style: this.style,
+            editorShortcut: this.editorShortcut,
+            editorPassword: this.editorPassword
         };
     }
 }

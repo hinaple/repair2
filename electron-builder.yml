@@ -4,8 +4,7 @@ directories:
     buildResources: build
 extraFiles:
     - data/**/*
-    - from: resources/default.repair
-      to: default.repair
+    - default.repair
 files:
     - "!**/.vscode/*"
     - "!src/*"
@@ -16,22 +15,13 @@ asarUnpack:
     - resources/**
 win:
     executableName: repair2
+    icon: resources/logo.png
 nsis:
     artifactName: ${name}-${version}-setup.${ext}
     shortcutName: ${productName}
     uninstallDisplayName: ${productName}
     createDesktopShortcut: always
     perMachine: true
-mac:
-    entitlementsInherit: build/entitlements.mac.plist
-    extendInfo:
-        - NSCameraUsageDescription: Application requests access to the device's camera.
-        - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-        - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-        - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-    notarize: false
-dmg:
-    artifactName: ${name}-${version}.${ext}
 linux:
     target:
         - AppImage

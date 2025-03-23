@@ -31,3 +31,17 @@
     code
     placeholder="inline CSS style"
 />
+<hr />
+<InputField
+    label="편집기 단축키"
+    value={data.editorShortcut}
+    setter={(d) => (data.editorShortcut = d)}
+    maxlength="1"
+    placeholder="E"
+/>
+<InputField
+    label="에디터 비밀번호"
+    value={data.editorPassword}
+    setter={(d) => (data.editorPassword = d)}
+    placeholder="비밀번호 없음"
+/>

@@ -5,6 +5,7 @@ import stepExecute from "./lib/stepActions";
 import { ipcRenderer } from "electron";
 import Branch from "@classes/nodes/branch.svelte";
 import "./lib/communication";
+import "./lib/editorOpen";
 
 console.log(getAppData());
 

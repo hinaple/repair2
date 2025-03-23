@@ -3,13 +3,13 @@ import { basename, extname, join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import fs from "fs/promises";
 import { watch } from "fs";
-import PluginPackageManager from "./plugin-package-manager";
 
 // import DataTemplate from "./dataTemplate.json";
 
 import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
+import PluginPackageManager from "./plugin-package-manager";
 
 let mainWindow, editorWindow;
 let pluginManager;
@@ -22,7 +22,7 @@ const pluginDir = join(dataDir, "plugins");
 const styleDir = join(dataDir, "styles");
 
 const defaultPath = is.dev
-    ? join(__dirname, "../../resources/default.repair")
+    ? join(__dirname, "../../default.repair")
     : join(app.getPath("exe"), "..", "default.repair");
 
 async function initializePluginSystem() {
@@ -326,7 +326,7 @@ app.on("ready", async () => {
         }, 1000);
     } else {
         createMainWindow();
-        createEditorWindow();
+        // createEditorWindow();
     }
 });
 
@@ -364,7 +364,7 @@ function setupIpcHandlers() {
 
     //#region editor IPCs
     ipcMain.on("editor-on", () => {
-        if (!editorWindow) createEditorWindow();
+        if (!isEditorOn) createEditorWindow();
     });
 
     ipcMain.on("unsaved", () => {
