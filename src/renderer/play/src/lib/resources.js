@@ -60,6 +60,10 @@ export function removePreloadsBulk(resourceIds) {
     resourceIds.forEach(removePreload);
 }
 
+export function removePreloadsAll() {
+    Object.keys(preloads).forEach(removePreload);
+}
+
 registerUtils("resources", {
     getElement(resourceTitle) {
         return genElement(getAppData().findResourceByTitle(resourceTitle));

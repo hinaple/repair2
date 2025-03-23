@@ -1,4 +1,4 @@
-import { addPreloadsBulk, removePreload, removePreloadsBulk } from "./resources";
+import { addPreloadsBulk, removePreload, removePreloadsAll, removePreloadsBulk } from "./resources";
 import { setVar } from "./variables";
 import { addComponent, clearComponents, removeComponentByAlias } from "./components";
 import { packageLoader } from "../lib/plugin-package-loader.js";
@@ -28,8 +28,8 @@ const actions = {
     },
     Preload: {
         add: (s) => addPreloadsBulk(s.payload.resourceArr),
-        release: (s) => removePreload(s.payload.resourceId),
-        releaseAll: (s) => removePreloadsBulk(s.payload.resourceArr)
+        release: (s) => removePreloadsBulk(s.payload.resourceArr),
+        releaseAll: () => removePreloadsAll()
     },
     Communication: {
         Socket: {
