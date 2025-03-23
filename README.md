@@ -12,6 +12,9 @@ Room Escape Pc App InteRface
 - [x] Make transitions work
 - [x] Import global.css and fonts
 - [x] Hot reload on plugins
+- [ ] Audio system
+- [ ] Fix every preload release feature
+- [ ] Make it single instance app
 - [ ] Add real-time player state monitoring feature in editor
 - [ ] Support touchpads in editor
 - [ ] Support multiple monitors

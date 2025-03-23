@@ -3,7 +3,6 @@ productName: repair2
 directories:
     buildResources: build
 extraFiles:
-    - data/**/*
     - default.repair
 files:
     - "!**/.vscode/*"
@@ -22,6 +21,7 @@ nsis:
     uninstallDisplayName: ${productName}
     createDesktopShortcut: always
     perMachine: true
+    oneClick: false
 linux:
     target:
         - AppImage
@@ -32,3 +32,8 @@ linux:
 appImage:
     artifactName: ${name}-${version}.${ext}
 npmRebuild: false
+fileAssociations:
+    - ext: repair
+      description: "Repair v2 Project"
+      name: "Repair v2 Project"
+      icon: resources/project.png

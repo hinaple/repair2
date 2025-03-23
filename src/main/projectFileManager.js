@@ -25,19 +25,30 @@ export default class ProjectFileManager {
     }
 
     async importProject(filePath) {
-        this?.beforeImport?.();
+        try {
+            this.beforeImport?.();
 
-        await emptyDir(this.dataDir);
+            await emptyDir(this.dataDir);
 
-        const zip = new admZip(filePath);
-        zip.extractAllTo(this.dataDir, true);
+            const zip = new admZip(filePath);
+            zip.extractAllTo(this.dataDir, true);
+        } catch (error) {
+            console.error(error);
+            await dialog.showMessageBox({
+                type: "error",
+                title: "프로젝트 불러오기",
+                message: "프로젝트를 불러오는 중 오류가 발생했습니다."
+            });
+            app.quit();
+        }
     }
 
     async selectImportProject() {
         const confirm = await dialog.showMessageBox({
-            type: "warning",
-            title: "프로젝트 파일을 불러올까요?",
-            message: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
+            type: "info",
+            title: "프로젝트 불러오기",
+            message: "프로젝트 파일을 불러올까요?",
+            detail: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
             buttons: ["취소", "확인"]
         });
         if (confirm.response !== 1) return;

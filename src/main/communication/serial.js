@@ -17,6 +17,8 @@ export default class SerialConnector {
             realPort = list.find((p) => p.friendlyName.includes(portAlias))?.path ?? path;
         }
 
+        if (!realPort) return;
+
         this.port = new SerialPort({
             path: realPort,
             baudRate: baudRate ?? 9600
