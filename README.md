@@ -8,7 +8,14 @@ Room Escape Pc App InteRface
 
 ## Todo
 
+- [x] Add project opening feature
+- [x] Make transitions work
+- [x] Import global.css and fonts
+- [x] Hot reload on plugins
+- [ ] Add real-time player state monitoring feature in editor
+- [ ] Support touchpads
+- [ ] Fix Ctrl+- shortcut on editor
+- [ ] Add some guides in editor
 - [ ] Refactor plugin system
 - [ ] Enhance preview feature
-- [ ] Add some guides in editor
-- [ ] Add real-time player state monitoring feature in editor
+- [ ] Documentation

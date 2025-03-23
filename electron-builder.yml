@@ -4,6 +4,8 @@ directories:
     buildResources: build
 extraFiles:
     - data/**/*
+    - from: resources/default.repair
+      to: default.repair
 files:
     - "!**/.vscode/*"
     - "!src/*"
@@ -19,6 +21,7 @@ nsis:
     shortcutName: ${productName}
     uninstallDisplayName: ${productName}
     createDesktopShortcut: always
+    perMachine: true
 mac:
     entitlementsInherit: build/entitlements.mac.plist
     extendInfo:

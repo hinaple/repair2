@@ -1,9 +1,3 @@
 export default {
-    attributes: ["startOpacity"],
-    from: ({ attributes }) => ({
-        opacity: attributes.startOpacity
-    }),
-    to: ({ attributes }) => ({
-        opacity: 1
-    })
+    keyframes: [{ opacity: 0 }, { opacity: 1 }]
 };

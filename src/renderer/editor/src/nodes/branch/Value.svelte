@@ -11,7 +11,6 @@
     import { onDestroy } from "svelte";
     import registerHighlight from "../../lib/highlight";
     import { genClipboardFn } from "../../lib/clipboard";
-    import { removeNodeWithHistory } from "../../lib/syncData.svelte";
 
     let { value, pre, isValueA = false, parent } = $props();
 
@@ -43,7 +42,7 @@
         if (get(currentFocus).obj === value) focusData("project");
     });
 
-    // Too many bugs begin occurred, may be fix later
+    // Too many bugs begin occurred here, may be fixed later
     // let clipboardFn;
     // function reloadClipboardFn() {
     //     clipboardFn = genClipboardFn("value", value, () => removeNodeWithHistory(value), {

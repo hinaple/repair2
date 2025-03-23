@@ -2,14 +2,20 @@ import RepairElement from "./repairElement";
 import { packageLoader } from "../lib/plugin-package-loader.js";
 
 export default class RepairComponent extends HTMLElement {
-    constructor(componentData) {
+    constructor(componentData, showIntro = true) {
         super();
         this.setAttribute("style", `position: absolute; ${componentData.styleString}`);
         this.componentId = componentData.aliasOrId;
         this.realId = componentData.id;
 
+        this.id = this.componentId;
+
         this.visible = componentData.visible;
         this.unbreakable = componentData.unbreakable;
+
+        this.showIntro = showIntro;
+        this.introTransition = componentData.introTransition;
+        this.outroTransition = componentData.outroTransition;
 
         this.container = this;
         componentData.frame.use(packageLoader).then((tempFrame) => {
@@ -29,7 +35,29 @@ export default class RepairComponent extends HTMLElement {
     }
 
     connectedCallback() {
+        if (this.showIntro) this.startTransition(this.introTransition);
         this.render();
+    }
+
+    startTransition(transition, isOutro = false) {
+        return new Promise(async (res) => {
+            if (!transition.plugin) res();
+
+            let keyframes = await transition.plugin.use(packageLoader);
+            if (!keyframes) res();
+
+            if (typeof keyframes === "function") keyframes = keyframes();
+
+            const ani = this.animate(keyframes, {
+                duration: transition.duration,
+                easing: transition.easing,
+                delay: transition.delay,
+                direction: isOutro ? "reverse" : "normal"
+            });
+            ani.addEventListener("finish", () => {
+                res();
+            });
+        });
     }
 }
 

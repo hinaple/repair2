@@ -30,8 +30,8 @@ function getStoreData() {
 export function saveData() {
     const storeData = getStoreData();
     console.log("Saved", storeData);
-    ipcRenderer.send("update-data", storeData);
     updateSaveIdx();
+    return ipcRenderer.invoke("update-data", storeData);
 }
 
 export function removeNodeWithHistory(node) {
@@ -53,4 +53,6 @@ export function removeNodeWithHistory(node) {
     });
 }
 
-ipcRenderer.on("request-save", saveData);
+ipcRenderer.on("request-save", () => {
+    saveData();
+});

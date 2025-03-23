@@ -2,12 +2,14 @@ import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from "electron";
 import { basename, extname, join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import fs from "fs/promises";
+import { watch } from "fs";
 import PluginPackageManager from "./plugin-package-manager";
 
-import DataTemplate from "./dataTemplate.json";
+// import DataTemplate from "./dataTemplate.json";
 
 import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
+import ProjectFileManager from "./projectFileManager";
 
 let mainWindow, editorWindow;
 let pluginManager;
@@ -17,11 +19,24 @@ let data;
 const dataDir = is.dev ? join(__dirname, "../../data") : join(app.getPath("exe"), "..", "data");
 const assetDir = join(dataDir, "assets");
 const pluginDir = join(dataDir, "plugins");
+const styleDir = join(dataDir, "styles");
+
+const defaultPath = is.dev
+    ? join(__dirname, "../../resources/default.repair")
+    : join(app.getPath("exe"), "..", "default.repair");
 
 async function initializePluginSystem() {
     pluginManager = new PluginPackageManager(pluginDir, join(app.getPath("userData"), "packages"));
     await pluginManager.initialize();
 }
+
+const projectFileManager = new ProjectFileManager(dataDir, () => {
+    if (editorWindow) editorWindow.close();
+    if (cssWatcher) {
+        cssWatcher.close();
+        cssWatcher = null;
+    }
+});
 
 const PluginTypes = ["elements", "frames", "functions", "transitions"];
 
@@ -47,16 +62,19 @@ async function updatePluginList() {
     await Promise.all(
         PluginTypes.map((type) => {
             return new Promise((res) => {
-                fs.readdir(join(pluginDir, type)).then((files) => {
-                    pluginList[type] = files;
-                    res();
-                });
+                fs.readdir(join(pluginDir, type))
+                    .then((files) => {
+                        pluginList[type] = files;
+                        res();
+                    })
+                    .catch(() => {
+                        res();
+                    });
             });
         })
     );
     return pluginList;
 }
-updatePluginList();
 
 async function saveData(tempData) {
     data = { ...tempData, updatedAt: new Date().getTime() };
@@ -66,13 +84,44 @@ async function saveData(tempData) {
     });
 }
 
+async function importDefaultProject() {
+    await projectFileManager.importProject(defaultPath);
+    await loadData();
+    if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
+}
+
+let globalCss = "";
+let cssWatcher;
+async function loadGlobalCss() {
+    try {
+        globalCss = (await fs.readFile(join(styleDir, "global.css"))).toString();
+        globalCss = globalCss.replace(/%FONTS%/g, join(styleDir, "fonts").replace(/\\/g, "/"));
+        if (mainWindow) mainWindow.webContents.send("global-css", globalCss);
+
+        watchGlobalStyles();
+    } catch (err) {
+        globalCss = "";
+    }
+}
+function watchGlobalStyles() {
+    if (cssWatcher) return;
+
+    cssWatcher = watch(join(styleDir, "global.css"), (eventType) => {
+        if (eventType === "change") {
+            console.log("Global CSS file has changed");
+            loadGlobalCss();
+        }
+    });
+}
 async function loadData() {
     try {
+        await fs.access(dataDir);
         const tempData = (await fs.readFile(join(dataDir, "data.json"))).toString();
         data = JSON.parse(tempData);
     } catch (err) {
-        await saveData(DataTemplate);
+        await importDefaultProject();
     }
+    await Promise.all([updatePluginList(), loadGlobalCss()]);
     return true;
 }
 
@@ -85,7 +134,8 @@ function createMainWindow() {
             nodeIntegration: true,
             contextIsolation: false,
             webSecurity: false
-        }
+        },
+        title: data?.config?.title ?? "REPAIRv2"
     });
     mainWindow.setMenu(null);
 
@@ -109,6 +159,7 @@ function createMainWindow() {
     });
 }
 
+let afterSave;
 let isEditorOn = false;
 function createEditorWindow() {
     if (isEditorOn) return;
@@ -135,6 +186,36 @@ function createEditorWindow() {
                         editorWindow.webContents.send("request-save");
                     },
                     accelerator: "CommandOrControl+S"
+                },
+                { type: "separator" },
+                {
+                    label: "프로젝트 불러오기",
+                    click: async () => {
+                        await projectFileManager.selectImportProject();
+                        await loadData();
+                        mainWindow.webContents.reloadIgnoringCache();
+                        createEditorWindow();
+                    },
+                    accelerator: "CommandOrControl+Shift+O"
+                },
+                {
+                    label: "프로젝트 내보내기",
+                    click: async () => {
+                        editorWindow.webContents.send("request-save");
+                        afterSave = () =>
+                            projectFileManager.exportProject(
+                                (data?.config?.title ?? "REPAIRv2").replace(/\s/g, "_")
+                            );
+                    },
+                    accelerator: "CommandOrControl+Shift+S"
+                },
+                { type: "separator" },
+                {
+                    label: "데이터 폴더 열기",
+                    click: () => {
+                        shell.openPath(dataDir);
+                    },
+                    accelerator: "CommandOrControl+Shift+N"
                 }
             ]
         },
@@ -268,13 +349,16 @@ function setupIpcHandlers() {
 
     //#region appdata IPCs
     ipcMain.on("request-data", (evt) => {
-        evt.returnValue = data;
+        evt.returnValue = { ...data, globalStyles: globalCss };
     });
 
-    ipcMain.on("update-data", async (evt, tempData) => {
+    ipcMain.handle("update-data", async (evt, tempData) => {
         await saveData(tempData);
+        afterSave?.();
+        afterSave = null;
+        mainWindow?.setTitle(data?.config?.title ?? "REPAIRv2");
         mainWindow.webContents.send("data", data);
-        evt.returnValue = true;
+        return true;
     });
     //#endregion
 

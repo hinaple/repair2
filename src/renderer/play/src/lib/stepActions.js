@@ -1,6 +1,6 @@
 import { addPreloadsBulk } from "./resources";
 import { setVar } from "./variables";
-import { addComponent, clearComponents, removeComponent } from "./components";
+import { addComponent, clearComponents, removeComponentByAlias } from "./components";
 import { packageLoader } from "../lib/plugin-package-loader.js";
 import {
     serialOpen,
@@ -15,7 +15,8 @@ import { emitRepairEvent } from "./event";
 const actions = {
     Component: {
         create: (s) => addComponent(s.payload),
-        remove: (s) => removeComponent(s.payload.componentAlias, s.payload.ignoreUnbreakable),
+        remove: (s) =>
+            removeComponentByAlias(s.payload.componentAlias, s.payload.ignoreUnbreakable),
         clear: (s) => clearComponents(s.payload.ignoreUnbreakable),
         modify: (s) => {}
     },

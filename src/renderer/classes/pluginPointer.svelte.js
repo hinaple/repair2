@@ -56,14 +56,18 @@ export default class PluginPointer {
             return temp;
         }
 
-        if (this.#type === "functions") {
-            return (argument) =>
+        if (
+            this.#type === "functions" ||
+            (this.#type === "transitions" && this.imported?.function)
+        ) {
+            return (argument = null) =>
                 this.imported.function({
                     attributes: this.payloads,
                     modules: this.modules,
                     ...argument
                 });
         }
+        if (this.#type === "transitions") return this.imported.keyframes ?? [];
 
         return this.imported;
     }

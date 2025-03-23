@@ -10,7 +10,6 @@ import Listener from "@classes/listener.svelte";
 import Branch from "@classes/nodes/branch.svelte";
 import Entry from "@classes/nodes/entry.svelte";
 import Sequence from "@classes/nodes/sequence.svelte";
-import Value from "@classes/value/value.svelte";
 import ValueProcess from "@classes/value/valueProcess";
 import { reload } from "./stores";
 
