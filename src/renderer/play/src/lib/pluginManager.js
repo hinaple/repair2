@@ -48,7 +48,8 @@ async function loadPlugin(type, name, forceLoad = false) {
     console.log(`Plugin loading: ${type} - ${name}`);
     const imported = await importPlugin(type, name);
     pluginObj.imported = imported;
-    pluginObj.modules = imported.dependencies ? await loadModules(imported.dependencies) : null;
+    if (imported)
+        pluginObj.modules = imported.dependencies ? await loadModules(imported.dependencies) : null;
 
     pluginObj.loading = false;
     pluginObj.onLoad.forEach((onLoad) => onLoad(pluginObj));
