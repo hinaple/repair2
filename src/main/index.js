@@ -374,7 +374,7 @@ function createEditorWindow() {
     });
 }
 
-async function appOpenedWithProject(argv) {
+async function appOpenedWithProject(argv, appWasRunning = true) {
     if (argv.length < 2) return false;
 
     const filePath = argv.find((arg) => arg.endsWith(".repair"));
@@ -391,7 +391,7 @@ async function appOpenedWithProject(argv) {
         noLink: true
     });
     if (confirm.response !== 0) {
-        app.quit();
+        if (!appWasRunning) app.quit();
         return false;
     }
     await projectFileManager.importProject(filePath);
@@ -406,7 +406,7 @@ if (!app.requestSingleInstanceLock()) {
     app.on("second-instance", async (event, argv) => {
         if (!mainWindow) return;
 
-        if (await appOpenedWithProject(argv)) await loadData();
+        if (await appOpenedWithProject(argv, true)) await loadData();
         mainWindow.show();
     });
 
@@ -417,7 +417,7 @@ if (!app.requestSingleInstanceLock()) {
             optimizer.watchWindowShortcuts(window);
         });
 
-        await appOpenedWithProject(process.argv);
+        await appOpenedWithProject(process.argv, false);
 
         await loadData();
 
