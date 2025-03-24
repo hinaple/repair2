@@ -11,18 +11,18 @@ const PayloadTemplates = {
         clear: { ignoreUnbreakable: false },
         modify: { componentAlias: null, modifyKey: null, modifyValue: null }
     },
-    Audio: {
-        isTypeObj: true,
-        play: { resourceId: null, channel: "default", volume: 100, loop: false },
-        pause: { channel: "default" },
-        resume: { channel: "default" },
-        changeVolume: { channel: "default", volume: 100 }
-    },
     Preload: {
         isTypeObj: true,
         add: { resourceArr: [] },
         release: { resourceArr: [] },
         releaseAll: null
+    },
+    Audio: {
+        isTypeObj: true,
+        play: { resourceId: null, channel: "default", volume: 100, loop: false },
+        pause: { channel: "default" },
+        resume: { channel: "default" },
+        changeVolume: { channel: "default", volume: 100, duration: 0 }
     },
     Communication: {
         isTypeObj: true,

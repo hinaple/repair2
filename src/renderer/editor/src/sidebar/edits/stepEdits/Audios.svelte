@@ -12,6 +12,7 @@
         placeholder="default"
     />
 {/if}
+
 {#if data.types[1] === "play"}
     <InputField
         label="재생할 오디오 자원"
@@ -26,15 +27,30 @@
         setter={(d) => (data.payload.loop = d)}
         type="checkbox"
     />
-{/if}
-{#if data.types[1] === "changeVolume" || data.types[1] === "play"}
     <InputField
         label="음량"
         value={data.payload.volume}
         setter={(d) => (data.payload.volume = d)}
         type="number"
-        placeholder="0-100 사이의 실수"
+        placeholder="0-100"
         min="0"
         max="100"
+    />
+{:else if data.types[1] === "changeVolume"}
+    <InputField
+        label="변경할 음량"
+        value={data.payload.volume}
+        setter={(d) => (data.payload.volume = d)}
+        type="number"
+        placeholder="0-100"
+        min="0"
+        max="100"
+    />
+    <InputField
+        label="변화 시간(초)"
+        value={data.payload.duration}
+        setter={(d) => (data.payload.duration = d)}
+        type="number"
+        min="0"
     />
 {/if}

@@ -58,6 +58,8 @@
                     <span>{option.title}</span>
                 </div>
             </div>
+        {:else}
+            <div class="no-resource">자원 없음</div>
         {/each}
     </div>
 {/if}
@@ -198,5 +200,11 @@
     .question-mark {
         font-size: 30px;
         opacity: 0.5;
+    }
+    .no-resource {
+        width: 100%;
+        color: #000;
+        opacity: 0.8;
+        text-align: center;
     }
 </style>
