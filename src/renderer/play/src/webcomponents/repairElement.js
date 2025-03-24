@@ -16,7 +16,7 @@ export default class RepairElement extends HTMLElement {
 
         this.setAttribute("style", element.styleString);
 
-        if (element.className) this.classList.add(element.className);
+        if (element.className) this.classList.add(...element.className.split(" "));
 
         this.type = element.types[0];
 

@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from "electron";
 import { basename, extname, join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import fs from "fs/promises";
-import { access, watch } from "fs";
+import { watch } from "fs";
 
 // import DataTemplate from "./dataTemplate.json";
 

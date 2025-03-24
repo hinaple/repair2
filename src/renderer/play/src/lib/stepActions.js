@@ -1,6 +1,11 @@
 import { addPreloadsBulk, removePreload, removePreloadsAll, removePreloadsBulk } from "./resources";
 import { setVar } from "./variables";
-import { addComponent, clearComponents, removeComponentByAlias } from "./components";
+import {
+    addComponent,
+    clearComponents,
+    modifyComponentByAlias,
+    removeComponentByAlias
+} from "./components";
 import { packageLoader } from "../lib/plugin-package-loader.js";
 import {
     serialOpen,
@@ -18,7 +23,13 @@ const actions = {
         remove: (s) =>
             removeComponentByAlias(s.payload.componentAlias, s.payload.ignoreUnbreakable),
         clear: (s) => clearComponents(s.payload.ignoreUnbreakable),
-        modify: (s) => {}
+        modify: (s) => {
+            modifyComponentByAlias(
+                s.payload.componentAlias,
+                s.payload.modifyKey,
+                s.payload.modifyValue
+            );
+        }
     },
     Audio: {
         play: (s) => {},
