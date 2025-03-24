@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from "electron";
 import { basename, extname, join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import fs from "fs/promises";
-import { watch } from "fs";
+import { access, watch } from "fs";
 
 // import DataTemplate from "./dataTemplate.json";
 
@@ -21,9 +21,9 @@ const assetDir = join(dataDir, "assets");
 const pluginDir = join(dataDir, "plugins");
 const styleDir = join(dataDir, "styles");
 
-const defaultPath = is.dev
-    ? join(__dirname, "../../default.repair")
-    : join(app.getPath("exe"), "..", "default.repair");
+const templateDir = is.dev
+    ? join(__dirname, "../../templates")
+    : join(app.getPath("exe"), "..", "templates");
 
 async function initializePluginSystem() {
     pluginManager = new PluginPackageManager(pluginDir, join(app.getPath("userData"), "packages"));
@@ -85,7 +85,7 @@ async function saveData(tempData) {
 }
 
 async function importDefaultProject() {
-    await projectFileManager.importProject(defaultPath);
+    await projectFileManager.importProject(join(templateDir, "default.repair"));
     await loadData();
     if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
 }
@@ -180,6 +180,33 @@ function createEditorWindow() {
         {
             label: "파일",
             submenu: [
+                {
+                    label: "새 프로젝트",
+                    click: async () => {
+                        const { response } = await dialog.showMessageBox(editorWindow, {
+                            type: "info",
+                            title: "프로젝트 내보내기",
+                            message: "현재 편집 중인 프로젝트 정보가 삭제됩니다.",
+                            detail: "현재 프로젝트를 먼저 내보낼까요?",
+                            buttons: ["취소", "내보내지 않음", "내보내기"],
+                            defaultId: 2
+                        });
+                        if (response === 0) return;
+                        if (
+                            response === 2 &&
+                            !(await projectFileManager.exportProject(
+                                data.config?.title ?? "REPAIRv2"
+                            ))
+                        )
+                            return;
+
+                        await projectFileManager.importProject(join("templates", "empty.repair"));
+                        await loadData();
+                        mainWindow.webContents.reloadIgnoringCache();
+                    },
+                    accelerator: "CommandOrControl+N"
+                },
+                { type: "separator" },
                 {
                     label: "저장",
                     click: () => {

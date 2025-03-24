@@ -49,7 +49,7 @@ export default class PluginPointer {
         await this.loadModules(packageLoader);
 
         if (this.#type === "frames" || this.#type === "elements") {
-            const temp = new this.imported({ modules: this.modules });
+            const temp = new this.imported({ modules: this.modules, attributes: this.payloads });
             this.attributes.forEach((attr) => {
                 temp.setAttribute(attr, this.payloads[attr]);
             });
