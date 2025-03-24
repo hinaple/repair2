@@ -17,7 +17,7 @@ Room Escape Pc App InteRface
 - [ ] Add some guides in editor
 - [ ] Refactor plugin system(Eww!)
 - [ ] Enhance preview feature
-- [ ] Documentation editoring
+- [ ] Documentation editing
 
 ## Done
 
