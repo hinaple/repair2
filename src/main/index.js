@@ -227,12 +227,14 @@ function createEditorWindow() {
                             title: "프로젝트 내보내기",
                             message: "현재 편집 중인 프로젝트 정보가 삭제됩니다.",
                             detail: "현재 프로젝트를 먼저 내보낼까요?",
-                            buttons: ["취소", "내보내지 않음", "내보내기"],
-                            defaultId: 2
+                            buttons: ["내보내기", "내보내지 않음", "취소"],
+                            defaultId: 0,
+                            cancelId: 2,
+                            noLink: true
                         });
-                        if (response === 0) return;
+                        if (response === 2) return;
                         if (
-                            response === 2 &&
+                            response === 0 &&
                             !(await projectFileManager.exportProject(
                                 data.config?.title ?? "REPAIRv2"
                             ))
@@ -257,7 +259,7 @@ function createEditorWindow() {
                 {
                     label: "프로젝트 불러오기",
                     click: async () => {
-                        await projectFileManager.selectImportProject();
+                        if (!(await projectFileManager.selectImportProject())) return;
                         await loadData();
                         mainWindow.webContents.reloadIgnoringCache();
                         createEditorWindow();
@@ -383,9 +385,12 @@ async function appOpenedWithProject(argv) {
         title: "프로젝트 불러오기",
         message: `프로젝트를 불러올까요?`,
         detail: "기존에 편집 중이던 프로젝트의 정보가 삭제됩니다.",
-        buttons: ["취소", "확인"]
+        buttons: ["확인", "취소"],
+        cancelId: 1,
+        defaultId: 0,
+        noLink: true
     });
-    if (confirm.response !== 1) {
+    if (confirm.response !== 0) {
         app.quit();
         return false;
     }
@@ -490,7 +495,7 @@ function setupIpcHandlers() {
     });
 
     ipcMain.on("dialogue", async (event, opt) => {
-        event.returnValue = await dialog.showMessageBoxSync(opt);
+        event.returnValue = await dialog.showMessageBoxSync({ ...opt, noLink: true });
     });
 
     ipcMain.on("copyInfoAsset", async (event, srcs) => {
