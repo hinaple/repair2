@@ -53,3 +53,25 @@ export function clearComponents(ignoreUnbreakable = false) {
     if (ignoreUnbreakable) components = [];
     else components = components.filter((c) => c?.unbreakable);
 }
+export function modifyComponentByAlias(alias, modifyKey, modifyValue) {
+    const idx = getComponentIdx(alias);
+    if (idx === -1) return;
+
+    const currentComp = components[idx];
+    if (modifyKey === "visible" && currentComp.visible !== modifyValue) {
+        currentComp[modifyKey] = modifyValue;
+
+        if (modifyValue) gamezone.appendChild(currentComp);
+        else removeComponentFromDOM(currentComp);
+        return;
+    }
+    if (modifyKey === "style") {
+        currentComp.renderStyle(modifyValue || "");
+        return;
+    }
+    if (modifyKey === "zIndex") {
+        currentComp.setZIndex(modifyValue);
+        return;
+    }
+    currentComp[modifyKey] = modifyValue;
+}

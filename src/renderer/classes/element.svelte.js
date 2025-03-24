@@ -94,7 +94,7 @@ export default class Element extends TypePayload {
             style: this.style,
             childStyle: this.childStyle,
             className: this.className,
-            pos: this.pos.copyData,
+            pos: this.pos.storeData,
             absolute: this.absolute,
             fullscreen: this.fullscreen,
             listeners: this.listeners.copyData

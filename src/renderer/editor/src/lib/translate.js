@@ -59,20 +59,18 @@ export const ComponentModifyTypes = {
     visible: "표시 여부",
     unbreakable: "보호",
     zIndex: "Z축 위치",
-    style: "스타일",
-    className: "CSS 클래스"
+    style: "스타일"
 };
 export const ComponentModifyInputData = {
-    visible: { type: "checkbox" },
-    unbreakable: { type: "checkbox" },
+    visible: { label: "표시 여부", type: "checkbox" },
+    unbreakable: { label: "보호", type: "checkbox" },
     zIndex: { type: "number", placeholder: "값이 클수록 앞에 보임" },
     style: {
         type: "textarea",
         code: true,
         autoResizeOpt: { minHeight: 50 },
         placeholder: "inline CSS code"
-    },
-    className: { type: "input" }
+    }
 };
 
 export const ValueProcessTypes = {

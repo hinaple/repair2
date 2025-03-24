@@ -8,7 +8,6 @@ Room Escape Pc App InteRface
 
 ## Todo
 
-- [ ] Audio system
 - [ ] Hot reload on plugins
 - [ ] Add real-time player state monitoring feature in editor
 - [ ] Support touchpads in editor
@@ -17,7 +16,7 @@ Room Escape Pc App InteRface
 - [ ] Add some guides in editor
 - [ ] Refactor plugin system(Eww!)
 - [ ] Enhance preview feature
-- [ ] Documentation editoring
+- [ ] Documentation editing
 
 ## Done
 
@@ -26,3 +25,4 @@ Room Escape Pc App InteRface
 - [x] Import global.css and fonts
 - [x] Make it single instance app
 - [x] Fix release every preload feature
+- [x] Audio system

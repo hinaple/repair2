@@ -15,11 +15,13 @@ export default class ProjectFileManager {
             defaultPath: join(app.getPath("documents"), `${projectName}.repair`),
             filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
         });
-        if (!result || result.canceled) return;
+        if (!result || result.canceled) return false;
 
         const zip = new admZip();
         zip.addLocalFolder(this.dataDir, "");
         zip.writeZip(result.filePath);
+
+        return true;
 
         shell.showItemInFolder(result.filePath);
     }

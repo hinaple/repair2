@@ -1,6 +1,11 @@
 import { addPreloadsBulk, removePreload, removePreloadsAll, removePreloadsBulk } from "./resources";
 import { setVar } from "./variables";
-import { addComponent, clearComponents, removeComponentByAlias } from "./components";
+import {
+    addComponent,
+    clearComponents,
+    modifyComponentByAlias,
+    removeComponentByAlias
+} from "./components";
 import { packageLoader } from "../lib/plugin-package-loader.js";
 import {
     serialOpen,
@@ -11,6 +16,7 @@ import {
     socketDisconnect
 } from "./communication";
 import { emitRepairEvent } from "./event";
+import { playAudio, pauseAudio, resumeAudio, changeAudioVolume } from "./audio";
 
 const actions = {
     Component: {
@@ -18,13 +24,21 @@ const actions = {
         remove: (s) =>
             removeComponentByAlias(s.payload.componentAlias, s.payload.ignoreUnbreakable),
         clear: (s) => clearComponents(s.payload.ignoreUnbreakable),
-        modify: (s) => {}
+        modify: (s) => {
+            modifyComponentByAlias(
+                s.payload.componentAlias,
+                s.payload.modifyKey,
+                s.payload.modifyValue
+            );
+        }
     },
     Audio: {
-        play: (s) => {},
-        pause: (s) => {},
-        resume: (s) => {},
-        changeVolume: (s) => {}
+        play: (s) =>
+            playAudio(s.payload.channel, s.payload.resourceId, s.payload.volume, s.payload.loop),
+        pause: (s) => pauseAudio(s.payload.channel),
+        resume: (s) => resumeAudio(s.payload.channel),
+        changeVolume: (s) =>
+            changeAudioVolume(s.payload.channel, s.payload.volume, s.payload.duration)
     },
     Preload: {
         add: (s) => addPreloadsBulk(s.payload.resourceArr),

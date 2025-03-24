@@ -3,7 +3,7 @@ productName: repair2
 directories:
     buildResources: build
 extraFiles:
-    - default.repair
+    - templates/**/*
 files:
     - "!**/.vscode/*"
     - "!src/*"

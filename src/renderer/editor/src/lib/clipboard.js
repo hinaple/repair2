@@ -102,7 +102,8 @@ export function genClipboardFn(
             if (!string) string = await navigator.clipboard.readText();
             pasted(string, { type, obj: target, data: pasteData }, afterPasteChange);
             return true;
-        }
+        },
+        ...(removing && { delete: removing })
     };
 }
 
@@ -129,4 +130,12 @@ window.addEventListener("cut", (e) => {
 
     const target = get(currentFocus);
     target.data?.clipboardFn?.cut?.();
+});
+
+window.addEventListener("keydown", (e) => {
+    if (e.key !== "Delete" || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")
+        return;
+
+    const target = get(currentFocus);
+    target.data?.clipboardFn?.delete?.();
 });

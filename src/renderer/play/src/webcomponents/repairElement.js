@@ -16,7 +16,7 @@ export default class RepairElement extends HTMLElement {
 
         this.setAttribute("style", element.styleString);
 
-        if (element.className) this.classList.add(element.className);
+        if (element.className) this.classList.add(...element.className.split(" "));
 
         this.type = element.types[0];
 
@@ -34,6 +34,7 @@ export default class RepairElement extends HTMLElement {
                     element.payload.content;
         } else if (this.type === "input") {
             this.realEl = document.createElement("input");
+            this.realEl.spellcheck = false;
             if (element.payload.placeholder) this.realEl.placeholder = element.payload.placeholder;
             if (element.payload.maxLength !== null)
                 this.realEl.maxlength = element.payload.maxLength;
