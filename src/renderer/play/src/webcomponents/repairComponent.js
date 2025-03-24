@@ -5,7 +5,7 @@ export default class RepairComponent extends HTMLElement {
     constructor(componentData, showIntro = true) {
         super();
 
-        this.renderStyle(componentData.style || "");
+        this.renderStyle(componentData.styleString || "");
 
         this.componentId = componentData.aliasOrId;
         this.realId = componentData.id;
