@@ -118,6 +118,8 @@ async function loadData() {
         await fs.access(dataDir);
         const tempData = (await fs.readFile(join(dataDir, "data.json"))).toString();
         data = JSON.parse(tempData);
+
+        mainWindow?.setTitle(data?.config?.title ?? "REPAIRv2");
     } catch (err) {
         await importDefaultProject();
     }
