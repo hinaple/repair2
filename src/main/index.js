@@ -32,10 +32,12 @@ async function initializePluginSystem() {
 
 const projectFileManager = new ProjectFileManager(dataDir, () => {
     if (editorWindow) editorWindow.close();
-    if (cssWatcher) {
-        cssWatcher.close();
-        cssWatcher = null;
-    }
+    Object.keys(watchers).forEach((key) => {
+        if (watchers[key]) {
+            watchers[key].close();
+            watchers[key] = null;
+        }
+    });
 });
 
 const PluginTypes = ["elements", "frames", "functions", "transitions"];
@@ -58,6 +60,7 @@ const serial = new SerialConnector((data) => {
 
 let pluginList = {};
 async function updatePluginList() {
+    console.log("Updating plugin list");
     pluginList = {};
     await Promise.all(
         PluginTypes.map((type) => {
@@ -91,7 +94,7 @@ async function importDefaultProject() {
 }
 
 let globalCss = "";
-let cssWatcher;
+let watchers = { css: null };
 async function loadGlobalCss() {
     try {
         globalCss = (await fs.readFile(join(styleDir, "global.css"))).toString();
@@ -99,18 +102,52 @@ async function loadGlobalCss() {
         if (mainWindow) mainWindow.webContents.send("global-css", globalCss);
 
         watchGlobalStyles();
+        watchPlugins();
     } catch (err) {
         globalCss = "";
     }
 }
 function watchGlobalStyles() {
-    if (cssWatcher) return;
+    if (watchers.css) return;
 
-    cssWatcher = watch(join(styleDir, "global.css"), (eventType) => {
+    watchers.css = watch(join(styleDir, "global.css"), (eventType) => {
         if (eventType === "change") {
             console.log("Global CSS file has changed");
             loadGlobalCss();
         }
+    });
+}
+
+const pluginHotReloadTimeouts = {};
+function watchPlugins() {
+    if (watchers.plugins) return;
+
+    watchers.plugins = watch(pluginDir, { recursive: true }, (type, filename) => {
+        if (type === "rename") {
+            updatePluginList();
+            return;
+        }
+        if (type !== "change") return;
+        if (filename === "dependencies.json") {
+            console.log("Plugin dependencies updated");
+            pluginManager.updateDependencies();
+            return;
+        }
+        const dirs = filename.split(/\\|\//);
+        if (dirs.length !== 2 || !PluginTypes.includes(dirs[0])) return;
+
+        if (pluginHotReloadTimeouts[filename]) clearTimeout(pluginHotReloadTimeouts[filename]);
+
+        pluginHotReloadTimeouts[filename] = setTimeout(() => {
+            delete pluginHotReloadTimeouts[filename];
+            console.log(`Plugin Editted: ${dirs[0]} - ${dirs[1]}`);
+
+            if (mainWindow)
+                mainWindow.webContents.send("plugin-hmr", {
+                    type: dirs[0],
+                    name: dirs[1]
+                });
+        }, 100);
     });
 }
 async function loadData() {

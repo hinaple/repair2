@@ -11,6 +11,7 @@ class PluginPackageManager {
         this.packagesDir = packagesDir;
         this.nodeModulesDir = join(this.packagesDir, "node_modules");
         this.require = createRequire(import.meta.url);
+        this.dependenciesPath = join(this.pluginDir, "dependencies.json");
     }
 
     async initialize() {
@@ -35,26 +36,29 @@ class PluginPackageManager {
                 );
             }
 
-            const dependenciesPath = join(this.pluginDir, "dependencies.json");
-            await fs
-                .readFile(dependenciesPath, "utf-8")
-                .then((data) => {
-                    try {
-                        const dependencies = JSON.parse(data);
-                        return Promise.all(
-                            Object.entries(dependencies).map(([name, version]) => {
-                                this.installPackage(name, version, this.nodeModulesDir);
-                            })
-                        );
-                    } catch {}
-                })
-                .catch(() => {
-                    console.log("There is no dependencies.json");
-                });
+            await this.updateDependencies();
         } catch (error) {
             console.error("Failed to initialize plugin system:", error);
             throw error;
         }
+    }
+
+    updateDependencies() {
+        return fs
+            .readFile(this.dependenciesPath, "utf-8")
+            .then((data) => {
+                try {
+                    const dependencies = JSON.parse(data);
+                    return Promise.all(
+                        Object.entries(dependencies).map(([name, version]) => {
+                            this.installPackage(name, version, this.nodeModulesDir);
+                        })
+                    );
+                } catch {}
+            })
+            .catch(() => {
+                console.log("There is no dependencies.json");
+            });
     }
 
     async getPackageInfo(packagePath) {

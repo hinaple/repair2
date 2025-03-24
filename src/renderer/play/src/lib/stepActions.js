@@ -74,7 +74,15 @@ const actions = {
     Others: {
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
         executePlugin: (s) => {
-            s.payload.use(packageLoader).then((func) => func?.());
+            return new Promise((res) => {
+                s.payload.plugin
+                    .use()
+                    .then((func) => func?.())
+                    .then(() => {
+                        if (s.payload.waitTillEnd) res();
+                    });
+                if (!s.payload.waitTillEnd) res();
+            });
         },
         eventEmit: (s) => {
             if (s.payload.channel) emitRepairEvent(s.payload.channel, s.payload.data);

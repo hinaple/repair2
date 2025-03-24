@@ -3,6 +3,17 @@ import Component from "./component.svelte";
 import { genId } from "./utils";
 import PluginPointer from "./pluginPointer.svelte";
 
+class executePlugin {
+    waitTillEnd = $state();
+    constructor({ plugin = {}, waitTillEnd = false }) {
+        this.plugin = new PluginPointer(plugin, "functions");
+        this.waitTillEnd = waitTillEnd;
+    }
+    get storeData() {
+        return { plugin: this.plugin.storeData, waitTillEnd: this.waitTillEnd };
+    }
+}
+
 const PayloadTemplates = {
     Component: {
         isTypeObj: true,
@@ -44,7 +55,7 @@ const PayloadTemplates = {
         isTypeObj: true,
         eventEmit: { channel: null, data: null },
         setVariable: { variableId: null, value: null },
-        executePlugin: { isClass: true, class: PluginPointer, argument: "functions" }
+        executePlugin: { isClass: true, class: executePlugin }
     }
 };
 

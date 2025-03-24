@@ -10,8 +10,8 @@ export function getAssetDir(dir) {
     return join(assetDir, dir);
 }
 
-export function genId() {
-    return randomBytes(20).toString("hex");
+export function genId(len = 20) {
+    return randomBytes(len).toString("hex");
 }
 
 export async function getPluginList(update = false) {
@@ -21,7 +21,7 @@ export async function getPluginList(update = false) {
 export async function importPlugin(type, name) {
     return await import(
         /* @vite-ignore */
-        join(pluginDir, type, name)
+        `${join(pluginDir, type, name)}?t=${Date.now()}`
     ).then((module) => module.default);
 }
 export async function importAllPluginsIn(type) {
