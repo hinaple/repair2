@@ -17,6 +17,7 @@ Room Escape Pc App InteRface
 - [ ] Documentation editing
 - [ ] Make default project prettier
 - [ ] Refactor repairElement.js
+- [ ] Add comment node
 
 ## Done
 
