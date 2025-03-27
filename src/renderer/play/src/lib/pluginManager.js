@@ -1,7 +1,7 @@
 import PluginPointer from "@classes/pluginPointer.svelte";
 import { genId, importPlugin } from "@classes/utils";
 import { ipcRenderer } from "electron";
-import { packageLoader } from "./plugin-package-loader";
+import { requirePackage } from "./requirePackage";
 
 const loadedPlugins = {};
 const importedModules = {};
@@ -21,7 +21,7 @@ async function loadModules(dependencies) {
             const nameVersion = `${name}@${version}`;
             if (importedModules[nameVersion]) return [name, importedModules[nameVersion]];
 
-            const module = await packageLoader.require(name, version);
+            const module = await requirePackage(name, version);
             importedModules[nameVersion] = module;
             modules[name] = module;
         })
@@ -37,11 +37,11 @@ async function loadPlugin(type, name, forceLoad = false) {
     if (!validPluginName(name)) return null;
 
     if (!loadedPlugins[type]) loadedPlugins[type] = {};
-    if (loadedPlugins[type][name] && !forceLoad) return null;
+    if (loadedPlugins[type][name]?.imported && !forceLoad) return loadedPlugins[type][name];
 
     const pluginObj = {
         imported: null,
-        onLoad: [...(loadedPlugins[type]?.[name]?.onLoad ?? [])], // in case onloads existed
+        onLoad: [...(loadedPlugins[type][name]?.onLoad ?? [])], // in case onloads existed
         loading: true
     };
     loadedPlugins[type][name] = pluginObj;
@@ -74,17 +74,21 @@ function getPluginAsync(type, name) {
     });
 }
 
+function definePlugin(pluginClass) {
+    if (customElements.getName(pluginClass)) return;
+
+    let basename = `plugin-${pluginClass.split(".")[0].toLowerCase()}`;
+    if (customElements.get(basename)) basename = `${basename}-${genId(3)}`;
+    customElements.define(basename, pluginClass);
+}
+
 PluginPointer.prototype.use = async function (pluginObj = null) {
     if (!pluginObj) pluginObj = await getPluginAsync(this.type, this.name);
     if (!pluginObj || !pluginObj.imported) return null;
 
     if (this.type === "frames" || this.type === "elements") {
         const ce = pluginObj.imported;
-        if (!customElements.getName(ce)) {
-            let basename = `plugin-${this.name.split(".")[0].toLowerCase()}`;
-            if (customElements.get(basename)) basename = `${basename}-${genId(3)}`;
-            customElements.define(basename, ce);
-        }
+        definePlugin(ce);
         const temp = new ce({
             modules: pluginObj.modules,
             attributes: this.payloads

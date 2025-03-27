@@ -6,7 +6,6 @@ import {
     modifyComponentByAlias,
     removeComponentByAlias
 } from "./components";
-import { packageLoader } from "../lib/plugin-package-loader.js";
 import {
     serialOpen,
     serialSend,

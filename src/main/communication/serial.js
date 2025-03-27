@@ -7,14 +7,14 @@ export default class SerialConnector {
     }
 
     async open(portAlias, path, baudRate = 9600) {
-        if (this.port) return;
+        if (this.port) this.port.close();
 
         let realPort = path;
 
-        if (portAlias) {
+        if (portAlias || !path) {
             const list = await SerialPort.list();
-            console.log(list);
-            realPort = list.find((p) => p.friendlyName.includes(portAlias))?.path ?? path;
+            realPort =
+                list.find((p) => p.friendlyName.includes(portAlias || "USB-SERIAL"))?.path ?? path;
         }
 
         if (!realPort) return;
@@ -23,6 +23,8 @@ export default class SerialConnector {
             path: realPort,
             baudRate: baudRate ?? 9600
         });
+
+        console.log("SERIAL OPENED: ", realPort);
 
         this.port.on("readable", () => {
             const data = this.port.read();

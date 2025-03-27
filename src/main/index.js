@@ -565,4 +565,17 @@ function setupIpcHandlers() {
     });
 
     //#endregion
+
+    //#region player monitoring IPCs
+
+    ipcMain.on("executed-start", (event, { type, id }) => {
+        if (!editorWindow) return;
+        editorWindow.webContents.send("start-executed", { type, id });
+    });
+    ipcMain.on("executed-end", (event, { type, id }) => {
+        if (!editorWindow) return;
+        editorWindow.webContents.send("end-executed", { type, id });
+    });
+
+    //#endregion
 }
