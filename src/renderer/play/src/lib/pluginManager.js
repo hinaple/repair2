@@ -74,10 +74,10 @@ function getPluginAsync(type, name) {
     });
 }
 
-function definePlugin(pluginClass) {
+function definePlugin(pluginClass, name) {
     if (customElements.getName(pluginClass)) return;
 
-    let basename = `plugin-${pluginClass.split(".")[0].toLowerCase()}`;
+    let basename = `plugin-${name.split(".")[0].toLowerCase()}`;
     if (customElements.get(basename)) basename = `${basename}-${genId(3)}`;
     customElements.define(basename, pluginClass);
 }
@@ -88,7 +88,7 @@ PluginPointer.prototype.use = async function (pluginObj = null) {
 
     if (this.type === "frames" || this.type === "elements") {
         const ce = pluginObj.imported;
-        definePlugin(ce);
+        definePlugin(ce, this.name);
         const temp = new ce({
             modules: pluginObj.modules,
             attributes: this.payloads
