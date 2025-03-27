@@ -32,10 +32,12 @@ async function initializePluginSystem() {
 
 const projectFileManager = new ProjectFileManager(dataDir, () => {
     if (editorWindow) editorWindow.close();
-    if (cssWatcher) {
-        cssWatcher.close();
-        cssWatcher = null;
-    }
+    Object.keys(watchers).forEach((key) => {
+        if (watchers[key]) {
+            watchers[key].close();
+            watchers[key] = null;
+        }
+    });
 });
 
 const PluginTypes = ["elements", "frames", "functions", "transitions"];
@@ -58,6 +60,7 @@ const serial = new SerialConnector((data) => {
 
 let pluginList = {};
 async function updatePluginList() {
+    console.log("Updating plugin list");
     pluginList = {};
     await Promise.all(
         PluginTypes.map((type) => {
@@ -91,7 +94,7 @@ async function importDefaultProject() {
 }
 
 let globalCss = "";
-let cssWatcher;
+let watchers = { css: null };
 async function loadGlobalCss() {
     try {
         globalCss = (await fs.readFile(join(styleDir, "global.css"))).toString();
@@ -99,18 +102,52 @@ async function loadGlobalCss() {
         if (mainWindow) mainWindow.webContents.send("global-css", globalCss);
 
         watchGlobalStyles();
+        watchPlugins();
     } catch (err) {
         globalCss = "";
     }
 }
 function watchGlobalStyles() {
-    if (cssWatcher) return;
+    if (watchers.css) return;
 
-    cssWatcher = watch(join(styleDir, "global.css"), (eventType) => {
+    watchers.css = watch(join(styleDir, "global.css"), (eventType) => {
         if (eventType === "change") {
             console.log("Global CSS file has changed");
             loadGlobalCss();
         }
+    });
+}
+
+const pluginHotReloadTimeouts = {};
+function watchPlugins() {
+    if (watchers.plugins) return;
+
+    watchers.plugins = watch(pluginDir, { recursive: true }, (type, filename) => {
+        if (type === "rename") {
+            updatePluginList();
+            return;
+        }
+        if (type !== "change") return;
+        if (filename === "dependencies.json") {
+            console.log("Plugin dependencies updated");
+            pluginManager.updateDependencies();
+            return;
+        }
+        const dirs = filename.split(/\\|\//);
+        if (dirs.length !== 2 || !PluginTypes.includes(dirs[0])) return;
+
+        if (pluginHotReloadTimeouts[filename]) clearTimeout(pluginHotReloadTimeouts[filename]);
+
+        pluginHotReloadTimeouts[filename] = setTimeout(() => {
+            delete pluginHotReloadTimeouts[filename];
+            console.log(`Plugin Editted: ${dirs[0]} - ${dirs[1]}`);
+
+            if (mainWindow)
+                mainWindow.webContents.send("plugin-hmr", {
+                    type: dirs[0],
+                    name: dirs[1]
+                });
+        }, 100);
     });
 }
 async function loadData() {
@@ -190,12 +227,14 @@ function createEditorWindow() {
                             title: "프로젝트 내보내기",
                             message: "현재 편집 중인 프로젝트 정보가 삭제됩니다.",
                             detail: "현재 프로젝트를 먼저 내보낼까요?",
-                            buttons: ["취소", "내보내지 않음", "내보내기"],
-                            defaultId: 2
+                            buttons: ["내보내기", "내보내지 않음", "취소"],
+                            defaultId: 0,
+                            cancelId: 2,
+                            noLink: true
                         });
-                        if (response === 0) return;
+                        if (response === 2) return;
                         if (
-                            response === 2 &&
+                            response === 0 &&
                             !(await projectFileManager.exportProject(
                                 data.config?.title ?? "REPAIRv2"
                             ))
@@ -220,7 +259,7 @@ function createEditorWindow() {
                 {
                     label: "프로젝트 불러오기",
                     click: async () => {
-                        await projectFileManager.selectImportProject();
+                        if (!(await projectFileManager.selectImportProject())) return;
                         await loadData();
                         mainWindow.webContents.reloadIgnoringCache();
                         createEditorWindow();
@@ -335,7 +374,7 @@ function createEditorWindow() {
     });
 }
 
-async function appOpenedWithProject(argv) {
+async function appOpenedWithProject(argv, appWasRunning = true) {
     if (argv.length < 2) return false;
 
     const filePath = argv.find((arg) => arg.endsWith(".repair"));
@@ -346,10 +385,13 @@ async function appOpenedWithProject(argv) {
         title: "프로젝트 불러오기",
         message: `프로젝트를 불러올까요?`,
         detail: "기존에 편집 중이던 프로젝트의 정보가 삭제됩니다.",
-        buttons: ["취소", "확인"]
+        buttons: ["확인", "취소"],
+        cancelId: 1,
+        defaultId: 0,
+        noLink: true
     });
-    if (confirm.response !== 1) {
-        app.quit();
+    if (confirm.response !== 0) {
+        if (!appWasRunning) app.quit();
         return false;
     }
     await projectFileManager.importProject(filePath);
@@ -364,7 +406,7 @@ if (!app.requestSingleInstanceLock()) {
     app.on("second-instance", async (event, argv) => {
         if (!mainWindow) return;
 
-        if (await appOpenedWithProject(argv)) await loadData();
+        if (await appOpenedWithProject(argv, true)) await loadData();
         mainWindow.show();
     });
 
@@ -375,7 +417,7 @@ if (!app.requestSingleInstanceLock()) {
             optimizer.watchWindowShortcuts(window);
         });
 
-        await appOpenedWithProject(process.argv);
+        await appOpenedWithProject(process.argv, false);
 
         await loadData();
 
@@ -453,7 +495,7 @@ function setupIpcHandlers() {
     });
 
     ipcMain.on("dialogue", async (event, opt) => {
-        event.returnValue = await dialog.showMessageBoxSync(opt);
+        event.returnValue = await dialog.showMessageBoxSync({ ...opt, noLink: true });
     });
 
     ipcMain.on("copyInfoAsset", async (event, srcs) => {
@@ -520,6 +562,19 @@ function setupIpcHandlers() {
     });
     ipcMain.on("serial-close", () => {
         serial.close();
+    });
+
+    //#endregion
+
+    //#region player monitoring IPCs
+
+    ipcMain.on("executed-start", (event, { type, id }) => {
+        if (!editorWindow) return;
+        editorWindow.webContents.send("start-executed", { type, id });
+    });
+    ipcMain.on("executed-end", (event, { type, id }) => {
+        if (!editorWindow) return;
+        editorWindow.webContents.send("end-executed", { type, id });
     });
 
     //#endregion

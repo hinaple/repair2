@@ -70,5 +70,11 @@
         type="input"
     />
 {:else if data.type === "Others.executePlugin"}
-    <InputField label="플러그인" value={data.payload} type="plugin" pluginType="functions" />
+    <InputField label="플러그인" value={data.payload.plugin} type="plugin" pluginType="functions" />
+    <InputField
+        label="끝날 때까지 기다리기"
+        value={data.payload.waitTillEnd}
+        setter={(d) => (data.payload.waitTillEnd = d)}
+        type="checkbox"
+    />
 {/if}

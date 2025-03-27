@@ -10,7 +10,8 @@ export default defineConfig({
         port: 3100
     },
     optimizeDeps: {
-        force: true
+        force: true,
+        exclude: ["lit"]
     },
     base: "./",
     build: {

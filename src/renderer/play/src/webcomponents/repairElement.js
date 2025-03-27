@@ -1,7 +1,6 @@
 import { setVar } from "../lib/variables";
 import { genElement } from "../lib/resources";
 import { getAppData } from "../lib/appdata";
-import { packageLoader } from "../lib/plugin-package-loader.js";
 import { subscribe } from "../lib/variables";
 
 const regexMap = {
@@ -48,9 +47,8 @@ export default class RepairElement extends HTMLElement {
 
             this.variableId = element.payload.variableId;
             if (this.variableId)
-                this.unsubscribe = subscribe(
-                    this.variableId,
-                    (value) => (this.realEl.value = value)
+                this.registerUnsubscriber(
+                    subscribe(this.variableId, (value) => (this.realEl.value = value))
                 );
             this.realEl.addEventListener("input", (evt) => {
                 let tempValue;
@@ -68,11 +66,16 @@ export default class RepairElement extends HTMLElement {
 
             this.willFocus = !!element.payload.autofocus;
         } else if (this.type === "plugin") {
-            element.payload.use(packageLoader).then((tempPlugin) => {
-                if (!tempPlugin) return;
-                this.realEl = tempPlugin;
-                this.render();
-            });
+            console.log(element.payload);
+            this.registerUnsubscriber(
+                "hmr",
+                element.payload.hmrSubscribe((tempPlugin) => {
+                    if (!tempPlugin) return;
+                    if (this.realEl) this.realEl.remove();
+                    this.realEl = tempPlugin;
+                    this.render();
+                })
+            );
         } else if (this.type === "image" || this.type === "video") {
             const resource = getAppData().findResourceById(element.payload.resourceId);
             this.realEl = genElement(resource, !element.payload.removePreload);
@@ -115,7 +118,11 @@ export default class RepairElement extends HTMLElement {
                         return;
                     }
                 } else if (l.types[0] === "plugin") {
-                    if (await l.payload.use(packageLoader).then((func) => func?.({ event: evt })))
+                    if (
+                        await l.payload
+                            .use()
+                            .then((func) => func?.({ channel: l.payload.channel, event: evt }))
+                    )
                         return;
                 }
 
@@ -128,11 +135,18 @@ export default class RepairElement extends HTMLElement {
         if (this.willFocus) this.realEl.focus();
         if (this.type === "video") this.realEl.play();
     }
+    registerUnsubscriber(key, unsubscriber) {
+        if (!this.unsubscribers) this.unsubscribers = {};
+        if (this.unsubscribers[key]) this.unsubscribers[key]();
+        this.unsubscribers[key] = unsubscriber;
+    }
     connectedCallback() {
         this.render();
     }
     disconnectedCallback() {
-        if (this.unsubscribe) this.unsubscribe();
+        if (!this.unsubscribers) return;
+
+        Object.values(this.unsubscribers).forEach((unsubscriber) => unsubscriber?.());
     }
 }
 

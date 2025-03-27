@@ -13,6 +13,7 @@ ipcRenderer.on("layout-preview", (event, { compData }) => {
 });
 ipcRenderer.on("stop-preview", () => {
     currentPreview = null;
+    previewComponent.classList.remove("show-content");
     render();
 });
 ipcRenderer.on("preview-content-visible", (event, visible) => {

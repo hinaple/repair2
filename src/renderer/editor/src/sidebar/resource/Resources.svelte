@@ -22,7 +22,8 @@
                 type: "question",
                 title: "다른 폴더의 파일이 있습니다.",
                 message: `${outAssets.join("\n")}\n\n위 파일들을 자원 폴더에 복사하시겠습니까?`,
-                buttons: ["자원 폴더에 복사", "건너뛰기"]
+                buttons: ["자원 폴더에 복사", "건너뛰기"],
+                cancelId: 1
             });
             doCopy = result === 0;
         }

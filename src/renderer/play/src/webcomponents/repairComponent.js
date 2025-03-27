@@ -1,5 +1,4 @@
 import RepairElement from "./repairElement";
-import { packageLoader } from "../lib/plugin-package-loader.js";
 
 export default class RepairComponent extends HTMLElement {
     constructor(componentData, showIntro = true) {
@@ -19,14 +18,16 @@ export default class RepairComponent extends HTMLElement {
         this.introTransition = componentData.introTransition;
         this.outroTransition = componentData.outroTransition;
 
-        this.container = this;
-        componentData.frame.use(packageLoader).then((tempFrame) => {
+        this.frameEl = null;
+        this.unsubscriber = componentData.frame.hmrSubscribe((tempFrame) => {
             if (!tempFrame) return;
-            this.container = tempFrame;
-            this.appendChild(this.container);
+            const prvFrame = this.frameEl;
+            this.frameEl = tempFrame;
+            this.appendChild(this.frameEl);
 
             if (!this.isConnected) return;
             this.render();
+            if (prvFrame) this.removeChild(prvFrame);
         });
 
         this.elements = componentData.elements.list.map((e) => new RepairElement(e));
@@ -46,7 +47,7 @@ export default class RepairComponent extends HTMLElement {
     }
 
     render() {
-        this.elements.forEach((el) => this.container.appendChild(el));
+        this.elements.forEach((el) => (this.frameEl ?? this).appendChild(el));
     }
 
     connectedCallback() {
@@ -59,7 +60,7 @@ export default class RepairComponent extends HTMLElement {
         return new Promise(async (res) => {
             if (!transition.plugin) res();
 
-            let keyframes = await transition.plugin.use(packageLoader);
+            let keyframes = await transition.plugin.use();
             if (!keyframes) res();
 
             if (typeof keyframes === "function") keyframes = keyframes();
@@ -74,6 +75,10 @@ export default class RepairComponent extends HTMLElement {
                 res();
             });
         });
+    }
+
+    disconnectedCallback() {
+        this.unsubscriber?.();
     }
 }
 

@@ -34,9 +34,9 @@
     const clipboardFn = genClipboardFn("step", step, remove);
 
     const contextmenu = [
-        { label: "플로우 실행", click: () => {} },
-        { label: "단독 실행", click: () => {} },
-        { type: "seperator" },
+        // { label: "플로우 실행", click: () => {} },
+        // { label: "단독 실행", click: () => {} },
+        // { type: "seperator" },
         {
             label: "잘라내기",
             click: clipboardFn.cut

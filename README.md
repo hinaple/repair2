@@ -8,15 +8,16 @@ Room Escape Pc App InteRface
 
 ## Todo
 
-- [ ] Hot reload on plugins
 - [ ] Add real-time player state monitoring feature in editor
 - [ ] Support touchpads in editor
 - [ ] Support multiple monitors
 - [ ] Fix Ctrl+- shortcut on editor(WTF??!)
 - [ ] Add some guides in editor
-- [ ] Refactor plugin system(Eww!)
 - [ ] Enhance preview feature
 - [ ] Documentation editing
+- [ ] Make default project prettier
+- [ ] Refactor repairElement.js
+- [ ] Add comment node
 
 ## Done
 
@@ -26,3 +27,5 @@ Room Escape Pc App InteRface
 - [x] Make it single instance app
 - [x] Fix release every preload feature
 - [x] Audio system
+- [x] Hot reload on plugins
+- [x] Refactor plugin system(Eww!)

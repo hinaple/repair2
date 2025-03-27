@@ -78,6 +78,7 @@
                 });
             }
         });
+        reload("sequenceMoved");
     });
 
     let folded = $state(node.folded);

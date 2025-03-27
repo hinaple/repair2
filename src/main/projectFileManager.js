@@ -21,9 +21,8 @@ export default class ProjectFileManager {
         zip.addLocalFolder(this.dataDir, "");
         zip.writeZip(result.filePath);
 
-        return true;
-
         shell.showItemInFolder(result.filePath);
+        return true;
     }
 
     async importProject(filePath) {
@@ -51,16 +50,20 @@ export default class ProjectFileManager {
             title: "프로젝트 불러오기",
             message: "프로젝트 파일을 불러올까요?",
             detail: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
-            buttons: ["취소", "확인"]
+            buttons: ["확인", "취소"],
+            cancelId: 1,
+            defaultId: 0,
+            noLink: true
         });
-        if (confirm.response !== 1) return;
+        if (confirm.response !== 0) return false;
         const result = await dialog.showOpenDialog({
             title: "프로젝트 불러오기",
             properties: ["openFile"],
             filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
         });
-        if (!result || result.canceled) return;
+        if (!result || result.canceled) return false;
 
         await this.importProject(result.filePaths[0]);
+        return true;
     }
 }

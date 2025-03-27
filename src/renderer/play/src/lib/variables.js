@@ -7,7 +7,7 @@ export default variables;
 export function registerVariables(varArr) {
     variables = {};
     varArr.forEach((v) => {
-        variables[v.id] = { name: v.name, value: v.defaultValue, subscriptions: [] };
+        variables[v.id] = { name: v.name, value: v.defaultValue, defaultValue, subscriptions: [] };
     });
 }
 
@@ -19,6 +19,12 @@ export function setVar(id, value) {
     if (!variables[id]) return;
     variables[id].value = value;
     variables[id].subscriptions.forEach((c) => c(value));
+}
+
+export function resetAllVar() {
+    Object.entries(variables).forEach(([id, v]) => {
+        setVar(id, v.defaultValue);
+    });
 }
 
 export function subscribe(id, callback) {

@@ -1,12 +1,11 @@
-import { addPreloadsBulk, removePreload, removePreloadsAll, removePreloadsBulk } from "./resources";
-import { setVar } from "./variables";
+import { addPreloadsBulk, removePreloadsAll, removePreloadsBulk } from "./resources";
+import { setVar, resetAllVar } from "./variables";
 import {
     addComponent,
     clearComponents,
     modifyComponentByAlias,
     removeComponentByAlias
 } from "./components";
-import { packageLoader } from "../lib/plugin-package-loader.js";
 import {
     serialOpen,
     serialSend,
@@ -73,8 +72,17 @@ const actions = {
     delay: (s) => new Promise((res) => setTimeout(res, s.payload.delayMs)),
     Others: {
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
+        resetAllVariables: () => resetAllVar(),
         executePlugin: (s) => {
-            s.payload.use(packageLoader).then((func) => func?.());
+            return new Promise((res) => {
+                s.payload.plugin
+                    .use()
+                    .then((func) => func?.())
+                    .then(() => {
+                        if (s.payload.waitTillEnd) res();
+                    });
+                if (!s.payload.waitTillEnd) res();
+            });
         },
         eventEmit: (s) => {
             if (s.payload.channel) emitRepairEvent(s.payload.channel, s.payload.data);

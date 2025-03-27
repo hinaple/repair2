@@ -1,3 +1,4 @@
+import "./pluginManager";
 import { ipcRenderer } from "electron";
 import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
