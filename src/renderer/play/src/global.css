@@ -64,6 +64,7 @@ input {
     -webkit-user-drag: none;
     box-sizing: border-box;
     border: none;
+    background: none;
 }
 input:focus {
     outline: none;

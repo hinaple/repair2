@@ -1,5 +1,5 @@
-import { addPreloadsBulk, removePreload, removePreloadsAll, removePreloadsBulk } from "./resources";
-import { setVar } from "./variables";
+import { addPreloadsBulk, removePreloadsAll, removePreloadsBulk } from "./resources";
+import { setVar, resetAllVar } from "./variables";
 import {
     addComponent,
     clearComponents,
@@ -72,6 +72,7 @@ const actions = {
     delay: (s) => new Promise((res) => setTimeout(res, s.payload.delayMs)),
     Others: {
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
+        resetAllVariables: () => resetAllVar(),
         executePlugin: (s) => {
             return new Promise((res) => {
                 s.payload.plugin

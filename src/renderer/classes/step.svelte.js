@@ -53,9 +53,10 @@ const PayloadTemplates = {
     delay: { delayMs: 0 },
     Others: {
         isTypeObj: true,
-        eventEmit: { channel: null, data: null },
         setVariable: { variableId: null, value: null },
-        executePlugin: { isClass: true, class: executePlugin }
+        resetAllVariables: null,
+        executePlugin: { isClass: true, class: executePlugin },
+        eventEmit: { channel: null, data: null }
     }
 };
 
