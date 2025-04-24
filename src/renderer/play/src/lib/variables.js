@@ -7,7 +7,12 @@ export default variables;
 export function registerVariables(varArr) {
     variables = {};
     varArr.forEach((v) => {
-        variables[v.id] = { name: v.name, value: v.defaultValue, defaultValue, subscriptions: [] };
+        variables[v.id] = {
+            name: v.name,
+            value: v.defaultValue,
+            defaultValue: v.defaultValue ?? null,
+            subscriptions: []
+        };
     });
 }
 
