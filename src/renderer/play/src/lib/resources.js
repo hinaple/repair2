@@ -24,8 +24,7 @@ export function genElement(resource, doClone = false, onlyNew = false) {
     if (resource.fileType === "video") {
         const video = document.createElement("video");
         video.src = getAssetDir(resource.src);
-        video.muted = true;
-        video.autoplay = false;
+        video.load();
         return video;
     }
     return null;
@@ -37,13 +36,21 @@ function addPreload(resourceId) {
     const resource = getAppData().findResourceById(resourceId);
     if (!resource) return;
 
+    const el = genElement(resource, false, true);
     preloads[resourceId] = {
         type: resource.fileType,
         src: resource.src,
         alias: resource.alias,
-        el: genElement(resource, false, true)
+        el
     };
-    if (preloads[resourceId].el) preloadsEl.appendChild(preloads[resourceId].el);
+    if (!el) return;
+
+    // if (resource.fileType === "video") {
+    //     el.muted = true;
+    //     el.loop = true;
+    //     el.play();
+    // }
+    preloadsEl.appendChild(el);
 }
 
 export function removePreload(resourceId) {

@@ -82,6 +82,7 @@ export default class RepairElement extends HTMLElement {
         }
 
         if (this.type === "video" && this.realEl) {
+            this.realEl.currentTime = 0;
             this.realEl.volume = (element.payload.volume ?? 100) / 100;
             this.realEl.loop = !!element.payload.loop;
             this.realEl.muted = false;
