@@ -58,7 +58,8 @@ video {
     -webkit-user-drag: none;
 }
 
-input {
+input,
+textarea {
     margin: 0;
     display: block;
     -webkit-user-drag: none;
@@ -66,7 +67,12 @@ input {
     border: none;
     background: none;
 }
-input:focus {
+textarea {
+    resize: none;
+    overflow: hidden;
+}
+input:focus,
+textarea:focus {
     outline: none;
 }
 

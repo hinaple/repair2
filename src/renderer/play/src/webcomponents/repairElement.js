@@ -32,7 +32,8 @@ export default class RepairElement extends HTMLElement {
                 this.realEl[element.payload.isHtml ? "innerHTML" : "textContent"] =
                     element.payload.content;
         } else if (this.type === "input") {
-            this.realEl = document.createElement("input");
+            this.realEl = document.createElement(element.payload.isTextarea ? "textarea" : "input");
+
             this.realEl.spellcheck = false;
             if (element.payload.placeholder) this.realEl.placeholder = element.payload.placeholder;
             if (element.payload.maxLength !== null)

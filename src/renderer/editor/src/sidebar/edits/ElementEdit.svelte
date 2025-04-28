@@ -33,6 +33,12 @@
         setter={(d) => (data.payload.autofocus = d)}
     />
     <InputField
+        label="큰 입력칸"
+        value={data.payload.isTextarea}
+        type="checkbox"
+        setter={(d) => (data.payload.isTextarea = d)}
+    />
+    <InputField
         label="변수 할당"
         value={data.payload.variableId}
         setter={(d) => (data.payload.variableId = d)}
