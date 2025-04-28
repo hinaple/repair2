@@ -413,9 +413,9 @@ if (!app.requestSingleInstanceLock()) {
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
 
-        app.on("browser-window-created", (_, window) => {
-            optimizer.watchWindowShortcuts(window);
-        });
+        // app.on("browser-window-created", (_, window) => {
+        //     optimizer.watchWindowShortcuts(window);
+        // });
 
         await appOpenedWithProject(process.argv, false);
 

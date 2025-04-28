@@ -12,6 +12,7 @@ const globalStyles = document.getElementById("global-styles");
 export function updateData(data = ipcRenderer.sendSync("request-data")) {
     appdata = new AppDataClass(data);
     registerVariables(appdata.variables);
+    initShortcuts(appdata.findAllEntry("shortcut"));
 
     if (appdata.config.width)
         document.body.style.setProperty("--gamezone-width", `${appdata.config.width}px`);
@@ -21,8 +22,6 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
     gamezone.setAttribute("style", appdata.config.styleString);
 
     globalStyles.textContent = data.globalStyles;
-
-    initShortcuts(appdata.findAllEntry("shortcut"));
 }
 updateData();
 
