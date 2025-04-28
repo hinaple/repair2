@@ -13,6 +13,12 @@ const EntryTemplate = {
         },
         serialData: { whenDataIs: null }
     },
+    shortcut: {
+        ctrlKey: true,
+        shiftKey: true,
+        pressingTime: 0,
+        key: null
+    },
     event: { channel: null }
 };
 
