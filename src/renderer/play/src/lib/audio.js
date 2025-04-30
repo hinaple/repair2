@@ -3,16 +3,13 @@ import { getAppData } from "./appdata";
 const audioChannels = {};
 
 class RepairAudio {
-    constructor(resourceId, volume = 100, loop = false) {
-        this.resource = getAppData().findResourceById(resourceId);
-        if (!this.resource) return;
-
+    constructor(resource, volume = 100, loop = false) {
         this.volume = (volume ?? 100) / 100;
         this.loop = loop;
 
         this.context = new AudioContext();
 
-        this.audio = new Audio(this.resource.src);
+        this.audio = new Audio(resource.src);
         this.audio.autoplay = true;
         this.audio.loop = this.loop;
 
@@ -53,7 +50,10 @@ export function playAudio(channel, resourceId, volume = 100, loop = false) {
 
     if (audioChannels[channel]) audioChannels[channel].stop();
 
-    audioChannels[channel] = new RepairAudio(resourceId, volume, loop);
+    const tempResource = getAppData().findResourceById(resourceId);
+    if (!tempResource) return;
+
+    audioChannels[channel] = new RepairAudio(tempResource, volume, loop);
 }
 export function pauseAudio(channel) {
     if (!channel) channel = "default";
