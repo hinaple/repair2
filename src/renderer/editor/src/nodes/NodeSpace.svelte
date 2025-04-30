@@ -68,11 +68,10 @@
     function wheel(evt) {
         if (get(grabbing)) return;
         const dir = Math.abs(evt.deltaY) / evt.deltaY;
-        if (evt.ctrlKey || evt.shiftKey) {
+        if (isNaN(dir)) return;
+        if (evt.ctrlKey || evt.shiftKey)
             moveViewport(evt.ctrlKey ? dir * 15 : 0, evt.shiftKey ? dir * 15 : 0);
-        } else {
-            resizeViewport(-dir, { x: evt.clientX, y: evt.clientY });
-        }
+        else resizeViewport(-dir, { x: evt.clientX, y: evt.clientY });
     }
 
     let viewportEl = $state(null);
