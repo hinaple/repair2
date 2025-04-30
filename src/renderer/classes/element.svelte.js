@@ -15,7 +15,8 @@ const PayloadTemplates = {
         autofocus: false,
         maxLength: null,
         allowedType: "any",
-        allowedRegex: null
+        allowedRegex: null,
+        isTextarea: false
     },
     plugin: { isClass: true, class: PluginPointer, argument: "elements" }
 };

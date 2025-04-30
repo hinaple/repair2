@@ -34,7 +34,7 @@ export default class AppData {
     findAllEntry(entryType, data = null) {
         return this.nodes.filter((node) => {
             if (node.type !== "entry" || entryType !== node.data.shortType) return false;
-            if (!node.data.payload) return true;
+            if (!node.data.payload || !data) return true;
 
             if (entryType === "Communication.serialData" && !node.data.payload.whenDataIs?.length)
                 return true;

@@ -2,7 +2,6 @@
     import { ElementTypes, InputAllowedTypes } from "../../lib/translate";
     import InputField from "../InputField.svelte";
     import Position from "../Position.svelte";
-    import ToggleZone from "./ToggleZone.svelte";
     import { reloadPreview } from "../editUtils";
 
     const { data } = $props();
@@ -32,6 +31,12 @@
         value={data.payload.autofocus}
         type="checkbox"
         setter={(d) => (data.payload.autofocus = d)}
+    />
+    <InputField
+        label="큰 입력칸"
+        value={data.payload.isTextarea}
+        type="checkbox"
+        setter={(d) => (data.payload.isTextarea = d)}
     />
     <InputField
         label="변수 할당"
@@ -108,85 +113,81 @@
     />
 {/if}
 <hr />
-<ToggleZone label="모양 설정">
-    {#snippet children()}
-        <InputField
-            label="전체화면"
-            value={data.fullscreen}
-            type="checkbox"
-            setter={(d) => {
-                data.fullscreen = d;
-                reloadPreview();
-            }}
-        />
-        {#if !data.fullscreen}
-            <InputField
-                label="위치 지정"
-                value={data.absolute}
-                type="checkbox"
-                setter={(d) => {
-                    data.absolute = d;
-                    reloadPreview();
-                }}
-                previewer
-            />
-            {#if data.absolute}
-                <Position position={data.pos} oninput={reloadPreview} previewer />
-                <hr />
-            {/if}
-            <InputField
-                label="가로 크기(px)"
-                type="number"
-                placeholder="자동"
-                value={data.width}
-                setter={(d) => {
-                    data.width = +d ? +d : null;
-                    reloadPreview();
-                }}
-                previewer
-            />
-            <InputField
-                label="세로 크기(px)"
-                type="number"
-                placeholder="자동"
-                value={data.height}
-                setter={(d) => {
-                    data.height = +d ? +d : null;
-                    reloadPreview();
-                }}
-                previewer
-            />
-        {/if}
+<InputField
+    label="전체화면"
+    value={data.fullscreen}
+    type="checkbox"
+    setter={(d) => {
+        data.fullscreen = d;
+        reloadPreview();
+    }}
+/>
+{#if !data.fullscreen}
+    <InputField
+        label="위치 지정"
+        value={data.absolute}
+        type="checkbox"
+        setter={(d) => {
+            data.absolute = d;
+            reloadPreview();
+        }}
+        previewer
+    />
+    {#if data.absolute}
+        <Position position={data.pos} oninput={reloadPreview} previewer />
         <hr />
-        <InputField
-            label="CSS 클래스명"
-            value={data.className}
-            setter={(d) => {
-                data.className = d;
-                reloadPreview();
-            }}
-            placeholder="띄어쓰기로 구분"
-        />
-        <InputField
-            label="CSS 코드"
-            value={data.style}
-            type="textarea"
-            code
-            setter={(d) => {
-                data.style = d;
-                reloadPreview();
-            }}
-            placeholder="inline CSS code"
-            autoResizeOpt={{ minHeight: 50 }}
-        />
-        <InputField
-            label="내부 CSS 코드"
-            value={data.childStyle}
-            type="textarea"
-            code
-            setter={(d) => (data.childStyle = d)}
-            placeholder="inline CSS code"
-            autoResizeOpt={{ minHeight: 50 }}
-        />
-    {/snippet}
-</ToggleZone>
+    {/if}
+    <InputField
+        label="가로 크기(px)"
+        type="number"
+        placeholder="자동"
+        value={data.width}
+        setter={(d) => {
+            data.width = +d ? +d : null;
+            reloadPreview();
+        }}
+        previewer
+    />
+    <InputField
+        label="세로 크기(px)"
+        type="number"
+        placeholder="자동"
+        value={data.height}
+        setter={(d) => {
+            data.height = +d ? +d : null;
+            reloadPreview();
+        }}
+        previewer
+    />
+{/if}
+<hr />
+<InputField
+    label="CSS 클래스명"
+    value={data.className}
+    setter={(d) => {
+        data.className = d;
+        reloadPreview();
+    }}
+    placeholder="띄어쓰기로 구분"
+/>
+<InputField
+    label="CSS 코드"
+    value={data.style}
+    type="textarea"
+    code
+    setter={(d) => {
+        data.style = d;
+        reloadPreview();
+    }}
+    placeholder="inline CSS code"
+    autoResizeOpt={{ minHeight: 50 }}
+/>
+<InputField
+    label="내부 CSS 코드"
+    value={data.childStyle}
+    type="textarea"
+    code
+    setter={(d) => (data.childStyle = d)}
+    placeholder="inline CSS code"
+    autoResizeOpt={{ minHeight: 50 }}
+/>

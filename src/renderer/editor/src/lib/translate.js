@@ -123,6 +123,7 @@ export const ElementListenerTypes = {
 export const EntryTypes = {
     startup: "프로그램 시작",
     event: "이벤트",
+    shortcut: "키보드 단축키",
 
     Communication: "통신",
     serialData: "시리얼 데이터 수신",

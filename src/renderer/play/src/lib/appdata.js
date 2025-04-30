@@ -3,6 +3,7 @@ import { ipcRenderer } from "electron";
 import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
 import { registerUtils } from "./globalUtils";
+import initShortcuts from "./shotcut";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -11,6 +12,7 @@ const globalStyles = document.getElementById("global-styles");
 export function updateData(data = ipcRenderer.sendSync("request-data")) {
     appdata = new AppDataClass(data);
     registerVariables(appdata.variables);
+    initShortcuts(appdata.findAllEntry("shortcut"));
 
     if (appdata.config.width)
         document.body.style.setProperty("--gamezone-width", `${appdata.config.width}px`);
