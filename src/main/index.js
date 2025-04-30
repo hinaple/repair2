@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from "electron";
 import { basename, extname, join } from "path";
-import { electronApp, optimizer, is } from "@electron-toolkit/utils";
+import { electronApp, is } from "@electron-toolkit/utils";
 import fs from "fs/promises";
 import { watch } from "fs";
 
@@ -412,10 +412,6 @@ if (!app.requestSingleInstanceLock()) {
 
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
-
-        // app.on("browser-window-created", (_, window) => {
-        //     optimizer.watchWindowShortcuts(window);
-        // });
 
         await appOpenedWithProject(process.argv, false);
 
