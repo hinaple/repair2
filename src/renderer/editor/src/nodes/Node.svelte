@@ -9,20 +9,21 @@
     import { rightclick } from "../lib/contextMenu/contextUtils";
     import outputNode from "./lines/output";
     import FrameUpdater from "../lib/frameUpdater";
-    import { currentFocus, focusData } from "../sidebar/editUtils";
+    import { currentFocus as CurrentFocus, focusData } from "../sidebar/editUtils";
+    import { genClipboardFn } from "../lib/clipboard";
+    import { removeNodeWithHistory } from "../lib/syncData.svelte";
+    import { ipcRenderer } from "electron";
 
     let {
         node,
+        type,
         outputs,
         innerOutputs = null,
         title,
         isLastHold,
         onmousedown: bubbleMouseDown,
-        isFocused,
-        contextmenu,
         body,
-        minWidth = 200,
-        isEntry = false
+        minWidth = 200
     } = $props();
 
     $effect(() => {
@@ -33,6 +34,9 @@
     let nodeEl, handleEl;
     let grabber;
 
+    let currentFocus;
+    let isFocused = $state(false);
+
     const frameUpdater = new FrameUpdater(async () => {
         if (!nodeEl) return;
         nodeEl.style.left = `${node.nodePos.x}px`;
@@ -41,40 +45,74 @@
     function applyNodePos() {
         frameUpdater.draw();
     }
-    const unsub = sequenceMovedReloader.subscribe(() => {
-        applyNodePos();
-    });
-    onDestroy(() => {
-        unsub();
-        if (get(currentFocus).obj === node) {
-            focusData("project");
-        }
-    });
+    const unsubs = [
+        sequenceMovedReloader.subscribe(() => {
+            applyNodePos();
+        }),
+        CurrentFocus.subscribe((cf) => {
+            currentFocus = cf;
+            isFocused =
+                cf.obj === node || (cf.type === "nodes" && cf.arr.some((n) => n.obj === node));
+        })
+    ];
 
     onMount(() => {
         applyNodePos();
-        let prvPos = null;
+        let movingNodes = null;
+        let multipleGrabbing = false;
         grabber = new Grabber({
             container: nodeEl,
             handle: handleEl,
-            onMoveStart: () => (prvPos = { x: node.nodePos.x, y: node.nodePos.y }),
+            onMoveStart: () => {
+                if (currentFocus.type === "nodes") {
+                    multipleGrabbing = true;
+                    movingNodes = currentFocus.arr.map((n) => ({
+                        node: n.obj,
+                        from: {
+                            x: n.obj.nodePos.x,
+                            y: n.obj.nodePos.y
+                        }
+                    }));
+                } else
+                    movingNodes = [
+                        {
+                            node,
+                            from: {
+                                x: node.nodePos.x,
+                                y: node.nodePos.y
+                            }
+                        }
+                    ];
+            },
             onMoved: ({ dx, dy }) => {
-                node.nodePos.x += dx;
-                node.nodePos.y += dy;
-                applyNodePos();
+                movingNodes.forEach(({ node, to }, i) => {
+                    node.nodePos.x += dx;
+                    node.nodePos.y += dy;
+                    node.applyNodePos();
+                });
                 reload("sequenceMoved");
             },
             onMoveEnd: (moved) => {
                 if (!moved) return;
                 addHistory({
-                    doFn: (pos) => {
-                        node.nodePos.x = pos.x;
-                        node.nodePos.y = pos.y;
-                        applyNodePos();
+                    doFn: (arr) => {
+                        arr.forEach(({ node, x, y }) => {
+                            node.nodePos.x = x;
+                            node.nodePos.y = y;
+                            node.applyNodePos();
+                        });
                         reload("sequenceMoved");
                     },
-                    doData: { x: node.nodePos.x, y: node.nodePos.y },
-                    undoData: { x: prvPos.x, y: prvPos.y }
+                    doData: movingNodes.map((p) => ({
+                        node: p.node,
+                        x: p.node.nodePos.x,
+                        y: p.node.nodePos.y
+                    })),
+                    undoData: movingNodes.map((p) => ({
+                        node: p.node,
+                        x: p.from.x,
+                        y: p.from.y
+                    }))
                 });
             }
         });
@@ -86,32 +124,91 @@
         node.folded = folded;
     });
 
+    function getFocusData() {
+        return { type, obj: node, data: { clipboardFn } };
+    }
+
     function onmousedown(evt) {
         if (evt.button || get(grabbing) === "viewport") return;
+        focusData(type, node, { clipboardFn });
         bubbleMouseDown(evt);
     }
+
+    const clipboardFn = genClipboardFn(type, node, () => removeNodeWithHistory(node), {
+        excludes: [(type === "branch" || type === "entry") && "paste"]
+    });
+
+    const contextmenu = [
+        {
+            label: "실행",
+            click: () => {
+                ipcRenderer.send("request-execute", { type: "node", id: node.id });
+                return true;
+            }
+        },
+        { type: "seperator" },
+        {
+            label: "잘라내기",
+            click: clipboardFn.cut
+        },
+        {
+            label: "복사",
+            click: clipboardFn.copy
+        },
+        type === "sequence" && {
+            label: "붙여넣기",
+            click: clipboardFn.paste
+        },
+        { type: "seperator" },
+        {
+            label: "삭제",
+            click: () => {
+                removeNodeWithHistory(node);
+                return true;
+            },
+            action: "remove"
+        }
+    ].filter((t) => t);
+
+    node.requestRect = () => nodeEl.getBoundingClientRect();
+    node.applyNodePos = applyNodePos;
+    node.getFocusData = getFocusData;
+
+    onDestroy(() => {
+        unsubs.forEach((us) => us());
+        if (!node) return;
+
+        if (currentFocus.obj === node) focusData("project");
+        delete node.requestRect;
+        delete node.applyNodePos;
+        delete node.getFocusData;
+    });
 </script>
 
 <div
     class="wrapper"
     class:last-hold={isLastHold}
-    class:entry={isEntry}
+    class:entry={type === "entry"}
     bind:this={nodeEl}
-    {onmousedown}
+    onmousedowncapture={onmousedown}
     use:rightclick={contextmenu}
 >
     <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
-        <div class="head" class:folded={folded && !innerOutputs?.length} use:inputNode={node.id}>
+        <div
+            class="head"
+            class:folded={folded && !innerOutputs?.length}
+            use:inputNode={type !== "entry" && node.id}
+        >
             <div class="handle" bind:this={handleEl}>
                 <span>
                     {title}
                 </span>
             </div>
-            {#if !isEntry}
+            {#if type !== "entry"}
                 <FoldArrow bind:folded toggle={() => reload("nodeMoved")} />
             {/if}
         </div>
-        {#if !folded && !isEntry}
+        {#if !folded && type !== "entry"}
             {@render body()}
         {:else if innerOutputs?.length}
             <div class="inner-outputs">
@@ -125,7 +222,7 @@
                 {/each}
             </div>
         {/if}
-        {#if !isEntry}
+        {#if type !== "entry"}
             <div class="start-circle" use:inputNode={node.id}></div>
         {/if}
         <div class="outputs">

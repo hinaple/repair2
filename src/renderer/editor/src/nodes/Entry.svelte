@@ -1,51 +1,8 @@
 <script>
     import Node from "./Node.svelte";
-    import { currentFocus, focusData } from "../sidebar/editUtils";
-    import { removeNodeWithHistory } from "../lib/syncData.svelte";
     import { EntryTypes } from "../lib/translate";
-    import { ipcRenderer } from "electron";
-    import { genClipboardFn } from "../lib/clipboard";
 
-    let { entry, isLastHold, onmousedown: bubbleMouseDown } = $props();
-
-    function onmousedown(evt) {
-        bubbleMouseDown(evt);
-        focusData("entry", entry, { clipboardFn });
-    }
-
-    const clipboardFn = genClipboardFn("entry", entry, () => removeNodeWithHistory(entry));
-
-    const contextmenu = [
-        {
-            label: "실행",
-            click: () => {
-                ipcRenderer.send("request-execute", { type: "node", id: entry.id });
-                return true;
-            }
-        },
-        { type: "seperator" },
-        {
-            label: "잘라내기",
-            click: clipboardFn.cut
-        },
-        {
-            label: "복사",
-            click: clipboardFn.copy
-        },
-        {
-            label: "붙여넣기",
-            click: clipboardFn.paste
-        },
-        { type: "seperator" },
-        {
-            label: "삭제",
-            click: () => {
-                removeNodeWithHistory(entry);
-                return true;
-            },
-            action: "remove"
-        }
-    ];
+    let { entry, isLastHold, onmousedown, ...nodeData } = $props();
 
     let title = $derived.by(() => {
         if (entry.alias?.length) return entry.alias;
@@ -68,11 +25,10 @@
 
 <Node
     node={entry}
+    type="entry"
     outputs={[{ output: entry.output, id: entry.id }]}
     {title}
     {isLastHold}
     {onmousedown}
-    isFocused={$currentFocus.obj === entry}
-    {contextmenu}
-    isEntry
+    {...nodeData}
 />

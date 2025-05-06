@@ -10,7 +10,6 @@ Room Escape Pc App InteRface
 
 - [ ] Add real-time player state monitoring feature in editor
 - [ ] Support touchpads in editor
-- [ ] Support multiple monitors
 - [ ] Fix Ctrl+- shortcut on editor(WTF??!)
 - [ ] Add some guides in editor
 - [ ] Enhance preview feature
@@ -22,6 +21,7 @@ Room Escape Pc App InteRface
 
 ## Done
 
+- [x] Support multiple monitors
 - [x] Add project opening feature
 - [x] Make transitions work
 - [x] Import global.css and fonts

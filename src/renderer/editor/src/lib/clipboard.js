@@ -24,25 +24,37 @@ export function copyItem(itemData, itemType) {
     );
 }
 
-export function pasted(pasteString, target = get(currentFocus), afterPasteChange = null) {
+export function pasted(pasteString, target = get(currentFocus), pos = null) {
     try {
         const { IS_REPAIR_COPY, type, data } = JSON.parse(pasteString);
         if (!IS_REPAIR_COPY || !type || !data) return null;
 
-        if (type === "sequence") {
+        if (type === "nodes") {
+            const posOffset = data[0].nodePos;
+            const newNodes = data.map((n) => {
+                const nodePos = {
+                    x: n.nodePos.x - posOffset.x + (pos ?? getViewportCenter()).x,
+                    y: n.nodePos.y - posOffset.y + (pos ?? getViewportCenter()).y
+                };
+                if (n.type === "sequence") return new Sequence({ ...n, nodePos });
+                else if (n.type === "branch") return new Branch({ ...n, nodePos });
+                else if (n.type === "entry") return new Entry({ ...n, nodePos });
+            });
+            appData.addManyNodeWithHistory(addHistory, newNodes);
+        } else if (type === "sequence") {
             appData.addNodeWithHistory(
                 addHistory,
-                new Sequence({ ...data, nodePos: getViewportCenter() })
+                new Sequence({ ...data, nodePos: pos ?? getViewportCenter() })
             );
         } else if (type === "entry") {
             appData.addNodeWithHistory(
                 addHistory,
-                new Entry({ ...data, nodePos: getViewportCenter() })
+                new Entry({ ...data, nodePos: pos ?? getViewportCenter() })
             );
         } else if (type === "branch") {
             appData.addNodeWithHistory(
                 addHistory,
-                new Branch({ ...data, nodePos: getViewportCenter() })
+                new Branch({ ...data, nodePos: pos ?? getViewportCenter() })
             );
         } else if (target.type === "sequence" && type === "step")
             target.obj.steps.addWithHistory(addHistory, {
@@ -59,16 +71,6 @@ export function pasted(pasteString, target = get(currentFocus), afterPasteChange
                 addingEl: new Listener(data),
                 afterChange: () => reload("nodeMoved")
             });
-        // else if (target.type === "value" && type === "value" && target.data.parent)
-        //     target.data.parent.setValueWithHistory(
-        //         addHistory,
-        //         new Value(data),
-        //         target.data.isValueA,
-        //         () => {
-        //             reload("nodeMoved");
-        //             afterPasteChange?.();
-        //         }
-        //     );
         else if (target.type === "value" && type === "valueProcess")
             target.obj.process.addWithHistory(addHistory, {
                 addingEl: new ValueProcess(data),
@@ -80,30 +82,30 @@ export function pasted(pasteString, target = get(currentFocus), afterPasteChange
     }
 }
 
-export function genClipboardFn(
-    type,
-    target,
-    removing = null,
-    { pasteData = null, afterPasteChange = null } = {}
-) {
+export function genClipboardFn(type, target, removing = null, { excludes = [] } = {}) {
     return {
-        ...(removing && {
-            cut: () => {
+        ...(removing &&
+            !excludes.includes("cut") && {
+                cut: () => {
+                    copyItem(target.copyData, type);
+                    removing();
+                    return true;
+                }
+            }),
+        ...(!excludes.includes("copy") && {
+            copy: () => {
                 copyItem(target.copyData, type);
-                removing();
                 return true;
             }
         }),
-        copy: () => {
-            copyItem(target.copyData, type);
-            return true;
-        },
-        paste: async (evt, string = null) => {
-            if (!string) string = await navigator.clipboard.readText();
-            pasted(string, { type, obj: target, data: pasteData }, afterPasteChange);
-            return true;
-        },
-        ...(removing && { delete: removing })
+        ...(!excludes.includes("paste") && {
+            paste: async (evt, string = null) => {
+                if (!string) string = await navigator.clipboard.readText();
+                pasted(string, { type, obj: target });
+                return true;
+            }
+        }),
+        ...(removing && !excludes.includes("delete") && { delete: removing })
     };
 }
 
@@ -122,6 +124,14 @@ window.addEventListener("copy", (e) => {
     if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
 
     const target = get(currentFocus);
+
+    if (target.type === "nodes") {
+        copyItem(
+            target.arr.map(({ obj }) => obj.copyData),
+            "nodes"
+        );
+        return;
+    }
     target.data?.clipboardFn?.copy?.();
 });
 

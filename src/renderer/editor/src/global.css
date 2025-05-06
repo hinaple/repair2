@@ -5,6 +5,9 @@ body {
 body.grabbing * {
     cursor: grabbing !important;
 }
+body.selecting * {
+    cursor: default !important;
+}
 
 html,
 body,

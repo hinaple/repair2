@@ -14,7 +14,7 @@
     import { get } from "svelte/store";
     import Lines from "./lines/Lines.svelte";
     import { appData } from "../lib/syncData.svelte";
-    import { focusData } from "../sidebar/editUtils";
+    import { focusData, selectManyNodes } from "../sidebar/editUtils";
     import { rightclick } from "../lib/contextMenu/contextUtils";
     import SequenceClass from "@classes/nodes/sequence.svelte";
     import BranchClass from "@classes/nodes/branch.svelte";
@@ -23,7 +23,8 @@
     import Branch from "./branch/Branch.svelte";
     import Entry from "./Entry.svelte";
     import { removeNodeWithHistory } from "../lib/syncData.svelte";
-    import { genClipboardFn } from "../lib/clipboard";
+    import { genClipboardFn, pasted } from "../lib/clipboard";
+    import { fade } from "svelte/transition";
 
     let readyToGrab = $state(false);
     function keydown(evt) {
@@ -44,7 +45,13 @@
     const myGrab = "viewport";
     let realGrabbing = $state(false);
     let prvMouse = null;
+    let selectOrigin = $state(null);
+    let selectBoxEl = $state(null);
     function mousedown(evt) {
+        if (evt.button === 0 && !readyToGrab && !get(grabbing)) {
+            selectOrigin = { x1: evt.clientX, y1: evt.clientY };
+        }
+
         if (!((evt.button === 0 && readyToGrab) || (evt.button === 1 && !get(grabbing)))) {
             if (!evt.button && !get(grabbing)) focusData("project");
             return;
@@ -54,12 +61,50 @@
         prvMouse = { x: evt.screenX, y: evt.screenY };
     }
     function mousemove(evt) {
+        if (selectOrigin) {
+            if (get(grabbing) !== "select") grabbing.set("select");
+
+            selectOrigin.x2 = evt.clientX;
+            selectOrigin.y2 = evt.clientY;
+            selectBoxEl.style.display = "block";
+            selectBoxEl.style.left = `${Math.min(selectOrigin.x1, selectOrigin.x2)}px`;
+            selectBoxEl.style.top = `${Math.min(selectOrigin.y1, selectOrigin.y2)}px`;
+            selectBoxEl.style.width = `${Math.abs(selectOrigin.x1 - selectOrigin.x2)}px`;
+            selectBoxEl.style.height = `${Math.abs(selectOrigin.y1 - selectOrigin.y2)}px`;
+            return;
+        }
+
         if (!realGrabbing) return;
 
         moveViewport(-evt.screenX + prvMouse.x, -evt.screenY + prvMouse.y);
         prvMouse = { x: evt.screenX, y: evt.screenY };
     }
     function mouseup(evt) {
+        if (selectOrigin) {
+            if (selectOrigin.x2) {
+                const area = {
+                    x1: Math.min(selectOrigin.x1, selectOrigin.x2),
+                    y1: Math.min(selectOrigin.y1, selectOrigin.y2),
+                    x2: Math.max(selectOrigin.x1, selectOrigin.x2),
+                    y2: Math.max(selectOrigin.y1, selectOrigin.y2)
+                };
+                selectManyNodes(
+                    appData.nodes.filter((node) => {
+                        const rect = node.requestRect();
+                        return (
+                            rect &&
+                            area.x1 < rect.left &&
+                            area.x2 > rect.right &&
+                            area.y1 < rect.top &&
+                            area.y2 > rect.bottom
+                        );
+                    })
+                );
+            }
+            selectOrigin = null;
+            grabbing.set(null);
+            return;
+        }
         if (!realGrabbing || evt.button === 2) return;
         if (!readyToGrab) grabbing.set(null);
         realGrabbing = false;
@@ -140,7 +185,12 @@
         { type: "seperator" },
         {
             label: "붙여넣기",
-            click: () => {}
+            click: ({ pos: { x, y } }) => {
+                navigator.clipboard.readText().then((string) => {
+                    pasted(string, { type: "project" }, getOriginalPos(x, y));
+                });
+                return true;
+            }
         }
     ];
 </script>
@@ -180,6 +230,14 @@
     </div>
     <Lines />
 </div>
+{#if selectOrigin}
+    <div
+        class="select-box"
+        bind:this={selectBoxEl}
+        style={`left: ${selectOrigin.x1}px; top: ${selectOrigin.y1}px;`}
+        out:fade={{ duration: 80 }}
+    ></div>
+{/if}
 
 <style>
     .node-space {
@@ -206,5 +264,16 @@
         top: 50%;
         pointer-events: none;
         transform-origin: left top;
+    }
+
+    .select-box {
+        position: fixed;
+        pointer-events: none;
+        width: 0;
+        height: 0;
+        background-color: #2b6eff4a;
+        outline: solid 2px #2b6eff;
+        display: none;
+        border-radius: 2px;
     }
 </style>

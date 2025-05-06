@@ -2,68 +2,25 @@
     import Node from "../Node.svelte";
     import { get } from "svelte/store";
     import { grabbing } from "../../lib/stores";
-    import { currentFocus, focusData } from "../../sidebar/editUtils";
-    import { removeNodeWithHistory } from "../../lib/syncData.svelte";
     import Value from "./Value.svelte";
     import { ComparisonOperatorTypes } from "../../lib/translate";
     import { outClicked } from "../../lib/contextMenu/contextUtils";
-    import { ipcRenderer } from "electron";
-    import { genClipboardFn } from "../../lib/clipboard";
 
-    let { branch, onmousedown: bubbleMouseDown, ...nodeData } = $props();
+    let { branch, onmousedown, ...nodeData } = $props();
 
-    function onmousedown(evt) {
-        bubbleMouseDown(evt);
-        focusData("branch", branch, { clipboardFn });
-    }
     function focusZoneMouseDown(evt) {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
         outClicked();
         onmousedown();
     }
-
-    const clipboardFn = genClipboardFn("branch", branch, () => removeNodeWithHistory(branch));
-
-    const contextmenu = [
-        {
-            label: "실행",
-            click: () => {
-                ipcRenderer.send("request-execute", { type: "node", id: branch.id });
-                return true;
-            }
-        },
-        { type: "seperator" },
-        {
-            label: "잘라내기",
-            click: clipboardFn.cut
-        },
-        {
-            label: "복사",
-            click: clipboardFn.copy
-        },
-        {
-            label: "붙여넣기",
-            click: clipboardFn.paste
-        },
-        { type: "seperator" },
-        {
-            label: "삭제",
-            click: () => {
-                removeNodeWithHistory(branch);
-                return true;
-            },
-            action: "remove"
-        }
-    ];
 </script>
 
 <Node
     node={branch}
+    type="branch"
     title={branch.alias?.length ? branch.alias : "분기"}
     {onmousedown}
-    isFocused={$currentFocus.obj === branch}
-    {contextmenu}
     minWidth={350}
     outputs={[
         { output: branch.falseOutput, id: `${branch.id}_false`, label: "거짓" },

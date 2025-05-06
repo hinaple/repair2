@@ -67,4 +67,16 @@ export default class AppData {
             doData: node
         });
     }
+    addManyNodeWithHistory(addHistory, nodes) {
+        addHistory({
+            doFn: (nodes) => {
+                this.nodes.push(...nodes);
+            },
+            undoFn: (from) => {
+                this.nodes.splice(from);
+            },
+            doData: nodes,
+            undoData: this.nodes.length
+        });
+    }
 }

@@ -42,32 +42,6 @@
         if (get(currentFocus).obj === value) focusData("project");
     });
 
-    // Too many bugs begin occurred here, may be fixed later
-    // let clipboardFn;
-    // function reloadClipboardFn() {
-    //     clipboardFn = genClipboardFn("value", value, () => removeNodeWithHistory(value), {
-    //         pasteData: {
-    //             parent,
-    //             isValueA
-    //         },
-    //         afterPasteChange: () => {
-    //             reloadClipboardFn();
-    //         }
-    //     });
-    // }
-    // reloadClipboardFn();
-
-    // const contextmenu = [
-    //     {
-    //         label: "복사",
-    //         click: () => clipboardFn.copy()
-    //     },
-    //     {
-    //         label: "붙여넣기",
-    //         click: () => clipboardFn.paste()
-    //     }
-    // ];
-
     let hlActive = $derived(!!(value.baseType === "variable" && value.baseValue));
 </script>
 

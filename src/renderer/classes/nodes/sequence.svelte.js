@@ -16,7 +16,7 @@ export default class Sequence extends AdvancedNode {
         this.output.goto();
     }
     get storeData() {
-        return { ...this, ...super.storeData, steps: this.steps.storeData };
+        return { ...super.storeData, steps: this.steps.storeData, output: this.output };
     }
     get copyData() {
         return { ...super.copyData, steps: this.steps.copyData };

@@ -6,12 +6,10 @@
     import { addHistory } from "../lib/workHistory";
     import { get } from "svelte/store";
     import { grabbing, reload } from "../lib/stores";
-    import { currentFocus, focusData } from "../sidebar/editUtils";
-    import { removeNodeWithHistory } from "../lib/syncData.svelte";
-    import { ipcRenderer } from "electron";
+    import { focusData } from "../sidebar/editUtils";
     import { genClipboardFn } from "../lib/clipboard";
 
-    let { sequence, isLastHold, onmousedown: bubbleMouseDown } = $props();
+    let { sequence, isLastHold, onmousedown, ...nodeData } = $props();
 
     function addStep(evt) {
         if (get(grabbing)) return;
@@ -24,45 +22,6 @@
         focusData("step", newStep, { clipboardFn: newClipboardFn });
         evt.stopPropagation();
     }
-
-    function onmousedown(evt) {
-        bubbleMouseDown(evt);
-        focusData("sequence", sequence, { clipboardFn });
-    }
-
-    const clipboardFn = genClipboardFn("sequence", sequence, () => removeNodeWithHistory(sequence));
-
-    const contextmenu = [
-        {
-            label: "실행",
-            click: () => {
-                ipcRenderer.send("request-execute", { type: "node", id: sequence.id });
-                return true;
-            }
-        },
-        { type: "seperator" },
-        {
-            label: "잘라내기",
-            click: clipboardFn.cut
-        },
-        {
-            label: "복사",
-            click: clipboardFn.copy
-        },
-        {
-            label: "붙여넣기",
-            click: clipboardFn.paste
-        },
-        { type: "seperator" },
-        {
-            label: "삭제",
-            click: () => {
-                removeNodeWithHistory(sequence);
-                return true;
-            },
-            action: "remove"
-        }
-    ];
 
     let innerOutputs = $state([]);
     function nodeCountChanged() {
@@ -80,13 +39,13 @@
 
 <Node
     node={sequence}
+    type="sequence"
     outputs={[{ output: sequence.output, id: sequence.id }]}
     {innerOutputs}
     title={sequence.alias?.length ? sequence.alias : "이름 없는 시퀀스"}
     {isLastHold}
     {onmousedown}
-    isFocused={$currentFocus.obj === sequence}
-    {contextmenu}
+    {...nodeData}
 >
     {#snippet body()}
         <div class="body">
