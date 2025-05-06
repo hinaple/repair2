@@ -12,7 +12,7 @@
     import registerHighlight from "../../lib/highlight";
     import { genClipboardFn } from "../../lib/clipboard";
 
-    let { value, pre, isValueA = false, parent } = $props();
+    let { value, pre, isValueA = false } = $props();
 
     $effect(() => {
         value.baseValue;
