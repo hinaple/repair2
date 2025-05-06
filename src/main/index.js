@@ -10,6 +10,7 @@ import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
 import PluginPackageManager from "./plugin-package-manager";
+import { getFullScreenArea, getPrimaryScreenArea } from "./screenManager";
 
 let mainWindow, editorWindow;
 let pluginManager;
@@ -156,7 +157,7 @@ async function loadData() {
         const tempData = (await fs.readFile(join(dataDir, "data.json"))).toString();
         data = JSON.parse(tempData);
 
-        mainWindow?.setTitle(data?.config?.title ?? "REPAIRv2");
+        applyDataConfig();
     } catch (err) {
         await importDefaultProject();
     }
@@ -164,9 +165,17 @@ async function loadData() {
     return true;
 }
 
+function applyDataConfig() {
+    mainWindow?.setTitle?.(data?.config?.title ?? "REPAIRv2");
+
+    const area = data?.config?.multiScreen ? getFullScreenArea() : getPrimaryScreenArea();
+
+    mainWindow?.setSize?.(area.width, area.height);
+    mainWindow?.setPosition?.(area.x, area.y);
+}
+
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        ...(is.dev ? { width: 1920, height: 1080 } : { fullscreen: true }),
         show: false,
         webPreferences: {
             sandbox: false,
@@ -174,12 +183,19 @@ function createMainWindow() {
             contextIsolation: false,
             webSecurity: false
         },
-        title: data?.config?.title ?? "REPAIRv2"
+        title: data?.config?.title ?? "REPAIRv2",
+        frame: false,
+        resizable: false,
+        minimizable: false,
+        maximizable: false,
+        movable: false
     });
     mainWindow.setMenu(null);
 
     mainWindow.on("ready-to-show", () => {
         mainWindow.show();
+
+        applyDataConfig();
     });
 
     mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -383,7 +399,7 @@ async function appOpenedWithProject(argv, appWasRunning = true) {
     const confirm = await dialog.showMessageBox({
         type: "info",
         title: "프로젝트 불러오기",
-        message: `프로젝트를 불러올까요?`,
+        message: "프로젝트를 불러올까요?",
         detail: "기존에 편집 중이던 프로젝트의 정보가 삭제됩니다.",
         buttons: ["확인", "취소"],
         cancelId: 1,
@@ -459,7 +475,7 @@ function setupIpcHandlers() {
         await saveData(tempData);
         afterSave?.();
         afterSave = null;
-        mainWindow?.setTitle(data?.config?.title ?? "REPAIRv2");
+        applyDataConfig();
         mainWindow.webContents.send("data", { ...data, globalStyles: globalCss });
         return true;
     });
@@ -572,6 +588,10 @@ function setupIpcHandlers() {
         if (!editorWindow) return;
         editorWindow.webContents.send("end-executed", { type, id });
     });
+
+    //#endregion
+
+    //#region screen detecting
 
     //#endregion
 }

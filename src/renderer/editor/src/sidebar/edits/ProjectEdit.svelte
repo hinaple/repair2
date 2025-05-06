@@ -14,6 +14,12 @@
     setter={(d) => (data.sizeRatio = d)}
     placeholder="가로비율,세로비율"
 />
+<InputField
+    label="다중 화면 모드"
+    value={data.multiScreen}
+    setter={(d) => (data.multiScreen = d)}
+    type="checkbox"
+/>
 <hr />
 <InputField
     label="화면 필터"

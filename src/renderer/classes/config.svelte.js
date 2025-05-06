@@ -15,6 +15,7 @@ export default class Config {
     style = $state();
     editorShortcut = $state();
     editorPassword = $state();
+    multiScreen = $state();
     constructor({
         title = "REPAIR v2",
         width = null,
@@ -23,7 +24,8 @@ export default class Config {
         filter = null,
         style = null,
         editorShortcut = "E",
-        editorPassword = null
+        editorPassword = null,
+        multiScreen = false
     } = {}) {
         this.title = title;
         this.width = width;
@@ -33,6 +35,7 @@ export default class Config {
         this.style = style;
         this.editorShortcut = editorShortcut;
         this.editorPassword = editorPassword;
+        this.multiScreen = multiScreen;
     }
     get styleString() {
         return (
@@ -59,7 +62,8 @@ export default class Config {
             filter: this.filter,
             style: this.style,
             editorShortcut: this.editorShortcut,
-            editorPassword: this.editorPassword
+            editorPassword: this.editorPassword,
+            multiScreen: this.multiScreen
         };
     }
 }
