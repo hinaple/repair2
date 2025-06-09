@@ -27,7 +27,7 @@ const templateDir = is.dev
     : join(app.getPath("exe"), "..", "templates");
 
 async function initializePluginSystem() {
-    pluginManager = new PluginPackageManager(pluginDir, join(app.getPath("userData"), "packages"));
+    pluginManager = new PluginPackageManager(pluginDir, join(dataDir, "packages"));
     await pluginManager.initialize();
 }
 
