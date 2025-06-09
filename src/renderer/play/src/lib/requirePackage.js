@@ -14,7 +14,9 @@ export async function requirePackage(packageName, version = "latest") {
         const { packageInfo } = installResult;
         console.log("Loading package from:", packageInfo.path);
 
-        const module = await import(/* @vite-ignore */ packageInfo.path);
+        const module = packageInfo.isESM
+            ? await import(/* @vite-ignore */ packageInfo.path)
+            : require(packageInfo.path);
         const exportedModule = module.default || module;
 
         console.log("Loaded package successfully");
