@@ -426,6 +426,7 @@ if (!app.requestSingleInstanceLock()) {
         mainWindow.show();
     });
 
+    app.commandLine.appendSwitch("disable-gpu-compositing");
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
 

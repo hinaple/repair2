@@ -20,6 +20,7 @@ const EntryTemplate = {
         key: null
     },
     event: { channel: null }
+    // keyDown: { key: null, useCapture: false }
 };
 
 export default class Entry extends Node {

@@ -116,6 +116,7 @@ export const ElementListenerTypes = {
     input: "값 입력",
     videoEnd: "영상 종료",
     keyPress: "키보드 누름",
+    globalKeyPress: "전역 키보드 누름",
     jsFunction: "함수",
     plugin: "플러그인"
 };

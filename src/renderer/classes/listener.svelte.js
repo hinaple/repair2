@@ -18,12 +18,14 @@ const PayloadTemplates = {
     keyPress: { key: null },
     click: null,
     videoEnd: null,
+    globalKeyPress: { key: null, useCapture: false },
     jsFunction: { channel: null, scriptData: null },
     plugin: { isClass: true, class: PluginListener }
 };
 
 const TypeMap = {
     keyPress: "keydown",
+    globalKeyPress: "keydown",
     videoEnd: "ended"
 };
 
