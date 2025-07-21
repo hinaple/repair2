@@ -1,9 +1,9 @@
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
 
-ipcRenderer.on("socket-income", (event, channel) => {
+ipcRenderer.on("socket-income", (event, channel, data) => {
     if (channel === "connect") getAppData().executeEntry("Communication.Socket.connect");
-    else getAppData().executeEntry("Communication.Socket.ondata", { channel });
+    else getAppData().executeEntry("Communication.Socket.ondata", { channel, data });
 });
 
 ipcRenderer.on("serial-income", (event, data) => {

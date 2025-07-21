@@ -39,6 +39,14 @@ export default class AppData {
             if (entryType === "Communication.serialData" && !node.data.payload.whenDataIs?.length)
                 return true;
 
+            if (
+                entryType === "Communication.Socket.ondata" &&
+                data?.channel &&
+                node.data.payload.channel === data?.channel &&
+                !node.data.payload.data?.length
+            )
+                return true;
+
             return Object.entries(node.data.payload).every(
                 ([key, value]) => value.trim() === data[key].trim()
             );

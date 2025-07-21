@@ -8,7 +8,7 @@ const EntryTemplate = {
         isTypeObj: true,
         Socket: {
             isTypeObj: true,
-            ondata: { channel: null },
+            ondata: { channel: null, data: null },
             connect: null
         },
         serialData: { whenDataIs: null }

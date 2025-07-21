@@ -18,7 +18,7 @@
         if (entry.data.type === "Communication.serialData" && entry.data.payload.whenDataIs?.length)
             return `시리얼 데이터 수신${entry.data.payload.whenDataIs?.length ? `(${entry.data.payload.whenDataIs})` : ""}`;
         if (entry.data.type === "Communication.Socket.ondata" && entry.data.payload.channel?.length)
-            return `소켓 데이터 수신(${entry.data.payload.channel})`;
+            return `소켓 데이터 수신(${entry.data.payload.channel}${entry.data.payload.data?.length ? ":" + entry.data.payload.data : ""})`;
         return EntryTypes[entry.data.type];
     });
 </script>

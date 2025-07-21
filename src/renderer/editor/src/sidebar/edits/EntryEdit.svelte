@@ -44,6 +44,14 @@
         value={data.data.payload.channel}
         setter={(d) => (data.data.payload.channel = d)}
     />
+    <InputField
+        label="일치 시 작동할 데이터"
+        value={data.data.payload.data}
+        setter={(d) => {
+            data.data.payload.data = d;
+        }}
+        placeholder="항상 작동"
+    />
 {:else if data.data.type === "Communication.serialData"}
     <InputField
         label="수신 데이터"
