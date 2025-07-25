@@ -37,6 +37,12 @@
     code
     placeholder="inline CSS style"
 />
+<InputField
+    label="투명한 창"
+    value={data.transparent}
+    setter={(d) => (data.transparent = d)}
+    type="checkbox"
+/>
 <hr />
 <InputField
     label="편집기 단축키"

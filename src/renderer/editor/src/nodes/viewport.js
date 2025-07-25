@@ -49,10 +49,9 @@ export function getOriginalPos(x, y) {
 }
 
 export function moveViewport(dx, dy) {
-    const ratio = Math.pow(10, get(viewport.size));
     viewport.pos.update((p) => ({
-        x: (p.x += dx / ratio),
-        y: (p.y += dy / ratio)
+        x: (p.x += dx / rInfo.ratio),
+        y: (p.y += dy / rInfo.ratio)
     }));
 }
 

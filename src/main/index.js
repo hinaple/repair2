@@ -18,6 +18,7 @@ let pluginManager;
 let data;
 
 const dataDir = join(app.getPath("userData"), is.dev ? "dev_project" : "project");
+console.log(is.dev);
 const assetDir = join(dataDir, "assets");
 const pluginDir = join(dataDir, "plugins");
 const styleDir = join(dataDir, "styles");
@@ -165,13 +166,19 @@ async function loadData() {
     return true;
 }
 
-function applyDataConfig() {
-    mainWindow?.setTitle?.(data?.config?.title ?? "REPAIRv2");
+let isMultiScreen = null;
+function applyDataConfig(forceUpdate = false) {
+    if (!mainWindow) return;
+    mainWindow.setTitle?.(data?.config?.title ?? "REPAIRv2");
 
-    const area = data?.config?.multiScreen ? getFullScreenArea() : getPrimaryScreenArea();
+    if (!forceUpdate && isMultiScreen === !!data?.config?.multiScreen) return;
+    isMultiScreen = !!data?.config?.multiScreen;
+    if (isMultiScreen) app.commandLine.appendSwitch("disable-gpu-compositing");
+    else app.commandLine.removeSwitch("disable-gpu-compositing");
 
-    mainWindow?.setSize?.(area.width, area.height);
-    mainWindow?.setPosition?.(area.x, area.y);
+    const area = isMultiScreen ? getFullScreenArea() : getPrimaryScreenArea();
+
+    mainWindow.setBounds?.(area);
 }
 
 function createMainWindow() {
@@ -185,6 +192,7 @@ function createMainWindow() {
         },
         title: data?.config?.title ?? "REPAIRv2",
         frame: false,
+        transparent: true,
         resizable: false,
         minimizable: false,
         maximizable: false,
@@ -195,7 +203,7 @@ function createMainWindow() {
     mainWindow.on("ready-to-show", () => {
         mainWindow.show();
 
-        applyDataConfig();
+        applyDataConfig(true);
     });
 
     mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -426,7 +434,7 @@ if (!app.requestSingleInstanceLock()) {
         mainWindow.show();
     });
 
-    app.commandLine.appendSwitch("disable-gpu-compositing");
+    // app.commandLine.appendSwitch("disable-gpu-compositing");
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
 

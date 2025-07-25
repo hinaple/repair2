@@ -1,11 +1,12 @@
 const asyncBuffer = [];
 const promiseBuffer = Array.from({ length: 5 }, () => []);
 let isScheduled = false;
+
 function requestDraw() {
     if (isScheduled) return;
     isScheduled = true;
 
-    window.requestAnimationFrame(async () => {
+    window.requestAnimationFrame(async (ts) => {
         isScheduled = false;
 
         const reupdates = [];

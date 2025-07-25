@@ -19,6 +19,8 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
     if (appdata.config.height)
         document.body.style.setProperty("--gamezone-height", `${appdata.config.height}px`);
 
+    if (appdata.config.transparent) document.body.style.background = "transparent";
+
     gamezone.setAttribute("style", appdata.config.styleString);
 
     globalStyles.textContent = data.globalStyles;
