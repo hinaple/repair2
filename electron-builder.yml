@@ -4,6 +4,7 @@ directories:
     buildResources: build
 extraFiles:
     - templates/**/*
+    - empty-svelte-plugin/**/*
 files:
     - "!**/.vscode/*"
     - "!src/*"

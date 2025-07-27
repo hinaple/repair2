@@ -67,7 +67,6 @@ export default class RepairElement extends HTMLElement {
 
             this.willFocus = !!element.payload.autofocus;
         } else if (this.type === "plugin") {
-            console.log(element.payload);
             this.registerUnsubscriber(
                 "hmr",
                 element.payload.hmrSubscribe((tempPlugin) => {
