@@ -67,7 +67,6 @@ export default class RepairElement extends HTMLElement {
 
             this.willFocus = !!element.payload.autofocus;
         } else if (this.type === "plugin") {
-            console.log(element.payload);
             this.registerUnsubscriber(
                 "hmr",
                 element.payload.hmrSubscribe((tempPlugin) => {
@@ -103,7 +102,28 @@ export default class RepairElement extends HTMLElement {
         }
 
         const deadListenerIdx = [];
+        this.globalEvents = [];
         this.listeners.forEach((l, idx) => {
+            if (l.types[0] === "globalKeyPress") {
+                const eventOpt = [
+                    l.realEventChannel,
+                    async (evt) => {
+                        if (
+                            l.payload.key?.length &&
+                            !l.payload.key.split(/\s*,\s*/).includes(evt.key)
+                        )
+                            return;
+
+                        if (l.once) deadListenerIdx.push(idx);
+                        l.output.goto();
+                    },
+                    { capture: l.useCapture }
+                ];
+                this.globalEvents.push(eventOpt);
+                window.addEventListener(...eventOpt);
+
+                return;
+            }
             this.realEl.addEventListener(l.realEventChannel, async (evt) => {
                 if (deadListenerIdx.includes(idx)) return;
 
@@ -146,9 +166,12 @@ export default class RepairElement extends HTMLElement {
         this.render();
     }
     disconnectedCallback() {
-        if (!this.unsubscribers) return;
-
-        Object.values(this.unsubscribers).forEach((unsubscriber) => unsubscriber?.());
+        if (this.unsubscribers)
+            Object.values(this.unsubscribers).forEach((unsubscriber) => unsubscriber?.());
+        if (this.globalEvents)
+            this.globalEvents.forEach((opt) => {
+                window.removeEventListener(...opt);
+            });
     }
 }
 

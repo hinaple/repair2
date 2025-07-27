@@ -18,7 +18,13 @@ export default class ProjectFileManager {
         if (!result || result.canceled) return false;
 
         const zip = new admZip();
-        zip.addLocalFolder(this.dataDir, "");
+        zip.addLocalFolder(this.dataDir, "", (filename) => {
+            const dirs = filename.split(/\\|\//);
+            return !(
+                dirs.includes("svelte-plugins") &&
+                (dirs.includes("node_modules") || dirs.includes("dist"))
+            );
+        });
         zip.writeZip(result.filePath);
 
         shell.showItemInFolder(result.filePath);

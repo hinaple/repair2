@@ -4,6 +4,9 @@ body {
     height: 100%;
     margin: 0;
     overflow: hidden;
+}
+
+body {
     background: repeating-conic-gradient(#e7e7e7 0% 25%, #bababa 0% 50%) 50% / 16px 16px;
 }
 

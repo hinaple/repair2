@@ -25,6 +25,7 @@
     import { removeNodeWithHistory } from "../lib/syncData.svelte";
     import { genClipboardFn, pasted } from "../lib/clipboard";
     import { fade } from "svelte/transition";
+    import FrameUpdater from "../lib/frameUpdater";
 
     let readyToGrab = $state(false);
     function keydown(evt) {
@@ -121,6 +122,12 @@
 
     let viewportEl = $state(null);
 
+    const frameUpdater = new FrameUpdater(() => {
+        const tempPos = posFromViewport(0, 0);
+        viewportEl.style.left = `${tempPos.x}px`;
+        viewportEl.style.top = `${tempPos.y}px`;
+    });
+
     function onResized() {
         if (!viewportEl) return;
         viewportEl.style.transform = `scale(${rInfo.ratio})`;
@@ -128,9 +135,7 @@
     }
     function onMoved() {
         if (!viewportEl) return;
-        const tempPos = posFromViewport(0, 0);
-        viewportEl.style.left = `${tempPos.x}px`;
-        viewportEl.style.top = `${tempPos.y}px`;
+        frameUpdater.draw();
     }
     const unsubs = [viewport.screen.subscribe(onResized), viewport.pos.subscribe(onMoved)];
 

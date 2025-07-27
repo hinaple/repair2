@@ -20,13 +20,21 @@
         setter={(d) => (data.payload.channel = d)}
     />
 {/if}
-{#if data.type === "keyPress"}
+{#if data.type === "keyPress" || data.type === "globalKeyPress"}
     <hr />
     <InputField
         label="감지할 버튼(콤마로 구분)"
         value={data.payload.key}
         setter={(d) => (data.payload.key = d)}
         placeholder="모든 키 감지"
+    />
+{/if}
+{#if data.type === "globalKeyPress"}
+    <InputField
+        label="최우선으로 실행"
+        value={data.useCapture}
+        setter={(d) => (data.useCapture = d)}
+        type="checkbox"
     />
 {:else if data.type === "jsFunction"}
     <InputField

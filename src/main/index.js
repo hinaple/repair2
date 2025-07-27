@@ -4,13 +4,14 @@ import { electronApp, is } from "@electron-toolkit/utils";
 import fs from "fs/promises";
 import { watch } from "fs";
 
-// import DataTemplate from "./dataTemplate.json";
-
 import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
 import PluginPackageManager from "./plugin-package-manager";
 import { getFullScreenArea, getPrimaryScreenArea } from "./screenManager";
+import createSveltePlugin from "./sveltePluginCreator";
+import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
+import prompt from "electron-prompt";
 
 let mainWindow, editorWindow;
 let pluginManager;
@@ -25,6 +26,10 @@ const styleDir = join(dataDir, "styles");
 const templateDir = is.dev
     ? join(__dirname, "../../templates")
     : join(app.getPath("exe"), "..", "templates");
+
+const emptySveltePluginDir = is.dev
+    ? join(__dirname, "../../empty-svelte-plugin")
+    : join(app.getPath("exe"), "..", "empty-svelte-plugin");
 
 async function initializePluginSystem() {
     pluginManager = new PluginPackageManager(pluginDir, join(dataDir, "packages"));
@@ -101,9 +106,6 @@ async function loadGlobalCss() {
         globalCss = (await fs.readFile(join(styleDir, "global.css"))).toString();
         globalCss = globalCss.replace(/%FONTS%/g, join(styleDir, "fonts").replace(/\\/g, "/"));
         if (mainWindow) mainWindow.webContents.send("global-css", globalCss);
-
-        watchGlobalStyles();
-        watchPlugins();
     } catch (err) {
         globalCss = "";
     }
@@ -112,6 +114,7 @@ function watchGlobalStyles() {
     if (watchers.css) return;
 
     watchers.css = watch(join(styleDir, "global.css"), (eventType) => {
+        if (!isEditorOn) return;
         if (eventType === "change") {
             console.log("Global CSS file has changed");
             loadGlobalCss();
@@ -124,18 +127,22 @@ function watchPlugins() {
     if (watchers.plugins) return;
 
     watchers.plugins = watch(pluginDir, { recursive: true }, (type, filename) => {
+        if (!isEditorOn || !filename) return;
+        const dirs = filename.split(/\\|\//);
+        if (dirs.length > 2 || !PluginTypes.includes(dirs[0])) return;
+
         if (type === "rename") {
             updatePluginList();
             return;
         }
         if (type !== "change") return;
+
         if (filename === "dependencies.json") {
-            console.log("Plugin dependencies updated");
+            console.log("Plugin dependencies updating");
             pluginManager.updateDependencies();
             return;
         }
-        const dirs = filename.split(/\\|\//);
-        if (dirs.length !== 2 || !PluginTypes.includes(dirs[0])) return;
+        if (dirs.length !== 2) return;
 
         if (pluginHotReloadTimeouts[filename]) clearTimeout(pluginHotReloadTimeouts[filename]);
 
@@ -165,13 +172,19 @@ async function loadData() {
     return true;
 }
 
-function applyDataConfig() {
-    mainWindow?.setTitle?.(data?.config?.title ?? "REPAIRv2");
+let isMultiScreen = null;
+function applyDataConfig(forceUpdate = false) {
+    if (!mainWindow) return;
+    mainWindow.setTitle?.(data?.config?.title ?? "REPAIRv2");
 
-    const area = data?.config?.multiScreen ? getFullScreenArea() : getPrimaryScreenArea();
+    if (!forceUpdate && isMultiScreen === !!data?.config?.multiScreen) return;
+    isMultiScreen = !!data?.config?.multiScreen;
+    if (isMultiScreen) app.commandLine.appendSwitch("disable-gpu-compositing");
+    else app.commandLine.removeSwitch("disable-gpu-compositing");
 
-    mainWindow?.setSize?.(area.width, area.height);
-    mainWindow?.setPosition?.(area.x, area.y);
+    const area = isMultiScreen ? getFullScreenArea() : getPrimaryScreenArea();
+
+    mainWindow.setBounds?.(area);
 }
 
 function createMainWindow() {
@@ -185,6 +198,7 @@ function createMainWindow() {
         },
         title: data?.config?.title ?? "REPAIRv2",
         frame: false,
+        transparent: true,
         resizable: false,
         minimizable: false,
         maximizable: false,
@@ -195,7 +209,7 @@ function createMainWindow() {
     mainWindow.on("ready-to-show", () => {
         mainWindow.show();
 
-        applyDataConfig();
+        applyDataConfig(true);
     });
 
     mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -216,9 +230,16 @@ function createMainWindow() {
 
 let afterSave;
 let isEditorOn = false;
+let isVscodeInstalled = null;
 function createEditorWindow() {
     if (isEditorOn) return;
+
+    watchGlobalStyles();
+    watchPlugins();
+
+    if (isVscodeInstalled === null) checkVscodeInstalled().then((r) => (isVscodeInstalled = r));
     isEditorOn = true;
+
     editorWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -294,6 +315,54 @@ function createEditorWindow() {
                     accelerator: "CommandOrControl+Shift+S"
                 },
                 { type: "separator" },
+                {
+                    label: "빈 Svelte 플러그인 생성",
+                    click: async () => {
+                        const name = await prompt(
+                            {
+                                title: "Svelte 플러그인 생성",
+                                label: "플러그인 이름:",
+                                buttonLabels: {
+                                    ok: "확인",
+                                    cancel: "취소"
+                                },
+                                height: 200
+                            },
+                            editorWindow
+                        );
+                        if (!name) return;
+                        const result = await createSveltePlugin(
+                            pluginDir,
+                            emptySveltePluginDir,
+                            name
+                        );
+                        if (!result.done) {
+                            dialog.showMessageBox(editorWindow, {
+                                type: "error",
+                                message: "플러그인 생성 중 오류가 발생했습니다.",
+                                detail: result.error,
+                                noLink: true
+                            });
+                            return;
+                        }
+                        if (isVscodeInstalled) {
+                            const confirm = await dialog.showMessageBox({
+                                type: "info",
+                                title: "Svelte 플러그인",
+                                message: "Visual Studio Code에서 플러그인을 열까요?",
+                                buttons: ["확인", "취소"],
+                                cancelId: 1,
+                                defaultId: 0,
+                                noLink: true
+                            });
+                            if (confirm.response === 0) {
+                                openVsCode(result.dir);
+                                return;
+                            }
+                        }
+                        shell.openPath(result.dir);
+                    }
+                },
                 {
                     label: "데이터 폴더 열기",
                     click: () => {
@@ -426,6 +495,7 @@ if (!app.requestSingleInstanceLock()) {
         mainWindow.show();
     });
 
+    // app.commandLine.appendSwitch("disable-gpu-compositing");
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
 

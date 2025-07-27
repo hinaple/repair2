@@ -16,6 +16,7 @@ export default class Config {
     editorShortcut = $state();
     editorPassword = $state();
     multiScreen = $state();
+    transparent = $state();
     constructor({
         title = "REPAIR v2",
         width = null,
@@ -25,7 +26,8 @@ export default class Config {
         style = null,
         editorShortcut = "E",
         editorPassword = null,
-        multiScreen = false
+        multiScreen = false,
+        transparent = false
     } = {}) {
         this.title = title;
         this.width = width;
@@ -36,9 +38,11 @@ export default class Config {
         this.editorShortcut = editorShortcut;
         this.editorPassword = editorPassword;
         this.multiScreen = multiScreen;
+        this.transparent = transparent;
     }
     get styleString() {
         return (
+            (this.transparent ? "background-color: transparent;" : "") +
             Object.entries(styleMap)
                 .reduce((acc, [key, [prefix, suffix]]) => {
                     if (
@@ -49,7 +53,8 @@ export default class Config {
                     }
                     return acc;
                 }, [])
-                .join("; ") + ";"
+                .join("; ") +
+            ";"
         );
     }
     get storeData() {
@@ -63,7 +68,8 @@ export default class Config {
             style: this.style,
             editorShortcut: this.editorShortcut,
             editorPassword: this.editorPassword,
-            multiScreen: this.multiScreen
+            multiScreen: this.multiScreen,
+            transparent: this.transparent
         };
     }
 }

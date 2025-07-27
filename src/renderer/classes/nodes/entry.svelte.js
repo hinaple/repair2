@@ -8,7 +8,7 @@ const EntryTemplate = {
         isTypeObj: true,
         Socket: {
             isTypeObj: true,
-            ondata: { channel: null },
+            ondata: { channel: null, data: null },
             connect: null
         },
         serialData: { whenDataIs: null }
@@ -20,6 +20,7 @@ const EntryTemplate = {
         key: null
     },
     event: { channel: null }
+    // keyDown: { key: null, useCapture: false }
 };
 
 export default class Entry extends Node {
