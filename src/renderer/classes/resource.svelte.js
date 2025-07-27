@@ -3,7 +3,7 @@ import { basename } from "path";
 
 const FileTypes = {
     image: ["jpg", "jpeg", "gif", "svg", "webp", "png", "bmp", "ico"],
-    video: ["mp4", "webm"],
+    video: ["mp4", "webm", "mkv"],
     audio: ["mp3", "wav", "ogg", "m4a", "weba"]
     // script: ["js"]
 };
