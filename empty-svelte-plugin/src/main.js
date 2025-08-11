@@ -6,10 +6,10 @@ import Component from "./Component.svelte";
 export default class SveltePlugin extends HTMLElement {
     static attributes = [];
 
-    constructor({ attributes = {} }) {
+    constructor({ attributes = {}, isDev = false }) {
         super();
         this.attachShadow({ mode: "open" });
-        this.attributesObj = attributes;
+        this.attributesObj = { ...attributes, isDev };
     }
 
     connectedCallback() {
@@ -18,10 +18,13 @@ export default class SveltePlugin extends HTMLElement {
             props: this.attributesObj
         });
 
+        // DO NOT EDIT BELOW UNLESS YOU KNOW WHAT IT DOES
         if (globalThis.InjectingCss) {
-            const style = document.createElement("style");
-            style.appendChild(document.createTextNode(InjectingCss));
-            this.shadowRoot.appendChild(style);
+            globalThis.InjectingCss.forEach((css) => {
+                const style = document.createElement("style");
+                style.appendChild(document.createTextNode(css));
+                this.shadowRoot.appendChild(style);
+            });
         }
     }
 

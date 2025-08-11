@@ -10,7 +10,7 @@ const PACKAGE_JSON_TEMPLATE = {
     type: "module",
     scripts: {
         dev: "vite",
-        build: "vite build && node move.js"
+        build: "vite build && node ./_internal/move.js"
     },
     devDependencies: {
         "@sveltejs/vite-plugin-svelte": "^5.0.3",

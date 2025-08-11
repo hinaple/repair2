@@ -21,4 +21,4 @@ if (!fs.existsSync(distFile)) {
 }
 
 fs.copyFileSync(distFile, targetFile);
-console.log(`✅ dir/plugin.iife.js was cloned to plugins/elements/${pluginName}-sv.js`);
+console.log(`✅ ${distFile} was cloned to ${targetFile}`);
