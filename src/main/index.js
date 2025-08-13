@@ -38,13 +38,18 @@ async function initializePluginSystem() {
 
 const projectFileManager = new ProjectFileManager(dataDir, () => {
     if (editorWindow) editorWindow.close();
-    Object.keys(watchers).forEach((key) => {
-        if (watchers[key]) {
-            watchers[key].close();
-            watchers[key] = null;
-        }
-    });
+    closeAllWatchers();
 });
+
+function closeAllWatchers() {
+    Object.keys(watchers).forEach((key) => {
+        if (!watchers[key]) return;
+
+        watchers[key].close();
+        watchers[key] = null;
+    });
+    console.log("All watchers closed");
+}
 
 const PluginTypes = ["elements", "frames", "functions", "transitions"];
 
@@ -120,6 +125,7 @@ function watchGlobalStyles() {
             loadGlobalCss();
         }
     });
+    console.log("CSS watcher activated");
 }
 
 const pluginHotReloadTimeouts = {};
@@ -157,6 +163,7 @@ function watchPlugins() {
                 });
         }, 100);
     });
+    console.log("Plugin watcher activated");
 }
 async function loadData() {
     try {
@@ -174,11 +181,21 @@ async function loadData() {
 
 let isMultiScreen = null;
 function applyDataConfig(forceUpdate = false) {
+    if (!data?.config) return;
+
+    if (data.config?.devMode) {
+        watchGlobalStyles();
+        watchPlugins();
+    } else if (watchers.css || watchers.plugins) {
+        closeAllWatchers();
+    }
+
     if (!mainWindow) return;
+
     mainWindow.setTitle?.(data?.config?.title ?? "REPAIRv2");
 
-    if (!forceUpdate && isMultiScreen === !!data?.config?.multiScreen) return;
-    isMultiScreen = !!data?.config?.multiScreen;
+    if (!forceUpdate && isMultiScreen === !!data.config?.multiScreen) return;
+    isMultiScreen = !!data.config?.multiScreen;
     if (isMultiScreen) app.commandLine.appendSwitch("disable-gpu-compositing");
     else app.commandLine.removeSwitch("disable-gpu-compositing");
 
@@ -233,9 +250,6 @@ let isEditorOn = false;
 let isVscodeInstalled = null;
 function createEditorWindow() {
     if (isEditorOn) return;
-
-    watchGlobalStyles();
-    watchPlugins();
 
     if (isVscodeInstalled === null) checkVscodeInstalled().then((r) => (isVscodeInstalled = r));
     isEditorOn = true;
@@ -554,6 +568,7 @@ function setupIpcHandlers() {
     //#region editor IPCs
     ipcMain.on("editor-on", () => {
         if (!isEditorOn) createEditorWindow();
+        else editorWindow.focus();
     });
 
     ipcMain.on("unsaved", () => {

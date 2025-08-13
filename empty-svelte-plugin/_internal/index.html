@@ -169,9 +169,11 @@
                         content.appendChild(createPropInput(key));
                     }
                 });
-                const hr = document.createElement("hr");
-                hr.style.border = "1px solid #444";
-                content.appendChild(hr);
+                if (attributes.length) {
+                    const hr = document.createElement("hr");
+                    hr.style.border = "1px solid #444";
+                    content.appendChild(hr);
+                }
                 Object.entries(configs).forEach(([key, val]) => {
                     content.appendChild(createConfigInput(key, val));
                 });
