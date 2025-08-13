@@ -56,7 +56,8 @@ const PayloadTemplates = {
         setVariable: { variableId: null, value: null },
         resetAllVariables: null,
         executePlugin: { isClass: true, class: executePlugin },
-        eventEmit: { channel: null, data: null }
+        eventEmit: { channel: null, data: null },
+        script: { code: null }
     }
 };
 

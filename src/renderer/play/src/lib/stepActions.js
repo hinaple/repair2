@@ -86,6 +86,13 @@ const actions = {
         },
         eventEmit: (s) => {
             if (s.payload.channel) emitRepairEvent(s.payload.channel, s.payload.data);
+        },
+        script: (s) => {
+            try {
+                new Function(s.payload.code)();
+            } catch (err) {
+                console.error(err);
+            }
         }
     }
 };
