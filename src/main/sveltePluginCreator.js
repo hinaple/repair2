@@ -13,9 +13,9 @@ const PACKAGE_JSON_TEMPLATE = {
         build: "vite build && node ./_internal/move.js"
     },
     devDependencies: {
-        "@sveltejs/vite-plugin-svelte": "^5.0.3",
-        svelte: "^5.20.1",
-        vite: "^6.1.0",
+        "@sveltejs/vite-plugin-svelte": "^6.1.2",
+        svelte: "^5.38.1",
+        vite: "^7.1.2",
         "vite-plugin-css-injected-by-js": "^3.5.2"
     }
 };

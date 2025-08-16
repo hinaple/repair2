@@ -23,6 +23,7 @@ nsis:
     createDesktopShortcut: always
     perMachine: true
     oneClick: false
+    allowToChangeInstallationDirectory: true
 linux:
     target:
         - AppImage
