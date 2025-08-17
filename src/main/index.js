@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from "electron";
 import { basename, extname, join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
-import fs from "fs/promises";
+import fs, { readdir } from "fs/promises";
 import { watch } from "fs";
 
 import SerialConnector from "./communication/serial";
@@ -9,9 +9,10 @@ import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
 import PluginPackageManager from "./plugin-package-manager";
 import { getFullScreenArea, getPrimaryScreenArea } from "./screenManager";
-import createSveltePlugin from "./sveltePluginCreator";
+import createSveltePlugin from "./svelte-plugin/sveltePluginCreator.js";
 import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
 import prompt from "electron-prompt";
+import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
 
 let mainWindow, editorWindow;
 let pluginManager;
@@ -27,9 +28,7 @@ const templateDir = is.dev
     ? join(__dirname, "../../templates")
     : join(app.getPath("exe"), "..", "templates");
 
-const emptySveltePluginDir = is.dev
-    ? join(__dirname, "../../empty-svelte-plugin")
-    : join(app.getPath("exe"), "..", "empty-svelte-plugin");
+const emptySveltePluginDir = join(templateDir, "empty-svelte-plugin");
 
 async function initializePluginSystem() {
     pluginManager = new PluginPackageManager(pluginDir, join(dataDir, "packages"));
@@ -40,6 +39,8 @@ const projectFileManager = new ProjectFileManager(dataDir, () => {
     if (editorWindow) editorWindow.close();
     closeAllWatchers();
 });
+
+initPluginDir(pluginDir);
 
 function closeAllWatchers() {
     Object.keys(watchers).forEach((key) => {
@@ -99,7 +100,7 @@ async function saveData(tempData) {
 }
 
 async function importDefaultProject() {
-    await projectFileManager.importProject(join(templateDir, "default.repair"));
+    await projectFileManager.importProject(join(templateDir, "projects/default.repair"));
     await loadData();
     if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
 }
@@ -229,11 +230,6 @@ function createMainWindow() {
         applyDataConfig(true);
     });
 
-    mainWindow.webContents.setWindowOpenHandler((details) => {
-        shell.openExternal(details.url);
-        return { action: "deny" };
-    });
-
     if (is.dev) {
         mainWindow.loadURL("http://localhost:3100");
     } else {
@@ -292,7 +288,9 @@ function createEditorWindow() {
                         )
                             return;
 
-                        await projectFileManager.importProject(join("templates", "empty.repair"));
+                        await projectFileManager.importProject(
+                            join(templateDir, "projects/empty.repair")
+                        );
                         await loadData();
                         mainWindow.webContents.reloadIgnoringCache();
                     },
@@ -363,14 +361,15 @@ function createEditorWindow() {
                             const confirm = await dialog.showMessageBox({
                                 type: "info",
                                 title: "Svelte 플러그인",
-                                message: "Visual Studio Code에서 플러그인을 열까요?",
+                                message: "플러그인 개발도구를 시작할까요?",
                                 buttons: ["확인", "취소"],
                                 cancelId: 1,
                                 defaultId: 0,
                                 noLink: true
                             });
                             if (confirm.response === 0) {
-                                openVsCode(result.dir);
+                                // openVsCode(result.dir);
+                                openPluginDevtool(result.dir, name);
                                 return;
                             }
                         }
@@ -412,12 +411,44 @@ function createEditorWindow() {
                     label: "편집기 콘솔",
                     click: () => {
                         editorWindow.webContents.toggleDevTools();
-                    }
+                    },
+                    accelerator: "CommandOrControl+Shift+I"
                 },
                 {
                     label: "플레이 콘솔",
                     click: () => {
                         mainWindow.webContents.toggleDevTools();
+                    }
+                },
+                { type: "separator" },
+                {
+                    label: "플러그인 개발 도구",
+                    click: async () => {
+                        const sveltePlugins = (
+                            await readdir(join(pluginDir, "svelte-plugins"), {
+                                withFileTypes: true
+                            })
+                        )
+                            .filter((e) => e.isDirectory())
+                            .map((e) => e.name);
+                        const target = await prompt(
+                            {
+                                title: "REPAIR 플러그인 개발 도구",
+                                label: "플러그인 선택",
+                                buttonLabels: { ok: "확인", cancel: "취소" },
+                                type: "select",
+                                selectOptions: sveltePlugins.reduce((obj, n) => {
+                                    obj[n] = n;
+                                    return obj;
+                                }, {}),
+                                height: 200
+                            },
+                            editorWindow
+                        );
+                        if (!target) return;
+                        if (isVscodeInstalled)
+                            openPluginDevtool(join(pluginDir, "svelte-plugins", target), target);
+                        else shell.openPath(result.dir);
                     }
                 }
             ]
@@ -561,6 +592,7 @@ function setupIpcHandlers() {
         afterSave = null;
         applyDataConfig();
         mainWindow.webContents.send("data", { ...data, globalStyles: globalCss });
+        updateData(data);
         return true;
     });
     //#endregion
