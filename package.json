@@ -24,6 +24,7 @@
     "dependencies": {
         "@electron-toolkit/utils": "^4.0.0",
         "adm-zip": "^0.5.16",
+        "easing-utils": "^1.0.0",
         "electron-prompt": "^1.7.0",
         "fs-extra": "^11.3.0",
         "lit": "^3.2.1",

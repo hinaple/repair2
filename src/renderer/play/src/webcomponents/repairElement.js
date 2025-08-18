@@ -2,6 +2,7 @@ import { setVar } from "../lib/variables";
 import { genElement } from "../lib/resources";
 import { getAppData } from "../lib/appdata";
 import { subscribe } from "../lib/variables";
+import Dragger from "../lib/dragger";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -19,10 +20,14 @@ export default class RepairElement extends HTMLElement {
 
         this.type = element.types[0];
 
+        this.element = element;
+
         this.width = element.width;
         this.height = element.height;
         this.childStyle = element.childStyle;
         this.fullscreen = !!element.fullscreen;
+
+        this.dragOption = element.dragOption;
 
         this.listeners = element.listeners.list ?? [];
 
@@ -156,6 +161,16 @@ export default class RepairElement extends HTMLElement {
         this.appendChild(this.realEl);
         if (this.willFocus) this.realEl.focus();
         if (this.type === "video") this.realEl.play();
+
+        if (!this.dragOption || this.fullscreen) return;
+        this.dragger = new Dragger(this.dragOption, this, {
+            setPos: (pos) => {
+                this.setAttribute("style", this.element.getStyleString(true, pos));
+            },
+            setPosAsDefault: () => {
+                this.setAttribute("style", this.element.styleString);
+            }
+        });
     }
     registerUnsubscriber(key, unsubscriber) {
         if (!this.unsubscribers) this.unsubscribers = {};
@@ -172,6 +187,7 @@ export default class RepairElement extends HTMLElement {
             this.globalEvents.forEach((opt) => {
                 window.removeEventListener(...opt);
             });
+        if (this.dragger) this.dragger.destroy();
     }
 }
 

@@ -3,6 +3,7 @@
     import InputField from "../InputField.svelte";
     import Position from "../Position.svelte";
     import { reloadPreview } from "../editUtils";
+    import DragOption from "../DragOption.svelte";
 
     const { data } = $props();
 </script>
@@ -191,3 +192,7 @@
     placeholder="inline CSS code"
     autoResizeOpt={{ minHeight: 50 }}
 />
+<hr />
+{#if !data.fullscreen}
+    <DragOption dragOption={data.dragOption} />
+{/if}
