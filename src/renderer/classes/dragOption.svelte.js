@@ -17,7 +17,7 @@ export default class DragOption {
         threshold = 0,
         snapOn = "never",
         snapDuration = 100,
-        moveEasing = "easingOutSine"
+        moveEasing = "easeOutSine"
     } = {}) {
         this.use = use;
         this.returnOnRelease = returnOnRelease;
