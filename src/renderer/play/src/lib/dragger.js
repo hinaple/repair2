@@ -132,6 +132,7 @@ export default class Dragger {
                     detail: currentHotspot === -1 ? {} : { hotspotIndex: currentHotspot }
                 })
             );
+            node.classList.remove("dragging");
             if (currentHotspot !== -1 && dragOption.snapOn !== "never") {
                 startSnap(dragOption.snapDuration ?? 100);
                 currentPos = this.hotspotsPos[currentHotspot];
@@ -146,7 +147,6 @@ export default class Dragger {
             }
 
             dragging = false;
-            node.classList.remove("dragging");
         });
         document.addEventListener("mousemove", this.mousemove);
         document.addEventListener("mouseup", this.mouseup);
