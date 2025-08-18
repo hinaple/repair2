@@ -15,11 +15,11 @@ export default class SveltePlugin extends HTMLElement {
     }
 
     connectedCallback() {
-        function dispatchEvent(event, detail = null) {
+        const dispatchEvent = (event, detail = null) => {
             this.shadowRoot.dispatchEvent(
                 new CustomEvent(event, { composed: true, detail: detail })
             );
-        }
+        };
 
         this.component = mount(Component, {
             target: this.shadowRoot,

@@ -77,6 +77,9 @@ export default defineConfig(({ command }) => ({
         }),
         renderer()
     ],
+    resolve: {
+        preserveSymlinks: true
+    },
     ...(command === "serve"
         ? {
               //DEV
