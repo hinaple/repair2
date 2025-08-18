@@ -15,7 +15,7 @@ export default class DragOption {
         returnDuration = 0,
         hotspots = [],
         threshold = 0,
-        snapOn = "never",
+        snapOn = "drag",
         snapDuration = 100,
         moveEasing = "easeOutSine"
     } = {}) {

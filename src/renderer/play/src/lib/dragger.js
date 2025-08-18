@@ -73,6 +73,7 @@ export default class Dragger {
         };
         const startSnap = (duration) => {
             if (Snap.snapping) cancelSnap();
+            node.classList.add("snapping");
             Snap.snapping = true;
             Snap.startedPos = { ...currentPos };
             Snap.startedAt = null;
@@ -80,6 +81,7 @@ export default class Dragger {
         };
         const endSnap = () => {
             Snap.snapping = false;
+            node.classList.remove("snapping");
         };
         const cancelSnap = () => {
             if (!Snap.snapping) return;
@@ -91,6 +93,7 @@ export default class Dragger {
             dragging = true;
             rendering = true;
             cancelSnap();
+            node.classList.add("dragging");
             startPos = {
                 x: evt.screenX - currentPos.x * screenRatio.x,
                 y: evt.screenY - currentPos.y * screenRatio.y
@@ -98,26 +101,6 @@ export default class Dragger {
             render();
         });
         let currentHotspot = -1;
-        const mouseProcess = (evt, doSnap) => {
-            if (!dragging) return;
-            const realPos = {
-                x: (evt.screenX - startPos.x) / screenRatio.x,
-                y: (evt.screenY - startPos.y) / screenRatio.y
-            };
-            if (doSnap) {
-                const tempHotspot = this.getTouchingHotspot(realPos);
-                if (currentHotspot !== tempHotspot) {
-                    startSnap(dragOption.snapDuration ?? 100);
-                }
-                currentHotspot = tempHotspot;
-                if (tempHotspot !== -1) {
-                    currentPos = this.hotspotsPos[tempHotspot];
-                    return true;
-                }
-            }
-            currentPos = realPos;
-            return false;
-        };
         this.mousemove = document.addEventListener("mousemove", (evt) => {
             if (!dragging) return;
             const realPos = {
@@ -143,14 +126,17 @@ export default class Dragger {
                 x: (evt.screenX - startPos.x) / screenRatio.x,
                 y: (evt.screenY - startPos.y) / screenRatio.y
             };
-            if (dragOption.snapOn !== "never") {
-                currentHotspot = this.getTouchingHotspot(realPos);
-                if (currentHotspot !== -1) {
-                    startSnap(dragOption.snapDuration ?? 100);
-                    currentPos = this.hotspotsPos[currentHotspot];
-                    dragging = false;
-                    return;
-                }
+            currentHotspot = this.getTouchingHotspot(realPos);
+            node.dispatchEvent(
+                new CustomEvent("released", {
+                    detail: currentHotspot === -1 ? {} : { hotspotIndex: currentHotspot }
+                })
+            );
+            if (currentHotspot !== -1 && dragOption.snapOn !== "never") {
+                startSnap(dragOption.snapDuration ?? 100);
+                currentPos = this.hotspotsPos[currentHotspot];
+                dragging = false;
+                return;
             }
             currentPos = realPos;
 
@@ -160,6 +146,7 @@ export default class Dragger {
             }
 
             dragging = false;
+            node.classList.remove("dragging");
         });
         document.addEventListener("mousemove", this.mousemove);
         document.addEventListener("mouseup", this.mouseup);

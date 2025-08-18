@@ -129,33 +129,47 @@ export default class RepairElement extends HTMLElement {
 
                 return;
             }
-            this.realEl.addEventListener(l.realEventChannel, async (evt) => {
-                if (deadListenerIdx.includes(idx)) return;
+            (l.types[0] === "released" ? this : this.realEl).addEventListener(
+                l.realEventChannel,
+                async (evt) => {
+                    if (deadListenerIdx.includes(idx)) return;
 
-                if (
-                    l.types[0] === "keyPress" &&
-                    l.payload.key?.length &&
-                    !l.payload.key.split(/\s*,\s*/).includes(evt.key)
-                )
-                    return;
-                else if (l.types[0] === "jsFunction") {
-                    try {
-                        if (!new Function("event", l.payload.scriptData)(evt)) return;
-                    } catch (e) {
-                        return;
-                    }
-                } else if (l.types[0] === "plugin") {
                     if (
-                        await l.payload
-                            .use()
-                            .then((func) => func?.({ channel: l.payload.channel, event: evt }))
+                        l.types[0] === "keyPress" &&
+                        l.payload.key?.length &&
+                        !l.payload.key.split(/\s*,\s*/).includes(evt.key)
                     )
                         return;
-                }
+                    else if (l.types[0] === "jsFunction") {
+                        try {
+                            if (!new Function("event", l.payload.scriptData)(evt)) return;
+                        } catch (e) {
+                            return;
+                        }
+                    } else if (
+                        l.types[0] === "released" &&
+                        l.payload.hotspotIndexes &&
+                        l.payload.hotspotIndexes.trim().length &&
+                        (evt.detail.hotspotIndex === undefined ||
+                            !l.payload.hotspotIndexes
+                                .split(",")
+                                .map((n) => +n)
+                                .includes(evt.detail.hotspotIndex))
+                    )
+                        return;
+                    else if (l.types[0] === "plugin") {
+                        if (
+                            await l.payload
+                                .use()
+                                .then((func) => func?.({ channel: l.payload.channel, event: evt }))
+                        )
+                            return;
+                    }
 
-                if (l.once) deadListenerIdx.push(idx);
-                l.output.goto();
-            });
+                    if (l.once) deadListenerIdx.push(idx);
+                    l.output.goto();
+                }
+            );
         });
 
         this.appendChild(this.realEl);
