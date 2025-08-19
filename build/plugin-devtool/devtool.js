@@ -2,7 +2,13 @@ import SveltePlugin from "./plugin/main.js";
 import resourceUtils from "./resourceUtils.js";
 customElements.define("repair-svelte-plugin", SveltePlugin);
 
-globalThis.RepairUtils = { resources: resourceUtils };
+globalThis.RepairUtils = {
+    resources: resourceUtils,
+    getSizeRatio: () => {
+        const ratio = (configs.sizeRatio.value ?? "1").split(",").map((n) => n);
+        return ratio.length === 2 ? ratio : [ratio[0], ratio[0]];
+    }
+};
 
 const attributes = SveltePlugin.attributes ?? [];
 const container = document.getElementById("component-container");
@@ -13,15 +19,22 @@ const configs = {
             container.style.width = val ? `${val}px` : "auto";
         },
         type: "number",
-        placeholder: "auto",
+        placeholder: "auto"
     },
     height: {
         setter: (val) => {
             container.style.height = val ? `${val}px` : "auto";
         },
         type: "number",
-        placeholder: "auto",
+        placeholder: "auto"
     },
+    sizeRatio: {
+        setter: (val) => {
+            container.style.transform = `translate(-50%, -50%) scale(${val ? val : 1}) `;
+        },
+        type: "text",
+        placeholder: "1, 1"
+    }
 };
 let pluginInstance = null;
 function createPluginInstance() {
@@ -31,7 +44,7 @@ function createPluginInstance() {
     }
     pluginInstance = new SveltePlugin({
         attributes: { ...propsState },
-        isDev: true,
+        isDev: true
     });
     container.appendChild(pluginInstance);
 }
@@ -80,10 +93,13 @@ function createConfigInput(
     input.type = type;
     let value = localStorage.getItem(`config_${key}`) ?? defaultValue ?? null;
     input.value = value;
-    if (value !== null) setter(value);
+    if (value !== null) {
+        configs[key].value = value;
+        setter(value);
+    }
     if (placeholder) input.placeholder = placeholder;
     input.addEventListener("input", () => {
-        configs[key] = input.value;
+        configs[key].value = input.value;
         setter(input.value);
         localStorage.setItem(`config_${key}`, input.value);
     });
