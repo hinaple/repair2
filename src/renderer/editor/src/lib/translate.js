@@ -16,10 +16,12 @@ export const StepTypes = {
     pause: "일시정지",
     resume: "재개",
     changeVolume: "음량 변경",
+    reset: "전체 초기화",
     "Audio.play": "오디오 재생",
     "Audio.pause": "오디오 일시정지",
     "Audio.resume": "오디오 재개",
     "Audio.changeVolume": "오디오 음량 변경",
+    "Audio.reset": "오디오 전체 초기화",
 
     Preload: "프리로드",
     add: "추가",

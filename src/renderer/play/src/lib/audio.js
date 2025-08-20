@@ -68,3 +68,9 @@ export function changeAudioVolume(channel, volume = 100, duration = 0) {
     if (!channel) channel = "default";
     if (audioChannels[channel]) audioChannels[channel].changeVolume(volume, duration);
 }
+export function resetAudio() {
+    Object.entries(audioChannels).forEach(([channel, audio]) => {
+        audio?.stop?.();
+        delete audioChannels[channel];
+    });
+}

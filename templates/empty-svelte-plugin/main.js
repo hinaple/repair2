@@ -6,7 +6,6 @@ import Component from "./Component.svelte";
 
 export default class SveltePlugin extends HTMLElement {
     static attributes = [];
-    static resources = [];
 
     constructor({ attributes = {}, isDev = false }) {
         super();

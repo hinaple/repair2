@@ -37,7 +37,8 @@ const actions = {
         pause: (s) => pauseAudio(s.payload.channel),
         resume: (s) => resumeAudio(s.payload.channel),
         changeVolume: (s) =>
-            changeAudioVolume(s.payload.channel, s.payload.volume, s.payload.duration)
+            changeAudioVolume(s.payload.channel, s.payload.volume, s.payload.duration),
+        reset: () => 
     },
     Preload: {
         add: (s) => addPreloadsBulk(s.payload.resourceArr),
