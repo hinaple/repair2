@@ -1,4 +1,5 @@
 import { getAppData } from "./appdata";
+import { getAssetDir } from "@classes/utils";
 
 const audioChannels = {};
 
@@ -12,7 +13,7 @@ class RepairAudio {
 
         this.context = new AudioContext();
 
-        this.audio = new Audio(this.resource.src);
+        this.audio = new Audio(getAssetDir(this.resource.src));
         this.audio.autoplay = true;
         this.audio.loop = this.loop;
 

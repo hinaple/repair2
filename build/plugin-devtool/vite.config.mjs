@@ -2,12 +2,12 @@ import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import path from "path";
-import { name } from "./package.json";
+import { name } from "./plugin/package.json";
 import renderer from "vite-plugin-electron-renderer";
 
 export default defineConfig(({ command }) => ({
     define: {
-        __PLUGIN_NAME__: JSON.stringify(name)
+        __PLUGIN_NAME__: JSON.stringify(name ?? "plugin")
     },
     plugins: [
         svelte(),
