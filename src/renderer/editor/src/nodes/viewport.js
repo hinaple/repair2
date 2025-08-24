@@ -49,6 +49,7 @@ export function getOriginalPos(x, y) {
 }
 
 export function moveViewport(dx, dy) {
+    if (Number.isNaN(dx) || Number.isNaN(dy)) return;
     viewport.pos.update((p) => ({
         x: (p.x += dx / rInfo.ratio),
         y: (p.y += dy / rInfo.ratio)
@@ -57,6 +58,7 @@ export function moveViewport(dx, dy) {
 
 const sizeLimit = [-0.7, 0.5];
 export function setViewportSize(size, considerLimit = true) {
+    if (Number.isNaN(size)) return;
     const newSize = considerLimit ? Math.min(Math.max(size, sizeLimit[0]), sizeLimit[1]) : size;
 
     outClicked();
@@ -65,6 +67,8 @@ export function setViewportSize(size, considerLimit = true) {
 }
 
 export function resizeViewport(step, mousePos = null) {
+    if (Number.isNaN(step)) return;
+
     const prevSize = get(viewport.size);
     const newSize = get(viewport.size) + step * 0.1;
 

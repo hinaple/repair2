@@ -4,6 +4,7 @@ import Sortable from "./sortable.svelte";
 import TypePayload from "./typePayload.svelte";
 import PluginPointer from "./pluginPointer.svelte";
 import { genId } from "./utils";
+import DragOption from "./dragOption.svelte";
 
 const PayloadTemplates = {
     empty: { content: null, isHtml: false },
@@ -43,7 +44,8 @@ export default class Element extends TypePayload {
         childStyle = null,
         className = null,
         fullscreen = false,
-        listeners = []
+        listeners = [],
+        dragOption = {}
     } = {}) {
         super({ type, payload, template: PayloadTemplates });
         this.id = id;
@@ -57,8 +59,9 @@ export default class Element extends TypePayload {
         this.childStyle = childStyle;
         this.className = className;
         this.listeners = new Sortable(listeners, Listener);
+        this.dragOption = new DragOption(dragOption);
     }
-    get styleString() {
+    getStyleString(absolute, pos) {
         if (this.fullscreen)
             return (
                 "position: absolute;" +
@@ -66,9 +69,10 @@ export default class Element extends TypePayload {
                 "left: 0; top: 0;" +
                 (this.style ?? "")
             );
-        return (
-            (this.absolute ? `position: absolute;${this.pos.styleString}` : "") + (this.style ?? "")
-        );
+        return (absolute ? `position: absolute;${pos.styleString}` : "") + (this.style ?? "");
+    }
+    get styleString() {
+        return this.getStyleString(this.absolute, this.pos);
     }
     get storeData() {
         return {
@@ -83,7 +87,8 @@ export default class Element extends TypePayload {
             pos: this.pos.storeData,
             absolute: this.absolute,
             fullscreen: this.fullscreen,
-            listeners: this.listeners.storeData
+            listeners: this.listeners.storeData,
+            dragOption: this.dragOption.storeData
         };
     }
     get copyData() {
@@ -98,7 +103,8 @@ export default class Element extends TypePayload {
             pos: this.pos.storeData,
             absolute: this.absolute,
             fullscreen: this.fullscreen,
-            listeners: this.listeners.copyData
+            listeners: this.listeners.copyData,
+            dragOption: this.dragOption.storeData
         };
     }
 }

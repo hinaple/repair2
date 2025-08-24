@@ -15,7 +15,7 @@ import {
     socketDisconnect
 } from "./communication";
 import { emitRepairEvent } from "./event";
-import { playAudio, pauseAudio, resumeAudio, changeAudioVolume } from "./audio";
+import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
 
 const actions = {
     Component: {
@@ -37,7 +37,8 @@ const actions = {
         pause: (s) => pauseAudio(s.payload.channel),
         resume: (s) => resumeAudio(s.payload.channel),
         changeVolume: (s) =>
-            changeAudioVolume(s.payload.channel, s.payload.volume, s.payload.duration)
+            changeAudioVolume(s.payload.channel, s.payload.volume, s.payload.duration),
+        reset: () => resetAudio()
     },
     Preload: {
         add: (s) => addPreloadsBulk(s.payload.resourceArr),
@@ -86,6 +87,13 @@ const actions = {
         },
         eventEmit: (s) => {
             if (s.payload.channel) emitRepairEvent(s.payload.channel, s.payload.data);
+        },
+        script: (s) => {
+            try {
+                new Function(s.payload.code)();
+            } catch (err) {
+                console.error(err);
+            }
         }
     }
 };

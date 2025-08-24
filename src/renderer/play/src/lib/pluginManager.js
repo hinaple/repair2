@@ -2,6 +2,7 @@ import PluginPointer from "@classes/pluginPointer.svelte";
 import { genId, importPlugin } from "@classes/utils";
 import { ipcRenderer } from "electron";
 import { requirePackage } from "./requirePackage";
+import { getAppData } from "./appdata";
 
 const loadedPlugins = {};
 const importedModules = {};
@@ -134,6 +135,7 @@ export default function subscribePluginHMR(type, pluginName, callback) {
 }
 
 ipcRenderer.on("plugin-hmr", async (_, { type, name }) => {
+    if (!getAppData().config.devMode) return;
     console.log(`Plugin HMR: ${type} - ${name}`);
     const pluginObj = await loadPlugin(type, name, true);
     if (!hmrSubscribers[type]?.[name]) return;

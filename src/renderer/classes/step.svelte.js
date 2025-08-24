@@ -33,7 +33,8 @@ const PayloadTemplates = {
         play: { resourceId: null, channel: "default", volume: 100, loop: false },
         pause: { channel: "default" },
         resume: { channel: "default" },
-        changeVolume: { channel: "default", volume: 100, duration: 0 }
+        changeVolume: { channel: "default", volume: 100, duration: 0 },
+        reset: {}
     },
     Communication: {
         isTypeObj: true,
@@ -56,7 +57,8 @@ const PayloadTemplates = {
         setVariable: { variableId: null, value: null },
         resetAllVariables: null,
         executePlugin: { isClass: true, class: executePlugin },
-        eventEmit: { channel: null, data: null }
+        eventEmit: { channel: null, data: null },
+        script: { code: null }
     }
 };
 

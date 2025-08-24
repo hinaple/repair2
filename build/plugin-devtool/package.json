@@ -1,0 +1,19 @@
+{
+    "name": "repair-plugin-devtool",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite --port 5533",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@sveltejs/vite-plugin-svelte": "^5.0.3",
+        "svelte": "^5.20.1",
+        "vite": "^6.1.0",
+        "vite-plugin-css-injected-by-js": "^3.5.2",
+        "vite-plugin-electron-renderer": "^0.14.6"
+    },
+    "workspaces": [
+        "plugin"
+    ]
+}

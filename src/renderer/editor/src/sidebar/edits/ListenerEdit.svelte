@@ -46,6 +46,14 @@
         placeholder="true 반환 시 활성화"
         autoResizeOpt={{ minHeight: 50 }}
     />
+{:else if data.type === "released"}
+    <hr />
+    <InputField
+        label="인식할 좌표(0부터 시작, 콤마로 구분)"
+        value={data.payload.hotspotIndexes}
+        setter={(d) => (data.payload.hotspotIndexes = d)}
+        placeholder="항상 발동"
+    />
 {:else if data.type === "plugin"}
     <InputField label="플러그인" value={data.payload.plugin} type="plugin" pluginType="functions" />
 {/if}

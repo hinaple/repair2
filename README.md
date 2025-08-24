@@ -18,6 +18,8 @@ Room Escape Pc App InteRface
 - [ ] Refactor repairElement.js
 - [ ] Add comment node
 - [ ] Online viewer
+- [ ] Make every attributes variable(like after effects)
+- [ ] Keep node connect infos when copying
 
 ## Done
 

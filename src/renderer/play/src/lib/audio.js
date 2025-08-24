@@ -1,4 +1,5 @@
 import { getAppData } from "./appdata";
+import { getAssetDir } from "@classes/utils";
 
 const audioChannels = {};
 
@@ -9,7 +10,7 @@ class RepairAudio {
 
         this.context = new AudioContext();
 
-        this.audio = new Audio(resource.src);
+        this.audio = new Audio(getAssetDir(this.resource.src));
         this.audio.autoplay = true;
         this.audio.loop = this.loop;
 
@@ -66,4 +67,10 @@ export function resumeAudio(channel) {
 export function changeAudioVolume(channel, volume = 100, duration = 0) {
     if (!channel) channel = "default";
     if (audioChannels[channel]) audioChannels[channel].changeVolume(volume, duration);
+}
+export function resetAudio() {
+    Object.entries(audioChannels).forEach(([channel, audio]) => {
+        audio?.stop?.();
+        delete audioChannels[channel];
+    });
 }

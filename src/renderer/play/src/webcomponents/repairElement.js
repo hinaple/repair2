@@ -2,6 +2,7 @@ import { setVar } from "../lib/variables";
 import { genElement } from "../lib/resources";
 import { getAppData } from "../lib/appdata";
 import { subscribe } from "../lib/variables";
+import Dragger from "../lib/dragger";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -19,10 +20,14 @@ export default class RepairElement extends HTMLElement {
 
         this.type = element.types[0];
 
+        this.element = element;
+
         this.width = element.width;
         this.height = element.height;
         this.childStyle = element.childStyle;
         this.fullscreen = !!element.fullscreen;
+
+        this.dragOption = element.dragOption;
 
         this.listeners = element.listeners.list ?? [];
 
@@ -124,38 +129,62 @@ export default class RepairElement extends HTMLElement {
 
                 return;
             }
-            this.realEl.addEventListener(l.realEventChannel, async (evt) => {
-                if (deadListenerIdx.includes(idx)) return;
+            (l.types[0] === "released" ? this : this.realEl).addEventListener(
+                l.realEventChannel,
+                async (evt) => {
+                    if (deadListenerIdx.includes(idx)) return;
 
-                if (
-                    l.types[0] === "keyPress" &&
-                    l.payload.key?.length &&
-                    !l.payload.key.split(/\s*,\s*/).includes(evt.key)
-                )
-                    return;
-                else if (l.types[0] === "jsFunction") {
-                    try {
-                        if (!new Function("event", l.payload.scriptData)(evt)) return;
-                    } catch (e) {
-                        return;
-                    }
-                } else if (l.types[0] === "plugin") {
                     if (
-                        await l.payload
-                            .use()
-                            .then((func) => func?.({ channel: l.payload.channel, event: evt }))
+                        l.types[0] === "keyPress" &&
+                        l.payload.key?.length &&
+                        !l.payload.key.split(/\s*,\s*/).includes(evt.key)
                     )
                         return;
-                }
+                    else if (l.types[0] === "jsFunction") {
+                        try {
+                            if (!new Function("event", l.payload.scriptData)(evt)) return;
+                        } catch (e) {
+                            return;
+                        }
+                    } else if (
+                        l.types[0] === "released" &&
+                        l.payload.hotspotIndexes &&
+                        l.payload.hotspotIndexes.trim().length &&
+                        (evt.detail.hotspotIndex === undefined ||
+                            !l.payload.hotspotIndexes
+                                .split(",")
+                                .map((n) => +n)
+                                .includes(evt.detail.hotspotIndex))
+                    )
+                        return;
+                    else if (l.types[0] === "plugin") {
+                        if (
+                            await l.payload
+                                .use()
+                                .then((func) => func?.({ channel: l.payload.channel, event: evt }))
+                        )
+                            return;
+                    }
 
-                if (l.once) deadListenerIdx.push(idx);
-                l.output.goto();
-            });
+                    if (l.once) deadListenerIdx.push(idx);
+                    l.output.goto();
+                }
+            );
         });
 
         this.appendChild(this.realEl);
         if (this.willFocus) this.realEl.focus();
         if (this.type === "video") this.realEl.play();
+
+        if (!this.dragOption || this.fullscreen) return;
+        this.dragger = new Dragger(this.dragOption, this, {
+            setPos: (pos) => {
+                this.setAttribute("style", this.element.getStyleString(true, pos));
+            },
+            setPosAsDefault: () => {
+                this.setAttribute("style", this.element.styleString);
+            }
+        });
     }
     registerUnsubscriber(key, unsubscriber) {
         if (!this.unsubscribers) this.unsubscribers = {};
@@ -172,6 +201,7 @@ export default class RepairElement extends HTMLElement {
             this.globalEvents.forEach((opt) => {
                 window.removeEventListener(...opt);
             });
+        if (this.dragger) this.dragger.destroy();
     }
 }
 

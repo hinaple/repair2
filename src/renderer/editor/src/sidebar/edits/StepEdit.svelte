@@ -77,4 +77,14 @@
         setter={(d) => (data.payload.waitTillEnd = d)}
         type="checkbox"
     />
+{:else if data.type === "Others.script"}
+    <InputField
+        label="스크립트 코드"
+        value={data.code}
+        setter={(d) => (data.code = d)}
+        type="textarea"
+        code
+        placeholder="//Enter JS script"
+        autoResizeOpt={{ minHeight: 100 }}
+    />
 {/if}

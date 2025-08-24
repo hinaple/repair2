@@ -2,6 +2,7 @@ import admZip from "adm-zip";
 import { app, dialog, shell } from "electron";
 import { emptyDir } from "fs-extra";
 import { join } from "path";
+import makeLog from "./logger";
 
 export default class ProjectFileManager {
     constructor(dataDir, beforeImport = null) {
@@ -41,10 +42,12 @@ export default class ProjectFileManager {
             zip.extractAllTo(this.dataDir, true);
         } catch (error) {
             console.error(error);
+            const logFile = await makeLog("error", JSON.stringify(error, null, 4));
             await dialog.showMessageBox({
                 type: "error",
                 title: "프로젝트 불러오기",
-                message: "프로젝트를 불러오는 중 오류가 발생했습니다."
+                message: "프로젝트를 불러오는 중 오류가 발생했습니다.",
+                detail: `에러 로그: ${logFile}`
             });
             app.quit();
         }

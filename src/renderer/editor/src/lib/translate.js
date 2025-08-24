@@ -16,10 +16,12 @@ export const StepTypes = {
     pause: "일시정지",
     resume: "재개",
     changeVolume: "음량 변경",
+    reset: "전체 초기화",
     "Audio.play": "오디오 재생",
     "Audio.pause": "오디오 일시정지",
     "Audio.resume": "오디오 재개",
     "Audio.changeVolume": "오디오 음량 변경",
+    "Audio.reset": "오디오 전체 초기화",
 
     Preload: "프리로드",
     add: "추가",
@@ -54,7 +56,8 @@ export const StepTypes = {
     "Others.setVariable": "변수 값 설정",
     "Others.resetAllVariables": "변수 전체 초기화",
     "Others.executePlugin": "플러그인 실행",
-    "Others.eventEmit": "이벤트 발생"
+    "Others.eventEmit": "이벤트 발생",
+    "Others.script": "스크립트 실행"
 };
 
 export const ComponentModifyTypes = {
@@ -118,6 +121,7 @@ export const ElementListenerTypes = {
     keyPress: "키보드 누름",
     globalKeyPress: "전역 키보드 누름",
     jsFunction: "함수",
+    released: "드래그 종료",
     plugin: "플러그인"
 };
 

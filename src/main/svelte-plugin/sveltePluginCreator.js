@@ -7,17 +7,7 @@ const execAsync = promisify(exec);
 
 const PACKAGE_JSON_TEMPLATE = {
     version: "1.0.0",
-    type: "module",
-    scripts: {
-        dev: "vite",
-        build: "vite build && node move.js"
-    },
-    devDependencies: {
-        "@sveltejs/vite-plugin-svelte": "^5.0.3",
-        svelte: "^5.20.1",
-        vite: "^6.1.0",
-        "vite-plugin-css-injected-by-js": "^3.5.2"
-    }
+    type: "module"
 };
 
 async function copyFolder(from, to) {

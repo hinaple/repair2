@@ -8,6 +8,7 @@
     import ResourceSelector from "./ResourceSelector.svelte";
     import TypeInput from "./TypeInput.svelte";
     import TransitionInput from "./TransitionInput.svelte";
+    import Icon from "../assets/icons/Icon.svelte";
 
     let {
         label = null,
@@ -19,6 +20,9 @@
         row = false,
         children = null,
         previewer = false,
+        oninputremove = null,
+        background = false,
+        style,
         ...props
     } = $props();
 
@@ -39,7 +43,13 @@
 </script>
 
 <div
-    class={["field", (type === "checkbox" || row) && "row", small && "small"]}
+    class={[
+        "field",
+        (type === "checkbox" || row) && "row",
+        small && "small",
+        background && "background"
+    ]}
+    {style}
     onclick={() => {
         if (type === "checkbox") checkboxClick();
     }}
@@ -47,7 +57,16 @@
     {#if type === "checkbox"}
         <Checkbox {value} />
     {/if}
-    {#if label}<div class="label">{label}</div>{/if}
+    {#if label || oninputremove}
+        <div class="label">
+            <span>{label}</span>
+            {#if oninputremove}
+                <button class="remove" onclick={oninputremove}>
+                    <Icon icon="bin" color="#fff" size="15" />
+                </button>
+            {/if}
+        </div>
+    {/if}
     {#if children}
         {@render children()}
     {:else if type === "input" || type === "number" || type === "textarea"}
@@ -55,9 +74,15 @@
     {:else if type === "select"}
         <select {value} onchange={(evt) => selectChange(evt.target.value)}>
             <option value={null} hidden>선택 안함</option>
-            {#each Object.entries(props.options) as [value, label]}
-                <option {value}>{label}</option>
-            {/each}
+            {#if Array.isArray(props.options)}
+                {#each props.options as value}
+                    <option {value}>{value}</option>
+                {/each}
+            {:else}
+                {#each Object.entries(props.options) as [value, label]}
+                    <option {value}>{label}</option>
+                {/each}
+            {/if}
         </select>
     {:else if type === "variable"}
         <select {value} onchange={(evt) => selectChange(evt.target.value)}>
@@ -92,6 +117,11 @@
         display: flex;
         flex-direction: column;
         gap: 3px;
+        box-sizing: border-box;
+    }
+    .field.background {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
     }
     .field.row {
         flex-direction: row;
@@ -106,6 +136,10 @@
     .label {
         font-size: 16px;
         padding-left: 5px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
     }
     .small .label {
         font-size: 14px;
@@ -126,5 +160,20 @@
     .row.small :global(input) {
         flex: 1 1 auto;
         width: 100%;
+    }
+
+    .remove {
+        background: none;
+        border: none;
+        cursor: pointer;
+        height: 30px;
+        width: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 5px;
+    }
+    .remove:hover {
+        background-color: rgba(255, 255, 255, 0.3);
     }
 </style>
