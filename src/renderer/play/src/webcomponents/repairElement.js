@@ -44,6 +44,10 @@ export default class RepairElement extends HTMLElement {
             if (element.payload.maxLength !== null)
                 this.realEl.maxlength = element.payload.maxLength;
 
+            const valueFunc =
+                element.payload.valueFunction &&
+                new Function("value", element.payload.valueFunction);
+
             if (!element.payload.allowedType || element.payload.allowedType === "any")
                 this.allowedRegex = null;
             else if (element.payload.allowedType === "regex")
@@ -57,10 +61,12 @@ export default class RepairElement extends HTMLElement {
                     subscribe(this.variableId, (value) => (this.realEl.value = value))
                 );
             this.realEl.addEventListener("input", (evt) => {
-                let tempValue;
+                let tempValue = evt.target.value;
+
+                if (valueFunc) tempValue = valueFunc(tempValue.toString());
+
                 if (this.allowedRegex)
-                    tempValue = (evt.target.value.match(this.allowedRegex) ?? []).join("");
-                else tempValue = evt.target.value;
+                    tempValue = (tempValue.match(this.allowedRegex) ?? []).join("");
 
                 if (this.variableId) setVar(this.variableId, tempValue);
 

@@ -20,7 +20,7 @@ async function loadModules(dependencies) {
     await Promise.all(
         Object.entries(dependencies).map(async ([name, version]) => {
             const nameVersion = `${name}@${version}`;
-            if (importedModules[nameVersion]) return [name, importedModules[nameVersion]];
+            if (importedModules[nameVersion]) modules[name] = importedModules[nameVersion];
 
             const module = await requirePackage(name, version);
             importedModules[nameVersion] = module;

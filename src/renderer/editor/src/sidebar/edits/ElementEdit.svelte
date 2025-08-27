@@ -72,6 +72,15 @@
             placeholder="허용할 문자열 정규표현식"
         />
     {/if}
+    <InputField
+        label="문자열 변형 함수"
+        value={data.payload.valueFunction}
+        setter={(d) => (data.payload.valueFunction = d)}
+        type="textarea"
+        code
+        autoResizeOpt={{ minHeight: 50 }}
+        placeholder="return value;"
+    />
 {:else if data.type === "video"}
     <InputField
         label="반복 재생"
