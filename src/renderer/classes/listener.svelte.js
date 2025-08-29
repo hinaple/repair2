@@ -14,9 +14,15 @@ class PluginListener {
 
 const PayloadTemplates = {
     custom: { channel: null },
+    Mouse: {
+        isTypeObj: true,
+        click: null, //{ doubleClick: false },
+        down: null,
+        up: null
+    },
+    // click: null,
     input: null,
     keyPress: { key: null },
-    click: null,
     videoEnd: null,
     globalKeyPress: { key: null, useCapture: false },
     jsFunction: { channel: null, scriptData: null },
@@ -27,25 +33,30 @@ const PayloadTemplates = {
 const TypeMap = {
     keyPress: "keydown",
     globalKeyPress: "keydown",
-    videoEnd: "ended"
+    videoEnd: "ended",
+    "Mouse.click": "click",
+    "Mouse.down": "mousedown",
+    "Mouse.up": "mouseup"
 };
 
 export default class Listener extends TypePayload {
     once = $state();
     constructor({ type = "custom", payload = {}, output = {}, once = false } = {}) {
+        if (type === "click" || type[0] === "click") type = ["Mouse", "click"];
         super({ type, payload, template: PayloadTemplates });
         this.output = new Output(output);
         this.once = once;
         this.id = Symbol();
     }
     get title() {
-        if (this.types[0] === "custom" && this.payload.channel?.length) return this.payload.channel;
+        if (this.shortType === "custom" && this.payload.channel?.length)
+            return this.payload.channel;
         return null;
     }
     get realEventChannel() {
         return this.payload.channel?.length
             ? this.payload.channel
-            : (TypeMap[this.types[0]] ?? this.types[0]);
+            : (TypeMap[this.shortType] ?? this.lastType);
     }
     get storeData() {
         return { ...super.storeData, output: this.output, once: this.once };

@@ -84,4 +84,7 @@ export default class TypePayload {
                 this.payload?.copyData ?? this.payload?.storeData ?? $state.snapshot(this.payload)
         };
     }
+    get lastType() {
+        return this.types[this.types.length - 1];
+    }
 }

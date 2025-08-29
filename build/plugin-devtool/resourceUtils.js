@@ -1,19 +1,21 @@
-import { ipcRenderer } from "electron";
 import { basename, join } from "path";
 
 const dataDir = ipcRenderer.sendSync("getDataDir");
 const assetDir = join(dataDir, "assets");
 
+let resources = [];
+export function setResources(r) {
+    resources = r;
+}
+
 function getAssetDir(dir) {
     return join(assetDir, dir);
 }
 
-let resources = ipcRenderer.sendSync("request-data").resources;
-
 const FileTypes = {
     image: ["jpg", "jpeg", "gif", "svg", "webp", "png", "bmp", "ico"],
     video: ["mp4", "webm", "mkv"],
-    audio: ["mp3", "wav", "ogg", "m4a", "weba"],
+    audio: ["mp3", "wav", "ogg", "m4a", "weba"]
     // script: ["js"]
 };
 const fileTypeMap = {};
@@ -53,9 +55,7 @@ function genElement(resource) {
 
 function findResourceByTitle(resourceTitle) {
     return resources.find(
-        (r) =>
-            (r.alias?.length ? r.alias : r.src ? basename(r.src) : null) ===
-            resourceTitle
+        (r) => (r.alias?.length ? r.alias : r.src ? basename(r.src) : null) === resourceTitle
     );
 }
 
@@ -65,6 +65,6 @@ const utils = {
     },
     getResourcePath(resourceTitle) {
         return getAssetDir(findResourceByTitle(resourceTitle).src);
-    },
+    }
 };
 export default utils;

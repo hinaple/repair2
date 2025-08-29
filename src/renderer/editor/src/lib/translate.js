@@ -115,7 +115,15 @@ export const ElementTypes = {
 
 export const ElementListenerTypes = {
     custom: "사용자 정의",
-    click: "마우스 클릭",
+
+    Mouse: "마우스",
+    click: "클릭",
+    down: "누름",
+    up: "뗌",
+    "Mouse.click": "마우스 클릭",
+    "Mouse.down": "마우스 누름",
+    "Mouse.up": "마우스 뗌",
+
     input: "값 입력",
     videoEnd: "영상 종료",
     keyPress: "키보드 누름",

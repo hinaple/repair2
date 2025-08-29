@@ -1,6 +1,16 @@
+import { ipcRenderer } from "electron";
 import SveltePlugin from "./plugin/main.js";
-import resourceUtils from "./resourceUtils.js";
+import resourceUtils, { setResources } from "./resourceUtils.js";
 customElements.define("repair-svelte-plugin", SveltePlugin);
+
+const data = ipcRenderer.sendSync("request-data");
+
+setResources(data.resources);
+
+if (data.globalStyles) {
+    const globalStyle = document.createElement("style");
+    document.head.appendChild(document.createTextNode(globalStyle));
+}
 
 globalThis.RepairUtils = {
     resources: resourceUtils,
