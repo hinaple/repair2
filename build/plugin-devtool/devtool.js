@@ -9,7 +9,8 @@ setResources(data.resources);
 
 if (data.globalStyles) {
     const globalStyle = document.createElement("style");
-    document.head.appendChild(document.createTextNode(globalStyle));
+    globalStyle.appendChild(document.createTextNode(data.globalStyles));
+    document.head.appendChild(globalStyle);
 }
 
 globalThis.RepairUtils = {
