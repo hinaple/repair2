@@ -125,10 +125,14 @@
     }
     .field.row {
         flex-direction: row;
-        align-items: center;
         gap: 5px;
         padding-left: 5px;
         box-sizing: border-box;
+        align-items: start;
+
+        .label {
+            margin-top: 2.5px;
+        }
     }
     .field.small {
         padding-left: 0;

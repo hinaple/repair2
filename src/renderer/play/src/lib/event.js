@@ -1,22 +1,30 @@
 import { getAppData } from "./appdata";
 import { registerUtils } from "./globalUtils";
 
-const eventMap = {};
+const eventMap = new Map();
 
 export function addRepairEventListener(channel, callback) {
-    if (eventMap[channel]) eventMap[channel] = [];
+    let channelArr = eventMap.get(channel);
+    if (!channelArr) {
+        channelArr = [];
+        eventMap.set(channel, channelArr);
+    }
 
-    eventMap[channel].push(callback);
+    channelArr.push(callback);
 
     return () => {
-        eventMap[channel] = eventMap[channel].filter((c) => c !== callback);
+        eventMap.set(
+            channel,
+            eventMap.get(channel).filter((c) => c !== callback)
+        );
     };
 }
 
 export function emitRepairEvent(channel, data) {
     getAppData().executeEntry("event", { channel });
-    if (!eventMap[channel]) return;
-    eventMap[channel].forEach((callback) => callback(data));
+    const channelArr = eventMap.get(channel);
+    if (!channelArr) return;
+    channelArr.forEach((callback) => callback(data));
 }
 
 registerUtils("event", {

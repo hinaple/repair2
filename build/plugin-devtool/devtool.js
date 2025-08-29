@@ -1,6 +1,7 @@
 import { ipcRenderer } from "electron";
 import SveltePlugin from "./plugin/main.js";
 import resourceUtils, { setResources } from "./resourceUtils.js";
+import { addListener } from "./event.js";
 customElements.define("repair-svelte-plugin", SveltePlugin);
 
 const data = ipcRenderer.sendSync("request-data");
@@ -15,6 +16,7 @@ if (data.globalStyles) {
 
 globalThis.RepairUtils = {
     resources: resourceUtils,
+    event: { addListener },
     getSizeRatio: () => {
         const ratio = (configs.sizeRatio.value ?? "1").split(",").map((n) => n);
         return ratio.length === 2 ? ratio : [ratio[0], ratio[0]];
@@ -138,7 +140,7 @@ function initPropsPanel() {
     content.appendChild(hr);
 
     const btn = document.createElement("button");
-    btn.innerText = "refresh";
+    btn.innerText = "Refresh";
     content.appendChild(btn);
     btn.addEventListener("click", () => {
         createPluginInstance();
