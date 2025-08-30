@@ -10,8 +10,8 @@ export function addListener(channel, callback) {
 const eventChannel = document.getElementById("event-channel");
 const eventData = document.getElementById("event-data");
 const eventDispatch = document.getElementById("event-dispatch");
-function dispatch(channel, data) {
-    EvtMap[channel]?.(data);
+function dispatch() {
+    EvtMap[eventChannel.value.trim()]?.(eventData.value);
 }
 eventDispatch.addEventListener("click", dispatch);
 function detectEnterToDispatch(evt) {
