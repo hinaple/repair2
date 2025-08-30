@@ -193,6 +193,8 @@ function applyDataConfig(forceUpdate = false) {
 
     if (!mainWindow) return;
 
+    mainWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
+    if (editorWindow) editorWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
     mainWindow.setTitle?.(data?.config?.title ?? "REPAIRv2");
 
     if (!forceUpdate && isMultiScreen === !!data.config?.multiScreen) return;
@@ -486,6 +488,7 @@ function createEditorWindow() {
 
     editorWindow.on("ready-to-show", () => {
         editorWindow.show();
+        if (data) editorWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
     });
 
     editorWindow.webContents.setWindowOpenHandler((details) => {

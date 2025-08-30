@@ -18,6 +18,7 @@ export default class Config {
     multiScreen = $state();
     transparent = $state();
     devMode = $state();
+    alwaysOnTop = $state();
     constructor({
         title = "REPAIR v2",
         width = null,
@@ -29,7 +30,8 @@ export default class Config {
         editorPassword = null,
         multiScreen = false,
         transparent = false,
-        devMode = true
+        devMode = true,
+        alwaysOnTop = false
     } = {}) {
         this.title = title;
         this.width = width;
@@ -42,6 +44,7 @@ export default class Config {
         this.multiScreen = multiScreen;
         this.transparent = transparent;
         this.devMode = devMode;
+        this.alwaysOnTop = alwaysOnTop;
     }
     get styleString() {
         return (
@@ -73,6 +76,7 @@ export default class Config {
             editorPassword: this.editorPassword,
             multiScreen: this.multiScreen,
             transparent: this.transparent,
+            alwaysOnTop: this.alwaysOnTop,
             devMode: this.devMode
         };
     }

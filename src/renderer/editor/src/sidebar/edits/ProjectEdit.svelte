@@ -58,6 +58,12 @@
     placeholder="비밀번호 없음"
 />
 <InputField
+    label="창을 항상 최상위에 표시"
+    value={data.alwaysOnTop}
+    setter={(d) => (data.alwaysOnTop = d)}
+    type="checkbox"
+/>
+<InputField
     label="플러그인 HMR 활성화"
     value={data.devMode}
     setter={(d) => (data.devMode = d)}
