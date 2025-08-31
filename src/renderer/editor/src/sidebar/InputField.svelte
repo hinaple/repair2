@@ -85,7 +85,7 @@
             {/if}
         </select>
     {:else if type === "variable"}
-        <select {value} onchange={(evt) => selectChange(evt.target.value)}>
+        <select value={value || null} onchange={(evt) => selectChange(evt.target.value)}>
             <option value={null}>변수 할당 없음</option>
             {#each appData.variables as variable}
                 <option value={variable.id}>

@@ -36,6 +36,9 @@ ipcRenderer.on("global-css", (event, css) => {
     globalStyles.textContent = css;
 });
 
+/**
+ * @returns {AppDataClass}
+ */
 export function getAppData() {
     return appdata;
 }

@@ -19,13 +19,15 @@
     import SequenceClass from "@classes/nodes/sequence.svelte";
     import BranchClass from "@classes/nodes/branch.svelte";
     import EntryClass from "@classes/nodes/entry.svelte";
+    import VariableSetClass from "@classes/nodes/variableSet.svelte";
     import { addHistory } from "../lib/workHistory";
-    import Branch from "./branch/Branch.svelte";
+    import Branch from "./Branch.svelte";
     import Entry from "./Entry.svelte";
     import { removeNodeWithHistory } from "../lib/syncData.svelte";
     import { genClipboardFn, pasted } from "../lib/clipboard";
     import { fade } from "svelte/transition";
     import FrameUpdater from "../lib/frameUpdater";
+    import VariableSet from "./VariableSet.svelte";
 
     let readyToGrab = $state(false);
     function keydown(evt) {
@@ -151,6 +153,18 @@
 
     const contextmenu = [
         {
+            label: "새 진입점",
+            click: ({ pos: { x, y } }) => {
+                const entry = new EntryClass({ nodePos: getOriginalPos(x, y) });
+                const clipboardFn = genClipboardFn("entry", entry, () =>
+                    removeNodeWithHistory(entry)
+                );
+                focusData("entry", entry, { clipboardFn });
+                appData.addNodeWithHistory(addHistory, entry);
+                return true;
+            }
+        },
+        {
             label: "새 시퀀스",
             click: ({ pos: { x, y } }) => {
                 const seq = new SequenceClass({ nodePos: getOriginalPos(x, y) });
@@ -175,14 +189,14 @@
             }
         },
         {
-            label: "새 진입점",
+            label: "새 변수설정",
             click: ({ pos: { x, y } }) => {
-                const entry = new EntryClass({ nodePos: getOriginalPos(x, y) });
-                const clipboardFn = genClipboardFn("entry", entry, () =>
-                    removeNodeWithHistory(entry)
+                const variableSet = new VariableSetClass({ nodePos: getOriginalPos(x, y) });
+                const clipboardFn = genClipboardFn("variableSet", variableSet, () =>
+                    removeNodeWithHistory(variableSet)
                 );
-                focusData("entry", entry, { clipboardFn });
-                appData.addNodeWithHistory(addHistory, entry);
+                focusData("variableSet", variableSet, { clipboardFn });
+                appData.addNodeWithHistory(addHistory, variableSet);
                 return true;
             }
         },
@@ -226,6 +240,12 @@
             {:else if node.type === "entry"}
                 <Entry
                     entry={node}
+                    isLastHold={node.id === lastHold}
+                    onmousedown={() => (lastHold = node.id)}
+                />
+            {:else if node.type === "variableSet"}
+                <VariableSet
+                    variableSet={node}
                     isLastHold={node.id === lastHold}
                     onmousedown={() => (lastHold = node.id)}
                 />

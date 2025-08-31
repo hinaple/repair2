@@ -1,10 +1,10 @@
 <script>
-    import Node from "../Node.svelte";
+    import Node from "./Node.svelte";
     import { get } from "svelte/store";
-    import { grabbing } from "../../lib/stores";
-    import Value from "./Value.svelte";
-    import { ComparisonOperatorTypes } from "../../lib/translate";
-    import { outClicked } from "../../lib/contextMenu/contextUtils";
+    import { grabbing } from "../lib/stores";
+    import Value from "./value/Value.svelte";
+    import { ComparisonOperatorTypes } from "../lib/translate";
+    import { outClicked } from "../lib/contextMenu/contextUtils";
 
     let { branch, onmousedown, ...nodeData } = $props();
 

@@ -1,6 +1,6 @@
 {
     "name": "repair2",
-    "version": "2.3.7-beta.0",
+    "version": "2.3.7-beta.2",
     "description": "REPAIR v2",
     "main": "./out/main/index.js",
     "type": "module",
@@ -27,6 +27,7 @@
         "easing-utils": "^1.0.0",
         "electron-prompt": "^1.7.0",
         "fs-extra": "^11.3.0",
+        "hangul-js": "^0.2.6",
         "lit": "^3.2.1",
         "serialport": "^13.0.0",
         "socket.io-client": "^4.8.1"

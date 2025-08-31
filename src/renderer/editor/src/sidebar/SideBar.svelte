@@ -16,6 +16,7 @@
     import EntryEdit from "./edits/EntryEdit.svelte";
     import Variables from "./variable/Variables.svelte";
     import Resources from "./resource/Resources.svelte";
+    import VariableSetEdit from "./edits/VariableSetEdit.svelte";
 
     const EditComponents = {
         project: ProjectEdit,
@@ -27,7 +28,8 @@
         component: ComponentEdit,
         element: ElementEdit,
         listener: ListenerEdit,
-        entry: EntryEdit
+        entry: EntryEdit,
+        variableSet: VariableSetEdit
     };
     let CurrentEditComponent = $state();
     let currentFocus = $state();

@@ -86,6 +86,8 @@ export const ValueProcessTypes = {
     toLowerCase: "소문자화",
     toUpperCase: "대문자화",
     length: "글자 개수",
+    koToEn: "한->영 변환",
+    enToKo: "영->한 변환",
     jsFunction: "함수"
 };
 
