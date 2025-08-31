@@ -7,11 +7,11 @@ function singleConvert(char) {
     if (Eng.includes(char)) return Kor[Eng.indexOf(char)];
     else return char;
 }
-function EngsToKoArr(str) {
-    return str.split("").map((c) => singleConvert(c));
+function EngsToKoArr(arr) {
+    return arr.map((c) => singleConvert(c));
 }
 export function enToKo(str) {
-    const KoArr = EngsToKoArr(str);
+    const KoArr = EngsToKoArr(Hangul.disassemble(str));
     return Hangul.assemble(KoArr);
 }
 export function koToEn(str) {
