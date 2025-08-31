@@ -36,7 +36,10 @@ async function initializePluginSystem() {
 }
 
 const projectFileManager = new ProjectFileManager(dataDir, () => {
-    if (editorWindow) editorWindow.close();
+    if (editorWindow) {
+        editorWindow.close();
+        editorWindow = null;
+    }
     closeAllWatchers();
 });
 
