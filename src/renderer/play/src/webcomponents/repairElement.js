@@ -112,21 +112,60 @@ export default class RepairElement extends HTMLElement {
             this.realEl.style.height = this.height ? `${this.height}px` : "auto";
         }
 
-        const deadListenerIdx = [];
+        const deadListeners = [];
+        function gotoListener(listener) {
+            if (listener.once) deadListeners.push(listener);
+            listener.output.goto();
+        }
+
+        this.repeating = new Map();
+        const activeListener = (listener) => {
+            //when event is activated
+            if (listener.repeatCount <= 1) {
+                //not repeating event
+                gotoListener(listener);
+                return;
+            }
+
+            const repeatInfo = this.repeating.get(listener); //repeating info
+            if (!repeatInfo) {
+                //first activated
+                this.repeating.set(listener, {
+                    count: 1,
+                    timeout: listener.repeatInterval
+                        ? setTimeout(() => this.repeating.delete(listener), listener.repeatInterval) //reset
+                        : null //never reset
+                });
+                return;
+            }
+            if (repeatInfo.timeout) clearTimeout(repeatInfo.timeout); //remove reset timeout
+            repeatInfo.count++;
+            if (repeatInfo.count >= listener.repeatCount) {
+                gotoListener(listener);
+                this.repeating.delete(listener);
+                return;
+            }
+            if (listener.repeatInterval)
+                repeatInfo.timeout = setTimeout(
+                    () => this.repeating.delete(listener),
+                    listener.repeatInterval
+                );
+        };
+
         this.globalEvents = [];
-        this.listeners.forEach((l, idx) => {
+        this.listeners.forEach((l) => {
             if (l.types[0] === "globalKeyPress") {
                 const eventOpt = [
                     l.realEventChannel,
                     async (evt) => {
                         if (
-                            l.payload.key?.length &&
-                            !l.payload.key.split(/\s*,\s*/).includes(evt.key)
+                            deadListeners.includes(l) ||
+                            (l.payload.key?.length &&
+                                !l.payload.key.split(/\s*,\s*/).includes(evt.key))
                         )
                             return;
 
-                        if (l.once) deadListenerIdx.push(idx);
-                        l.output.goto();
+                        activeListener(l);
                     },
                     { capture: l.useCapture }
                 ];
@@ -138,7 +177,7 @@ export default class RepairElement extends HTMLElement {
             (l.types[0] === "released" ? this : this.realEl).addEventListener(
                 l.realEventChannel,
                 async (evt) => {
-                    if (deadListenerIdx.includes(idx)) return;
+                    if (deadListeners.includes(l)) return;
 
                     if (
                         l.types[0] === "keyPress" &&
@@ -172,8 +211,7 @@ export default class RepairElement extends HTMLElement {
                             return;
                     }
 
-                    if (l.once) deadListenerIdx.push(idx);
-                    l.output.goto();
+                    activeListener(l);
                 }
             );
         });
@@ -208,6 +246,7 @@ export default class RepairElement extends HTMLElement {
                 window.removeEventListener(...opt);
             });
         if (this.dragger) this.dragger.destroy();
+        if (this.repeating) this.repeating.forEach((rep) => clearTimeout(rep.timeout));
     }
 }
 

@@ -7,6 +7,23 @@
 
 <InputField label="리스너 종류" type="type" value={data} options={ElementListenerTypes} />
 <InputField
+    label="발동 반복 횟수"
+    value={data.repeatCount}
+    setter={(d) => (data.repeatCount = d)}
+    type="number"
+    min="1"
+/>
+{#if data.repeatCount > 1}
+    <InputField
+        label="최소 반복 감지 시간(ms)"
+        value={data.repeatInterval}
+        setter={(d) => (data.repeatInterval = d)}
+        type="number"
+        min="0"
+        placeholder="0 = 시간 제한 없음"
+    />
+{/if}
+<InputField
     label="한 번만 실행"
     value={data.once}
     setter={(d) => (data.once = d)}

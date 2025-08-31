@@ -40,11 +40,22 @@ const TypeMap = {
 };
 
 export default class Listener extends TypePayload {
+    repeatCount = $state();
+    repeatInterval = $state();
     once = $state();
-    constructor({ type = "custom", payload = {}, output = {}, once = false } = {}) {
+    constructor({
+        type = "custom",
+        payload = {},
+        output = {},
+        once = false,
+        repeatCount = 1,
+        repeatInterval = 0
+    } = {}) {
         if (type === "click" || type[0] === "click") type = ["Mouse", "click"];
         super({ type, payload, template: PayloadTemplates });
         this.output = new Output(output);
+        this.repeatCount = repeatCount;
+        this.repeatInterval = repeatInterval;
         this.once = once;
         this.id = Symbol();
     }
@@ -59,9 +70,20 @@ export default class Listener extends TypePayload {
             : (TypeMap[this.shortType] ?? this.lastType);
     }
     get storeData() {
-        return { ...super.storeData, output: this.output, once: this.once };
+        return {
+            ...super.storeData,
+            output: this.output,
+            repeatCount: this.repeatCount,
+            repeatInterval: this.repeatInterval,
+            once: this.once
+        };
     }
     get copyData() {
-        return { ...super.storeData, once: this.once };
+        return {
+            ...super.storeData,
+            repeatCount: this.repeatCount,
+            repeatInterval: this.repeatInterval,
+            once: this.once
+        };
     }
 }
