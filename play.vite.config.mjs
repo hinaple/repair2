@@ -5,6 +5,7 @@ import vanillizer from "./vanillizer";
 
 export default defineConfig({
     root: "src/renderer/play",
+    cacheDir: "node_modules/.vite-play",
     plugins: [renderer(), vanillizer],
     server: {
         port: 3100

@@ -59,10 +59,10 @@ export function modifyComponentByAlias(alias, modifyKey, modifyValue) {
 
     const currentComp = components[idx];
     if (modifyKey === "visible" && currentComp.visible !== modifyValue) {
-        currentComp[modifyKey] = modifyValue;
-
         if (modifyValue) gamezone.appendChild(currentComp);
         else removeComponentFromDOM(currentComp);
+
+        currentComp.visible = !!modifyValue;
         return;
     }
     if (modifyKey === "style") {
