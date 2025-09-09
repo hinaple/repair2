@@ -43,8 +43,10 @@ export function getAppData() {
     return appdata;
 }
 
-registerUtils("getAppData", getAppData);
-registerUtils("getSizeRatio", () => {
+export function getSizeRatio() {
     const ratio = (appdata.config.sizeRatio ?? "1").split(",").map((n) => n);
     return ratio.length === 2 ? ratio : [ratio[0], ratio[0]];
-});
+}
+
+registerUtils("getAppData", getAppData);
+registerUtils("getSizeRatio", getSizeRatio);

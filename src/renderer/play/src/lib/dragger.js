@@ -1,5 +1,5 @@
 import * as Easing from "easing-utils";
-import { getAppData } from "./appdata";
+import { getSizeRatio } from "./appdata";
 
 function getDistance(a, b) {
     return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
@@ -12,12 +12,7 @@ export default class Dragger {
         this.dragOption = dragOption;
         this.node = node;
 
-        const ratio = getAppData()
-            .config.sizeRatio.split(",")
-            .map((n) => +n);
-        const screenRatio = ratio.length
-            ? { x: ratio[0], y: ratio[1] ?? ratio[0] }
-            : { x: 1, y: 1 };
+        const screenRatio = getSizeRatio();
 
         if (dragOption.hotspots.length) {
             requestAnimationFrame(() => {
