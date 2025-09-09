@@ -44,7 +44,7 @@ export function getAppData() {
 }
 
 export function getSizeRatio() {
-    const ratio = (appdata.config.sizeRatio ?? "1").split(",").map((n) => n);
+    const ratio = (appdata.config.sizeRatio || "1").split(",").map((n) => n);
     return ratio.length === 2 ? ratio : [ratio[0], ratio[0]];
 }
 
