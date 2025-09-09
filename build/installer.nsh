@@ -1,5 +1,5 @@
-Function CopyToUserData
-    StrCpy $0 "${BUILD_RESOURCES_DIR}\plugin-devtool" ; source
+!macro customInstall
+    StrCpy $0 "$INSTDIR\plugin-devtool" ; source
 
     ReadEnvStr $1 "APPDATA"
     StrCpy $2 "$1\repair2\plugin-devtool" ; dest
@@ -11,8 +11,4 @@ Function CopyToUserData
     
     ; ExecWait 'xcopy "$0\*" "$2" /E /I /Y /H /R /C /Q'
     CopyFiles /SILENT "$0\*.*" "$2"
-FunctionEnd
-
-Section .onInstSuccess
-    Call CopyToUserData
-SectionEnd
+!macroEnd
