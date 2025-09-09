@@ -11,7 +11,7 @@ export default class Sequence extends AdvancedNode {
     }
     async execute() {
         for (const step of this.steps.list) {
-            await step.execute();
+            if ((await step.execute()) === false) return;
         }
         this.output.goto();
     }

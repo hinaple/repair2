@@ -3,7 +3,7 @@ import { ipcRenderer } from "electron";
 import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
 import { registerUtils } from "./globalUtils";
-import initShortcuts from "./shotcut";
+import initShortcuts from "./shortcut";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");

@@ -44,6 +44,37 @@
         type="number"
         min="0"
     />
+{:else if data.type === "Others.customReset"}
+    <InputField
+        label="음향 초기화"
+        value={data.payload.audios}
+        setter={(d) => (data.payload.audios = d)}
+        type="checkbox"
+    />
+    <InputField
+        label="변수 초기화"
+        value={data.payload.variables}
+        setter={(d) => (data.payload.variables = d)}
+        type="checkbox"
+    />
+    <InputField
+        label="컴포넌트 전체 삭제"
+        value={data.payload.components}
+        setter={(d) => (data.payload.components = d)}
+        type="checkbox"
+    />
+    <InputField
+        label="딜레이 초기화"
+        value={data.payload.delays}
+        setter={(d) => (data.payload.delays = d)}
+        type="checkbox"
+    />
+    <InputField
+        label="프리로드 초기화"
+        value={data.payload.preloads}
+        setter={(d) => (data.payload.preloads = d)}
+        type="checkbox"
+    />
 {:else if data.type === "Others.eventEmit"}
     <InputField
         label="이벤트 채널"

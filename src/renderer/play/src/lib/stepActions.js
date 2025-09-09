@@ -16,6 +16,7 @@ import {
 } from "./communication";
 import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
+import { clearDelays, delay } from "./delay";
 
 const actions = {
     Component: {
@@ -70,8 +71,15 @@ const actions = {
         }
     },
 
-    delay: (s) => new Promise((res) => setTimeout(res, s.payload.delayMs)),
+    delay: (s) => delay(s.payload.delayMs),
     Others: {
+        customReset: (s) => {
+            if (s.payload.audios) resetAudio();
+            if (s.payload.variables) resetAllVar();
+            if (s.payload.components) clearComponents(true);
+            if (s.payload.delays) clearDelays();
+            if (s.payload.preloads) removePreloadsAll();
+        },
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
         resetAllVariables: () => resetAllVar(),
         executePlugin: (s) => {

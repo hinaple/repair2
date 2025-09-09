@@ -54,6 +54,13 @@ const PayloadTemplates = {
     delay: { delayMs: 0 },
     Others: {
         isTypeObj: true,
+        customReset: {
+            audios: true,
+            variables: true,
+            components: true,
+            delays: true,
+            preloads: true
+        },
         setVariable: { variableId: null, value: null },
         resetAllVariables: null,
         executePlugin: { isClass: true, class: executePlugin },
