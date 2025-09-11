@@ -584,7 +584,7 @@ if (!app.requestSingleInstanceLock()) {
 
         if (!(await appOpenedWithProject(process.argv, false))) {
             showSplash(is.dev);
-            await loadData();
+            await Promise.all([new Promise((res) => setTimeout(res, 3000)), loadData()]);
         }
 
         await initializePluginSystem();
