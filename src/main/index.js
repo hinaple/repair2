@@ -119,6 +119,7 @@ async function saveData(tempData) {
 }
 
 function importDefaultProject() {
+    sendStartupInfo("기본 프로젝트 로드 중...");
     return projectFileManager.importProject(join(templateDir, "projects/default.repair"));
 }
 
@@ -564,9 +565,10 @@ if (!app.requestSingleInstanceLock()) {
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
 
-        showSplash(is.dev);
-
-        if (!(await appOpenedWithProject(process.argv, false))) await loadData();
+        if (!(await appOpenedWithProject(process.argv, false))) {
+            showSplash(is.dev);
+            await loadData();
+        }
 
         await initializePluginSystem();
 

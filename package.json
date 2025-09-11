@@ -15,7 +15,7 @@
         "build:main": "electron-vite build",
         "build:editor": "vite build --config editor.vite.config.mjs",
         "build:play": "vite build --config play.vite.config.mjs",
-        "build:splash": "cp -r src/splash out/splash",
+        "build:splash": "xcopy src\\renderer\\splash out\\splash /E /I /Y",
         "build": "npm-run-all --parallel build:main build:editor build:play build:splash",
         "postinstall": "electron-builder install-app-deps",
         "build:unpack": "npm run build && electron-builder --dir",
@@ -25,6 +25,7 @@
     "dependencies": {
         "@electron-toolkit/utils": "^4.0.0",
         "archiver": "^7.0.1",
+        "archiver-utils": "^5.0.2",
         "easing-utils": "^1.0.0",
         "electron-prompt": "^1.7.0",
         "fs-extra": "^11.3.0",

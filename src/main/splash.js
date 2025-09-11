@@ -33,7 +33,7 @@ export function showSplash(isDev = false) {
     splashWindow.on("ready-to-show", () => {
         splashWindow.show();
         splashWindow.setAlwaysOnTop(true, "pop-up-menu");
-        if (isDev) splashWindow.webContents.openDevTools();
+        // if (isDev) splashWindow.webContents.openDevTools();
     });
 
     splashWindow.loadFile(

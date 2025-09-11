@@ -5,6 +5,7 @@ import makeLog from "./logger";
 import { createWriteStream } from "fs";
 import archiver from "archiver";
 import StreamZip from "node-stream-zip";
+import { readdir } from "fs/promises";
 
 export default class ProjectFileManager {
     constructor(dataDir, { beforeImport = null, importProgress = null, afterImport = null }) {
@@ -45,11 +46,18 @@ export default class ProjectFileManager {
             });
             archive.finalize();
 
+            let fileCount = 0;
             archive.on("progress", (progress) => {
                 console.log(
                     "PROGRESS",
-                    Math.floor((progress.fs.processedBytes / progress.fs.totalBytes) * 100)
+                    fileCount
+                        ? Math.floor((progress.entries.processed / fileCount) * 100)
+                        : "Unknown"
                 );
+            });
+
+            readdir(this.dataDir, { recursive: true }).then((files) => {
+                fileCount = files.length;
             });
             // const zip = new admZip();
             // zip.addLocalFolder(this.dataDir, "", (filename) => {
@@ -129,7 +137,7 @@ export default class ProjectFileManager {
             detail: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
             buttons: ["확인", "취소"],
             cancelId: 1,
-            defaultId: 0,
+            defaultId: 1,
             noLink: true
         });
         if (confirm.response !== 0) return false;
