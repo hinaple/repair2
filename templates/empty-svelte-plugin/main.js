@@ -22,7 +22,7 @@ export default class SveltePlugin extends HTMLElement {
 
         this.component = mount(Component, {
             target: this.shadowRoot,
-            props: { ...this.attributesObj, dispatchEvent }
+            props: { ...this.attributesObj, root: this.shadowRoot, dispatchEvent }
         });
 
         // DO NOT EDIT BELOW UNLESS YOU KNOW WHAT IT DOES
