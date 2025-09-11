@@ -13,6 +13,7 @@ import createSveltePlugin from "./svelte-plugin/sveltePluginCreator.js";
 import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
 import prompt from "electron-prompt";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
+import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 
 let mainWindow, editorWindow;
 let pluginManager;
@@ -35,12 +36,27 @@ async function initializePluginSystem() {
     await pluginManager.initialize();
 }
 
-const projectFileManager = new ProjectFileManager(dataDir, () => {
-    if (editorWindow) {
-        editorWindow.close();
-        editorWindow = null;
+const projectFileManager = new ProjectFileManager(dataDir, {
+    beforeImport: () => {
+        console.log("IMPORT STARTED NOW");
+        showSplash(is.dev);
+        if (editorWindow) {
+            editorWindow.close();
+            editorWindow = null;
+        }
+        if (mainWindow) {
+            mainWindow.close();
+            mainWindow = null;
+        }
+        closeAllWatchers();
+    },
+    importProgress: sendStartupInfo,
+    afterImport: async () => {
+        console.log("IMPORTING DONE");
+        await loadData();
+        if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
+        else createMainWindow();
     }
-    closeAllWatchers();
 });
 
 initPluginDir(pluginDir);
@@ -102,10 +118,8 @@ async function saveData(tempData) {
     });
 }
 
-async function importDefaultProject() {
-    await projectFileManager.importProject(join(templateDir, "projects/default.repair"));
-    await loadData();
-    if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
+function importDefaultProject() {
+    return projectFileManager.importProject(join(templateDir, "projects/default.repair"));
 }
 
 let globalCss = "";
@@ -170,6 +184,7 @@ function watchPlugins() {
     console.log("Plugin watcher activated");
 }
 async function loadData() {
+    sendStartupInfo("데이터 파일 로드 중...");
     try {
         await fs.access(dataDir);
         const tempData = (await fs.readFile(join(dataDir, "data.json"))).toString();
@@ -230,6 +245,7 @@ function createMainWindow() {
     mainWindow.setMenu(null);
 
     mainWindow.on("ready-to-show", () => {
+        closeSplash();
         mainWindow.show();
 
         applyDataConfig(true);
@@ -242,7 +258,10 @@ function createMainWindow() {
     }
 
     mainWindow.on("closed", () => {
-        app.quit();
+        if (!projectFileManager.importing) {
+            closeSplash();
+            app.quit();
+        }
     });
 }
 
@@ -288,7 +307,7 @@ function createEditorWindow() {
                         if (
                             response === 0 &&
                             !(await projectFileManager.exportProject(
-                                data.config?.title ?? "REPAIRv2"
+                                (data?.config?.title ?? "REPAIRv2").replace(/\s/g, "_")
                             ))
                         )
                             return;
@@ -296,8 +315,6 @@ function createEditorWindow() {
                         await projectFileManager.importProject(
                             join(templateDir, "projects/empty.repair")
                         );
-                        await loadData();
-                        mainWindow.webContents.reloadIgnoringCache();
                     },
                     accelerator: "CommandOrControl+N"
                 },
@@ -314,8 +331,6 @@ function createEditorWindow() {
                     label: "프로젝트 불러오기",
                     click: async () => {
                         if (!(await projectFileManager.selectImportProject())) return;
-                        await loadData();
-                        mainWindow.webContents.reloadIgnoringCache();
                         createEditorWindow();
                     },
                     accelerator: "CommandOrControl+Shift+O"
@@ -531,7 +546,6 @@ async function appOpenedWithProject(argv, appWasRunning = true) {
         return false;
     }
     await projectFileManager.importProject(filePath);
-    if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
 
     return true;
 }
@@ -542,17 +556,17 @@ if (!app.requestSingleInstanceLock()) {
     app.on("second-instance", async (event, argv) => {
         if (!mainWindow) return;
 
-        if (await appOpenedWithProject(argv, true)) await loadData();
-        mainWindow.show();
+        await appOpenedWithProject(argv, true);
+        // mainWindow?.show?.();
     });
 
     // app.commandLine.appendSwitch("disable-gpu-compositing");
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
 
-        await appOpenedWithProject(process.argv, false);
+        showSplash(is.dev);
 
-        await loadData();
+        if (!(await appOpenedWithProject(process.argv, false))) await loadData();
 
         await initializePluginSystem();
 
@@ -569,6 +583,10 @@ if (!app.requestSingleInstanceLock()) {
         }
     });
 }
+
+app.on("window-all-closed", () => {
+    app.quit();
+});
 
 function setupIpcHandlers() {
     //#region plugin IPCs

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>REPAIRv2</title>
+        <style>
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                margin: 0;
+                padding: 0;
+                touch-action: none;
+                pointer-events: none;
+                cursor: wait;
+                background-color: transparent;
+            }
+            img {
+                display: block;
+                -webkit-user-drag: none;
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                left: 0;
+                top: 0;
+            }
+            * {
+                pointer-events: none;
+                user-select: none;
+            }
+            .info {
+                position: absolute;
+                left: 0;
+                top: 0;
+                z-index: 2;
+                height: 100%;
+                aspect-ratio: 6/10;
+                font-family: "Pretend";
+                text-align: center;
+                color: #000;
+            }
+            .info > div {
+                width: 100%;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            #version {
+                top: 136px;
+                font-size: 18px;
+                font-family: "HelveticaExt";
+            }
+            #info {
+                display: flex;
+                top: 195px;
+                font-size: 12px;
+                white-space: pre-wrap;
+                flex-direction: column;
+                align-items: center;
+                text-align: left;
+                word-break: break-all;
+                padding-inline: 23px;
+                box-sizing: border-box;
+            }
+            #copy {
+                top: 395px;
+                font-size: 9px;
+                opacity: 0.5;
+                line-height: 100%;
+                white-space: pre-wrap;
+            }
+
+            @font-face {
+                font-family: "HelveticaExt";
+                src: url("./helveticaExt.woff") format("woff");
+            }
+            @font-face {
+                font-family: "Pretend";
+                src: url("./Pretendard-Regular.woff2") format("wofff2");
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="info">
+            <div id="version"></div>
+            <div id="info">프로그램 실행 중...</div>
+            <div id="copy"></div>
+        </div>
+        <img src="./splash.png" />
+        <script defer src="./app.js"></script>
+    </body>
+</html>
