@@ -149,7 +149,7 @@ export default class ProjectFileManager {
             detail: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
             buttons: ["확인", "취소"],
             cancelId: 1,
-            defaultId: 1,
+            defaultId: 0,
             noLink: true
         });
         if (confirm.response !== 0) return false;
