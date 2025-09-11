@@ -55,12 +55,14 @@ export const StepTypes = {
     executePlugin: "플러그인 실행",
     eventEmit: "이벤트 발생",
     script: "스크립트 실행",
+    log: "로그 작성",
     "Others.customReset": "모두 초기화",
     "Others.setVariable": "변수 값 설정",
     "Others.resetAllVariables": "변수 전체 초기화",
     "Others.executePlugin": "플러그인 실행",
     "Others.eventEmit": "이벤트 발생",
-    "Others.script": "스크립트 실행"
+    "Others.script": "스크립트 실행",
+    "Others.log": "로그 작성"
 };
 
 export const ComponentModifyTypes = {

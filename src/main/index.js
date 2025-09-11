@@ -56,6 +56,12 @@ const projectFileManager = new ProjectFileManager(dataDir, {
         await loadData();
         if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
         else createMainWindow();
+    },
+    exportProgress: (progress) => {
+        sendToEditor("exporting", progress);
+    },
+    afterExport: (filePath) => {
+        sendToEditor("exported", filePath);
     }
 });
 
@@ -73,21 +79,32 @@ function closeAllWatchers() {
 
 const PluginTypes = ["elements", "frames", "functions", "transitions"];
 
-const socket = new SocketConnector((channel, data) => {
+function sendToEditor(channel, ...params) {
+    if (editorWindow) editorWindow.webContents.send(channel, ...params);
+}
+
+const socket = new SocketConnector((channel, data, url) => {
     if (!mainWindow) return;
 
     console.log("SOCKET INCOMING:", channel);
 
+    sendToEditor("socket-income", channel, data, url);
     mainWindow.webContents.send("socket-income", channel, data);
 });
 
-const serial = new SerialConnector((data) => {
-    if (!mainWindow) return;
+const serial = new SerialConnector(
+    (data) => {
+        if (!mainWindow) return;
 
-    console.log("SERIAL INCOMING:", data);
+        console.log("SERIAL INCOMING:", data);
 
-    mainWindow.webContents.send("serial-income", data);
-});
+        sendToEditor("serial-income", data);
+        mainWindow.webContents.send("serial-income", data);
+    },
+    (port) => {
+        sendToEditor("serial-connected", port);
+    }
+);
 
 let pluginList = {};
 async function updatePluginList() {
@@ -323,7 +340,7 @@ function createEditorWindow() {
                 {
                     label: "저장",
                     click: () => {
-                        editorWindow.webContents.send("request-save");
+                        sendToEditor("request-save");
                     },
                     accelerator: "CommandOrControl+S"
                 },
@@ -339,7 +356,7 @@ function createEditorWindow() {
                 {
                     label: "프로젝트 내보내기",
                     click: async () => {
-                        editorWindow.webContents.send("request-save");
+                        sendToEditor("request-save");
                         afterSave = () =>
                             projectFileManager.exportProject(
                                 (data?.config?.title ?? "REPAIRv2").replace(/\s/g, "_")
@@ -395,14 +412,14 @@ function createEditorWindow() {
                             }
                         }
                         shell.openPath(result.dir);
-                    }
+                    },
+                    accelerator: "CommandOrControl+Shift+N"
                 },
                 {
                     label: "데이터 폴더 열기",
                     click: () => {
                         shell.openPath(dataDir);
-                    },
-                    accelerator: "CommandOrControl+Shift+N"
+                    }
                 }
             ]
         },
@@ -412,14 +429,14 @@ function createEditorWindow() {
                 {
                     label: "취소",
                     click: () => {
-                        editorWindow.webContents.send("undo");
+                        sendToEditor("undo");
                     },
                     accelerator: "CommandOrControl+Z"
                 },
                 {
                     label: "재실행",
                     click: () => {
-                        editorWindow.webContents.send("redo");
+                        sendToEditor("redo");
                     },
                     accelerator: "CommandOrControl+Shift+Z"
                 }
@@ -480,21 +497,21 @@ function createEditorWindow() {
                 {
                     label: "확대",
                     click: () => {
-                        editorWindow.webContents.send("zoom", 1);
+                        sendToEditor("zoom", 1);
                     },
                     accelerator: "CommandOrControl+="
                 },
                 {
                     label: "축소",
                     click: () => {
-                        editorWindow.webContents.send("zoom", -1);
+                        sendToEditor("zoom", -1);
                     },
-                    accelerator: "CommandOrControl+numsub"
+                    accelerator: "CommandOrControl+-"
                 },
                 {
                     label: "화면에 맞추기",
                     click: () => {
-                        editorWindow.webContents.send("zoom-fit");
+                        sendToEditor("zoom-fit");
                     },
                     accelerator: "CommandOrControl+0"
                 }
@@ -724,12 +741,14 @@ function setupIpcHandlers() {
     //#region player monitoring IPCs
 
     ipcMain.on("executed-start", (event, { type, id }) => {
-        if (!editorWindow) return;
-        editorWindow.webContents.send("start-executed", { type, id });
+        sendToEditor("start-executed", { type, id });
     });
     ipcMain.on("executed-end", (event, { type, id }) => {
-        if (!editorWindow) return;
-        editorWindow.webContents.send("end-executed", { type, id });
+        sendToEditor("end-executed", { type, id });
+    });
+
+    ipcMain.on("custom-log", (evt, content) => {
+        sendToEditor("custom-log", content);
     });
 
     //#endregion

@@ -1,6 +1,7 @@
 <svelte:options runes={true} />
 
 <script>
+    import ToastDisplay from "./lib/ToastDisplay.svelte";
     import ContextMenu from "./lib/contextMenu/ContextMenu.svelte";
     import { appData } from "./lib/syncData.svelte";
     import { redo, undo } from "./lib/workHistory";
@@ -29,6 +30,7 @@
 <svelte:window {onkeydown} />
 <div class="info">REPAIR v{__APP_VERSION__}</div>
 <NodeSpace />
+<ToastDisplay />
 <ContextMenu />
 <SideBar />
 

@@ -111,11 +111,18 @@
 {:else if data.type === "Others.script"}
     <InputField
         label="스크립트 코드"
-        value={data.code}
-        setter={(d) => (data.code = d)}
+        value={data.payload.code}
+        setter={(d) => (data.payload.code = d)}
         type="textarea"
         code
         placeholder="//Enter JS script"
         autoResizeOpt={{ minHeight: 100 }}
+    />
+{:else if data.type === "Others.log"}
+    <InputField
+        label="로그 내용"
+        value={data.payload.content}
+        setter={(d) => (data.payload.content = d)}
+        type="textarea"
     />
 {/if}

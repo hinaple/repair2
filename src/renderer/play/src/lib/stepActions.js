@@ -17,6 +17,7 @@ import {
 import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
 import { clearDelays, delay } from "./delay";
+import { ipcRenderer } from "electron";
 
 const actions = {
     Component: {
@@ -102,6 +103,15 @@ const actions = {
             } catch (err) {
                 console.error(err);
             }
+        },
+        log: (s) => {
+            ipcRenderer.send("custom-log", s.payload.content);
+            console.log(
+                `%cLOG%c${(s.payload.content.includes("\n") ? "\n" : "") + s.payload.content}`,
+                "font-family: system-ui; color: #fff; font-weight: bold;" +
+                    "display: inline-block; background-color: #140959; padding: 3px 15px; border-radius: 3px; margin-right: 5px;",
+                ""
+            );
         }
     }
 };

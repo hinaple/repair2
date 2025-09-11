@@ -11,7 +11,7 @@ export default class SocketConnector {
         this.socket = io(url);
 
         this.socket.onAny((channel, data) => {
-            this.ondata?.(channel, data);
+            this.ondata?.(channel, data, url);
         });
     }
 

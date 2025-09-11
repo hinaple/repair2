@@ -8,11 +8,22 @@ import StreamZip from "node-stream-zip";
 import { readdir } from "fs/promises";
 
 export default class ProjectFileManager {
-    constructor(dataDir, { beforeImport = null, importProgress = null, afterImport = null }) {
+    constructor(
+        dataDir,
+        {
+            beforeImport = null,
+            importProgress = null,
+            afterImport = null,
+            exportProgress = null,
+            afterExport = null
+        }
+    ) {
         this.dataDir = dataDir;
         this.beforeImport = beforeImport;
         this.importProgress = importProgress;
         this.afterImport = afterImport;
+        this.exportProgress = exportProgress;
+        this.afterExport = afterExport;
 
         this.exporting = false;
         this.importing = false;
@@ -20,13 +31,16 @@ export default class ProjectFileManager {
 
     exportProject(projectName) {
         return new Promise(async (res, rej) => {
-            this.importing = true;
             const result = await dialog.showSaveDialog({
                 title: "프로젝트 내보내기",
                 defaultPath: join(app.getPath("documents"), `${projectName}.repair`),
                 filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
             });
-            if (!result || result.canceled) res(false);
+            if (!result || result.canceled) {
+                res(false);
+                return;
+            }
+            this.importing = true;
 
             const output = createWriteStream(result.filePath);
             const archive = archiver("zip", { zlip: { level: 0 } });
@@ -34,6 +48,7 @@ export default class ProjectFileManager {
                 res(true);
                 shell.showItemInFolder(result.filePath);
                 this.importing = false;
+                this.afterExport?.(result.filePath);
             });
             output.on("error", (err) => {
                 rej(err);
@@ -48,11 +63,8 @@ export default class ProjectFileManager {
 
             let fileCount = 0;
             archive.on("progress", (progress) => {
-                console.log(
-                    "PROGRESS",
-                    fileCount
-                        ? Math.floor((progress.entries.processed / fileCount) * 100)
-                        : "Unknown"
+                this.exportProgress?.(
+                    fileCount ? Math.floor((progress.entries.processed / fileCount) * 100) : null
                 );
             });
 
