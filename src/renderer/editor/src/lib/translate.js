@@ -136,7 +136,11 @@ export const ElementListenerTypes = {
     keyPress: "키보드 누름",
     // globalKeyPress: "전역 키보드 누름",
     jsFunction: "함수",
-    released: "드래그 종료",
+    Drag: "드래그",
+    released: "종료",
+    return: "복귀",
+    "Drag.released": "드래그 종료",
+    "Drag.return": "드래그 복귀",
     plugin: "플러그인"
 };
 

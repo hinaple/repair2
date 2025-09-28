@@ -124,7 +124,7 @@ export default class Dragger {
             };
             currentHotspot = this.getTouchingHotspot(realPos);
             node.dispatchEvent(
-                new CustomEvent("released", {
+                new CustomEvent("dragreleased", {
                     detail: currentHotspot === -1 ? {} : { hotspotIndex: currentHotspot }
                 })
             );
@@ -140,6 +140,11 @@ export default class Dragger {
             if (dragOption.returnOnRelease) {
                 startSnap(dragOption.returnDuration ?? 100);
                 currentPos = { x: 0, y: 0 };
+                node.dispatchEvent(
+                    new CustomEvent("dragreturn", {
+                        detail: currentHotspot === -1 ? {} : { hotspotIndex: currentHotspot }
+                    })
+                );
             }
 
             dragging = false;

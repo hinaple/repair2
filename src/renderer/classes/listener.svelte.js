@@ -25,7 +25,11 @@ const PayloadTemplates = {
     keyPress: { key: null },
     videoEnd: null,
     jsFunction: { channel: null, scriptData: null },
-    released: { hotspotIndexes: null },
+    Drag: {
+        isTypeObj: true,
+        released: { hotspotIndexes: null },
+        return: null
+    },
     plugin: { isClass: true, class: PluginListener }
 };
 
@@ -35,7 +39,9 @@ const TypeMap = {
     videoEnd: "ended",
     "Mouse.click": "click",
     "Mouse.down": "mousedown",
-    "Mouse.up": "mouseup"
+    "Mouse.up": "mouseup",
+    "Drag.released": "dragreleased",
+    "Drag.return": "dragreturn"
 };
 
 export default class Listener extends TypePayload {
@@ -55,7 +61,8 @@ export default class Listener extends TypePayload {
         useCapture = false
     } = {}) {
         if (type === "click" || type[0] === "click") type = ["Mouse", "click"];
-        if (type === "globalKeyPress" || type[0] === "globalKeyPress") {
+        else if (type === "released" || type[0] === "released") type = ["Drag", "released"];
+        else if (type === "globalKeyPress" || type[0] === "globalKeyPress") {
             type = ["keyPress"];
             global = true;
             useCapture = payload.useCapture ?? false;

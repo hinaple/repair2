@@ -172,7 +172,7 @@ export default class RepairElement extends HTMLElement {
                             return;
                         }
                     } else if (
-                        l.types[0] === "released" &&
+                        l.shortType === "Drag.released" &&
                         l.payload.hotspotIndexes &&
                         l.payload.hotspotIndexes.trim().length &&
                         (evt.detail.hotspotIndex === undefined ||
@@ -201,7 +201,7 @@ export default class RepairElement extends HTMLElement {
                 window.addEventListener(...eventOpt);
                 return;
             }
-            (l.types[0] === "released" ? this : this.realEl).addEventListener(...eventOpt);
+            (l.types[0] === "Drag" ? this : this.realEl).addEventListener(...eventOpt);
         });
 
         this.appendChild(this.realEl);

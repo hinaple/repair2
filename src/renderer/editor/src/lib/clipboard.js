@@ -10,6 +10,7 @@ import Listener from "@classes/listener.svelte";
 import Branch from "@classes/nodes/branch.svelte";
 import Entry from "@classes/nodes/entry.svelte";
 import Sequence from "@classes/nodes/sequence.svelte";
+import VariableSet from "@classes/nodes/variableSet.svelte";
 import ValueProcess from "@classes/value/valueProcess";
 import { reload } from "./stores";
 
@@ -55,6 +56,11 @@ export function pasted(pasteString, target = get(currentFocus), pos = null) {
             appData.addNodeWithHistory(
                 addHistory,
                 new Branch({ ...data, nodePos: pos ?? getViewportCenter() })
+            );
+        } else if (type === "variableSet") {
+            appData.addNodeWithHistory(
+                addHistory,
+                new VariableSet({ ...data, nodePos: pos ?? getViewportCenter() })
             );
         } else if (target.type === "sequence" && type === "step")
             target.obj.steps.addWithHistory(addHistory, {
