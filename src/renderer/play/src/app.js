@@ -38,10 +38,10 @@ Branch.prototype.execute = function () {
 };
 
 VariableSet.prototype.execute = function () {
+    if (this.variable) {
+        setVar(this.variable, this.value.value);
+    }
     this.output.goto();
-
-    if (!this.variable) return;
-    setVar(this.variable, this.value.value);
 };
 
 ValueProcess.prototype.process = function (before) {
