@@ -43,21 +43,32 @@ export default class Listener extends TypePayload {
     repeatCount = $state();
     repeatInterval = $state();
     once = $state();
+    global = $state();
+    useCapture = $state();
     constructor({
         type = "custom",
         payload = {},
         output = {},
         once = false,
         repeatCount = 1,
-        repeatInterval = 0
+        repeatInterval = 0,
+        global = false,
+        useCapture = false
     } = {}) {
         if (type === "click" || type[0] === "click") type = ["Mouse", "click"];
+        if (type === "globalKeyPress" || type[0] === "globalKeyPress") {
+            type = ["keyPress"];
+            global = true;
+            useCapture = payload.useCapture ?? false;
+        }
         super({ type, payload, template: PayloadTemplates });
         this.output = new Output(output);
         this.repeatCount = repeatCount;
         this.repeatInterval = repeatInterval;
         this.once = once;
         this.id = Symbol();
+        this.global = global;
+        this.useCapture = useCapture;
     }
     get title() {
         if (this.shortType === "custom" && this.payload.channel?.length)
@@ -75,7 +86,9 @@ export default class Listener extends TypePayload {
             output: this.output,
             repeatCount: this.repeatCount,
             repeatInterval: this.repeatInterval,
-            once: this.once
+            once: this.once,
+            global: this.global,
+            useCapture: this.useCapture
         };
     }
     get copyData() {
@@ -83,7 +96,9 @@ export default class Listener extends TypePayload {
             ...super.storeData,
             repeatCount: this.repeatCount,
             repeatInterval: this.repeatInterval,
-            once: this.once
+            once: this.once,
+            global: this.global,
+            useCapture: this.useCapture
         };
     }
 }

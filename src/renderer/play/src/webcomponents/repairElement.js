@@ -154,27 +154,7 @@ export default class RepairElement extends HTMLElement {
 
         this.globalEvents = [];
         this.listeners.forEach((l) => {
-            if (l.types[0] === "globalKeyPress") {
-                const eventOpt = [
-                    l.realEventChannel,
-                    async (evt) => {
-                        if (
-                            deadListeners.includes(l) ||
-                            (l.payload.key?.length &&
-                                !l.payload.key.split(/\s*,\s*/).includes(evt.key))
-                        )
-                            return;
-
-                        activeListener(l);
-                    },
-                    { capture: l.useCapture }
-                ];
-                this.globalEvents.push(eventOpt);
-                window.addEventListener(...eventOpt);
-
-                return;
-            }
-            (l.types[0] === "released" ? this : this.realEl).addEventListener(
+            const eventOpt = [
                 l.realEventChannel,
                 async (evt) => {
                     if (deadListeners.includes(l)) return;
@@ -212,8 +192,16 @@ export default class RepairElement extends HTMLElement {
                     }
 
                     activeListener(l);
-                }
-            );
+                },
+                { capture: l.useCapture }
+            ];
+
+            if (l.global) {
+                this.globalEvents.push(eventOpt);
+                window.addEventListener(...eventOpt);
+                return;
+            }
+            (l.types[0] === "released" ? this : this.realEl).addEventListener(...eventOpt);
         });
 
         this.appendChild(this.realEl);

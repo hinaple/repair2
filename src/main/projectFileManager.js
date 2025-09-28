@@ -102,10 +102,10 @@ export default class ProjectFileManager {
 
                 let proceedSize = 0;
                 zip.on("extract", (entry, outPath) => {
-                    console.log(
-                        "IMPORT PROGRESS",
-                        Math.floor((proceedSize / totalEntrySize) * 100)
-                    );
+                    // console.log(
+                    //     "IMPORT PROGRESS",
+                    //     Math.floor((proceedSize / totalEntrySize) * 100)
+                    // );
                     proceedSize += entry.size;
                     this.importProgress?.(
                         `프로젝트 불러오는 중(${Math.floor((proceedSize / totalEntrySize) * 100)}%)\n[${outPath}]`

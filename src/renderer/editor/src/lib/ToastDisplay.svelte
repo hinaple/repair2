@@ -47,7 +47,7 @@
         box-sizing: border-box;
         border-radius: 10px;
         display: flex;
-        flex-direction: column-reverse;
+        flex-direction: column;
         flex: 0 0 auto;
         user-select: none;
         background-color: rgba(0, 0, 0, 0.7);
