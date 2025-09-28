@@ -1,8 +1,9 @@
 import { get, writable } from "svelte/store";
 import { appData } from "../lib/syncData.svelte";
 import { ipcRenderer } from "electron";
+import { NodeClasses } from "@classes/utils";
 
-const NodeTypes = ["sequence", "branch", "entry"];
+const NodeTypes = Object.keys(NodeClasses);
 
 export const currentFocus = writable({ type: "project", obj: null });
 
