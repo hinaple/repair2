@@ -12,7 +12,8 @@ export default class Dragger {
         this.dragOption = dragOption;
         this.node = node;
 
-        const screenRatio = getSizeRatio();
+        const ratio = getSizeRatio();
+        const screenRatio = { x: ratio[0], y: ratio[1] };
 
         if (dragOption.hotspots.length) {
             requestAnimationFrame(() => {
@@ -96,7 +97,7 @@ export default class Dragger {
             render();
         });
         let currentHotspot = -1;
-        this.mousemove = document.addEventListener("mousemove", (evt) => {
+        this.mousemove = (evt) => {
             if (!dragging) return;
             const realPos = {
                 x: (evt.screenX - startPos.x) / screenRatio.x,
@@ -114,8 +115,8 @@ export default class Dragger {
                 }
             }
             currentPos = realPos;
-        });
-        this.mouseup = document.addEventListener("mouseup", (evt) => {
+        };
+        this.mouseup = (evt) => {
             if (!dragging) return;
             const realPos = {
                 x: (evt.screenX - startPos.x) / screenRatio.x,
@@ -142,7 +143,7 @@ export default class Dragger {
             }
 
             dragging = false;
-        });
+        };
         document.addEventListener("mousemove", this.mousemove);
         document.addEventListener("mouseup", this.mouseup);
 
