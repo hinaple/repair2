@@ -24,7 +24,6 @@ const PayloadTemplates = {
     input: null,
     keyPress: { key: null },
     videoEnd: null,
-    globalKeyPress: { key: null, useCapture: false },
     jsFunction: { channel: null, scriptData: null },
     released: { hotspotIndexes: null },
     plugin: { isClass: true, class: PluginListener }
