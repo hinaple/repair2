@@ -121,7 +121,8 @@ ipcRenderer.on("serial-connected", (evt, port) => {
 ipcRenderer.on("serial-income", (evt, data) => {
     showToast({
         title: "시리얼 통신 데이터를 수신했습니다.",
-        content: data
+        content: data,
+        duration: 3000
     });
 });
 
