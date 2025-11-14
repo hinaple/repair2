@@ -540,6 +540,7 @@ function createEditorWindow() {
 
     editorWindow.on("close", () => {
         isEditorOn = false;
+        editorWindow = null;
     });
 }
 
