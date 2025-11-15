@@ -3,6 +3,7 @@ import { genElement } from "../lib/resources";
 import { getAppData } from "../lib/appdata";
 import { subscribe } from "../lib/variables";
 import Dragger from "../lib/dragger";
+import amplifyVideo from "../lib/amplifyVideo";
 import RepairInput from "./repairInput";
 
 const regexMap = {
@@ -97,7 +98,9 @@ export default class RepairElement extends HTMLElement {
 
         if (this.type === "video" && this.realEl) {
             this.realEl.currentTime = 0;
-            this.realEl.volume = (element.payload.volume ?? 100) / 100;
+            const vol = (element.payload.volume ?? 100) / 100;
+            if (vol > 1) amplifyVideo(this.realEl, vol);
+            else this.realEl.volume = vol;
             this.realEl.loop = !!element.payload.loop;
             this.realEl.muted = false;
         }
