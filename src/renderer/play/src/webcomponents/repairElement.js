@@ -3,6 +3,7 @@ import { genElement } from "../lib/resources";
 import { getAppData } from "../lib/appdata";
 import { subscribe } from "../lib/variables";
 import Dragger from "../lib/dragger";
+import RepairInput from "./repairInput";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -90,6 +91,8 @@ export default class RepairElement extends HTMLElement {
         } else if (this.type === "image" || this.type === "video") {
             const resource = getAppData().findResourceById(element.payload.resourceId);
             this.realEl = genElement(resource, !element.payload.removePreload);
+        } else if (this.type === "advancedInput") {
+            this.realEl = new RepairInput(element.payload);
         }
 
         if (this.type === "video" && this.realEl) {

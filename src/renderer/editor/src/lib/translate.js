@@ -117,6 +117,7 @@ export const ElementTypes = {
     image: "이미지",
     video: "영상",
     input: "입력",
+    advancedInput: "고급 입력",
     plugin: "플러그인"
 };
 

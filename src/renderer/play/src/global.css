@@ -84,14 +84,39 @@ textarea:focus {
 }
 
 repair-component,
+repair-input,
+repair-element,
 #preview-component {
     width: fit-content;
     height: fit-content;
 }
 repair-element {
     display: block;
-    width: fit-content;
-    height: fit-content;
+}
+
+repair-input {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .advanced-input-blink-cursor {
+        width: 1px;
+        height: 60%;
+        background-color: #000;
+        flex-shrink: 0;
+        margin-left: 1px;
+
+        animation: blink step-start 1s 0s infinite;
+    }
+}
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 #preview-component:not(.show-content) {

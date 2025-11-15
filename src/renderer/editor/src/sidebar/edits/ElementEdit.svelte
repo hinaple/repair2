@@ -81,6 +81,27 @@
         autoResizeOpt={{ minHeight: 50 }}
         placeholder="return value;"
     />
+{:else if data.type === "advancedInput"}
+    <InputField
+        label="변수 할당"
+        value={data.payload.variableId}
+        setter={(d) => (data.payload.variableId = d)}
+        type="variable"
+    />
+    <InputField
+        label="글자 최대 길이"
+        type="number"
+        value={data.payload.maxLength}
+        setter={(d) => (data.payload.maxLength = d)}
+        placeholder="제한 없음"
+    />
+    <InputField
+        label="가림 문자"
+        value={data.payload.securityText}
+        setter={(d) => (data.payload.securityText = d)}
+        maxLength={1}
+        placeholder="가림 없음"
+    />
 {:else if data.type === "video"}
     <InputField
         label="반복 재생"
