@@ -97,9 +97,15 @@ export default defineConfig(({ command }) => ({
                       fileName: "plugin",
                       formats: ["es"]
                   },
+                  rollupOptions: {
+                      output: {
+                          inlineDynamicImports: true
+                      }
+                  },
                   cssCodeSplit: true,
                   outDir: "dist",
-                  emptyOutDir: true
+                  emptyOutDir: true,
+                  assetsInlineLimit: Infinity
               }
           })
 }));
