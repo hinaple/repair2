@@ -63,7 +63,9 @@ export default class Dragger {
                 };
                 this.setTransformPos(Snap.renderPos);
                 if (t >= 1) endSnap();
-            } else this.setTransformPos(currentPos);
+            } else {
+                this.setTransformPos(currentPos);
+            }
 
             requestAnimationFrame(render);
         };
@@ -86,6 +88,7 @@ export default class Dragger {
         };
 
         node.addEventListener("mousedown", (evt) => {
+            if (dragging) return;
             dragging = true;
             rendering = true;
             cancelSnap();

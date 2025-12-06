@@ -86,6 +86,7 @@ export default class RepairElement extends HTMLElement {
                     if (!tempPlugin) return;
                     if (this.realEl) this.realEl.remove();
                     this.realEl = tempPlugin;
+                    this.rendered = false;
                     this.render();
                 })
             );
@@ -106,7 +107,8 @@ export default class RepairElement extends HTMLElement {
         }
     }
     render() {
-        if (!this.isConnected || !this.realEl) return;
+        if (this.rendered || !this.isConnected || !this.realEl) return;
+        this.rendered = true;
 
         this.realEl.setAttribute("style", this.childStyle ?? "");
 
@@ -232,7 +234,7 @@ export default class RepairElement extends HTMLElement {
     connectedCallback() {
         this.render();
     }
-    disconnectedCallback() {
+    destroy() {
         if (this.unsubscribers)
             Object.values(this.unsubscribers).forEach((unsubscriber) => unsubscriber?.());
         if (this.globalEvents)

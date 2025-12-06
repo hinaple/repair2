@@ -80,6 +80,7 @@ export default class RepairComponent extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.elements.forEach((el) => el.destroy());
         this.unsubscriber?.();
     }
 }
