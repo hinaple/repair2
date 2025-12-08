@@ -142,7 +142,8 @@ ipcRenderer.on("socket-income", (evt, channel, data, url) => {
     else
         showToast({
             title: "소켓 통신 데이터를 수신했습니다.",
-            content: `채널: <${channel}>\n<${data}>`
+            content: `채널: <${channel}>\n<${data}>`,
+            duration: 3000
         });
 });
 
