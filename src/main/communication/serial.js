@@ -43,7 +43,7 @@ export default class SerialConnector {
     }
 
     close() {
-        if (!this.port) return;
+        if (!this.port || !this.port.isOpen) return;
         this.port.close();
         this.port = null;
     }
