@@ -126,6 +126,10 @@ ipcRenderer.on("serial-income", (evt, data) => {
     });
 });
 
+ipcRenderer.on("socket-failed", () => {
+    showToast({ title: "소켓 통신 연결에 실패했습니다.", duration: 5000 });
+});
+
 ipcRenderer.on("socket-income", (evt, channel, data, url) => {
     if (channel === "connect")
         showToast({

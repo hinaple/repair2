@@ -47,6 +47,7 @@ const PayloadTemplates = {
         Socket: {
             isTypeObj: true,
             connect: { url: null },
+            connectService: { type: null, name: null },
             send: { channel: null, data: null },
             disconnect: null
         }

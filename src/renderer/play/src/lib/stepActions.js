@@ -12,7 +12,8 @@ import {
     serialClose,
     socketConnect,
     socketSend,
-    socketDisconnect
+    socketDisconnect,
+    socketConnectService
 } from "./communication";
 import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
@@ -51,6 +52,9 @@ const actions = {
         Socket: {
             connect: (s) => {
                 socketConnect(s.payload.url);
+            },
+            connectService: (s) => {
+                socketConnectService(s.payload.type, s.payload.name);
             },
             send: (s) => {
                 socketSend(s.payload.channel, s.payload.data);

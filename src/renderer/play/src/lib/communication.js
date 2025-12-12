@@ -15,6 +15,9 @@ ipcRenderer.on("serial-income", (event, data) => {
 export function socketConnect(url) {
     ipcRenderer.send("socket-connect", url);
 }
+export function socketConnectService(type, name) {
+    ipcRenderer.send("socket-connect-service", type, name);
+}
 export function socketSend(channel, data) {
     ipcRenderer.send("socket-send", channel, data);
 }

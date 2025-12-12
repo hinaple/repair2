@@ -40,11 +40,13 @@ export const StepTypes = {
     send: "전송",
     close: " 종료",
     connect: "연결",
+    connectService: "서비스 연결",
     disconnect: "연결 종료",
     "Communication.Serial.open": "시리얼 통신 시작",
     "Communication.Serial.send": "시리얼 통신 전송",
     "Communication.Serial.close": "시리얼 통신 종료",
     "Communication.Socket.connect": "소켓 통신 연결",
+    "Communication.Socket.connectService": "소켓 통신 서비스 연결",
     "Communication.Socket.send": "소켓 통신 전송",
     "Communication.Socket.disconnect": "소켓 통신 종료",
 

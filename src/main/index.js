@@ -14,6 +14,7 @@ import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
 import prompt from "electron-prompt";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
+import { findService } from "./communication/bonjour.js";
 
 let mainWindow, editorWindow;
 let pluginManager;
@@ -717,8 +718,22 @@ function setupIpcHandlers() {
 
     //#region communication IPCs
 
-    ipcMain.on("socket-connect", (event, url) => {
-        socket.connect(url);
+    ipcMain.on("socket-connect", (event, urls) => {
+        socket
+            .connect(typeof urls === "string" ? urls.trim().split("\n") : urls)
+            .then((connected) => {
+                if (!connected) sendToEditor("socket-failed");
+            });
+    });
+    ipcMain.on("socket-connect-service", (event, type, name) => {
+        if (socket.connected) return;
+        findService(type, name)
+            .then((urls) => {
+                socket.connect(urls).then((connected) => {
+                    if (!connected) sendToEditor("socket-failed");
+                });
+            })
+            .catch(() => {});
     });
     ipcMain.on("socket-send", (event, channel, data) => {
         socket.send(channel, data);
