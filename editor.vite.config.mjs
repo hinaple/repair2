@@ -5,6 +5,7 @@ import renderer from "vite-plugin-electron-renderer";
 
 export default defineConfig({
     root: "src/renderer/editor",
+    cacheDir: "node_modules/.vite-editor",
     plugins: [
         svelte({
             onwarn: (warning, handler) => {

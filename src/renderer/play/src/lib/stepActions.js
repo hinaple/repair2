@@ -12,10 +12,13 @@ import {
     serialClose,
     socketConnect,
     socketSend,
-    socketDisconnect
+    socketDisconnect,
+    socketConnectService
 } from "./communication";
 import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
+import { clearDelays, delay } from "./delay";
+import { ipcRenderer } from "electron";
 
 const actions = {
     Component: {
@@ -50,6 +53,9 @@ const actions = {
             connect: (s) => {
                 socketConnect(s.payload.url);
             },
+            connectService: (s) => {
+                socketConnectService(s.payload.type, s.payload.name);
+            },
             send: (s) => {
                 socketSend(s.payload.channel, s.payload.data);
             },
@@ -70,8 +76,15 @@ const actions = {
         }
     },
 
-    delay: (s) => new Promise((res) => setTimeout(res, s.payload.delayMs)),
+    delay: (s) => delay(s.payload.delayMs),
     Others: {
+        customReset: (s) => {
+            if (s.payload.audios) resetAudio();
+            if (s.payload.variables) resetAllVar();
+            if (s.payload.components) clearComponents(true);
+            if (s.payload.delays) clearDelays();
+            if (s.payload.preloads) removePreloadsAll();
+        },
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
         resetAllVariables: () => resetAllVar(),
         executePlugin: (s) => {
@@ -94,6 +107,15 @@ const actions = {
             } catch (err) {
                 console.error(err);
             }
+        },
+        log: (s) => {
+            ipcRenderer.send("custom-log", s.payload.content);
+            console.log(
+                `%cLOG%c${(s.payload.content.includes("\n") ? "\n" : "") + s.payload.content}`,
+                "font-family: system-ui; color: #fff; font-weight: bold;" +
+                    "display: inline-block; background-color: #140959; padding: 3px 15px; border-radius: 3px; margin-right: 5px;",
+                ""
+            );
         }
     }
 };

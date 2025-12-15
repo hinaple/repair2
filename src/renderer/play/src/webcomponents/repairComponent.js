@@ -4,7 +4,9 @@ export default class RepairComponent extends HTMLElement {
     constructor(componentData, showIntro = true) {
         super();
 
-        this.renderStyle(componentData.styleString || "");
+        this.componentData = componentData;
+
+        this.renderStyle(componentData.style ?? "");
 
         this.componentId = componentData.aliasOrId;
         this.realId = componentData.id;
@@ -37,11 +39,11 @@ export default class RepairComponent extends HTMLElement {
         this.zIndex = zIndex;
         this.renderStyle();
     }
-    renderStyle(styleString = this.styleString) {
+    renderStyle(styleString = this.componentData.styleString) {
         this.styleString = styleString;
         this.setAttribute(
             "style",
-            `position: absolute; ${this.styleString}` +
+            `position: absolute; ${this.componentData.styleString} ${this.styleString}` +
                 (this.zIndex ? `z-index: ${this.zIndex};` : "")
         );
     }
@@ -78,6 +80,7 @@ export default class RepairComponent extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.elements.forEach((el) => el.destroy());
         this.unsubscriber?.();
     }
 }

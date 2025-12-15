@@ -1,6 +1,10 @@
 import { randomBytes } from "crypto";
 import { ipcRenderer } from "electron";
 import { join } from "path";
+import Sequence from "./nodes/sequence.svelte";
+import Branch from "./nodes/branch.svelte";
+import Entry from "./nodes/entry.svelte";
+import VariableSet from "./nodes/variableSet.svelte";
 
 const dataDir = ipcRenderer.sendSync("getDataDir");
 const assetDir = join(dataDir, "assets");
@@ -32,3 +36,10 @@ export async function importAllPlugins() {
         Object.keys(await getPluginList()).map((type) => importAllPluginsIn(type))
     );
 }
+
+export const NodeClasses = {
+    sequence: Sequence,
+    branch: Branch,
+    entry: Entry,
+    variableSet: VariableSet
+};

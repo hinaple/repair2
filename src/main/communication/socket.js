@@ -1,20 +1,49 @@
 import { io } from "socket.io-client";
 
+function tryToConnect(url) {
+    return new Promise((res) => {
+        const socket = io(url);
+
+        socket.on("connect", () => {
+            res({ succeed: true, socket });
+            socket.offAny();
+        });
+        socket.on("connect-error", () => {
+            res({ succeed: false });
+            socket.disconnect();
+        });
+    });
+}
+
 export default class SocketConnector {
     constructor(ondata) {
         this.socket = null;
         this.ondata = ondata;
+        this.url = null;
+        this.connected = false;
     }
-    connect(url) {
-        if (this.socket) return;
+    async connect(urls) {
+        if (this.socket && this.connected) return true;
+        else if (this.socket) this.disconnect();
 
-        this.socket = io(url);
-
-        this.socket.onAny((channel, data) => {
-            this.ondata?.(channel, data);
-        });
+        for (const url of urls) {
+            const result = await tryToConnect(url);
+            if (result.succeed) {
+                this.url = url;
+                this.socket = result.socket;
+                this.connected = true;
+                this.ondata?.("connect", null, url);
+                this.socket.onAny((channel, data) => {
+                    if (channel === "disconnect" || channel === "connect_error")
+                        this.connected = false;
+                    if (channel === "connect") this.connected = true;
+                    this.ondata?.(channel, data, url);
+                });
+                return true;
+            }
+        }
+        return false;
     }
-
     send(channel, data) {
         if (!channel) return;
 

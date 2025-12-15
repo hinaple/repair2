@@ -47,6 +47,7 @@ const PayloadTemplates = {
         Socket: {
             isTypeObj: true,
             connect: { url: null },
+            connectService: { type: null, name: null },
             send: { channel: null, data: null },
             disconnect: null
         }
@@ -54,11 +55,19 @@ const PayloadTemplates = {
     delay: { delayMs: 0 },
     Others: {
         isTypeObj: true,
+        customReset: {
+            audios: true,
+            variables: true,
+            components: true,
+            delays: true,
+            preloads: true
+        },
         setVariable: { variableId: null, value: null },
         resetAllVariables: null,
         executePlugin: { isClass: true, class: executePlugin },
         eventEmit: { channel: null, data: null },
-        script: { code: null }
+        script: { code: null },
+        log: { content: null }
     }
 };
 

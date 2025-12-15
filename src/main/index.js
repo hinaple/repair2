@@ -13,6 +13,8 @@ import createSveltePlugin from "./svelte-plugin/sveltePluginCreator.js";
 import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
 import prompt from "electron-prompt";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
+import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
+import { findService } from "./communication/bonjour.js";
 
 let mainWindow, editorWindow;
 let pluginManager;
@@ -35,9 +37,33 @@ async function initializePluginSystem() {
     await pluginManager.initialize();
 }
 
-const projectFileManager = new ProjectFileManager(dataDir, () => {
-    if (editorWindow) editorWindow.close();
-    closeAllWatchers();
+const projectFileManager = new ProjectFileManager(dataDir, {
+    beforeImport: () => {
+        console.log("IMPORT STARTED NOW");
+        showSplash(is.dev);
+        if (editorWindow) {
+            editorWindow.close();
+            editorWindow = null;
+        }
+        if (mainWindow) {
+            mainWindow.close();
+            mainWindow = null;
+        }
+        closeAllWatchers();
+    },
+    importProgress: sendStartupInfo,
+    afterImport: async () => {
+        console.log("IMPORTING DONE");
+        await loadData();
+        if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
+        else createMainWindow();
+    },
+    exportProgress: (progress) => {
+        sendToEditor("exporting", progress);
+    },
+    afterExport: (filePath) => {
+        sendToEditor("exported", filePath);
+    }
 });
 
 initPluginDir(pluginDir);
@@ -54,21 +80,32 @@ function closeAllWatchers() {
 
 const PluginTypes = ["elements", "frames", "functions", "transitions"];
 
-const socket = new SocketConnector((channel, data) => {
+function sendToEditor(channel, ...params) {
+    if (editorWindow) editorWindow.webContents.send(channel, ...params);
+}
+
+const socket = new SocketConnector((channel, data, url) => {
     if (!mainWindow) return;
 
     console.log("SOCKET INCOMING:", channel);
 
+    sendToEditor("socket-income", channel, data, url);
     mainWindow.webContents.send("socket-income", channel, data);
 });
 
-const serial = new SerialConnector((data) => {
-    if (!mainWindow) return;
+const serial = new SerialConnector(
+    (data) => {
+        if (!mainWindow) return;
 
-    console.log("SERIAL INCOMING:", data);
+        console.log("SERIAL INCOMING:", data);
 
-    mainWindow.webContents.send("serial-income", data);
-});
+        sendToEditor("serial-income", data);
+        mainWindow.webContents.send("serial-income", data);
+    },
+    (port) => {
+        sendToEditor("serial-connected", port);
+    }
+);
 
 let pluginList = {};
 async function updatePluginList() {
@@ -99,10 +136,9 @@ async function saveData(tempData) {
     });
 }
 
-async function importDefaultProject() {
-    await projectFileManager.importProject(join(templateDir, "projects/default.repair"));
-    await loadData();
-    if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
+function importDefaultProject() {
+    sendStartupInfo("기본 프로젝트 로드 중...");
+    return projectFileManager.importProject(join(templateDir, "projects/default.repair"));
 }
 
 let globalCss = "";
@@ -167,6 +203,7 @@ function watchPlugins() {
     console.log("Plugin watcher activated");
 }
 async function loadData() {
+    sendStartupInfo("데이터 파일 로드 중...");
     try {
         await fs.access(dataDir);
         const tempData = (await fs.readFile(join(dataDir, "data.json"))).toString();
@@ -193,6 +230,8 @@ function applyDataConfig(forceUpdate = false) {
 
     if (!mainWindow) return;
 
+    mainWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
+    if (editorWindow) editorWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
     mainWindow.setTitle?.(data?.config?.title ?? "REPAIRv2");
 
     if (!forceUpdate && isMultiScreen === !!data.config?.multiScreen) return;
@@ -225,6 +264,7 @@ function createMainWindow() {
     mainWindow.setMenu(null);
 
     mainWindow.on("ready-to-show", () => {
+        closeSplash();
         mainWindow.show();
 
         applyDataConfig(true);
@@ -237,7 +277,10 @@ function createMainWindow() {
     }
 
     mainWindow.on("closed", () => {
-        app.quit();
+        if (!projectFileManager.importing) {
+            closeSplash();
+            app.quit();
+        }
     });
 }
 
@@ -283,7 +326,7 @@ function createEditorWindow() {
                         if (
                             response === 0 &&
                             !(await projectFileManager.exportProject(
-                                data.config?.title ?? "REPAIRv2"
+                                (data?.config?.title ?? "REPAIRv2").replace(/\s/g, "_")
                             ))
                         )
                             return;
@@ -291,8 +334,6 @@ function createEditorWindow() {
                         await projectFileManager.importProject(
                             join(templateDir, "projects/empty.repair")
                         );
-                        await loadData();
-                        mainWindow.webContents.reloadIgnoringCache();
                     },
                     accelerator: "CommandOrControl+N"
                 },
@@ -300,7 +341,7 @@ function createEditorWindow() {
                 {
                     label: "저장",
                     click: () => {
-                        editorWindow.webContents.send("request-save");
+                        sendToEditor("request-save");
                     },
                     accelerator: "CommandOrControl+S"
                 },
@@ -309,8 +350,6 @@ function createEditorWindow() {
                     label: "프로젝트 불러오기",
                     click: async () => {
                         if (!(await projectFileManager.selectImportProject())) return;
-                        await loadData();
-                        mainWindow.webContents.reloadIgnoringCache();
                         createEditorWindow();
                     },
                     accelerator: "CommandOrControl+Shift+O"
@@ -318,7 +357,7 @@ function createEditorWindow() {
                 {
                     label: "프로젝트 내보내기",
                     click: async () => {
-                        editorWindow.webContents.send("request-save");
+                        sendToEditor("request-save");
                         afterSave = () =>
                             projectFileManager.exportProject(
                                 (data?.config?.title ?? "REPAIRv2").replace(/\s/g, "_")
@@ -374,14 +413,14 @@ function createEditorWindow() {
                             }
                         }
                         shell.openPath(result.dir);
-                    }
+                    },
+                    accelerator: "CommandOrControl+Shift+N"
                 },
                 {
                     label: "데이터 폴더 열기",
                     click: () => {
                         shell.openPath(dataDir);
-                    },
-                    accelerator: "CommandOrControl+Shift+N"
+                    }
                 }
             ]
         },
@@ -391,14 +430,14 @@ function createEditorWindow() {
                 {
                     label: "취소",
                     click: () => {
-                        editorWindow.webContents.send("undo");
+                        sendToEditor("undo");
                     },
                     accelerator: "CommandOrControl+Z"
                 },
                 {
                     label: "재실행",
                     click: () => {
-                        editorWindow.webContents.send("redo");
+                        sendToEditor("redo");
                     },
                     accelerator: "CommandOrControl+Shift+Z"
                 }
@@ -459,21 +498,21 @@ function createEditorWindow() {
                 {
                     label: "확대",
                     click: () => {
-                        editorWindow.webContents.send("zoom", 1);
+                        sendToEditor("zoom", 1);
                     },
                     accelerator: "CommandOrControl+="
                 },
                 {
                     label: "축소",
                     click: () => {
-                        editorWindow.webContents.send("zoom", -1);
+                        sendToEditor("zoom", -1);
                     },
-                    accelerator: "CommandOrControl+numsub"
+                    accelerator: "CommandOrControl+-"
                 },
                 {
                     label: "화면에 맞추기",
                     click: () => {
-                        editorWindow.webContents.send("zoom-fit");
+                        sendToEditor("zoom-fit");
                     },
                     accelerator: "CommandOrControl+0"
                 }
@@ -486,6 +525,7 @@ function createEditorWindow() {
 
     editorWindow.on("ready-to-show", () => {
         editorWindow.show();
+        if (data) editorWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
     });
 
     editorWindow.webContents.setWindowOpenHandler((details) => {
@@ -501,6 +541,7 @@ function createEditorWindow() {
 
     editorWindow.on("close", () => {
         isEditorOn = false;
+        editorWindow = null;
     });
 }
 
@@ -525,7 +566,6 @@ async function appOpenedWithProject(argv, appWasRunning = true) {
         return false;
     }
     await projectFileManager.importProject(filePath);
-    if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
 
     return true;
 }
@@ -536,17 +576,18 @@ if (!app.requestSingleInstanceLock()) {
     app.on("second-instance", async (event, argv) => {
         if (!mainWindow) return;
 
-        if (await appOpenedWithProject(argv, true)) await loadData();
-        mainWindow.show();
+        await appOpenedWithProject(argv, true);
+        // mainWindow?.show?.();
     });
 
     // app.commandLine.appendSwitch("disable-gpu-compositing");
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
 
-        await appOpenedWithProject(process.argv, false);
-
-        await loadData();
+        if (!(await appOpenedWithProject(process.argv, false))) {
+            showSplash(is.dev);
+            await Promise.all([new Promise((res) => setTimeout(res, 3000)), loadData()]);
+        }
 
         await initializePluginSystem();
 
@@ -563,6 +604,10 @@ if (!app.requestSingleInstanceLock()) {
         }
     });
 }
+
+app.on("window-all-closed", () => {
+    app.quit();
+});
 
 function setupIpcHandlers() {
     //#region plugin IPCs
@@ -673,8 +718,22 @@ function setupIpcHandlers() {
 
     //#region communication IPCs
 
-    ipcMain.on("socket-connect", (event, url) => {
-        socket.connect(url);
+    ipcMain.on("socket-connect", (event, urls) => {
+        socket
+            .connect(typeof urls === "string" ? urls.trim().split("\n") : urls)
+            .then((connected) => {
+                if (!connected) sendToEditor("socket-failed");
+            });
+    });
+    ipcMain.on("socket-connect-service", (event, type, name) => {
+        if (socket.connected) return;
+        findService(type, name)
+            .then((urls) => {
+                socket.connect(urls).then((connected) => {
+                    if (!connected) sendToEditor("socket-failed");
+                });
+            })
+            .catch(() => {});
     });
     ipcMain.on("socket-send", (event, channel, data) => {
         socket.send(channel, data);
@@ -698,12 +757,14 @@ function setupIpcHandlers() {
     //#region player monitoring IPCs
 
     ipcMain.on("executed-start", (event, { type, id }) => {
-        if (!editorWindow) return;
-        editorWindow.webContents.send("start-executed", { type, id });
+        sendToEditor("start-executed", { type, id });
     });
     ipcMain.on("executed-end", (event, { type, id }) => {
-        if (!editorWindow) return;
-        editorWindow.webContents.send("end-executed", { type, id });
+        sendToEditor("end-executed", { type, id });
+    });
+
+    ipcMain.on("custom-log", (evt, content) => {
+        sendToEditor("custom-log", content);
     });
 
     //#endregion

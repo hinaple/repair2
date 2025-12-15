@@ -1,9 +1,10 @@
 import { SerialPort } from "serialport";
 
 export default class SerialConnector {
-    constructor(ondata) {
+    constructor(ondata, onconnect) {
         this.port = null;
         this.ondata = ondata;
+        this.onconnect = onconnect;
     }
 
     async open(portAlias, path, baudRate = 9600) {
@@ -25,6 +26,7 @@ export default class SerialConnector {
         });
 
         console.log("SERIAL OPENED: ", realPort);
+        this.onconnect(realPort);
 
         this.port.on("readable", () => {
             const data = this.port.read();
@@ -41,7 +43,7 @@ export default class SerialConnector {
     }
 
     close() {
-        if (!this.port) return;
+        if (!this.port || !this.port.isOpen) return;
         this.port.close();
         this.port = null;
     }

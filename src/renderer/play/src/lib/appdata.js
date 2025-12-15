@@ -3,7 +3,7 @@ import { ipcRenderer } from "electron";
 import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
 import { registerUtils } from "./globalUtils";
-import initShortcuts from "./shotcut";
+import initShortcuts from "./shortcut";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -36,12 +36,20 @@ ipcRenderer.on("global-css", (event, css) => {
     globalStyles.textContent = css;
 });
 
+/**
+ * @returns {AppDataClass}
+ */
 export function getAppData() {
     return appdata;
 }
 
-registerUtils("getAppData", getAppData);
-registerUtils("getSizeRatio", () => {
-    const ratio = (appdata.config.sizeRatio ?? "1").split(",").map((n) => n);
+export function getSizeRatio() {
+    const ratio = (appdata.config.sizeRatio || "1")
+        .toString()
+        .split(",")
+        .map((n) => n);
     return ratio.length === 2 ? ratio : [ratio[0], ratio[0]];
-});
+}
+
+registerUtils("getAppData", getAppData);
+registerUtils("getSizeRatio", getSizeRatio);

@@ -38,7 +38,21 @@
             label="URL"
             value={data.payload.url}
             setter={(d) => (data.payload.url = d)}
-            placeholder="http://127.0.0.1:3000"
+            placeholder="Enter로 구분"
+            type="textarea"
+        />
+    {:else if data.types[2] === "connectService"}
+        <InputField
+            label="서비스 종류"
+            value={data.payload.type}
+            setter={(d) => (data.payload.type = d)}
+            placeholder="http"
+        />
+        <InputField
+            label="서비스 이름"
+            value={data.payload.name}
+            setter={(d) => (data.payload.name = d)}
+            placeholder="서비스 이름"
         />
     {:else if data.types[2] === "send"}
         <InputField

@@ -1,5 +1,5 @@
 <script>
-    let { dispatchEvent } = $props();
+    let { root, dispatchEvent } = $props();
 </script>
 
 <div class="plugin-container">

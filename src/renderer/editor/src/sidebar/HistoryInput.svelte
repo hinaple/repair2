@@ -83,6 +83,7 @@
     }
     textarea {
         resize: none;
+        width: 100%;
     }
     .small {
         font-size: 16px;

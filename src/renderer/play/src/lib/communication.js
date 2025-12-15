@@ -4,14 +4,19 @@ import { getAppData } from "./appdata";
 ipcRenderer.on("socket-income", (event, channel, data) => {
     if (channel === "connect") getAppData().executeEntry("Communication.Socket.connect");
     else getAppData().executeEntry("Communication.Socket.ondata", { channel, data });
+    console.log(`SOCKET DATA INCOME | channel: "${channel}", data: "${data}"`);
 });
 
 ipcRenderer.on("serial-income", (event, data) => {
     getAppData().executeEntry("Communication.serialData", { whenDataIs: data.trim() });
+    console.log(`SERIAL DATA: "${data}"`);
 });
 
 export function socketConnect(url) {
     ipcRenderer.send("socket-connect", url);
+}
+export function socketConnectService(type, name) {
+    ipcRenderer.send("socket-connect-service", type, name);
 }
 export function socketSend(channel, data) {
     ipcRenderer.send("socket-send", channel, data);

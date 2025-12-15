@@ -29,6 +29,8 @@
         {#if plugin.name && plugin.name !== "null" && plugin.imported && plugin.attributes?.length}
             {#each plugin.attributes as attr}
                 <InputField
+                    type="textarea"
+                    autoResizeOpt={{ minHeight: 0 }}
                     label={attr}
                     value={plugin.payloads[attr]}
                     setter={(d) => (plugin.payloads[attr] = d)}

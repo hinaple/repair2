@@ -4,7 +4,10 @@ import { getAssetDir } from "@classes/utils";
 const audioChannels = {};
 
 class RepairAudio {
-    constructor(resource, volume = 100, loop = false) {
+    constructor(resourceId, volume = 100, loop = false) {
+        this.resource = getAppData().findResourceById(resourceId);
+        if (!this.resource) return;
+
         this.volume = (volume ?? 100) / 100;
         this.loop = loop;
 
@@ -51,10 +54,7 @@ export function playAudio(channel, resourceId, volume = 100, loop = false) {
 
     if (audioChannels[channel]) audioChannels[channel].stop();
 
-    const tempResource = getAppData().findResourceById(resourceId);
-    if (!tempResource) return;
-
-    audioChannels[channel] = new RepairAudio(tempResource, volume, loop);
+    audioChannels[channel] = new RepairAudio(resourceId, volume, loop);
 }
 export function pauseAudio(channel) {
     if (!channel) channel = "default";

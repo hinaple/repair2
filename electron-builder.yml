@@ -4,6 +4,7 @@ directories:
     buildResources: build
 extraFiles:
     - templates/**/*
+    - plugin-devtool/**/*
     # - from: plugin-devtool
     #   to: resources/plugin-devtool
 files:

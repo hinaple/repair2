@@ -40,24 +40,31 @@ export const StepTypes = {
     send: "전송",
     close: " 종료",
     connect: "연결",
+    connectService: "서비스 연결",
     disconnect: "연결 종료",
     "Communication.Serial.open": "시리얼 통신 시작",
     "Communication.Serial.send": "시리얼 통신 전송",
     "Communication.Serial.close": "시리얼 통신 종료",
     "Communication.Socket.connect": "소켓 통신 연결",
+    "Communication.Socket.connectService": "소켓 통신 서비스 연결",
     "Communication.Socket.send": "소켓 통신 전송",
     "Communication.Socket.disconnect": "소켓 통신 종료",
 
     Others: "기타",
+    customReset: "모두 초기화",
     setVariable: "변수 값 설정",
     resetAllVariables: "변수 전체 초기화",
     executePlugin: "플러그인 실행",
     eventEmit: "이벤트 발생",
+    script: "스크립트 실행",
+    log: "로그 작성",
+    "Others.customReset": "모두 초기화",
     "Others.setVariable": "변수 값 설정",
     "Others.resetAllVariables": "변수 전체 초기화",
     "Others.executePlugin": "플러그인 실행",
     "Others.eventEmit": "이벤트 발생",
-    "Others.script": "스크립트 실행"
+    "Others.script": "스크립트 실행",
+    "Others.log": "로그 작성"
 };
 
 export const ComponentModifyTypes = {
@@ -86,6 +93,8 @@ export const ValueProcessTypes = {
     toLowerCase: "소문자화",
     toUpperCase: "대문자화",
     length: "글자 개수",
+    koToEn: "한->영 변환",
+    enToKo: "영->한 변환",
     jsFunction: "함수"
 };
 
@@ -110,18 +119,31 @@ export const ElementTypes = {
     image: "이미지",
     video: "영상",
     input: "입력",
+    advancedInput: "고급 입력",
     plugin: "플러그인"
 };
 
 export const ElementListenerTypes = {
     custom: "사용자 정의",
-    click: "마우스 클릭",
+
+    Mouse: "마우스",
+    click: "클릭",
+    down: "누름",
+    up: "뗌",
+    "Mouse.click": "마우스 클릭",
+    "Mouse.down": "마우스 누름",
+    "Mouse.up": "마우스 뗌",
+
     input: "값 입력",
     videoEnd: "영상 종료",
     keyPress: "키보드 누름",
-    globalKeyPress: "전역 키보드 누름",
+    // globalKeyPress: "전역 키보드 누름",
     jsFunction: "함수",
-    released: "드래그 종료",
+    Drag: "드래그",
+    released: "종료",
+    return: "복귀",
+    "Drag.released": "드래그 종료",
+    "Drag.return": "드래그 복귀",
     plugin: "플러그인"
 };
 

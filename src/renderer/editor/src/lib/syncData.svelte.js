@@ -5,6 +5,7 @@ import { get } from "svelte/store";
 import { getAllConnectedNodes, setAllOutput } from "../nodes/lines/line";
 import { reload } from "./stores";
 import AppData from "@classes/appData.svelte";
+import { showToast } from "./toast.svelte";
 
 const fileData = ipcRenderer.sendSync("request-data");
 export const appData = new AppData(fileData);
@@ -27,11 +28,13 @@ function getStoreData() {
     };
 }
 
-export function saveData() {
+export async function saveData() {
     const storeData = getStoreData();
     console.log("Saved", storeData);
     updateSaveIdx();
-    return ipcRenderer.invoke("update-data", storeData);
+    await ipcRenderer.invoke("update-data", storeData);
+    showToast({ title: "프로젝트를 저장했습니다.", duration: 2000 });
+    return true;
 }
 
 export function removeNodeWithHistory(node) {

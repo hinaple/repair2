@@ -1,5 +1,5 @@
 import * as Easing from "easing-utils";
-import { getAppData } from "./appdata";
+import { getSizeRatio } from "./appdata";
 
 function getDistance(a, b) {
     return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
@@ -12,12 +12,8 @@ export default class Dragger {
         this.dragOption = dragOption;
         this.node = node;
 
-        const ratio = getAppData()
-            .config.sizeRatio.split(",")
-            .map((n) => +n);
-        const screenRatio = ratio.length
-            ? { x: ratio[0], y: ratio[1] ?? ratio[0] }
-            : { x: 1, y: 1 };
+        const ratio = getSizeRatio();
+        const screenRatio = { x: ratio[0], y: ratio[1] };
 
         if (dragOption.hotspots.length) {
             requestAnimationFrame(() => {
@@ -67,7 +63,9 @@ export default class Dragger {
                 };
                 this.setTransformPos(Snap.renderPos);
                 if (t >= 1) endSnap();
-            } else this.setTransformPos(currentPos);
+            } else {
+                this.setTransformPos(currentPos);
+            }
 
             requestAnimationFrame(render);
         };
@@ -90,6 +88,7 @@ export default class Dragger {
         };
 
         node.addEventListener("mousedown", (evt) => {
+            if (dragging) return;
             dragging = true;
             rendering = true;
             cancelSnap();
@@ -101,7 +100,7 @@ export default class Dragger {
             render();
         });
         let currentHotspot = -1;
-        this.mousemove = document.addEventListener("mousemove", (evt) => {
+        this.mousemove = (evt) => {
             if (!dragging) return;
             const realPos = {
                 x: (evt.screenX - startPos.x) / screenRatio.x,
@@ -119,8 +118,8 @@ export default class Dragger {
                 }
             }
             currentPos = realPos;
-        });
-        this.mouseup = document.addEventListener("mouseup", (evt) => {
+        };
+        this.mouseup = (evt) => {
             if (!dragging) return;
             const realPos = {
                 x: (evt.screenX - startPos.x) / screenRatio.x,
@@ -128,7 +127,7 @@ export default class Dragger {
             };
             currentHotspot = this.getTouchingHotspot(realPos);
             node.dispatchEvent(
-                new CustomEvent("released", {
+                new CustomEvent("dragreleased", {
                     detail: currentHotspot === -1 ? {} : { hotspotIndex: currentHotspot }
                 })
             );
@@ -144,10 +143,15 @@ export default class Dragger {
             if (dragOption.returnOnRelease) {
                 startSnap(dragOption.returnDuration ?? 100);
                 currentPos = { x: 0, y: 0 };
+                node.dispatchEvent(
+                    new CustomEvent("dragreturn", {
+                        detail: currentHotspot === -1 ? {} : { hotspotIndex: currentHotspot }
+                    })
+                );
             }
 
             dragging = false;
-        });
+        };
         document.addEventListener("mousemove", this.mousemove);
         document.addEventListener("mouseup", this.mouseup);
 

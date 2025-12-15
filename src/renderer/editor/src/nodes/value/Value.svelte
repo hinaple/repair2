@@ -7,17 +7,18 @@
     import { grabbing, reload } from "../../lib/stores";
     import { addHistory } from "../../lib/workHistory";
     import { currentFocus, focusData } from "../../sidebar/editUtils";
-    import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
+    import { outClicked } from "../../lib/contextMenu/contextUtils";
     import { onDestroy } from "svelte";
     import registerHighlight from "../../lib/highlight";
     import { genClipboardFn } from "../../lib/clipboard";
 
-    let { value, pre, isValueA = false } = $props();
+    let { value, pre, isFull = false, isValueA = false, inNodeSpace = true } = $props();
 
-    $effect(() => {
-        value.baseValue;
-        reload("nodeMoved");
-    });
+    if (inNodeSpace)
+        $effect(() => {
+            value.baseValue;
+            reload("nodeMoved");
+        });
 
     function addProcess(evt) {
         if (get(grabbing)) return;
@@ -45,7 +46,7 @@
     let hlActive = $derived(!!(value.baseType === "variable" && value.baseValue));
 </script>
 
-<div class={["value-wrapper", isValueA && "right-border"]}>
+<div class={["value-wrapper", isFull && "full", isValueA && "right-border"]}>
     <div
         class={["value", $currentFocus.obj === value && "focus"]}
         onmousedown={clickBase}
@@ -79,6 +80,9 @@
     .value-wrapper {
         width: 50%;
         flex: 1 1 auto;
+    }
+    .value-wrapper.full {
+        width: 100%;
     }
     .value-wrapper.right-border {
         border-right: solid #000 2px;

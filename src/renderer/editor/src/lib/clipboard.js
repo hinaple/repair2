@@ -7,10 +7,8 @@ import { currentFocus } from "../sidebar/editUtils";
 import Step from "@classes/step.svelte";
 import Element from "@classes/element.svelte";
 import Listener from "@classes/listener.svelte";
-import Branch from "@classes/nodes/branch.svelte";
-import Entry from "@classes/nodes/entry.svelte";
-import Sequence from "@classes/nodes/sequence.svelte";
 import ValueProcess from "@classes/value/valueProcess";
+import { NodeClasses } from "@classes/utils";
 import { reload } from "./stores";
 
 export function copyItem(itemData, itemType) {
@@ -36,25 +34,13 @@ export function pasted(pasteString, target = get(currentFocus), pos = null) {
                     x: n.nodePos.x - posOffset.x + (pos ?? getViewportCenter()).x,
                     y: n.nodePos.y - posOffset.y + (pos ?? getViewportCenter()).y
                 };
-                if (n.type === "sequence") return new Sequence({ ...n, nodePos });
-                else if (n.type === "branch") return new Branch({ ...n, nodePos });
-                else if (n.type === "entry") return new Entry({ ...n, nodePos });
+                if (n.type in NodeClasses) return new NodeClasses[n.type]({ ...n, nodePos });
             });
             appData.addManyNodeWithHistory(addHistory, newNodes);
-        } else if (type === "sequence") {
+        } else if (type in NodeClasses) {
             appData.addNodeWithHistory(
                 addHistory,
-                new Sequence({ ...data, nodePos: pos ?? getViewportCenter() })
-            );
-        } else if (type === "entry") {
-            appData.addNodeWithHistory(
-                addHistory,
-                new Entry({ ...data, nodePos: pos ?? getViewportCenter() })
-            );
-        } else if (type === "branch") {
-            appData.addNodeWithHistory(
-                addHistory,
-                new Branch({ ...data, nodePos: pos ?? getViewportCenter() })
+                new NodeClasses[type]({ ...data, nodePos: pos ?? getViewportCenter() })
             );
         } else if (target.type === "sequence" && type === "step")
             target.obj.steps.addWithHistory(addHistory, {

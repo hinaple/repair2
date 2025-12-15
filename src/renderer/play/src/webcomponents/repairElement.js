@@ -3,6 +3,8 @@ import { genElement } from "../lib/resources";
 import { getAppData } from "../lib/appdata";
 import { subscribe } from "../lib/variables";
 import Dragger from "../lib/dragger";
+import amplifyVideo from "../lib/amplifyVideo";
+import RepairInput from "./repairInput";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -44,6 +46,10 @@ export default class RepairElement extends HTMLElement {
             if (element.payload.maxLength !== null)
                 this.realEl.maxlength = element.payload.maxLength;
 
+            const valueFunc =
+                element.payload.valueFunction &&
+                new Function("value", element.payload.valueFunction);
+
             if (!element.payload.allowedType || element.payload.allowedType === "any")
                 this.allowedRegex = null;
             else if (element.payload.allowedType === "regex")
@@ -57,10 +63,12 @@ export default class RepairElement extends HTMLElement {
                     subscribe(this.variableId, (value) => (this.realEl.value = value))
                 );
             this.realEl.addEventListener("input", (evt) => {
-                let tempValue;
+                let tempValue = evt.target.value;
+
+                if (valueFunc) tempValue = valueFunc(tempValue.toString());
+
                 if (this.allowedRegex)
-                    tempValue = (evt.target.value.match(this.allowedRegex) ?? []).join("");
-                else tempValue = evt.target.value;
+                    tempValue = (tempValue.match(this.allowedRegex) ?? []).join("");
 
                 if (this.variableId) setVar(this.variableId, tempValue);
 
@@ -78,23 +86,29 @@ export default class RepairElement extends HTMLElement {
                     if (!tempPlugin) return;
                     if (this.realEl) this.realEl.remove();
                     this.realEl = tempPlugin;
+                    this.rendered = false;
                     this.render();
                 })
             );
         } else if (this.type === "image" || this.type === "video") {
             const resource = getAppData().findResourceById(element.payload.resourceId);
             this.realEl = genElement(resource, !element.payload.removePreload);
+        } else if (this.type === "advancedInput") {
+            this.realEl = new RepairInput(element.payload);
         }
 
         if (this.type === "video" && this.realEl) {
             this.realEl.currentTime = 0;
-            this.realEl.volume = (element.payload.volume ?? 100) / 100;
+            const vol = (element.payload.volume ?? 100) / 100;
+            if (vol > 1) amplifyVideo(this.realEl, vol);
+            else this.realEl.volume = vol;
             this.realEl.loop = !!element.payload.loop;
             this.realEl.muted = false;
         }
     }
     render() {
-        if (!this.isConnected || !this.realEl) return;
+        if (this.rendered || !this.isConnected || !this.realEl) return;
+        this.rendered = true;
 
         this.realEl.setAttribute("style", this.childStyle ?? "");
 
@@ -106,33 +120,52 @@ export default class RepairElement extends HTMLElement {
             this.realEl.style.height = this.height ? `${this.height}px` : "auto";
         }
 
-        const deadListenerIdx = [];
-        this.globalEvents = [];
-        this.listeners.forEach((l, idx) => {
-            if (l.types[0] === "globalKeyPress") {
-                const eventOpt = [
-                    l.realEventChannel,
-                    async (evt) => {
-                        if (
-                            l.payload.key?.length &&
-                            !l.payload.key.split(/\s*,\s*/).includes(evt.key)
-                        )
-                            return;
+        const deadListeners = [];
+        function gotoListener(listener) {
+            if (listener.once) deadListeners.push(listener);
+            listener.output.goto();
+        }
 
-                        if (l.once) deadListenerIdx.push(idx);
-                        l.output.goto();
-                    },
-                    { capture: l.useCapture }
-                ];
-                this.globalEvents.push(eventOpt);
-                window.addEventListener(...eventOpt);
-
+        this.repeating = new Map();
+        const activeListener = (listener) => {
+            //when event is activated
+            if (listener.repeatCount <= 1) {
+                //not repeating event
+                gotoListener(listener);
                 return;
             }
-            (l.types[0] === "released" ? this : this.realEl).addEventListener(
+
+            const repeatInfo = this.repeating.get(listener); //repeating info
+            if (!repeatInfo) {
+                //first activated
+                this.repeating.set(listener, {
+                    count: 1,
+                    timeout: listener.repeatInterval
+                        ? setTimeout(() => this.repeating.delete(listener), listener.repeatInterval) //reset
+                        : null //never reset
+                });
+                return;
+            }
+            if (repeatInfo.timeout) clearTimeout(repeatInfo.timeout); //remove reset timeout
+            repeatInfo.count++;
+            if (repeatInfo.count >= listener.repeatCount) {
+                gotoListener(listener);
+                this.repeating.delete(listener);
+                return;
+            }
+            if (listener.repeatInterval)
+                repeatInfo.timeout = setTimeout(
+                    () => this.repeating.delete(listener),
+                    listener.repeatInterval
+                );
+        };
+
+        this.globalEvents = [];
+        this.listeners.forEach((l) => {
+            const eventOpt = [
                 l.realEventChannel,
                 async (evt) => {
-                    if (deadListenerIdx.includes(idx)) return;
+                    if (deadListeners.includes(l)) return;
 
                     if (
                         l.types[0] === "keyPress" &&
@@ -147,7 +180,7 @@ export default class RepairElement extends HTMLElement {
                             return;
                         }
                     } else if (
-                        l.types[0] === "released" &&
+                        l.shortType === "Drag.released" &&
                         l.payload.hotspotIndexes &&
                         l.payload.hotspotIndexes.trim().length &&
                         (evt.detail.hotspotIndex === undefined ||
@@ -166,10 +199,17 @@ export default class RepairElement extends HTMLElement {
                             return;
                     }
 
-                    if (l.once) deadListenerIdx.push(idx);
-                    l.output.goto();
-                }
-            );
+                    activeListener(l);
+                },
+                { capture: l.useCapture }
+            ];
+
+            if (l.global) {
+                this.globalEvents.push(eventOpt);
+                window.addEventListener(...eventOpt);
+                return;
+            }
+            (l.types[0] === "Drag" ? this : this.realEl).addEventListener(...eventOpt);
         });
 
         this.appendChild(this.realEl);
@@ -194,7 +234,7 @@ export default class RepairElement extends HTMLElement {
     connectedCallback() {
         this.render();
     }
-    disconnectedCallback() {
+    destroy() {
         if (this.unsubscribers)
             Object.values(this.unsubscribers).forEach((unsubscriber) => unsubscriber?.());
         if (this.globalEvents)
@@ -202,6 +242,7 @@ export default class RepairElement extends HTMLElement {
                 window.removeEventListener(...opt);
             });
         if (this.dragger) this.dragger.destroy();
+        if (this.repeating) this.repeating.forEach((rep) => clearTimeout(rep.timeout));
     }
 }
 

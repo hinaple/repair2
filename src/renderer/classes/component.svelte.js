@@ -37,7 +37,7 @@ export default class Component {
         this.outroTransition = new Transition(outroTransition);
     }
     get styleString() {
-        return `${this.pos.styleString} z-index: ${this.zIndex ?? 0}; ${this.style ?? ""};`;
+        return `${this.pos.styleString} z-index: ${this.zIndex ?? 0};`;
     }
     get aliasOrId() {
         return this.alias || this.id;

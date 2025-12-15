@@ -17,7 +17,13 @@ const PayloadTemplates = {
         maxLength: null,
         allowedType: "any",
         allowedRegex: null,
+        valueFunction: null,
         isTextarea: false
+    },
+    advancedInput: {
+        variableId: null,
+        maxLength: null,
+        securityText: null
     },
     plugin: { isClass: true, class: PluginPointer, argument: "elements" }
 };

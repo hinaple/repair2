@@ -13,24 +13,47 @@
                 background: repeating-conic-gradient(#e7e7e7 0% 25%, #bababa 0% 50%) 50% / 16px 16px;
             }
             input[type="text"],
-            input[type="number"] {
+            input[type="number"],
+            textarea {
                 width: 100%;
                 margin-bottom: 8px;
                 padding: 6px 8px;
                 border-radius: 4px;
                 border: none;
                 box-sizing: border-box;
+                font-family: inherit;
             }
-            #props-panel {
+            textarea {
+                resize: vertical;
+            }
+            button {
+                width: 100%;
+                background-color: #d3d3d3;
+                padding-block: 8px;
+                border-radius: 4px;
+                border: none;
+                font-size: 14px;
+                cursor: pointer;
+                font-weight: 600;
+            }
+            button:hover {
+                background-color: #fff;
+            }
+            .panel-zone {
                 position: fixed;
                 top: 10px;
                 right: 10px;
                 width: 280px;
-                max-height: 90vh;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .panel {
                 background: rgba(0, 0, 0, 0.7);
                 color: white;
                 font-family: sans-serif;
                 border-radius: 8px;
+                max-height: 90vh;
                 overflow: hidden;
                 user-select: none;
                 display: flex;
@@ -38,18 +61,24 @@
                 z-index: 9999;
                 backdrop-filter: blur(3px);
             }
-            #props-header {
+            .panel.foldable {
+                flex: 0 1 auto;
+
+                .panel-header {
+                    cursor: pointer;
+                }
+            }
+            .panel-header {
                 padding: 10px;
-                cursor: pointer;
                 background: rgba(255, 255, 255, 0.1);
                 font-weight: bold;
             }
-            #props-content {
+            .panel-content {
                 padding: 10px;
                 overflow-y: auto;
                 flex: 1;
             }
-            #props-content label {
+            .panel-content label {
                 display: block;
                 font-size: 0.85em;
                 margin-bottom: 4px;
@@ -69,9 +98,19 @@
     </head>
     <body>
         <div id="component-container"></div>
-        <div id="props-panel" class="">
-            <div id="props-header">Config</div>
-            <div id="props-content"></div>
+        <div class="panel-zone">
+            <div id="props-panel" class="panel foldable">
+                <div id="props-header" class="panel-header">Config</div>
+                <div id="props-content" class="panel-content"></div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">Event Dispatcher</div>
+                <div class="panel-content">
+                    <input type="text" id="event-channel" placeholder="Channel" />
+                    <textarea id="event-data" placeholder="Data"></textarea>
+                    <button id="event-dispatch">Dispatch</button>
+                </div>
+            </div>
         </div>
         <script type="module" src="./devtool.js"></script>
     </body>
