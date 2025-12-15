@@ -44,34 +44,36 @@ export default defineConfig(({ command }) => ({
                                   css: FontFaces.join("\n"),
                                   attributes: option.attributes
                               });
+
+                          globalThis.SveltePluginStyleReload?.();
                       },
                       injectionCodeFormat: "es"
                   }
                 : {
                       injectCode: (cssCode, option) => {
                           return `
-                const cssCode = ${cssCode};
-                const option = ${JSON.stringify(option)};
-                const pluginName = ${JSON.stringify(name)};
-                if (!globalThis.InjectingCss) globalThis.InjectingCss = {};
-                if (!globalThis.InjectingCss[pluginName])
-                    globalThis.InjectingCss[pluginName] = [[], []]; //inner, outer
+                            const cssCode = ${cssCode};
+                            const option = ${JSON.stringify(option)};
+                            const pluginName = ${JSON.stringify(name)};
+                            if (!globalThis.InjectingCss) globalThis.InjectingCss = {};
+                            if (!globalThis.InjectingCss[pluginName])
+                                globalThis.InjectingCss[pluginName] = [[], []]; //inner, outer
 
-                const cssObj = globalThis.InjectingCss[pluginName];
-                const FontFaceRegex = /(@font-face\s*{.+?})/gms;
-                const FontFaces = [...cssCode.matchAll(FontFaceRegex)].map((m) => m[0]);
-                const RemainCss = cssCode.replace(FontFaceRegex, "").trim();
-                if (RemainCss.length)
-                    cssObj[0].push({
-                        css: RemainCss,
-                        attributes: option.attributes
-                    });
-                if (FontFaces.length)
-                    cssObj[1].push({
-                        css: FontFaces.join("\\n"),
-                        attributes: option.attributes
-                    });
-                `;
+                            const cssObj = globalThis.InjectingCss[pluginName];
+                            const FontFaceRegex = /(@font-face\s*{.+?})/gms;
+                            const FontFaces = [...cssCode.matchAll(FontFaceRegex)].map((m) => m[0]);
+                            const RemainCss = cssCode.replace(FontFaceRegex, "").trim();
+                            if (RemainCss.length)
+                                cssObj[0].push({
+                                    css: RemainCss,
+                                    attributes: option.attributes
+                                });
+                            if (FontFaces.length)
+                                cssObj[1].push({
+                                    css: FontFaces.join("\\n"),
+                                    attributes: option.attributes
+                                });
+                            `;
                       }
                   })
         }),

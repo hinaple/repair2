@@ -22,11 +22,20 @@ export default class SveltePlugin extends HTMLElement {
 
         this.component = mount(Component, {
             target: this.shadowRoot,
-            props: { ...this.attributesObj, root: this.shadowRoot, dispatchEvent }
+            props: {
+                ...this.attributesObj,
+                root: this.shadowRoot,
+                dispatchEvent
+            }
         });
 
         // DO NOT EDIT BELOW UNLESS YOU KNOW WHAT IT DOES
-        mountCss(__PLUGIN_NAME__, globalThis.InjectingCss[__PLUGIN_NAME__], this.shadowRoot);
+        const mountCssFn = () =>
+            mountCss(__PLUGIN_NAME__, globalThis.InjectingCss[__PLUGIN_NAME__], this.shadowRoot);
+        mountCssFn();
+        if (this.attributesObj.isDev) {
+            globalThis.SveltePluginStyleReload = mountCssFn;
+        }
     }
 
     disconnectedCallback() {
