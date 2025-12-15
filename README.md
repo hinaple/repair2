@@ -10,7 +10,6 @@ Room Escape Pc App InteRface
 
 - [ ] Add real-time player state monitoring feature in editor
 - [ ] Support touchpads in editor
-- [ ] Fix Ctrl+- shortcut on editor(WTF??!)
 - [ ] Add some guides in editor
 - [ ] Enhance preview feature
 - [ ] Documentation editing
@@ -20,6 +19,7 @@ Room Escape Pc App InteRface
 - [ ] Online viewer
 - [ ] Make every attributes variable(like after effects)
 - [ ] Keep node connect infos when copying
+- [ ] Patch code feature
 
 ## Done
 
@@ -32,3 +32,4 @@ Room Escape Pc App InteRface
 - [x] Audio system
 - [x] Hot reload on plugins
 - [x] Refactor plugin system(Eww!)
+- [x] Fix Ctrl+- shortcut on editor(WTF??!)

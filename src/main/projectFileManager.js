@@ -71,17 +71,6 @@ export default class ProjectFileManager {
             readdir(this.dataDir, { recursive: true }).then((files) => {
                 fileCount = files.length;
             });
-            // const zip = new admZip();
-            // zip.addLocalFolder(this.dataDir, "", (filename) => {
-            //     const dirs = filename.split(/\\|\//);
-            //     return !(
-            //         dirs.includes("svelte-plugins") &&
-            //         (dirs.includes("node_modules") || dirs.includes("dist"))
-            //     );
-            // });
-            // zip.writeZip(result.filePath);
-
-            // res(true);
         });
     }
 
@@ -102,10 +91,6 @@ export default class ProjectFileManager {
 
                 let proceedSize = 0;
                 zip.on("extract", (entry, outPath) => {
-                    // console.log(
-                    //     "IMPORT PROGRESS",
-                    //     Math.floor((proceedSize / totalEntrySize) * 100)
-                    // );
                     proceedSize += entry.size;
                     this.importProgress?.(
                         `프로젝트 불러오는 중(${Math.floor((proceedSize / totalEntrySize) * 100)}%)\n[${outPath}]`
@@ -123,9 +108,6 @@ export default class ProjectFileManager {
                 this.importing = false;
                 this.afterImport?.();
                 res();
-
-                // const zip = new admZip(filePath);
-                // zip.extractAllTo(this.dataDir, true);
             } catch (error) {
                 console.error(error);
                 const logFile = await makeLog("error", JSON.stringify(error, null, 4));
