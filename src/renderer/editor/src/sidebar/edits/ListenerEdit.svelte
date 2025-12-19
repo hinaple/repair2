@@ -33,7 +33,7 @@
         placeholder="event 객체 사용 가능\ntrue 반환 시 활성화"
         autoResizeOpt={{ minHeight: 50 }}
     />
-{:else if data.type === "released"}
+{:else if data.type === "Drag.released"}
     <hr />
     <InputField
         label="인식할 좌표(0부터 시작, 콤마로 구분)"
