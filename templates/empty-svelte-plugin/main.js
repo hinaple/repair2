@@ -30,8 +30,11 @@ export default class SveltePlugin extends HTMLElement {
         });
 
         // DO NOT EDIT BELOW UNLESS YOU KNOW WHAT IT DOES
-        const mountCssFn = () =>
+        const mountCssFn = () => {
+            destroyCss(__PLUGIN_NAME__);
+            destroyCss(__PLUGIN_NAME__, this.shadowRoot);
             mountCss(__PLUGIN_NAME__, globalThis.InjectingCss[__PLUGIN_NAME__], this.shadowRoot);
+        };
         mountCssFn();
         if (this.attributesObj.isDev) {
             globalThis.SveltePluginStyleReload = mountCssFn;

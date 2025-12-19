@@ -17,8 +17,8 @@ export function mountCss(pluginName, cssObj, shadowRoot) {
     });
 }
 
-export function destroyCss(pluginName) {
-    document
-        .querySelectorAll(`style[data-plugin-name=${pluginName}]`)
-        .forEach((s) => s.parentNode.removeChild(s));
+export function destroyCss(pluginName, root = document) {
+    root.querySelectorAll(`style[data-plugin-name=${pluginName}]`).forEach((s) =>
+        s.parentNode.removeChild(s)
+    );
 }
