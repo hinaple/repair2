@@ -35,13 +35,13 @@
                     from.x + currentBezierOffset,
                     from.y,
                     from.x + currentBezierOffset,
-                    yCenter,
+                    (from.y + yCenter) / 2,
                     (from.x + to.x) / 2,
                     yCenter
                 );
                 ctx.bezierCurveTo(
                     to.x - currentBezierOffset,
-                    yCenter,
+                    (to.y + yCenter) / 2,
                     to.x - currentBezierOffset,
                     to.y,
                     to.x,

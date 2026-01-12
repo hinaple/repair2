@@ -515,6 +515,14 @@ function createEditorWindow() {
                         sendToEditor("zoom-fit");
                     },
                     accelerator: "CommandOrControl+0"
+                },
+                { type: "separator" },
+                {
+                    label: "편집기 새로고침",
+                    click: () => {
+                        editorWindow.webContents.reloadIgnoringCache();
+                    },
+                    accelerator: "CommandOrControl+R"
                 }
             ]
         }
