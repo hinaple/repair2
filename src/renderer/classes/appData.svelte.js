@@ -46,10 +46,11 @@ export default class AppData {
             );
         });
     }
-    executeEntry(entryType, data = null) {
+    enterEntry(entryType, data = null) {
         const entries = this.findAllEntry(entryType, data);
         entries.forEach((entry) => {
-            entry.output.goto();
+            // entry.output.goto();
+            entry.enter();
         });
     }
     findSequence(id) {

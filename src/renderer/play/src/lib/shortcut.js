@@ -26,7 +26,7 @@ window.addEventListener(
             .filter((d) => (!d.ctrlKey || e.ctrlKey) && (!d.shiftKey || e.shiftKey))
             .forEach((d) => {
                 if (!d.pressingTime) {
-                    d.entry.execute();
+                    d.entry.enter();
                     return;
                 }
 
@@ -34,7 +34,7 @@ window.addEventListener(
                 d.timeout = setTimeout(() => {
                     d.timeout = null;
                     d.worked = true;
-                    d.entry.execute();
+                    d.entry.enter();
                 }, d.pressingTime * 1000);
             });
     },

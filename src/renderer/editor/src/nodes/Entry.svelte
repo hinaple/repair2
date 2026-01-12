@@ -27,6 +27,7 @@
     node={entry}
     type="entry"
     outputs={[{ output: entry.output, id: entry.id }]}
+    hasInput={entry.standbyMode}
     {title}
     {isLastHold}
     {onmousedown}

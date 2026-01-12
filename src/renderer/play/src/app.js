@@ -68,7 +68,7 @@ ValueProcess.prototype.process = function (before) {
 };
 
 window.addEventListener("load", () => {
-    getAppData().executeEntry("startup");
+    getAppData().enterEntry("startup");
 });
 
 ipcRenderer.on("request-execute", (event, { type, id }) => {

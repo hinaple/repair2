@@ -7,6 +7,12 @@
 
 <InputField label="진입점 이름" value={data.alias} setter={(d) => (data.alias = d)} />
 <InputField label="진입 유형" type="type" value={data.data} options={EntryTypes} />
+<InputField
+    label="항상 대기"
+    value={!data.standbyMode}
+    type="checkbox"
+    setter={(d) => (data.standbyMode = !d)}
+/>
 {#if data.data.type === "event"}
     <InputField
         label="이벤트 채널"

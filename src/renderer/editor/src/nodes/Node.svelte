@@ -23,7 +23,8 @@
         isLastHold,
         onmousedown: bubbleMouseDown,
         body,
-        minWidth = 200
+        minWidth = 200,
+        hasInput = true
     } = $props();
 
     $effect(() => {
@@ -197,7 +198,7 @@
         <div
             class="head"
             class:folded={folded && !innerOutputs?.length}
-            use:inputNode={type !== "entry" && node.id}
+            use:inputNode={{ hasInput, id: node.id }}
         >
             <div class="handle" bind:this={handleEl}>
                 <span>
@@ -222,7 +223,7 @@
                 {/each}
             </div>
         {/if}
-        {#if type !== "entry"}
+        {#if hasInput}
             <div class="start-circle" use:inputNode={node.id}></div>
         {/if}
         <div class="outputs">
