@@ -1,6 +1,9 @@
 <script>
     import InputField from "../InputField.svelte";
     import { EntryTypes } from "../../lib/translate";
+    import { addHistory } from "../../lib/workHistory";
+    import { getAllConnectedNodes, setAllOutput } from "../../nodes/lines/line";
+    import { reload } from "../../lib/stores";
 
     const { data } = $props();
 </script>
@@ -11,7 +14,33 @@
     label="항상 대기"
     value={!data.standbyMode}
     type="checkbox"
-    setter={(d) => (data.standbyMode = !d)}
+    manual
+    setter={(d) => {
+        if (!d) {
+            addHistory({
+                doFn: (v) => (data.standbyMode = v),
+                doData: !d,
+                undoData: !!d
+            });
+            return;
+        }
+        const connectedNodes = getAllConnectedNodes(data.id);
+        console.log(data.id, connectedNodes);
+        addHistory({
+            doFn: ({ value, nodes }) => {
+                data.standbyMode = value;
+                setAllOutput(nodes, null);
+                reload("nodeMoved");
+            },
+            undoFn: ({ value, nodes, targetEntryId }) => {
+                data.standbyMode = value;
+                setAllOutput(nodes, targetEntryId);
+                reload("nodeMoved");
+            },
+            doData: { value: !d, nodes: connectedNodes },
+            undoData: { value: !!d, nodes: connectedNodes, targetEntryId: data.id }
+        });
+    }}
 />
 {#if data.data.type === "event"}
     <InputField

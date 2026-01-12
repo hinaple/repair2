@@ -140,8 +140,15 @@
     });
 
     const contextmenu = [
-        {
+        type === "entry" && {
             label: "실행",
+            click: () => {
+                ipcRenderer.send("request-execute", { type: "entry", id: node.id });
+                return true;
+            }
+        },
+        (type !== "entry" || node.standbyMode) && {
+            label: type === "entry" ? "활성화" : "실행",
             click: () => {
                 ipcRenderer.send("request-execute", { type: "node", id: node.id });
                 return true;
@@ -187,45 +194,47 @@
 </script>
 
 <div
-    class="wrapper"
-    class:last-hold={isLastHold}
-    class:entry={type === "entry"}
+    class={[
+        "wrapper",
+        isLastHold && "last-hold",
+        type === "entry" && "entry",
+        type === "branch" && "branch"
+    ]}
     bind:this={nodeEl}
     onmousedowncapture={onmousedown}
     use:rightclick={contextmenu}
 >
-    <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
-        <div
-            class="head"
-            class:folded={folded && !innerOutputs?.length}
-            use:inputNode={{ hasInput, id: node.id }}
-        >
-            <div class="handle" bind:this={handleEl}>
-                <span>
-                    {title}
-                </span>
+    <div class="node-wrapper">
+        <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
+            <div
+                class="head"
+                class:folded={folded && !innerOutputs?.length}
+                use:inputNode={{ hasInput, id: node.id }}
+            >
+                <div class="handle" bind:this={handleEl}>
+                    <span>
+                        {title}
+                    </span>
+                </div>
+                {#if type !== "entry" && type !== "branch"}
+                    <FoldArrow bind:folded toggle={() => reload("nodeMoved")} />
+                {/if}
             </div>
-            {#if type !== "entry"}
-                <FoldArrow bind:folded toggle={() => reload("nodeMoved")} />
+            {#if !folded && type !== "entry" && type !== "entry"}
+                {@render body()}
+            {:else if innerOutputs?.length}
+                <div class="inner-outputs">
+                    {#each innerOutputs as output}
+                        <div class="right-output-wrapper">
+                            <div class="right-output" use:outputNode={output}></div>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+            {#if hasInput}
+                <div class="start-circle" use:inputNode={node.id}></div>
             {/if}
         </div>
-        {#if !folded && type !== "entry"}
-            {@render body()}
-        {:else if innerOutputs?.length}
-            <div class="inner-outputs">
-                {#each innerOutputs as output}
-                    <div class="right-output-wrapper">
-                        <div
-                            class="output right"
-                            use:outputNode={{ isHeadingBottom: false, ...output }}
-                        ></div>
-                    </div>
-                {/each}
-            </div>
-        {/if}
-        {#if hasInput}
-            <div class="start-circle" use:inputNode={node.id}></div>
-        {/if}
         <div class="outputs">
             {#each outputs as output}
                 <div class="output" use:outputNode={output}>
@@ -247,8 +256,12 @@
     .wrapper.last-hold {
         z-index: 2;
     }
-    .node {
+    .node-wrapper {
+        display: flex;
+        flex-direction: row;
         pointer-events: all;
+    }
+    .node {
         min-width: 200px;
         display: flex;
         flex-direction: column;
@@ -295,7 +308,7 @@
     }
     .start-circle {
         position: absolute;
-        top: 6px;
+        top: 7px;
         left: -8px;
         background-color: #fff;
         width: 16px;
@@ -304,36 +317,47 @@
         border-radius: 50%;
         box-sizing: border-box;
     }
+    .entry .start-circle {
+        top: calc(calc(45px - 16px) / 2);
+    }
     .outputs {
+        right: -14px;
         position: absolute;
-        height: 14px;
-        bottom: -14px;
-        width: 100%;
+        height: 30px;
         display: flex;
-        flex-direction: row-reverse;
+        flex-direction: column;
         justify-content: space-between;
-        padding-inline: 10px;
         box-sizing: border-box;
+        justify-content: space-evenly;
+    }
+    .branch .outputs {
+        bottom: 2px;
+        height: 60px;
     }
     .entry .outputs {
-        justify-content: center;
+        height: 100%;
     }
     .output {
-        background-color: #000;
-        width: 14px;
-        height: 14px;
-        border-radius: 0 0 7px 7px;
-        cursor: grab;
         position: relative;
+        left: -2px;
+        cursor: grab;
+        background-color: #fff;
+        width: 16px;
+        height: 16px;
+        border: solid #000 4px;
+        border-radius: 50%;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-self: center;
     }
     .output-label {
         opacity: 0.8;
         width: 30px;
-        text-align: center;
+        text-align: right;
         position: absolute;
-        left: 50%;
-        bottom: 100%;
-        transform: translate(-50%, -5px);
+        left: -5px;
+        transform: translateX(-100%);
         color: #fff;
         font-size: 12px;
         font-weight: 700;
@@ -345,15 +369,21 @@
         background-color: #000;
         border-radius: 0 0 10px 10px;
         width: 100%;
-        gap: 10px;
-        padding-bottom: 10px;
+        gap: 8px;
+        padding-block: 5px 10px;
         margin-top: -1px;
     }
     .right-output-wrapper {
+        width: 100%;
         position: relative;
         height: 14px;
     }
-    .output.right {
+    .right-output {
+        background-color: #000;
+        width: 14px;
+        height: 14px;
+        border-radius: 0 7px 7px 0;
+        border-radius: 50%;
         position: absolute;
         right: -14px;
         border-radius: 0 7px 7px 0;

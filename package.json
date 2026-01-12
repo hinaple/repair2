@@ -1,6 +1,6 @@
 {
     "name": "repair2",
-    "version": "2.4.1",
+    "version": "2.4.2-beta.0",
     "description": "REPAIR v2",
     "main": "./out/main/index.js",
     "type": "module",

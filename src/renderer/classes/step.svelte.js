@@ -60,7 +60,8 @@ const PayloadTemplates = {
             variables: true,
             components: true,
             delays: true,
-            preloads: true
+            preloads: true,
+            entries: true
         },
         setVariable: { variableId: null, value: null },
         resetAllVariables: null,

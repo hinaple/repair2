@@ -75,5 +75,8 @@ ipcRenderer.on("request-execute", (event, { type, id }) => {
     if (type === "node") {
         const outputNode = getAppData().findNodeById(id);
         if (outputNode) outputNode.execute();
+    } else if (type === "entry") {
+        const targetEntry = getAppData().findNodeById(id);
+        if (targetEntry && targetEntry.type === "entry") targetEntry.enter();
     }
 });

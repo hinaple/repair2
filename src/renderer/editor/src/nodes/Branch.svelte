@@ -23,8 +23,8 @@
     {onmousedown}
     minWidth={350}
     outputs={[
-        { output: branch.falseOutput, id: `${branch.id}_false`, label: "거짓" },
-        { output: branch.trueOutput, id: `${branch.id}_true`, label: "참" }
+        { output: branch.trueOutput, id: `${branch.id}_true`, label: "참" },
+        { output: branch.falseOutput, id: `${branch.id}_false`, label: "거짓" }
     ]}
     {...nodeData}
 >
@@ -70,7 +70,7 @@
     }
     .operator {
         width: 100%;
-        height: 40px;
+        height: 60px;
         background-color: #000;
         color: #fff;
         font-size: 18px;

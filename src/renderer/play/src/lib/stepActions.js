@@ -19,6 +19,7 @@ import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
 import { clearDelays, delay } from "./delay";
 import { ipcRenderer } from "electron";
+import { getAppData } from "./appdata";
 
 const actions = {
     Component: {
@@ -84,6 +85,9 @@ const actions = {
             if (s.payload.components) clearComponents(true);
             if (s.payload.delays) clearDelays();
             if (s.payload.preloads) removePreloadsAll();
+            if (s.payload.entries) {
+                getAppData().resetEntries();
+            }
         },
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
         resetAllVariables: () => resetAllVar(),

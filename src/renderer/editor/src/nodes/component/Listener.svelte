@@ -71,14 +71,7 @@
                 "리스너"}
         </div>
         {#if !hidden}
-            <div
-                class="output"
-                use:outputNode={{
-                    id: listener.id,
-                    output: listener.output,
-                    isHeadingBottom: false
-                }}
-            ></div>
+            <div class="output" use:outputNode={listener}></div>
         {/if}
     </div>
 </div>

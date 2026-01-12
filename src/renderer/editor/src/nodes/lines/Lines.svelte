@@ -5,6 +5,7 @@
     import FrameUpdater from "../../lib/frameUpdater";
 
     let canvas = $state(null);
+    /** @type {CanvasRenderingContext2D} */
     let ctx;
 
     let vpPos = { x: 0, y: 0 },
@@ -20,30 +21,42 @@
         ctx.strokeStyle = "#000";
         ctx.lineCap = "round";
         ctx.lineWidth = 3 * rInfo.ratio;
+
+        const currentBezierOffset = BEZIER_OFFSET * rInfo.ratio;
         lineArr.forEach((l) => {
             ctx.beginPath();
             const from = posFromViewport(l.fromCoord.x, l.fromCoord.y);
             const to = posFromViewport(l.toCoord.x, l.toCoord.y);
             ctx.moveTo(from.x, from.y);
             if (l.noBezier) ctx.lineTo(to.x, to.y);
-            else if (l.isHeadingBottom) {
+            else if (to.x <= from.x) {
+                const yCenter = (from.y + to.y) / 2;
                 ctx.bezierCurveTo(
-                    from.x,
-                    from.y + BEZIER_OFFSET * rInfo.ratio,
-                    to.x - BEZIER_OFFSET * rInfo.ratio,
-                    to.y,
-                    to.x,
-                    to.y
-                );
-            } else
-                ctx.bezierCurveTo(
-                    from.x + BEZIER_OFFSET * rInfo.ratio,
+                    from.x + currentBezierOffset,
                     from.y,
-                    to.x - BEZIER_OFFSET * rInfo.ratio,
+                    from.x + currentBezierOffset,
+                    yCenter,
+                    (from.x + to.x) / 2,
+                    yCenter
+                );
+                ctx.bezierCurveTo(
+                    to.x - currentBezierOffset,
+                    yCenter,
+                    to.x - currentBezierOffset,
                     to.y,
                     to.x,
                     to.y
                 );
+            } else {
+                ctx.bezierCurveTo(
+                    Math.max(from.x + currentBezierOffset, (to.x + from.x) / 2),
+                    from.y,
+                    Math.min(to.x - currentBezierOffset, (to.x + from.x) / 2),
+                    to.y,
+                    to.x,
+                    to.y
+                );
+            }
             ctx.stroke();
         });
     }, 2);

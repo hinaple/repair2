@@ -40,7 +40,9 @@ export default class Entry extends Node {
     }
 
     enter() {
-        if (!this.standbyMode || this.activated) this.output.goto();
+        if (this.standbyMode && !this.activated) return;
+        this.output.goto();
+        if (this.standbyMode) this.activated = false;
     }
     async execute() {
         if (this.standbyMode) this.activated = true;

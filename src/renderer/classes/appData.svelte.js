@@ -49,8 +49,13 @@ export default class AppData {
     enterEntry(entryType, data = null) {
         const entries = this.findAllEntry(entryType, data);
         entries.forEach((entry) => {
-            // entry.output.goto();
             entry.enter();
+        });
+    }
+    resetEntries() {
+        this.nodes.forEach((e) => {
+            if (e.type !== "entry" || !e.standbyMode) return;
+            e.activated = false;
         });
     }
     findSequence(id) {
