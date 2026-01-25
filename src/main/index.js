@@ -3,6 +3,8 @@ import { basename, extname, join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
 import fs, { readdir } from "fs/promises";
 import { watch } from "fs";
+import prompt from "electron-prompt";
+import Store from "electron-store";
 
 import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
@@ -11,7 +13,6 @@ import PluginPackageManager from "./plugin-package-manager";
 import { getFullScreenArea, getPrimaryScreenArea } from "./screenManager";
 import createSveltePlugin from "./svelte-plugin/sveltePluginCreator.js";
 import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
-import prompt from "electron-prompt";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
@@ -57,6 +58,8 @@ const projectFileManager = new ProjectFileManager(dataDir, {
         await loadData();
         if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
         else createMainWindow();
+
+        store.clear();
     },
     exportProgress: (progress) => {
         sendToEditor("exporting", progress);
@@ -777,7 +780,12 @@ function setupIpcHandlers() {
 
     //#endregion
 
-    //#region screen detecting
-
-    //#endregion
+    ipcMain.on("get-store", (evt, key) => {
+        evt.returnValue = store.get(key);
+    });
+    ipcMain.on("set-store", (evt, key, value) => {
+        store.set(key, value);
+    });
 }
+
+const store = new Store();

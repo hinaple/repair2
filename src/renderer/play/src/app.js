@@ -11,6 +11,7 @@ import { ipcRenderer } from "electron";
 import { setVar } from "./lib/variables";
 import "./lib/communication";
 import "./lib/editorOpen";
+import "./lib/store";
 
 console.log(getAppData());
 
