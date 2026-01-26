@@ -36,7 +36,6 @@ export function getWindowArea(config) {
     if (config.screenConfig.type === "fullMultiScreen") return getPrimaryScreenArea();
     const primaryScreenArea = getPrimaryScreenArea();
     const sizeRatio = getSizeRatio(config);
-    console.log(sizeRatio);
     return {
         x: config.screenConfig.payload.x ?? 0,
         y: config.screenConfig.payload.y ?? 0,
