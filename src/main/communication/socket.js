@@ -23,6 +23,7 @@ export default class SocketConnector {
         this.connected = false;
     }
     async connect(urls) {
+        if (!Array.isArray(urls)) urls = [urls];
         if (this.socket && this.connected) return true;
         else if (this.socket) this.disconnect();
 

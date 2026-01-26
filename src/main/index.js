@@ -10,7 +10,7 @@ import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
 import PluginPackageManager from "./plugin-package-manager";
-import { getFullScreenArea, getPrimaryScreenArea } from "./screenManager";
+import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "./screenManager";
 import createSveltePlugin from "./svelte-plugin/sveltePluginCreator.js";
 import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
@@ -233,18 +233,28 @@ function applyDataConfig(forceUpdate = false) {
 
     if (!mainWindow) return;
 
-    mainWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
-    if (editorWindow) editorWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
-    mainWindow.setTitle?.(data?.config?.title ?? "REPAIRv2");
+    mainWindow.setAlwaysOnTop(!!data.config?.alwaysOnTop, "screen-saver");
+    if (editorWindow) editorWindow.setAlwaysOnTop(!!data.config?.alwaysOnTop, "screen-saver");
+    mainWindow.setTitle?.(data.config?.title ?? "REPAIRv2");
 
-    if (!forceUpdate && isMultiScreen === !!data.config?.multiScreen) return;
-    isMultiScreen = !!data.config?.multiScreen;
+    if (!data.config.screenConfig && data.config.multiScreen !== undefined) {
+        isMultiScreen = data.config.multiScreen;
+
+        if (isMultiScreen) app.commandLine.appendSwitch("disable-gpu-compositing");
+        else app.commandLine.removeSwitch("disable-gpu-compositing");
+        const area = isMultiScreen ? getFullScreenArea() : getPrimaryScreenArea();
+
+        mainWindow.setBounds?.(area);
+        return;
+    }
+
+    const currentIsMultiscreen = (data.config.screenConfig?.type ?? "fullscreen") !== "fullscreen";
+    if (!data.config.screenConfig) return;
+    isMultiScreen = currentIsMultiscreen;
     if (isMultiScreen) app.commandLine.appendSwitch("disable-gpu-compositing");
     else app.commandLine.removeSwitch("disable-gpu-compositing");
 
-    const area = isMultiScreen ? getFullScreenArea() : getPrimaryScreenArea();
-
-    mainWindow.setBounds?.(area);
+    mainWindow.setBounds?.(getWindowArea(data.config));
 }
 
 function createMainWindow() {
