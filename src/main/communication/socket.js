@@ -6,10 +6,11 @@ function tryToConnect(url) {
 
         socket.on("connect", () => {
             res({ succeed: true, socket });
-            socket.offAny();
+            socket.removeAllListeners();
         });
         socket.on("connect-error", () => {
             res({ succeed: false });
+            socket.removeAllListeners();
             socket.disconnect();
         });
     });
