@@ -8,6 +8,7 @@ Room Escape Pc App InteRface
 
 ## Todo
 
+- [ ] Make every attributes variable(like after effects)
 - [ ] Add real-time player state monitoring feature in editor
 - [ ] Support touchpads in editor
 - [ ] Add some guides in editor
@@ -17,7 +18,6 @@ Room Escape Pc App InteRface
 - [ ] Refactor repairElement.js
 - [ ] Add comment node
 - [ ] Online viewer
-- [ ] Make every attributes variable(like after effects)
 - [ ] Keep node connect infos when copying
 - [ ] Patch code feature
 
@@ -33,3 +33,4 @@ Room Escape Pc App InteRface
 - [x] Hot reload on plugins
 - [x] Refactor plugin system(Eww!)
 - [x] Fix Ctrl+- shortcut on editor(WTF??!)
+- [x] Access to store in plugins

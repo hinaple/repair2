@@ -1,8 +1,8 @@
 import Output from "../output";
 import Value from "../value/value.svelte";
-import AdvancedNode from "./advancedNode";
+import Node from "./node.svelte";
 
-export default class Branch extends AdvancedNode {
+export default class Branch extends Node {
     operator = $state();
     scriptData = $state();
     disableAfterTrue = $state();

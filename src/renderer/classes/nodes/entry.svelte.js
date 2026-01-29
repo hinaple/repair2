@@ -24,22 +24,42 @@ const EntryTemplate = {
 };
 
 export default class Entry extends Node {
-    constructor({ output = {}, entryType = "startup", payload = null, ...nodeData } = {}) {
+    standbyMode = $state(false);
+    constructor({
+        output = {},
+        entryType = "startup",
+        payload = null,
+        standbyMode = false,
+        ...nodeData
+    } = {}) {
         super("entry", nodeData);
         this.output = new Output(output);
         this.data = new TypePayload({ type: entryType, payload, template: EntryTemplate });
+        this.standbyMode = standbyMode;
+        this.activated = false;
     }
 
-    async execute() {
+    enter() {
+        if (this.standbyMode && !this.activated) return;
         this.output.goto();
+        if (this.standbyMode) this.activated = false;
+    }
+    async execute() {
+        if (this.standbyMode) this.activated = true;
     }
 
     get storeData() {
         const { type: entryType, payload } = this.data.storeData;
-        return { ...super.storeData, entryType, payload, output: this.output };
+        return {
+            ...super.storeData,
+            entryType,
+            payload,
+            output: this.output,
+            standbyMode: this.standbyMode
+        };
     }
     get copyData() {
         const { type: entryType, payload } = this.data.copyData;
-        return { ...super.copyData, entryType, payload };
+        return { ...super.copyData, entryType, payload, standbyMode: this.standbyMode };
     }
 }

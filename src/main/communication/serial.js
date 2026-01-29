@@ -8,7 +8,7 @@ export default class SerialConnector {
     }
 
     async open(portAlias, path, baudRate = 9600) {
-        if (this.port) this.port.close();
+        if (this.port?.isOpen) this.port.close();
 
         let realPort = path;
 

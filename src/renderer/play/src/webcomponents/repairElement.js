@@ -177,6 +177,7 @@ export default class RepairElement extends HTMLElement {
                         try {
                             if (!new Function("event", l.payload.scriptData)(evt)) return;
                         } catch (e) {
+                            console.error("Function listener error:", e);
                             return;
                         }
                     } else if (

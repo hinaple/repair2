@@ -170,3 +170,9 @@ export const InputAllowedTypes = {
     korean: "한글",
     regex: "정규표현식 직접 입력"
 };
+
+export const screenConfigTypes = {
+    fullscreen: "전체화면",
+    fullMultiScreen: "다중 모니터 전체화면",
+    windowMode: "창 모드"
+};

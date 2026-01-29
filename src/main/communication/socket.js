@@ -6,10 +6,11 @@ function tryToConnect(url) {
 
         socket.on("connect", () => {
             res({ succeed: true, socket });
-            socket.offAny();
+            socket.removeAllListeners();
         });
         socket.on("connect-error", () => {
             res({ succeed: false });
+            socket.removeAllListeners();
             socket.disconnect();
         });
     });
@@ -23,6 +24,7 @@ export default class SocketConnector {
         this.connected = false;
     }
     async connect(urls) {
+        if (!Array.isArray(urls)) urls = [urls];
         if (this.socket && this.connected) return true;
         else if (this.socket) this.disconnect();
 

@@ -1,4 +1,5 @@
 <script>
+    import { screenConfigTypes } from "../../lib/translate";
     import InputField from "../InputField.svelte";
 
     const { data } = $props();
@@ -14,12 +15,28 @@
     setter={(d) => (data.sizeRatio = d)}
     placeholder="가로비율,세로비율"
 />
-<InputField
+<!-- <InputField
     label="다중 화면 모드"
     value={data.multiScreen}
     setter={(d) => (data.multiScreen = d)}
     type="checkbox"
-/>
+/> -->
+<InputField label="창 유형" type="type" value={data.screenConfig} options={screenConfigTypes} />
+{#if data.screenConfig.types[0] === "windowMode"}
+    <InputField
+        label="창 X좌표(px)"
+        type="number"
+        value={data.screenConfig.payload.x}
+        setter={(d) => (data.screenConfig.payload.x = d)}
+    />
+    <InputField
+        label="창 Y좌표(px)"
+        type="number"
+        value={data.screenConfig.payload.y}
+        setter={(d) => (data.screenConfig.payload.y = d)}
+    />
+    <hr />
+{/if}
 <hr />
 <InputField
     label="화면 필터"

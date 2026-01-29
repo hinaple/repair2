@@ -1,3 +1,5 @@
+import ScreenConfig from "./screenConfig.svelte";
+
 const styleMap = {
     width: ["width: ", "px"],
     height: ["height: ", "px"],
@@ -15,7 +17,7 @@ export default class Config {
     style = $state();
     editorShortcut = $state();
     editorPassword = $state();
-    multiScreen = $state();
+    // multiScreen = $state();
     transparent = $state();
     devMode = $state();
     alwaysOnTop = $state();
@@ -28,10 +30,11 @@ export default class Config {
         style = null,
         editorShortcut = "E",
         editorPassword = null,
-        multiScreen = false,
+        screenConfig = {},
         transparent = false,
         devMode = true,
-        alwaysOnTop = false
+        alwaysOnTop = false,
+        ...config
     } = {}) {
         this.title = title;
         this.width = width;
@@ -41,7 +44,10 @@ export default class Config {
         this.style = style;
         this.editorShortcut = editorShortcut;
         this.editorPassword = editorPassword;
-        this.multiScreen = multiScreen;
+        // this.multiScreen = config.multiScreen;
+        if (!this.screenConfig && config.multiScreen !== undefined)
+            this.screenConfig = { type: config.multiScreen ? "fullMultiScreen" : "fullscreen" };
+        this.screenConfig = new ScreenConfig(screenConfig);
         this.transparent = transparent;
         this.devMode = devMode;
         this.alwaysOnTop = alwaysOnTop;
@@ -74,7 +80,8 @@ export default class Config {
             style: this.style,
             editorShortcut: this.editorShortcut,
             editorPassword: this.editorPassword,
-            multiScreen: this.multiScreen,
+            // multiScreen: this.multiScreen,
+            screenConfig: this.screenConfig.storeData,
             transparent: this.transparent,
             alwaysOnTop: this.alwaysOnTop,
             devMode: this.devMode

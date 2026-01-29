@@ -75,6 +75,12 @@
         setter={(d) => (data.payload.preloads = d)}
         type="checkbox"
     />
+    <InputField
+        label="활성 진입점 초기화"
+        value={data.payload.entries}
+        setter={(d) => (data.payload.entries = d)}
+        type="checkbox"
+    />
 {:else if data.type === "Others.eventEmit"}
     <InputField
         label="이벤트 채널"

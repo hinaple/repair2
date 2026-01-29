@@ -22,3 +22,24 @@ export function getFullScreenArea() {
 export function getPrimaryScreenArea() {
     return screen.getPrimaryDisplay().bounds;
 }
+
+function getSizeRatio(config) {
+    const ratio = (config.sizeRatio || "1")
+        .toString()
+        .split(",")
+        .map((n) => n);
+    return ratio.length === 2 ? ratio : [ratio[0], ratio[0]];
+}
+
+export function getWindowArea(config) {
+    if (config.screenConfig.type[0] === "fullscreen") return getPrimaryScreenArea();
+    if (config.screenConfig.type[0] === "fullMultiScreen") return getFullScreenArea();
+    const primaryScreenArea = getPrimaryScreenArea();
+    const sizeRatio = getSizeRatio(config);
+    return {
+        x: config.screenConfig.payload.x ?? 0,
+        y: config.screenConfig.payload.y ?? 0,
+        width: (config.width || primaryScreenArea.width) * sizeRatio[0],
+        height: (config.height || primaryScreenArea.height) * sizeRatio[1]
+    };
+}

@@ -37,8 +37,11 @@
     }
 
     function checkboxClick() {
-        value = !value;
-        addHistory({ doFn: setter, doData: value, undoData: !value });
+        if (manual) {
+            setter(!value);
+            return;
+        }
+        addHistory({ doFn: setter, doData: !value, undoData: !!value });
     }
 </script>
 

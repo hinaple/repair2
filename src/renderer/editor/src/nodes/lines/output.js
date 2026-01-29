@@ -7,16 +7,19 @@ import { addHistory } from "../../lib/workHistory";
 import { nodeMovedReloader, reload } from "../../lib/stores";
 import FrameUpdater from "../../lib/frameUpdater";
 
-export default function outputNode(node, { id, output, isHeadingBottom = true }) {
+export default function outputNode(node, { id, output }) {
     function drawOutputLine() {
         if (!output.to) {
             removeLine(id);
             endPos = null;
             return;
         }
-        const tempPos = getNodeById(output.to).nodePos;
-        endPos = { x: tempPos.x, y: tempPos.y + 14 };
-        syncLine({ fromCoord, toCoord: endPos, fromId: id, output, isHeadingBottom });
+        const connectedNode = getNodeById(output.to);
+        endPos = {
+            x: connectedNode.nodePos.x,
+            y: connectedNode.nodePos.y + (connectedNode.type === "entry" ? 45 : 30) / 2
+        };
+        syncLine({ fromCoord, toCoord: endPos, fromId: id, output });
     }
 
     const grabber = new Grabber({
@@ -52,7 +55,7 @@ export default function outputNode(node, { id, output, isHeadingBottom = true })
         if (destroyed) return;
         const rect = node.getBoundingClientRect();
         const originalPos = getOriginalPos(rect.x, rect.y);
-        fromCoord = { x: originalPos.x + 14 / 2, y: originalPos.y + 14 / 2 };
+        fromCoord = { x: originalPos.x + 16 / 2, y: originalPos.y + 16 / 2 };
 
         drawOutputLine(id, output);
     }, 1);
