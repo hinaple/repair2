@@ -248,7 +248,8 @@ function applyDataConfig(forceUpdate = false) {
         return;
     }
 
-    const currentIsMultiscreen = (data.config.screenConfig?.type ?? "fullscreen") !== "fullscreen";
+    const currentIsMultiscreen =
+        (data.config.screenConfig?.type[0] ?? "fullscreen") !== "fullscreen";
     if (!data.config.screenConfig) return;
     isMultiScreen = currentIsMultiscreen;
     if (isMultiScreen) app.commandLine.appendSwitch("disable-gpu-compositing");
