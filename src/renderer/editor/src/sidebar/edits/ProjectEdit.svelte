@@ -15,12 +15,6 @@
     setter={(d) => (data.sizeRatio = d)}
     placeholder="가로비율,세로비율"
 />
-<!-- <InputField
-    label="다중 화면 모드"
-    value={data.multiScreen}
-    setter={(d) => (data.multiScreen = d)}
-    type="checkbox"
-/> -->
 <InputField label="창 유형" type="type" value={data.screenConfig} options={screenConfigTypes} />
 {#if data.screenConfig.types[0] === "windowMode"}
     <InputField

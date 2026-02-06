@@ -1,14 +1,17 @@
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
+import { emitRepairEvent } from "./event";
 
 ipcRenderer.on("socket-income", (event, channel, data) => {
     if (channel === "connect") getAppData().enterEntry("Communication.Socket.connect");
     else getAppData().enterEntry("Communication.Socket.ondata", { channel, data });
+    emitRepairEvent("socket", [channel, data]);
     console.log(`SOCKET DATA INCOME | channel: "${channel}", data: "${data}"`);
 });
 
 ipcRenderer.on("serial-income", (event, data) => {
     getAppData().enterEntry("Communication.serialData", { whenDataIs: data.trim() });
+    emitRepairEvent("serial", data);
     console.log(`SERIAL DATA: "${data}"`);
 });
 
