@@ -5,7 +5,7 @@ import { emitRepairEvent } from "./event";
 ipcRenderer.on("socket-income", (event, channel, data) => {
     if (channel === "connect") getAppData().enterEntry("Communication.Socket.connect");
     else getAppData().enterEntry("Communication.Socket.ondata", { channel, data });
-    emitRepairEvent("socket", [channel, data]);
+    emitRepairEvent("socket", channel, data);
     console.log(`SOCKET DATA INCOME | channel: "${channel}", data: "${data}"`);
 });
 
