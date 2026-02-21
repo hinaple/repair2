@@ -21,8 +21,8 @@ export function socketConnect(url) {
 export function socketConnectService(type, name) {
     ipcRenderer.send("socket-connect-service", type, name);
 }
-export function socketSend(channel, data) {
-    ipcRenderer.send("socket-send", channel, data);
+export function socketSend(channel, ...data) {
+    ipcRenderer.send("socket-send", channel, ...data);
 }
 export function socketDisconnect() {
     ipcRenderer.send("socket-disconnect");

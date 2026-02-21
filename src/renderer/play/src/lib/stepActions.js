@@ -58,7 +58,12 @@ const actions = {
                 socketConnectService(s.payload.type, s.payload.name);
             },
             send: (s) => {
-                socketSend(s.payload.channel, s.payload.data);
+                socketSend(
+                    s.payload.channel,
+                    ...(s.payload.splitStr
+                        ? s.payload.data.split(s.payload.splitStr)
+                        : [s.payload.data])
+                );
             },
             disconnect: () => {
                 socketDisconnect();

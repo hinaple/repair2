@@ -66,5 +66,11 @@
             setter={(d) => (data.payload.data = d)}
             type="textarea"
         />
+        <InputField
+            label="데이터 구분자 문자열"
+            value={data.payload.splitStr}
+            setter={(d) => (data.payload.splitStr = d)}
+            placeholder="구분 없음"
+        />
     {/if}
 {/if}

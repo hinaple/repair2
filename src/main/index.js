@@ -757,8 +757,8 @@ function setupIpcHandlers() {
             })
             .catch(() => {});
     });
-    ipcMain.on("socket-send", (event, channel, data) => {
-        socket.send(channel, data);
+    ipcMain.on("socket-send", (event, channel, ...data) => {
+        socket.send(channel, ...data);
     });
     ipcMain.on("socket-disconnect", () => {
         socket.disconnect();

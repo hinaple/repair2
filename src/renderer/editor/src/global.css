@@ -92,5 +92,5 @@ hr {
 }
 @font-face {
     font-family: "Pretend";
-    src: url(./assets/fonts/PretendardVariable.woff2);
+    src: url(./assets/fonts/PretendardVariable.woff2) format("woff2-variations");
 }

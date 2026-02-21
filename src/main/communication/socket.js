@@ -46,14 +46,14 @@ export default class SocketConnector {
         }
         return false;
     }
-    send(channel, data) {
+    send(channel, ...data) {
         if (!channel) return;
 
         if (!this.socket) {
             console.log("No socket connection");
             return;
         }
-        this.socket.emit(channel, data);
+        this.socket.emit(channel, ...data);
     }
 
     disconnect() {
