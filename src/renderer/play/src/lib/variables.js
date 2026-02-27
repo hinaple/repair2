@@ -42,7 +42,9 @@ export function subscribe(id, callback) {
 }
 
 function repairVar(name) {
-    return Object.values(variables).find((v) => v.name === name);
+    const vId = Object.entries(variables).find(([k, v]) => v.name === name)[0];
+    if (!vId) console.error("Variable named", name, "does not exist.");
+    return vId;
 }
 
 registerUtils("variables", {
