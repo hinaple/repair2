@@ -101,8 +101,8 @@ const actions = {
                 s.payload.plugin
                     .use()
                     .then((func) => func?.())
-                    .then(() => {
-                        if (s.payload.waitTillEnd) res();
+                    .then((result = true) => {
+                        if (s.payload.waitTillEnd) res(result);
                     });
                 if (!s.payload.waitTillEnd) res();
             });
