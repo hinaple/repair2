@@ -59,6 +59,7 @@ img,
 video {
     display: block;
     -webkit-user-drag: none;
+    object-fit: fill;
 }
 
 input,
