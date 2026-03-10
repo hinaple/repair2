@@ -1,6 +1,7 @@
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
 import { emitRepairEvent } from "./event";
+import { registerUtils } from "./globalUtils";
 
 ipcRenderer.on("socket-income", (event, channel, data) => {
     if (channel === "connect") getAppData().enterEntry("Communication.Socket.connect");
@@ -37,3 +38,8 @@ export function serialSend(data) {
 export function serialClose() {
     ipcRenderer.send("serial-close");
 }
+
+registerUtils("communication", {
+    socketSend,
+    serialSend
+});
