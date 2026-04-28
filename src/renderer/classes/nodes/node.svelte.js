@@ -7,11 +7,13 @@ export default class Node {
         this.id = id;
         this.alias = alias;
         this.nodePos = nodePos;
+        this.onCreated();
     }
+    onCreated() {}
     get storeData() {
         return { type: this.type, id: this.id, alias: this.alias, nodePos: this.nodePos };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return { type: this.type, alias: this.alias, nodePos: this.nodePos };
     }
 }

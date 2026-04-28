@@ -7,22 +7,25 @@ export default class Branch extends Node {
     scriptData = $state();
     disableAfterTrue = $state();
     disableAfterFalse = $state();
-    constructor({
-        valueA = {},
-        valueB = {},
-        operator = "equals",
-        scriptData = null,
-        trueOutput = {},
-        falseOutput = {},
-        disableAfterTrue = false,
-        disableAfterFalse = false,
-        ...nodeData
-    }) {
+    constructor(
+        {
+            valueA = {},
+            valueB = {},
+            operator = "equals",
+            scriptData = null,
+            trueOutput = {},
+            falseOutput = {},
+            disableAfterTrue = false,
+            disableAfterFalse = false,
+            ...nodeData
+        },
+        creatingOpt = null
+    ) {
         super("branch", nodeData);
         this.valueA = new Value(valueA);
         this.valueB = new Value(valueB);
-        this.trueOutput = new Output(trueOutput);
-        this.falseOutput = new Output(falseOutput);
+        this.trueOutput = new Output(trueOutput, creatingOpt);
+        this.falseOutput = new Output(falseOutput, creatingOpt);
 
         this.operator = operator;
         this.scriptData = scriptData;
@@ -75,15 +78,17 @@ export default class Branch extends Node {
             falseOutput: this.falseOutput
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
-            ...super.copyData,
-            valueA: this.valueA.copyData,
-            valueB: this.valueB.copyData,
+            ...super.copyData(),
+            valueA: this.valueA.copyData(),
+            valueB: this.valueB.copyData(),
             operator: this.operator,
             disableAfterTrue: this.disableAfterTrue,
             disableAfterFalse: this.disableAfterFalse,
-            scriptData: this.scriptData
+            scriptData: this.scriptData,
+            trueOutput: this.trueOutput(availableOuputIds),
+            falseOutput: this.falseOutput(availableOuputIds)
         };
     }
 }

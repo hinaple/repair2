@@ -11,22 +11,25 @@ export default class Component {
     visible = $state();
     unbreakable = $state();
     style = $state();
-    constructor({
-        id = genId(),
-        alias = null,
-        elements = [],
-        pos = {},
-        zIndex = null,
-        unbreakable = false,
-        visible = true,
-        style = null,
-        frame = {},
-        introTransition = {},
-        outroTransition = {}
-    } = {}) {
+    constructor(
+        {
+            id = genId(),
+            alias = null,
+            elements = [],
+            pos = {},
+            zIndex = null,
+            unbreakable = false,
+            visible = true,
+            style = null,
+            frame = {},
+            introTransition = {},
+            outroTransition = {}
+        } = {},
+        creatingOpt = null
+    ) {
         this.id = id;
         this.alias = alias;
-        this.elements = new Sortable(elements, Element);
+        this.elements = new Sortable(elements, Element, creatingOpt);
         this.pos = new Coord(pos);
         this.zIndex = zIndex;
         this.unbreakable = unbreakable;
@@ -57,7 +60,7 @@ export default class Component {
             outroTransition: this.outroTransition.storeData
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
             alias: this.alias,
             zIndex: this.zIndex,
@@ -65,7 +68,7 @@ export default class Component {
             unbreakable: this.unbreakable,
             visible: this.visible,
             style: this.style,
-            elements: this.elements.copyData,
+            elements: this.elements.copyData(availableOuputIds),
             frame: this.frame.storeData,
             introTransition: this.introTransition.storeData,
             outroTransition: this.outroTransition.storeData

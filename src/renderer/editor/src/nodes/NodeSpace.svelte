@@ -160,7 +160,7 @@
                     removeNodeWithHistory(entry)
                 );
                 focusData("entry", entry, { clipboardFn });
-                appData.addNodeWithHistory(addHistory, entry);
+                appData.addNode(entry);
                 return true;
             }
         },
@@ -172,7 +172,7 @@
                     removeNodeWithHistory(seq)
                 );
                 focusData("sequence", seq, { clipboardFn });
-                appData.addNodeWithHistory(addHistory, seq);
+                appData.addNode(seq);
                 return true;
             }
         },
@@ -184,7 +184,7 @@
                     removeNodeWithHistory(branch)
                 );
                 focusData("branch", branch, { clipboardFn });
-                appData.addNodeWithHistory(addHistory, branch);
+                appData.addNode(branch);
                 return true;
             }
         },
@@ -196,7 +196,7 @@
                     removeNodeWithHistory(variableSet)
                 );
                 focusData("variableSet", variableSet, { clipboardFn });
-                appData.addNodeWithHistory(addHistory, variableSet);
+                appData.addNode(variableSet);
                 return true;
             }
         },

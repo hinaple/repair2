@@ -4,11 +4,23 @@ import { setViewportSize, viewport } from "../nodes/viewport";
 import { get } from "svelte/store";
 import { getAllConnectedNodes, setAllOutput } from "../nodes/lines/line";
 import { reload } from "./stores";
-import AppData from "@classes/appData.svelte";
 import { showToast } from "./toast.svelte";
+import EditableAppData from "../editableClasses/editableAppData";
+
+import Node from "@classes/nodes/node.svelte";
+import { genClipboardFn } from "./clipboard";
+
+Node.prototype.onCreated = function () {
+    this.clipboardFn = genClipboardFn(this.type, this, () => removeNodeWithHistory(this), {
+        excludes: [(this.type === "branch" || this.type === "entry") && "paste"]
+    });
+    this.getFocusData = () => {
+        return { type: this.type, obj: this, data: { clipboardFn: this.clipboardFn } };
+    };
+};
 
 const fileData = ipcRenderer.sendSync("request-data");
-export const appData = new AppData(fileData);
+export const appData = new EditableAppData(fileData);
 viewport.pos.set(fileData.viewport?.pos ?? { x: 0, y: 0 });
 setViewportSize(fileData.viewport?.size ?? 0);
 

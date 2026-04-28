@@ -64,27 +64,4 @@ export default class AppData {
     findBranch(id) {
         return this.nodes.find((node) => node.type === "branch" && node.id === id);
     }
-    addNodeWithHistory(addHistory, node) {
-        addHistory({
-            doFn: (d) => {
-                this.nodes.push(d);
-            },
-            undoFn: () => {
-                this.nodes.pop();
-            },
-            doData: node
-        });
-    }
-    addManyNodeWithHistory(addHistory, nodes) {
-        addHistory({
-            doFn: (nodes) => {
-                this.nodes.push(...nodes);
-            },
-            undoFn: (from) => {
-                this.nodes.splice(from);
-            },
-            doData: nodes,
-            undoData: this.nodes.length
-        });
-    }
 }

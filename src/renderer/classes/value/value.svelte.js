@@ -28,11 +28,11 @@ export default class Value {
             process: this.process.storeData
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
             baseType: this.baseType,
             baseValue: this.baseValue,
-            process: this.process.copyData
+            process: this.process.copyData()
         };
     }
 }

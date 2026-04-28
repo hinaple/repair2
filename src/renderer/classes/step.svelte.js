@@ -74,8 +74,11 @@ const PayloadTemplates = {
 
 export default class Step extends TypePayload {
     title = $state();
-    constructor({ id = genId(), type = null, title = null, payload = {} } = {}) {
-        super({ type, payload, template: PayloadTemplates });
+    constructor(
+        { id = genId(), type = null, title = null, payload = {} } = {},
+        creatingOpt = null
+    ) {
+        super({ type, payload, template: PayloadTemplates }, creatingOpt);
         this.id = id;
         this.title = title;
     }
@@ -92,9 +95,9 @@ export default class Step extends TypePayload {
             title: this.title
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
-            ...super.copyData,
+            ...super.copyData(availableOuputIds),
             title: this.title
         };
     }

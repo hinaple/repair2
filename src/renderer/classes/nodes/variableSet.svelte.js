@@ -4,10 +4,10 @@ import AdvancedNode from "./advancedNode";
 
 export default class VariableSet extends AdvancedNode {
     variable = $state();
-    constructor({ variable = null, value = {}, output = {}, ...nodeData }) {
+    constructor({ variable = null, value = {}, output = {}, ...nodeData }, creatingOpt = null) {
         super("variableSet", nodeData);
         this.value = new Value(value);
-        this.output = new Output(output);
+        this.output = new Output(output, creatingOpt);
 
         this.variable = variable;
     }
@@ -19,11 +19,12 @@ export default class VariableSet extends AdvancedNode {
             output: this.output
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
-            ...super.copyData,
+            ...super.copyData(),
             variable: this.variable,
-            value: this.value.storeData
+            value: this.value.storeData,
+            output: this.output.copyData(availableOuputIds)
         };
     }
 }

@@ -32,6 +32,8 @@
         reload("nodeMoved");
     });
 
+    const clipboardFn = node.clipboardFn;
+
     let nodeEl, handleEl;
     let grabber;
 
@@ -125,19 +127,11 @@
         node.folded = folded;
     });
 
-    function getFocusData() {
-        return { type, obj: node, data: { clipboardFn } };
-    }
-
     function onmousedown(evt) {
         if (evt.button || get(grabbing) === "viewport") return;
         focusData(type, node, { clipboardFn });
         bubbleMouseDown(evt);
     }
-
-    const clipboardFn = genClipboardFn(type, node, () => removeNodeWithHistory(node), {
-        excludes: [(type === "branch" || type === "entry") && "paste"]
-    });
 
     const contextmenu = [
         type === "entry" && {
@@ -180,7 +174,6 @@
 
     node.requestRect = () => nodeEl.getBoundingClientRect();
     node.applyNodePos = applyNodePos;
-    node.getFocusData = getFocusData;
 
     onDestroy(() => {
         unsubs.forEach((us) => us());
@@ -189,7 +182,6 @@
         if (currentFocus.obj === node) focusData("project");
         delete node.requestRect;
         delete node.applyNodePos;
-        delete node.getFocusData;
     });
 </script>
 

@@ -2,7 +2,7 @@ import { get } from "svelte/store";
 import { appData } from "./syncData.svelte";
 import { addHistory } from "./workHistory";
 import { getViewportCenter } from "../nodes/viewport";
-import { currentFocus } from "../sidebar/editUtils";
+import { currentFocus, selectManyNodes } from "../sidebar/editUtils";
 import { clipboard } from "electron";
 import { unpack, pack } from "msgpackr";
 
@@ -10,7 +10,7 @@ import Step from "@classes/step.svelte";
 import Element from "@classes/element.svelte";
 import Listener from "@classes/listener.svelte";
 import ValueProcess from "@classes/value/valueProcess";
-import { NodeClasses } from "@classes/utils";
+import { NodeClasses, genId } from "@classes/utils";
 import { reload } from "./stores";
 
 const ClipboardFormat = "application/x-repair2-clipboard-binary";
@@ -19,7 +19,6 @@ export function copyItem(itemData, itemType) {
     clipboard.writeBuffer(
         ClipboardFormat,
         pack({
-            IS_REPAIR_COPY: true,
             REPAIR_VERSION: __APP_VERSION__,
             type: itemType,
             data: itemData
@@ -30,22 +29,27 @@ export function copyItem(itemData, itemType) {
 export function pasted(target = get(currentFocus), pos = null) {
     try {
         if (!clipboard.has(ClipboardFormat)) return;
-        const { IS_REPAIR_COPY, type, data } = unpack(clipboard.readBuffer(ClipboardFormat));
-        if (!IS_REPAIR_COPY || !type || !data) return null;
+        const { type, data } = unpack(clipboard.readBuffer(ClipboardFormat));
+        if (!type || !data) return null;
 
         if (type === "nodes") {
             const posOffset = data[0].nodePos;
-            const newNodes = data.map((n) => {
+            const newIds = Array.from(data, () => genId());
+            const newNodes = data.map((n, i) => {
                 const nodePos = {
                     x: n.nodePos.x - posOffset.x + (pos ?? getViewportCenter()).x,
                     y: n.nodePos.y - posOffset.y + (pos ?? getViewportCenter()).y
                 };
-                if (n.type in NodeClasses) return new NodeClasses[n.type]({ ...n, nodePos });
+                if (n.type in NodeClasses)
+                    return new NodeClasses[n.type](
+                        { ...n, id: newIds[i], nodePos },
+                        { nodeIds: newIds }
+                    );
             });
-            appData.addManyNodeWithHistory(addHistory, newNodes);
+            appData.addManyNode(newNodes);
+            selectManyNodes(newNodes);
         } else if (type in NodeClasses) {
-            appData.addNodeWithHistory(
-                addHistory,
+            appData.addNode(
                 new NodeClasses[type]({ ...data, nodePos: pos ?? getViewportCenter() })
             );
         } else if (target.type === "sequence" && type === "step")
@@ -79,14 +83,14 @@ export function genClipboardFn(type, target, removing = null, { excludes = [] } 
         ...(removing &&
             !excludes.includes("cut") && {
                 cut: () => {
-                    copyItem(target.copyData, type);
+                    copyItem(target.copyData(), type);
                     removing();
                     return true;
                 }
             }),
         ...(!excludes.includes("copy") && {
             copy: () => {
-                copyItem(target.copyData, type);
+                copyItem(target.copyData(), type);
                 return true;
             }
         }),
@@ -100,7 +104,7 @@ export function genClipboardFn(type, target, removing = null, { excludes = [] } 
     };
 }
 
-window.addEventListener("paste", (e) => {
+function pasteHandler(e) {
     if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
 
     const target = get(currentFocus);
@@ -109,34 +113,53 @@ window.addEventListener("paste", (e) => {
         return;
     }
     pasted(target);
-});
-
-window.addEventListener("copy", (e) => {
+}
+function copyNodes(nodesArr) {
+    const nodeIds = nodesArr.map((n) => n.obj.id);
+    copyItem(
+        nodesArr.map(({ obj }) => obj.copyData(nodeIds)),
+        "nodes"
+    );
+}
+function copyHandler(e) {
     if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
 
     const target = get(currentFocus);
 
     if (target.type === "nodes") {
-        copyItem(
-            target.arr.map(({ obj }) => obj.copyData),
-            "nodes"
-        );
+        copyNodes(target.arr);
+        return;
+    } else if (target.type in NodeClasses) {
+        copyNodes([target]);
         return;
     }
     target.data?.clipboardFn?.copy?.();
-});
-
-window.addEventListener("cut", (e) => {
+}
+function cutHandler(e) {
     if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
 
     const target = get(currentFocus);
     target.data?.clipboardFn?.cut?.();
-});
-
-window.addEventListener("keydown", (e) => {
+}
+function keyDownHandler(e) {
     if (e.key !== "Delete" || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")
         return;
 
     const target = get(currentFocus);
     target.data?.clipboardFn?.delete?.();
-});
+}
+
+window.addEventListener("paste", pasteHandler);
+window.addEventListener("copy", copyHandler);
+window.addEventListener("cut", cutHandler);
+window.addEventListener("keydown", keyDownHandler);
+
+if (import.meta.hot) {
+    import.meta.hot.accept();
+    import.meta.hot.dispose(() => {
+        window.removeEventListener("paste", pasteHandler);
+        window.removeEventListener("copy", copyHandler);
+        window.removeEventListener("cut", cutHandler);
+        window.removeEventListener("keydown", keyDownHandler);
+    });
+}

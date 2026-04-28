@@ -18,12 +18,12 @@ Room Escape Pc App InteRface
 - [ ] Refactor repairElement.js
 - [ ] Add comment node
 - [ ] Online viewer
-- [ ] Keep node connect infos when copying
 - [ ] Patch code feature
 - [ ] Typing `RepairUtils`
 
 ## Done
 
+- [x] Keep node connect infos when copying
 - [x] Support multiple monitors
 - [x] Add project opening feature
 - [x] Make transitions work

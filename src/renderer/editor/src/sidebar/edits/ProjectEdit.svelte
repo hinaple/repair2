@@ -29,7 +29,6 @@
         value={data.screenConfig.payload.y}
         setter={(d) => (data.screenConfig.payload.y = d)}
     />
-    <hr />
 {/if}
 <hr />
 <InputField
