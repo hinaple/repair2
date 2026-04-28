@@ -20,11 +20,11 @@ export function addRepairEventListener(channel, callback) {
     };
 }
 
-export function emitRepairEvent(channel, data) {
+export function emitRepairEvent(channel, ...data) {
     getAppData().enterEntry("event", { channel });
     const channelArr = eventMap.get(channel);
     if (!channelArr) return;
-    channelArr.forEach((callback) => callback(data));
+    channelArr.forEach((callback) => callback(...data));
 }
 
 registerUtils("event", {

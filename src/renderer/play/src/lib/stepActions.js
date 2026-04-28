@@ -58,7 +58,12 @@ const actions = {
                 socketConnectService(s.payload.type, s.payload.name);
             },
             send: (s) => {
-                socketSend(s.payload.channel, s.payload.data);
+                socketSend(
+                    s.payload.channel,
+                    ...(s.payload.splitStr
+                        ? s.payload.data.split(s.payload.splitStr)
+                        : [s.payload.data])
+                );
             },
             disconnect: () => {
                 socketDisconnect();
@@ -96,8 +101,8 @@ const actions = {
                 s.payload.plugin
                     .use()
                     .then((func) => func?.())
-                    .then(() => {
-                        if (s.payload.waitTillEnd) res();
+                    .then((result = true) => {
+                        if (s.payload.waitTillEnd) res(result);
                     });
                 if (!s.payload.waitTillEnd) res();
             });

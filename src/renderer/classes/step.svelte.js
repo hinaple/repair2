@@ -48,7 +48,7 @@ const PayloadTemplates = {
             isTypeObj: true,
             connect: { url: null },
             connectService: { type: null, name: null },
-            send: { channel: null, data: null },
+            send: { channel: null, data: null, splitStr: null },
             disconnect: null
         }
     },
