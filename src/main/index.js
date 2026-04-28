@@ -12,7 +12,7 @@ import ProjectFileManager from "./projectFileManager";
 import PluginPackageManager from "./plugin-package-manager";
 import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "./screenManager";
 import createSveltePlugin from "./svelte-plugin/sveltePluginCreator.js";
-import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
+import { checkVscodeInstalled } from "./vscodeUtils.js";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
@@ -141,7 +141,9 @@ async function saveData(tempData) {
 
 function importDefaultProject() {
     sendStartupInfo("기본 프로젝트 로드 중...");
-    return projectFileManager.importProject(join(templateDir, "projects/default.repair"));
+    return projectFileManager
+        .importProject(join(templateDir, "projects/default.repair"))
+        .catch(closeSplash);
 }
 
 let globalCss = "";

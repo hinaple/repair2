@@ -111,13 +111,13 @@ export default class ProjectFileManager {
             } catch (error) {
                 console.error(error);
                 const logFile = await makeLog("error", JSON.stringify(error, null, 4));
+                rej(error);
                 await dialog.showMessageBox({
                     type: "error",
                     title: "프로젝트 불러오기",
                     message: "프로젝트를 불러오는 중 오류가 발생했습니다.",
                     detail: `에러 로그: ${logFile}`
                 });
-                rej(error);
                 app.quit();
             }
         });
