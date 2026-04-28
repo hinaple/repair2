@@ -61,7 +61,7 @@ const PayloadTemplates = {
             audios: true,
             variables: true,
             components: true,
-            delays: true,
+            steps: true,
             preloads: true,
             entries: true
         },

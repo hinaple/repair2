@@ -64,9 +64,9 @@
         type="checkbox"
     />
     <InputField
-        label="딜레이 초기화"
-        value={data.payload.delays}
-        setter={(d) => (data.payload.delays = d)}
+        label="스텝 초기화"
+        value={data.payload.steps}
+        setter={(d) => (data.payload.steps = d)}
         type="checkbox"
     />
     <InputField

@@ -17,9 +17,11 @@ import {
 } from "./communication";
 import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
-import { clearDelays, delay } from "./delay";
+import { delay } from "./delay";
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
+
+let resetAbort = new AbortController();
 
 const actions = {
     Component: {
@@ -82,13 +84,13 @@ const actions = {
         }
     },
 
-    delay: (s) => delay(s.payload.delayMs),
+    delay: (s) => delay(s.payload.delayMs, resetAbort.signal),
     Others: {
         customReset: (s) => {
             if (s.payload.audios) resetAudio();
             if (s.payload.variables) resetAllVar();
             if (s.payload.components) clearComponents(true);
-            if (s.payload.delays) clearDelays();
+            if (s.payload.steps) clearWaitingSteps();
             if (s.payload.preloads) removePreloadsAll();
             if (s.payload.entries) {
                 getAppData().resetEntries();
@@ -100,7 +102,7 @@ const actions = {
             return new Promise((res) => {
                 s.payload.plugin
                     .use()
-                    .then((func) => func?.())
+                    .then((func) => func?.({ signal: resetAbort.signal }))
                     .then((result = true) => {
                         if (s.payload.waitTillEnd) res(result);
                     });
@@ -129,9 +131,32 @@ const actions = {
     }
 };
 
-export default function stepExecute(step) {
-    const action = step.types.reduce((acc, type) => acc[type], actions);
-    if (action) return action(step);
+export const WaitingSteps = new Map();
 
-    return null;
+export function stepExecute(step) {
+    const action = step.types.reduce((acc, type) => acc[type], actions);
+    if (!action) return null;
+
+    let actionResult = action(step);
+    if (!actionResult?.then) return actionResult;
+
+    return new Promise((resolve) => {
+        const s = Symbol();
+        WaitingSteps.set(s, {
+            resolve,
+            id: step.id
+        });
+        actionResult.then((result) => {
+            if (!WaitingSteps.has(s)) return;
+            resolve(result);
+            WaitingSteps.delete(s);
+        });
+    });
+}
+
+export function clearWaitingSteps() {
+    WaitingSteps.forEach(({ resolve }) => resolve(false));
+    WaitingSteps.clear();
+    resetAbort.abort();
+    resetAbort = new AbortController();
 }

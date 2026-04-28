@@ -1,22 +1,16 @@
-const delays = new Map();
-
-export function delay(ms) {
+export function delay(ms, signal) {
+    if (signal.aborted) return false;
     return new Promise((resolve) => {
-        let s = Symbol();
-        delays.set(s, {
-            resolve,
-            timeout: setTimeout(() => {
-                delays.delete(s);
-                resolve(true);
-            }, ms)
-        });
+        const timeout = setTimeout(() => {
+            resolve(true);
+            cleanup();
+        }, ms);
+        const cleanup = () => signal.removeEventListener("abort", onAbort);
+        const onAbort = () => {
+            clearTimeout(timeout);
+            resolve(false);
+            cleanup();
+        };
+        signal.addEventListener("abort", onAbort);
     });
-}
-
-export function clearDelays() {
-    delays.forEach(({ timeout, resolve }) => {
-        clearTimeout(timeout);
-        resolve(false);
-    });
-    delays.clear();
 }

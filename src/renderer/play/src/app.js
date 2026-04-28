@@ -6,7 +6,7 @@ import ValueProcess from "@classes/value/valueProcess";
 
 import { enToKo, koToEn } from "./lib/enKoConvert";
 import { getAppData } from "./lib/appdata";
-import stepExecute from "./lib/stepActions";
+import { stepExecute } from "./lib/stepActions";
 import { ipcRenderer } from "electron";
 import { setVar } from "./lib/variables";
 import "./lib/communication";
