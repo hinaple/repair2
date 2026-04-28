@@ -33,7 +33,9 @@ export default class PluginPointer {
         return this.imported ? (this.imported.attributes ?? []) : [];
     }
 
+    //#only editor
     get storeData() {
         return { name: this.name, payloads: $state.snapshot(this.payloads) };
     }
+    //#endonly
 }

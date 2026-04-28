@@ -2,7 +2,7 @@ import { getAssetDir } from "@classes/utils";
 import { getAppData } from "./appdata";
 import { registerUtils } from "./globalUtils";
 
-let preloads = {};
+export const preloads = {};
 
 const preloadsEl = document.getElementById("preloads");
 

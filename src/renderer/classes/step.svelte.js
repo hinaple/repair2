@@ -9,9 +9,11 @@ class executePlugin {
         this.plugin = new PluginPointer(plugin, "functions");
         this.waitTillEnd = waitTillEnd;
     }
+    //#only editor
     get storeData() {
         return { plugin: this.plugin.storeData, waitTillEnd: this.waitTillEnd };
     }
+    //#endonly
 }
 
 const PayloadTemplates = {
@@ -82,12 +84,14 @@ export default class Step extends TypePayload {
         this.id = id;
         this.title = title;
     }
+    execute() {}
+
+    //#only editor
     get displayTitle() {
         if (this.title?.length) return this.title;
         if (this.type === "delay") return `딜레이 ${this.payload.delayMs}ms`;
         return null;
     }
-    execute() {}
     get storeData() {
         return {
             id: this.id,
@@ -101,4 +105,5 @@ export default class Step extends TypePayload {
             title: this.title
         };
     }
+    //#endonly
 }

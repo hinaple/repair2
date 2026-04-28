@@ -4,6 +4,7 @@ export default class Sortable {
         this.elementClass = elementClass;
         this.list = payloads.map((p) => new elementClass(p, creatingOpt || undefined));
     }
+    //#only editor
     add(v) {
         this.list = [...this.list, v];
     }
@@ -66,4 +67,5 @@ export default class Sortable {
     copyData(availableOuputIds = null) {
         return this.list.map((s) => s.copyData(availableOuputIds));
     }
+    //#endonly
 }

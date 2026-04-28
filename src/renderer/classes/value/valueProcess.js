@@ -18,9 +18,11 @@ export default class ValueProcess extends TypePayload {
         super({ type, payload, template: PayloadTemplate });
         this.id = Symbol();
     }
+    //#only editor
     copyData(availableOuputIds = null) {
         const sd = this.storeData;
         delete sd.id;
         return sd;
     }
+    //#endonly
 }

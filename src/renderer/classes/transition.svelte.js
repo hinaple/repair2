@@ -10,6 +10,7 @@ export default class Transition {
         this.delay = delay;
         this.plugin = new PluginPointer(plugin, "transitions");
     }
+    //#only editor
     get storeData() {
         return {
             duration: this.duration,
@@ -18,4 +19,5 @@ export default class Transition {
             plugin: this.plugin.storeData
         };
     }
+    //#endonly
 }

@@ -1,5 +1,6 @@
 import ScreenConfig from "./screenConfig.svelte";
 
+//#only play
 const styleMap = {
     width: ["width: ", "px"],
     height: ["height: ", "px"],
@@ -7,6 +8,7 @@ const styleMap = {
     sizeRatio: ["transform: scale(", ")"],
     style: ["", ""]
 };
+//#endonly
 
 export default class Config {
     title = $state();
@@ -17,7 +19,6 @@ export default class Config {
     style = $state();
     editorShortcut = $state();
     editorPassword = $state();
-    // multiScreen = $state();
     transparent = $state();
     devMode = $state();
     alwaysOnTop = $state();
@@ -44,7 +45,6 @@ export default class Config {
         this.style = style;
         this.editorShortcut = editorShortcut;
         this.editorPassword = editorPassword;
-        // this.multiScreen = config.multiScreen;
         if (!this.screenConfig && config.multiScreen !== undefined)
             this.screenConfig = { type: config.multiScreen ? "fullMultiScreen" : "fullscreen" };
         this.screenConfig = new ScreenConfig(screenConfig);
@@ -52,6 +52,8 @@ export default class Config {
         this.devMode = devMode;
         this.alwaysOnTop = alwaysOnTop;
     }
+
+    //#only play
     get styleString() {
         return (
             (this.transparent ? "background-color: transparent;" : "") +
@@ -69,6 +71,9 @@ export default class Config {
             ";"
         );
     }
+    //#endonly
+
+    //#only editor
     get storeData() {
         return {
             ...this,
@@ -87,4 +92,5 @@ export default class Config {
             devMode: this.devMode
         };
     }
+    //#endonly
 }

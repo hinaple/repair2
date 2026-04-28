@@ -30,6 +30,8 @@ export default class Resource {
     get fileType() {
         return fileTypeMap[this.extension] ?? null;
     }
+
+    //#only editor
     get title() {
         return this.alias?.length ? this.alias : this.src ? basename(this.src) : "이름 없는 자원";
     }
@@ -40,4 +42,5 @@ export default class Resource {
             alias: this.alias
         };
     }
+    //#endonly
 }

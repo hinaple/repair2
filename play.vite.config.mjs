@@ -1,12 +1,17 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
 import renderer from "vite-plugin-electron-renderer";
-import vanillizer from "./vanillizer";
+import vanillizer from "./vitePlugins/vanillizer";
+import onlyBlockPlugin from "./vitePlugins/only-block-plugin.mjs";
 
 export default defineConfig({
     root: "src/renderer/play",
     cacheDir: "node_modules/.vite-play",
-    plugins: [renderer(), vanillizer],
+    plugins: [
+        onlyBlockPlugin({ target: "play", dir: "src/renderer/classes" }),
+        renderer(),
+        vanillizer
+    ],
     server: {
         port: 3100
     },

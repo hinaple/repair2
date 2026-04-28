@@ -70,6 +70,7 @@ export default class Element extends TypePayload {
         this.listeners = new Sortable(listeners, Listener, creatingOpt);
         this.dragOption = new DragOption(dragOption);
     }
+    //#only play
     getStyleString(absolute, pos) {
         if (this.fullscreen)
             return (
@@ -83,6 +84,8 @@ export default class Element extends TypePayload {
     get styleString() {
         return this.getStyleString(this.absolute, this.pos);
     }
+    //#endonly
+    //#only editor
     get storeData() {
         return {
             ...super.storeData,
@@ -116,4 +119,5 @@ export default class Element extends TypePayload {
             dragOption: this.dragOption.storeData
         };
     }
+    //#endonly
 }

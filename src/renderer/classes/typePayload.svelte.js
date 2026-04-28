@@ -6,6 +6,10 @@ export default class TypePayload {
     constructor({ type = [], payload, template }, creatingOpt = null) {
         this.#template = template;
         this.changeType(type, payload, false, creatingOpt);
+
+        //#only play
+        this.#template = null;
+        //#endonly
     }
     getTemplateWithTypes(steps = this.types) {
         if (!steps.length) return this.#template;
@@ -16,18 +20,6 @@ export default class TypePayload {
     }
     get currentTemplate() {
         return this.getTemplateWithTypes();
-    }
-    get typeTree() {
-        const tree = [Object.keys(this.#template)];
-        this.types.reduce((currentObj, currentStep, i) => {
-            const nextObj = currentObj[currentStep];
-            if (nextObj?.isTypeObj) {
-                const keys = Object.keys(nextObj);
-                tree.push(keys.toSpliced(keys.indexOf("isTypeObj"), 1));
-            }
-            return nextObj;
-        }, this.#template);
-        return tree;
     }
     genPayload(payload = {}, currentTemplate = this.currentTemplate, creatingOpt = null) {
         if (currentTemplate?.isTypeObj) return;
@@ -54,6 +46,26 @@ export default class TypePayload {
 
         this.payload = this.genPayload(payload, currentTemplate, creatingOpt);
     }
+    get shortType() {
+        return this.types.join(".");
+    }
+    get lastType() {
+        return this.types[this.types.length - 1];
+    }
+
+    //#only editor
+    get typeTree() {
+        const tree = [Object.keys(this.#template)];
+        this.types.reduce((currentObj, currentStep, i) => {
+            const nextObj = currentObj[currentStep];
+            if (nextObj?.isTypeObj) {
+                const keys = Object.keys(nextObj);
+                tree.push(keys.toSpliced(keys.indexOf("isTypeObj"), 1));
+            }
+            return nextObj;
+        }, this.#template);
+        return tree;
+    }
     changeTypeWithHistory(addHistory, type, typeDepth = this.types.length) {
         const newTypes = [...this.types];
         newTypes.splice(typeDepth);
@@ -67,9 +79,6 @@ export default class TypePayload {
             doData: { types: newTypes, payload: newPayload, that: this },
             undoData: { types: this.types.map((t) => t), payload: this.payload, that: this }
         });
-    }
-    get shortType() {
-        return this.types.join(".");
     }
     get storeData() {
         return {
@@ -86,7 +95,5 @@ export default class TypePayload {
                 $state.snapshot(this.payload)
         };
     }
-    get lastType() {
-        return this.types[this.types.length - 1];
-    }
+    //#endonly
 }

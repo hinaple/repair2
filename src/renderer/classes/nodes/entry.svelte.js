@@ -42,6 +42,7 @@ export default class Entry extends Node {
         this.activated = false;
     }
 
+    //#only play
     enter() {
         if (this.standbyMode && !this.activated) return;
         this.output.goto();
@@ -50,7 +51,9 @@ export default class Entry extends Node {
     async execute() {
         if (this.standbyMode) this.activated = true;
     }
+    //#endonly
 
+    //#only editor
     get storeData() {
         const { type: entryType, payload } = this.data.storeData;
         return {
@@ -71,4 +74,5 @@ export default class Entry extends Node {
             output: this.output.copyData(availableOuputIds)
         };
     }
+    //#endonly
 }

@@ -12,6 +12,7 @@ export default class Value {
         this.baseType = type;
         this.baseValue = value;
     }
+    //#only play
     get value() {
         return this.process.list.reduce(
             (result, process) => process.process(result),
@@ -21,6 +22,9 @@ export default class Value {
     getBase() {
         return this.baseValue;
     }
+    //#endonly
+
+    //#only editor
     get storeData() {
         return {
             baseType: this.baseType,
@@ -35,4 +39,5 @@ export default class Value {
             process: this.process.copyData()
         };
     }
+    //#endonly
 }

@@ -39,12 +39,17 @@ export default class Component {
         this.introTransition = new Transition(introTransition);
         this.outroTransition = new Transition(outroTransition);
     }
+
+    //#only play
     get styleString() {
         return `${this.pos.styleString} z-index: ${this.zIndex ?? 0};`;
     }
     get aliasOrId() {
         return this.alias || this.id;
     }
+    //#endonly
+
+    //#only editor
     get storeData() {
         return {
             id: this.id,
@@ -74,4 +79,5 @@ export default class Component {
             outroTransition: this.outroTransition.storeData
         };
     }
+    //#endonly
 }

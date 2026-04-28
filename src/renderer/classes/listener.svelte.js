@@ -7,9 +7,11 @@ class PluginListener {
         this.channel = channel;
         this.plugin = new PluginPointer(plugin, "functions");
     }
+    //#only editor
     get storeData() {
         return { channel: this.channel, plugin: this.plugin.storeData };
     }
+    //#endonly
 }
 
 const PayloadTemplates = {
@@ -79,16 +81,16 @@ export default class Listener extends TypePayload {
         this.global = global;
         this.useCapture = useCapture;
     }
-    get title() {
-        if (this.shortType === "custom" && this.payload.channel?.length)
-            return this.payload.channel;
-        return null;
-    }
+
+    //#only play
     get realEventChannel() {
         return this.payload.channel?.length
             ? this.payload.channel
             : (TypeMap[this.shortType] ?? this.lastType);
     }
+    //#endonly
+
+    //#only editor
     get storeData() {
         return {
             ...super.storeData,
@@ -111,4 +113,5 @@ export default class Listener extends TypePayload {
             output: this.output.copyData(availableOuputIds)
         };
     }
+    //#endonly
 }

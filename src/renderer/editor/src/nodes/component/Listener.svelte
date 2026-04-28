@@ -65,9 +65,7 @@
             <Icon icon="hamburger" color="rgba(255, 255, 255, 0.5)" size={8} />
         </div>
         <div class="title">
-            {listener.title ??
-                listener.payload?.channel ??
-                ElementListenerTypes[listener.type] ??
+            {(listener.payload?.channel?.trim?.() || ElementListenerTypes[listener.type]) ??
                 "리스너"}
         </div>
         {#if !hidden}

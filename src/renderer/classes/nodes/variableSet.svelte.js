@@ -11,6 +11,8 @@ export default class VariableSet extends AdvancedNode {
 
         this.variable = variable;
     }
+
+    //#only editor
     get storeData() {
         return {
             ...super.storeData,
@@ -27,4 +29,5 @@ export default class VariableSet extends AdvancedNode {
             output: this.output.copyData(availableOuputIds)
         };
     }
+    //#endonly
 }

@@ -6,10 +6,13 @@ export default class AdvancedNode extends Node {
         this.folded = folded;
         this.inputColor = inputColor;
     }
+
+    //#only editor
     get storeData() {
         return { folded: this.folded, inputColor: this.inputColor, ...super.storeData };
     }
     copyData(availableOuputIds = null) {
         return { folded: this.folded, inputColor: this.inputColor, ...super.copyData() };
     }
+    //#endonly
 }

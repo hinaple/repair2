@@ -13,14 +13,16 @@ export default class AppData {
         this.variables = variables.map((r) => new Variable(r));
         this.nodes = nodes.map((node) => new NodeClasses[node.type](node));
     }
+    findVariableById(id) {
+        return this.variables.find((v) => v.id === id);
+    }
+
+    //#only play
     findResourceByTitle(title) {
         return this.resources.find((r) => r.title === title);
     }
     findResourceById(id) {
         return this.resources.find((r) => r.id === id);
-    }
-    findVariableById(id) {
-        return this.variables.find((v) => v.id === id);
     }
     findNodeById(id) {
         return this.nodes.find((node) => node.id === id);
@@ -64,4 +66,5 @@ export default class AppData {
     findBranch(id) {
         return this.nodes.find((node) => node.type === "branch" && node.id === id);
     }
+    //#endonly
 }
