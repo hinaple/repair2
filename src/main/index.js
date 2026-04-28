@@ -141,9 +141,7 @@ async function saveData(tempData) {
 
 function importDefaultProject() {
     sendStartupInfo("기본 프로젝트 로드 중...");
-    return projectFileManager
-        .importProject(join(templateDir, "projects/default.repair"))
-        .catch(closeSplash);
+    return projectFileManager.importProject(join(templateDir, "projects/default.repair"));
 }
 
 let globalCss = "";

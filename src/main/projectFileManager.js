@@ -6,6 +6,7 @@ import { createWriteStream } from "fs";
 import archiver from "archiver";
 import StreamZip from "node-stream-zip";
 import { readdir } from "fs/promises";
+import { closeSplash } from "./splash";
 
 export default class ProjectFileManager {
     constructor(
@@ -112,6 +113,7 @@ export default class ProjectFileManager {
                 console.error(error);
                 const logFile = await makeLog("error", JSON.stringify(error, null, 4));
                 rej(error);
+                closeSplash();
                 await dialog.showMessageBox({
                     type: "error",
                     title: "프로젝트 불러오기",
