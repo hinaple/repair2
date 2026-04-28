@@ -3,6 +3,8 @@ import { appData } from "./syncData.svelte";
 import { addHistory } from "./workHistory";
 import { getViewportCenter } from "../nodes/viewport";
 import { currentFocus } from "../sidebar/editUtils";
+import { clipboard } from "electron";
+import { unpack, pack } from "msgpackr";
 
 import Step from "@classes/step.svelte";
 import Element from "@classes/element.svelte";
@@ -11,9 +13,12 @@ import ValueProcess from "@classes/value/valueProcess";
 import { NodeClasses } from "@classes/utils";
 import { reload } from "./stores";
 
+const ClipboardFormat = "application/x-repair2-clipboard-binary";
+
 export function copyItem(itemData, itemType) {
-    navigator.clipboard.writeText(
-        JSON.stringify({
+    clipboard.writeBuffer(
+        ClipboardFormat,
+        pack({
             IS_REPAIR_COPY: true,
             REPAIR_VERSION: __APP_VERSION__,
             type: itemType,
@@ -22,9 +27,10 @@ export function copyItem(itemData, itemType) {
     );
 }
 
-export function pasted(pasteString, target = get(currentFocus), pos = null) {
+export function pasted(target = get(currentFocus), pos = null) {
     try {
-        const { IS_REPAIR_COPY, type, data } = JSON.parse(pasteString);
+        if (!clipboard.has(ClipboardFormat)) return;
+        const { IS_REPAIR_COPY, type, data } = unpack(clipboard.readBuffer(ClipboardFormat));
         if (!IS_REPAIR_COPY || !type || !data) return null;
 
         if (type === "nodes") {
@@ -85,9 +91,8 @@ export function genClipboardFn(type, target, removing = null, { excludes = [] } 
             }
         }),
         ...(!excludes.includes("paste") && {
-            paste: async (evt, string = null) => {
-                if (!string) string = await navigator.clipboard.readText();
-                pasted(string, { type, obj: target });
+            paste: async () => {
+                pasted({ type, obj: target });
                 return true;
             }
         }),
@@ -100,10 +105,10 @@ window.addEventListener("paste", (e) => {
 
     const target = get(currentFocus);
     if (target.data?.clipboardFn?.paste) {
-        target.data.clipboardFn.paste(null, e.clipboardData.getData("text"));
+        target.data.clipboardFn.paste();
         return;
     }
-    pasted(e.clipboardData.getData("text"), target);
+    pasted(target);
 });
 
 window.addEventListener("copy", (e) => {

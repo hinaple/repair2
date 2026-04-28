@@ -20,6 +20,7 @@ Room Escape Pc App InteRface
 - [ ] Online viewer
 - [ ] Keep node connect infos when copying
 - [ ] Patch code feature
+- [ ] Typing `RepairUtils`
 
 ## Done
 

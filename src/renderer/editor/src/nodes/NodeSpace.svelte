@@ -204,9 +204,7 @@
         {
             label: "붙여넣기",
             click: ({ pos: { x, y } }) => {
-                navigator.clipboard.readText().then((string) => {
-                    pasted(string, { type: "project" }, getOriginalPos(x, y));
-                });
+                pasted({ type: "project" }, getOriginalPos(x, y));
                 return true;
             }
         }

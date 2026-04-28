@@ -25,7 +25,7 @@
         focusData("component", comp, {
             preview: comp,
             clipboardFn: {
-                paste: (_, string) => pasted(string, { type: "component", obj: comp })
+                paste: () => pasted({ type: "component", obj: comp })
             }
         });
         outClicked();

@@ -22,7 +22,7 @@
             focusData("component", data.payload, {
                 preview: data.payload,
                 clipboardFn: {
-                    paste: (_, string) => pasted(string, { type: "component", obj: data.payload })
+                    paste: () => pasted({ type: "component", obj: data.payload })
                 }
             });
     }}
