@@ -300,6 +300,7 @@ function createMainWindow() {
     }
 
     mainWindow.on("closed", () => {
+        mainWindow = null;
         if (!projectFileManager.importing) {
             closeSplash();
             app.quit();
