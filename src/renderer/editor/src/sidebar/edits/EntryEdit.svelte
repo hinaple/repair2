@@ -2,8 +2,7 @@
     import InputField from "../InputField.svelte";
     import { EntryTypes } from "../../lib/translate";
     import { addHistory } from "../../lib/workHistory";
-    import { getAllConnectedNodes, setAllOutput } from "../../nodes/lines/line";
-    import { reload } from "../../lib/stores";
+    import { getAllConnectedLines, setAllOutput } from "../../nodes/lines/line";
 
     const { data } = $props();
 </script>
@@ -24,21 +23,18 @@
             });
             return;
         }
-        const connectedNodes = getAllConnectedNodes(data.id);
-        console.log(data.id, connectedNodes);
+        const connectedLines = getAllConnectedLines(data.id);
         addHistory({
-            doFn: ({ value, nodes }) => {
+            doFn: ({ value, lines }) => {
                 data.standbyMode = value;
-                setAllOutput(nodes, null);
-                reload("nodeMoved");
+                setAllOutput(lines, null);
             },
-            undoFn: ({ value, nodes, targetEntryId }) => {
+            undoFn: ({ value, lines, targetEntryId }) => {
                 data.standbyMode = value;
-                setAllOutput(nodes, targetEntryId);
-                reload("nodeMoved");
+                setAllOutput(lines, targetEntryId);
             },
-            doData: { value: !d, nodes: connectedNodes },
-            undoData: { value: !!d, nodes: connectedNodes, targetEntryId: data.id }
+            doData: { value: !d, lines: connectedLines },
+            undoData: { value: !!d, lines: connectedLines, targetEntryId: data.id }
         });
     }}
 />

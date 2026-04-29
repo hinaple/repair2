@@ -17,6 +17,5 @@ export default function amplifyVideo(vidEl, gain) {
     result.source.connect(result.gain);
     result.gain.connect(context.destination);
     result.amplify(gain);
-    console.log(result);
     return result;
 }

@@ -45,11 +45,22 @@ export default class Entry extends Node {
     //#only play
     enter() {
         if (this.standbyMode && !this.activated) return;
+        this.onEntered?.();
+        this.disable();
         this.output.goto();
-        if (this.standbyMode) this.activated = false;
     }
     async execute() {
-        if (this.standbyMode) this.activated = true;
+        this.activate();
+    }
+    disable() {
+        if (!this.standbyMode && !this.activated) return;
+        this.activated = false;
+        this.onDisabled?.();
+    }
+    activate() {
+        if (!this.standbyMode) return;
+        this.activated = true;
+        this.onActivated?.();
     }
     //#endonly
 

@@ -20,6 +20,7 @@ Room Escape Pc App InteRface
 - [ ] Online viewer
 - [ ] Patch code feature
 - [ ] Typing `RepairUtils`
+- [ ] Resources searching
 
 ## Done
 

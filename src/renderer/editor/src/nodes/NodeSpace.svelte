@@ -20,11 +20,9 @@
     import BranchClass from "@classes/nodes/branch.svelte";
     import EntryClass from "@classes/nodes/entry.svelte";
     import VariableSetClass from "@classes/nodes/variableSet.svelte";
-    import { addHistory } from "../lib/workHistory";
     import Branch from "./Branch.svelte";
     import Entry from "./Entry.svelte";
-    import { removeNodeWithHistory } from "../lib/syncData.svelte";
-    import { genClipboardFn, pasted } from "../lib/clipboard";
+    import { pasted } from "../lib/clipboard";
     import { fade } from "svelte/transition";
     import FrameUpdater from "../lib/frameUpdater";
     import VariableSet from "./VariableSet.svelte";
@@ -92,16 +90,19 @@
                     y2: Math.max(selectOrigin.y1, selectOrigin.y2)
                 };
                 selectManyNodes(
-                    appData.nodes.filter((node) => {
-                        const rect = node.requestRect();
-                        return (
-                            rect &&
-                            area.x1 < rect.left &&
-                            area.x2 > rect.right &&
-                            area.y1 < rect.top &&
-                            area.y2 > rect.bottom
-                        );
-                    })
+                    appData.nodes
+                        .values()
+                        .filter((node) => {
+                            const rect = node.requestRect();
+                            return (
+                                rect &&
+                                area.x1 < rect.left &&
+                                area.x2 > rect.right &&
+                                area.y1 < rect.top &&
+                                area.y2 > rect.bottom
+                            );
+                        })
+                        .toArray()
                 );
             }
             selectOrigin = null;
@@ -125,6 +126,7 @@
     let viewportEl = $state(null);
 
     const frameUpdater = new FrameUpdater(() => {
+        if (!viewportEl) return;
         const tempPos = posFromViewport(0, 0);
         viewportEl.style.left = `${tempPos.x}px`;
         viewportEl.style.top = `${tempPos.y}px`;
@@ -156,10 +158,7 @@
             label: "새 진입점",
             click: ({ pos: { x, y } }) => {
                 const entry = new EntryClass({ nodePos: getOriginalPos(x, y) });
-                const clipboardFn = genClipboardFn("entry", entry, () =>
-                    removeNodeWithHistory(entry)
-                );
-                focusData("entry", entry, { clipboardFn });
+                focusData("entry", entry, { clipboardFn: entry.clipboardFn });
                 appData.addNode(entry);
                 return true;
             }
@@ -168,10 +167,7 @@
             label: "새 시퀀스",
             click: ({ pos: { x, y } }) => {
                 const seq = new SequenceClass({ nodePos: getOriginalPos(x, y) });
-                const clipboardFn = genClipboardFn("sequence", seq, () =>
-                    removeNodeWithHistory(seq)
-                );
-                focusData("sequence", seq, { clipboardFn });
+                focusData("sequence", seq, { clipboardFn: seq.clipboardFn });
                 appData.addNode(seq);
                 return true;
             }
@@ -180,10 +176,7 @@
             label: "새 분기점",
             click: ({ pos: { x, y } }) => {
                 const branch = new BranchClass({ nodePos: getOriginalPos(x, y) });
-                const clipboardFn = genClipboardFn("branch", branch, () =>
-                    removeNodeWithHistory(branch)
-                );
-                focusData("branch", branch, { clipboardFn });
+                focusData("branch", branch, { clipboardFn: branch.clipboardFn });
                 appData.addNode(branch);
                 return true;
             }
@@ -192,10 +185,7 @@
             label: "새 변수설정",
             click: ({ pos: { x, y } }) => {
                 const variableSet = new VariableSetClass({ nodePos: getOriginalPos(x, y) });
-                const clipboardFn = genClipboardFn("variableSet", variableSet, () =>
-                    removeNodeWithHistory(variableSet)
-                );
-                focusData("variableSet", variableSet, { clipboardFn });
+                focusData("variableSet", variableSet, { clipboardFn: variableSet.clipboardFn });
                 appData.addNode(variableSet);
                 return true;
             }
@@ -222,7 +212,7 @@
 >
     <Background />
     <div class="viewport" bind:this={viewportEl}>
-        {#each appData.nodes as node (node.id)}
+        {#each appData.nodes.values() as node (node.id)}
             {#if node.type === "sequence"}
                 <Sequence
                     sequence={node}

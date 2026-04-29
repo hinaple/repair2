@@ -5,11 +5,20 @@
     import FoldArrow from "../../lib/FoldArrow.svelte";
     import ResourcePreview from "../../lib/ResourcePreview.svelte";
     import { changeResourceFile } from "./selectResourceFile";
+    import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
+    import { onDestroy } from "svelte";
 
     let { resource, remove } = $props();
+
+    let isPreloaded = $state(false);
+    const unsub = startMonitoring("preloads", resource.id, (f) => (isPreloaded = f));
+    onDestroy(unsub);
 </script>
 
-<div class="resource" use:hoverHighlight={{ type: "resource", data: resource.id }}>
+<div
+    class={["resource", isPreloaded && "preloaded"]}
+    use:hoverHighlight={{ type: "resource", data: resource.id }}
+>
     <div class="top" onclick={() => (resource.folded = !resource.folded)}>
         <div class="name">{resource.title}</div>
         <FoldArrow folded={resource.folded} />
@@ -46,6 +55,9 @@
         background-color: rgba(255, 255, 255, 0.2);
         box-sizing: border-box;
         border-radius: 10px;
+    }
+    .resource.preloaded {
+        outline: solid #ff8000 3px;
     }
     .top {
         display: flex;

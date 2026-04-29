@@ -1,8 +1,11 @@
 import Value from "@classes/value/value.svelte";
 import { registerUtils } from "./globalUtils";
+import { sendChanges } from "./runtimeMonitor";
 
 let variables = {};
-export default variables;
+export function getVariables() {
+    return variables;
+}
 
 export function registerVariables(varArr) {
     variables = {};
@@ -24,6 +27,8 @@ export function setVar(id, value) {
     if (!variables[id]) return;
     variables[id].value = value;
     variables[id].subscriptions.forEach((c) => c(value));
+
+    sendChanges("variable", "changed", id, value);
 }
 
 export function resetAllVar() {

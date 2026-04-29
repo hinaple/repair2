@@ -3,8 +3,14 @@
     import InputField from "../InputField.svelte";
     import outClickAction from "../../lib/outclickaction";
     import { hoverHighlight } from "../../lib/highlight";
+    import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
+    import { onDestroy } from "svelte";
 
     let { variable, isEditing, edit, blur, remove } = $props();
+
+    let runtimeValue = $state(null);
+    const unsub = startMonitoring("variables", variable.id, (v) => (runtimeValue = v));
+    onDestroy(unsub);
 </script>
 
 <div
@@ -41,6 +47,11 @@
         </div>
         {#if variable.defaultValue?.length}
             <div class="value">{variable.defaultValue}</div>
+        {/if}
+        {#if runtimeValue && variable.defaultValue !== runtimeValue}
+            <div class="runtime-value">
+                {runtimeValue}
+            </div>
         {/if}
     {/if}
 </div>
@@ -91,5 +102,11 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
+    }
+    .runtime-value {
+        padding: 3px 5px;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.7);
+        color: #000;
     }
 </style>

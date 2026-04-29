@@ -6,10 +6,6 @@ export default class TypePayload {
     constructor({ type = [], payload, template }, creatingOpt = null) {
         this.#template = template;
         this.changeType(type, payload, false, creatingOpt);
-
-        //#only play
-        this.#template = null;
-        //#endonly
     }
     getTemplateWithTypes(steps = this.types) {
         if (!steps.length) return this.#template;

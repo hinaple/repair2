@@ -8,6 +8,8 @@
     import NodeSpace from "./nodes/NodeSpace.svelte";
     import { focusData } from "./sidebar/editUtils";
     import SideBar from "./sidebar/SideBar.svelte";
+    import { onMount } from "svelte";
+    import { ipcRenderer } from "electron";
 
     focusData("project");
 
@@ -25,6 +27,10 @@
     }
 
     $inspect(appData);
+
+    onMount(() => {
+        ipcRenderer.send("monitor-event", "start");
+    });
 </script>
 
 <svelte:window {onkeydown} />

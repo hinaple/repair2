@@ -1,5 +1,6 @@
 let shortcuts = {};
 export default function initShortcuts(entryArr) {
+    shortcuts = {};
     entryArr.forEach((e) => {
         const data = {
             ctrlKey: e.data.payload.ctrlKey,

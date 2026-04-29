@@ -4,6 +4,7 @@ import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
 import { registerUtils } from "./globalUtils";
 import initShortcuts from "./shortcut";
+import { sendTotalInfo } from "./runtimeMonitor";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -13,6 +14,8 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
     appdata = new AppDataClass(data);
     registerVariables(appdata.variables);
     initShortcuts(appdata.findAllEntry("shortcut"));
+
+    sendTotalInfo();
 
     if (appdata.config.width)
         document.body.style.setProperty("--gamezone-width", `${appdata.config.width}px`);

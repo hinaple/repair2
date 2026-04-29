@@ -1,28 +1,71 @@
 import AppData from "@classes/appData.svelte";
 import { addHistory } from "../lib/workHistory";
+import { getAllConnectedLines, setAllOutput } from "../nodes/lines/line";
+import { SvelteMap } from "svelte/reactivity";
 
 export default class EditableAppData extends AppData {
+    constructor(...props) {
+        super(...props);
+        this.nodes = new SvelteMap(this.nodes);
+    }
     addNode(node) {
         addHistory({
             doFn: (d) => {
-                this.nodes.push(d);
+                this.nodes.set(d.id, d);
             },
-            undoFn: () => {
-                this.nodes.pop();
+            undoFn: (id) => {
+                this.nodes.delete(id);
             },
-            doData: node
+            doData: node,
+            undoData: node.id
         });
     }
-    addManyNode(nodes) {
+    addManyNodes(nodes) {
         addHistory({
             doFn: (nodes) => {
-                this.nodes.push(...nodes);
+                nodes.forEach((node) => {
+                    this.nodes.set(node.id, node);
+                });
             },
-            undoFn: (from) => {
-                this.nodes.splice(from);
+            undoFn: (nodes) => {
+                nodes.forEach(({ id }) => this.nodes.delete(id));
             },
             doData: nodes,
-            undoData: this.nodes.length
+            undoData: nodes
+        });
+    }
+    removeNode(node) {
+        const connectedLines = getAllConnectedLines(node.id);
+        addHistory({
+            doFn: ({ id, connectedLines }) => {
+                this.nodes.delete(id);
+                setAllOutput(connectedLines, null);
+            },
+            undoFn: ({ node, connectedLines }) => {
+                this.nodes.set(node.id, node);
+                setAllOutput(connectedLines, node.id);
+            },
+            doData: { id: node.id, connectedLines },
+            undoData: { node, connectedLines }
+        });
+    }
+    removeManyNodes(nodes) {
+        const connectedLines = nodes.map((node) => getAllConnectedLines(node.id));
+        addHistory({
+            doFn: ({ nodes, connectedLines }) => {
+                nodes.forEach(({ id }, i) => {
+                    this.nodes.delete(id);
+                    setAllOutput(connectedLines[i], null);
+                });
+            },
+            undoFn: ({ nodes, connectedLines }) => {
+                nodes.forEach((node, i) => {
+                    this.nodes.set(node.id, node);
+                    setAllOutput(connectedLines[i], node.id);
+                });
+            },
+            doData: { nodes, connectedLines },
+            undoData: { nodes, connectedLines }
         });
     }
 }

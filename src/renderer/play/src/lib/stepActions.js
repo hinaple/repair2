@@ -20,6 +20,7 @@ import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } fro
 import { delay } from "./delay";
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
+import { sendChanges, sendTotalInfo } from "./runtimeMonitor";
 
 let resetAbort = new AbortController();
 
@@ -92,9 +93,9 @@ const actions = {
             if (s.payload.components) clearComponents(true);
             if (s.payload.steps) clearWaitingSteps();
             if (s.payload.preloads) removePreloadsAll();
-            if (s.payload.entries) {
-                getAppData().resetEntries();
-            }
+            if (s.payload.entries) getAppData().resetEntries();
+
+            sendTotalInfo();
         },
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
         resetAllVariables: () => resetAllVar(),
@@ -138,17 +139,23 @@ export function stepExecute(step) {
     if (!action) return null;
 
     let actionResult = action(step);
-    if (!actionResult?.then) return actionResult;
+    if (!actionResult?.then) {
+        sendChanges("step", "executed", step.id);
+        return actionResult;
+    }
 
     return new Promise((resolve) => {
+        sendChanges("step", "started", step.id);
         const s = Symbol();
         WaitingSteps.set(s, {
             resolve,
             id: step.id
         });
         actionResult.then((result) => {
-            if (!WaitingSteps.has(s)) return;
-            resolve(result);
+            const data = WaitingSteps.get(s);
+            if (!data) return;
+            data.resolve(result);
+            sendChanges("step", "ended", data.id);
             WaitingSteps.delete(s);
         });
     });

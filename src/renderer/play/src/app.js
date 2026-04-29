@@ -12,6 +12,8 @@ import { setVar } from "./lib/variables";
 import "./lib/communication";
 import "./lib/editorOpen";
 import "./lib/store";
+import Entry from "@classes/nodes/entry.svelte";
+import { sendChanges } from "./lib/runtimeMonitor";
 
 console.log(getAppData());
 
@@ -66,6 +68,16 @@ ValueProcess.prototype.process = function (before) {
         }
     }
     return string;
+};
+
+Entry.prototype.onEntered = function () {
+    sendChanges("entry", "entered", this.id);
+};
+Entry.prototype.onActivated = function () {
+    sendChanges("entry", "activated", this.id);
+};
+Entry.prototype.onDisabled = function () {
+    sendChanges("entry", "disabled", this.id);
 };
 
 window.addEventListener("load", () => {

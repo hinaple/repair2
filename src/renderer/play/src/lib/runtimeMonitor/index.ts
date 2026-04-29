@@ -1,27 +1,37 @@
 import { ipcRenderer } from "electron";
+import { getVariables } from "../variables";
+import { preloads } from "../resources";
+import { WaitingSteps } from "../stepActions";
+import { getAppData } from "../appdata";
 
 let changesBuffer: Array<Array<string>> = [];
 
 type ChangeType = "step" | "preload" | "variable" | "entry";
 export function sendChanges(
     type: "step",
-    target: string,
-    status: "executed" | "started" | "ended"
+    status: "executed" | "started" | "ended",
+    target: string
 ): void;
-export function sendChanges(type: "preload", target: string, status: "added" | "released"): void;
-export function sendChanges(type: "variable", target: string, status: "changed"): void;
+export function sendChanges(type: "preload", status: "added" | "released", target: string): void;
+export function sendChanges(
+    type: "variable",
+    status: "changed",
+    target: string,
+    value: string
+): void;
 export function sendChanges(
     type: "entry",
-    target: string,
-    status: "executed" | "activated" | "disabled"
+    status: "entered" | "disabled" | "activated",
+    target: string
 ): void;
-export function sendChanges(type: ChangeType, status: string, target: string): void {
-    changesBuffer.push([type, status, target]);
+export function sendChanges(type: ChangeType, status: string, target: string, data?: string): void {
+    if (!monitoring) return;
 
+    changesBuffer.push(data ? [type, status, target, data] : [type, status, target]);
     readyToFlush();
 }
 
-const FLUSH_TIME_MS = 10;
+const FLUSH_TIME_MS = 5;
 let isReadyToFlush = false;
 let flushTimeout: NodeJS.Timeout | number = 0;
 function readyToFlush() {
@@ -32,7 +42,7 @@ function readyToFlush() {
 }
 
 function flush() {
-    ipcRenderer.send("monitor-data-update", changesBuffer);
+    ipcRenderer.send("monitor-info", "update", changesBuffer);
     clear();
 }
 function clear() {
@@ -45,4 +55,34 @@ function discard() {
     clear();
 }
 
-export function sendTotalInfo() {}
+export function sendTotalInfo() {
+    if (!monitoring) return;
+    discard();
+
+    const variables = new Map(Object.entries(getVariables()).map(([k, v]) => [k, v.value]));
+    const preloadedArr = Object.keys(preloads);
+    const steps = WaitingSteps.values().reduce(
+        (map: Map<string, number>, { id }) => map.set(id, (map.get(id) ?? 0) + 1),
+        new Map()
+    );
+    const entries = getAppData()
+        .nodes.values()
+        .filter((node: any) => node.type === "entry" && node.standbyMode && node.activated)
+        .map((node: any) => node.id)
+        .toArray();
+
+    ipcRenderer.send("monitor-info", "total", {
+        variables,
+        preloads: preloadedArr,
+        steps,
+        entries
+    });
+}
+
+let monitoring: boolean = false;
+ipcRenderer.addListener("monitor-event", (evt, channel: string) => {
+    if (channel === "start") {
+        monitoring = true;
+        sendTotalInfo();
+    } else if (channel === "end") monitoring = false;
+});

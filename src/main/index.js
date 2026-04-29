@@ -17,7 +17,14 @@ import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pl
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
 
-let mainWindow, editorWindow;
+/**
+ * @type {BrowserWindow | null}
+ */
+let mainWindow;
+/**
+ * @type {BrowserWindow | null}
+ */
+let editorWindow;
 let pluginManager;
 
 let data;
@@ -83,6 +90,9 @@ function closeAllWatchers() {
 
 const PluginTypes = ["elements", "frames", "functions", "transitions"];
 
+function sendToMain(channel, ...params) {
+    if (mainWindow) mainWindow.webContents.send(channel, ...params);
+}
 function sendToEditor(channel, ...params) {
     if (editorWindow) editorWindow.webContents.send(channel, ...params);
 }
@@ -93,7 +103,7 @@ const socket = new SocketConnector((channel, data, url) => {
     console.log("SOCKET INCOMING:", channel);
 
     sendToEditor("socket-income", channel, data, url);
-    mainWindow.webContents.send("socket-income", channel, data);
+    sendToMain("socket-income", channel, data);
 });
 
 const serial = new SerialConnector(
@@ -103,7 +113,7 @@ const serial = new SerialConnector(
         console.log("SERIAL INCOMING:", data);
 
         sendToEditor("serial-income", data);
-        mainWindow.webContents.send("serial-income", data);
+        sendToMain("serial-income", data);
     },
     (port) => {
         sendToEditor("serial-connected", port);
@@ -150,7 +160,7 @@ async function loadGlobalCss() {
     try {
         globalCss = (await fs.readFile(join(styleDir, "global.css"))).toString();
         globalCss = globalCss.replace(/%FONTS%/g, join(styleDir, "fonts").replace(/\\/g, "/"));
-        if (mainWindow) mainWindow.webContents.send("global-css", globalCss);
+        if (mainWindow) sendToMain("global-css", globalCss);
     } catch (err) {
         globalCss = "";
     }
@@ -196,11 +206,10 @@ function watchPlugins() {
             delete pluginHotReloadTimeouts[filename];
             console.log(`Plugin Editted: ${dirs[0]} - ${dirs[1]}`);
 
-            if (mainWindow)
-                mainWindow.webContents.send("plugin-hmr", {
-                    type: dirs[0],
-                    name: dirs[1]
-                });
+            sendToMain("plugin-hmr", {
+                type: dirs[0],
+                name: dirs[1]
+            });
         }, 100);
     });
     console.log("Plugin watcher activated");
@@ -564,6 +573,7 @@ function createEditorWindow() {
     editorWindow.on("close", () => {
         isEditorOn = false;
         editorWindow = null;
+        sendToMain("monitor-event", "end");
     });
 }
 
@@ -658,7 +668,7 @@ function setupIpcHandlers() {
         afterSave?.();
         afterSave = null;
         applyDataConfig();
-        mainWindow.webContents.send("data", { ...data, globalStyles: globalCss });
+        sendToMain("data", { ...data, globalStyles: globalCss });
         updateData(data);
         return true;
     });
@@ -722,19 +732,19 @@ function setupIpcHandlers() {
 
     //#region preview IPCs
     ipcMain.on("request-execute", (event, { type, id }) => {
-        mainWindow.webContents.send("request-execute", { type, id });
+        sendToMain("request-execute", { type, id });
     });
 
     ipcMain.on("layout-preview", (event, { compData }) => {
-        mainWindow.webContents.send("layout-preview", { compData });
+        sendToMain("layout-preview", { compData });
     });
 
     ipcMain.on("preview-content-visible", (event, visible) => {
-        mainWindow.webContents.send("preview-content-visible", visible);
+        sendToMain("preview-content-visible", visible);
     });
 
     ipcMain.on("stop-preview", () => {
-        mainWindow.webContents.send("stop-preview");
+        sendToMain("stop-preview");
     });
     //#endregion
 
@@ -778,11 +788,11 @@ function setupIpcHandlers() {
 
     //#region player monitoring IPCs
 
-    ipcMain.on("executed-start", (event, { type, id }) => {
-        sendToEditor("start-executed", { type, id });
+    ipcMain.on("monitor-event", (event, ...data) => {
+        sendToMain("monitor-event", ...data);
     });
-    ipcMain.on("executed-end", (event, { type, id }) => {
-        sendToEditor("end-executed", { type, id });
+    ipcMain.on("monitor-info", (event, ...data) => {
+        sendToEditor("monitor-info", ...data);
     });
 
     ipcMain.on("custom-log", (evt, content) => {

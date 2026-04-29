@@ -28,7 +28,6 @@
             const from = posFromViewport(l.fromCoord.x, l.fromCoord.y);
             const to = posFromViewport(l.toCoord.x, l.toCoord.y);
             ctx.moveTo(from.x, from.y);
-            console.log(l);
             if (l.noBezier) ctx.lineTo(to.x, to.y);
             else if (l.fromId === l.output.to) {
                 ctx.bezierCurveTo(

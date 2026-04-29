@@ -2,10 +2,10 @@ import { getOriginalPos } from "../viewport";
 import { hoverInput, removeLine, syncLine } from "./line";
 import Grabber from "../../lib/grabber";
 import { get } from "svelte/store";
-import { getNodeById } from "../../lib/utils";
 import { addHistory } from "../../lib/workHistory";
 import { nodeMovedReloader, reload } from "../../lib/stores";
 import FrameUpdater from "../../lib/frameUpdater";
+import { appData } from "../../lib/syncData.svelte";
 
 export default function outputNode(node, { id, output }) {
     function drawOutputLine() {
@@ -14,7 +14,7 @@ export default function outputNode(node, { id, output }) {
             endPos = null;
             return;
         }
-        const connectedNode = getNodeById(output.to);
+        const connectedNode = appData.findNodeById(output.to);
         endPos = {
             x: connectedNode.nodePos.x,
             y: connectedNode.nodePos.y + (connectedNode.type === "entry" ? 45 : 30) / 2

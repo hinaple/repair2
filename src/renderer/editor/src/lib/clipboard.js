@@ -46,7 +46,7 @@ export function pasted(target = get(currentFocus), pos = null) {
                         { nodeIds: newIds }
                     );
             });
-            appData.addManyNode(newNodes);
+            appData.addManyNodes(newNodes);
             selectManyNodes(newNodes);
         } else if (type in NodeClasses) {
             appData.addNode(
@@ -79,18 +79,22 @@ export function pasted(target = get(currentFocus), pos = null) {
 }
 
 export function genClipboardFn(type, target, removing = null, { excludes = [] } = {}) {
+    const currentCopy = () => {
+        if (target.type in NodeClasses) copyNodes([target]);
+        else copyItem(target.copyData(), type);
+    };
     return {
         ...(removing &&
             !excludes.includes("cut") && {
                 cut: () => {
-                    copyItem(target.copyData(), type);
+                    currentCopy();
                     removing();
                     return true;
                 }
             }),
         ...(!excludes.includes("copy") && {
             copy: () => {
-                copyItem(target.copyData(), type);
+                currentCopy();
                 return true;
             }
         }),
@@ -115,9 +119,9 @@ function pasteHandler(e) {
     pasted(target);
 }
 function copyNodes(nodesArr) {
-    const nodeIds = nodesArr.map((n) => n.obj.id);
+    const nodeIds = nodesArr.map((n) => n.id);
     copyItem(
-        nodesArr.map(({ obj }) => obj.copyData(nodeIds)),
+        nodesArr.map((node) => node.copyData(nodeIds)),
         "nodes"
     );
 }
@@ -127,10 +131,7 @@ function copyHandler(e) {
     const target = get(currentFocus);
 
     if (target.type === "nodes") {
-        copyNodes(target.arr);
-        return;
-    } else if (target.type in NodeClasses) {
-        copyNodes([target]);
+        copyNodes(target.arr.map((n) => n.obj));
         return;
     }
     target.data?.clipboardFn?.copy?.();
@@ -139,6 +140,11 @@ function cutHandler(e) {
     if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
 
     const target = get(currentFocus);
+    if (target.type === "nodes") {
+        copyNodes(target.arr.map((n) => n.obj));
+        appData.removeManyNodes(target.arr.map((n) => n.obj));
+        return;
+    }
     target.data?.clipboardFn?.cut?.();
 }
 function keyDownHandler(e) {
@@ -146,6 +152,10 @@ function keyDownHandler(e) {
         return;
 
     const target = get(currentFocus);
+    if (target.type === "nodes") {
+        appData.removeManyNodes(target.arr.map((n) => n.obj));
+        return;
+    }
     target.data?.clipboardFn?.delete?.();
 }
 

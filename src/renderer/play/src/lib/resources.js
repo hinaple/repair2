@@ -1,6 +1,7 @@
 import { getAssetDir } from "@classes/utils";
 import { getAppData } from "./appdata";
 import { registerUtils } from "./globalUtils";
+import { sendChanges } from "./runtimeMonitor";
 
 export const preloads = {};
 
@@ -11,7 +12,7 @@ export function genElement(resource, doClone = false, onlyNew = false) {
 
     if (!onlyNew && preloads[resource.id]) {
         const el = preloads[resource.id].el;
-        delete preloads[resource.id];
+        deletePreloadData(resource.id);
 
         if (doClone) addPreload(resource.id);
         return el;
@@ -43,6 +44,7 @@ function addPreload(resourceId) {
         alias: resource.alias,
         el
     };
+    sendChanges("preload", "added", resourceId);
     if (!el) return;
 
     // if (resource.fileType === "video") {
@@ -53,10 +55,14 @@ function addPreload(resourceId) {
     preloadsEl.appendChild(el);
 }
 
+function deletePreloadData(resourceId) {
+    delete preloads[resourceId];
+    sendChanges("preload", "released", resourceId);
+}
 export function removePreload(resourceId) {
     if (!preloads[resourceId]) return;
     if (preloads[resourceId].el) preloadsEl.removeChild(preloads[resourceId].el);
-    delete preloads[resourceId];
+    deletePreloadData(resourceId);
 }
 
 export function addPreloadsBulk(resourceIds) {

@@ -10,8 +10,7 @@
     import outputNode from "./lines/output";
     import FrameUpdater from "../lib/frameUpdater";
     import { currentFocus as CurrentFocus, focusData } from "../sidebar/editUtils";
-    import { genClipboardFn } from "../lib/clipboard";
-    import { removeNodeWithHistory } from "../lib/syncData.svelte";
+    import { appData } from "../lib/syncData.svelte";
     import { ipcRenderer } from "electron";
 
     let {
@@ -24,7 +23,8 @@
         onmousedown: bubbleMouseDown,
         body,
         minWidth = 200,
-        hasInput = true
+        hasInput = true,
+        color = "#000"
     } = $props();
 
     $effect(() => {
@@ -56,19 +56,18 @@
             currentFocus = cf;
             isFocused =
                 cf.obj === node || (cf.type === "nodes" && cf.arr.some((n) => n.obj === node));
-        })
+        }),
+        () => grabber?.destroy?.()
     ];
 
     onMount(() => {
         applyNodePos();
         let movingNodes = null;
-        let multipleGrabbing = false;
         grabber = new Grabber({
             container: nodeEl,
             handle: handleEl,
             onMoveStart: () => {
                 if (currentFocus.type === "nodes") {
-                    multipleGrabbing = true;
                     movingNodes = currentFocus.arr.map((n) => ({
                         node: n.obj,
                         from: {
@@ -165,7 +164,7 @@
         {
             label: "삭제",
             click: () => {
-                removeNodeWithHistory(node);
+                appData.removeNode(node);
                 return true;
             },
             action: "remove"
@@ -176,10 +175,10 @@
     node.applyNodePos = applyNodePos;
 
     onDestroy(() => {
-        unsubs.forEach((us) => us());
+        unsubs.forEach((us) => us?.());
         if (!node) return;
 
-        if (currentFocus.obj === node) focusData("project");
+        if (isFocused) focusData("project");
         delete node.requestRect;
         delete node.applyNodePos;
     });
@@ -196,7 +195,7 @@
     onmousedowncapture={onmousedown}
     use:rightclick={contextmenu}
 >
-    <div class="node-wrapper">
+    <div class="node-wrapper" style={`--node-color: ${color};`}>
         <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
             <div
                 class="head"
@@ -266,7 +265,7 @@
     .head {
         color: #fff;
         flex: 0 0 auto;
-        background-color: #000;
+        background-color: var(--node-color);
         cursor: grab;
         font-weight: 600;
         display: flex;
@@ -305,7 +304,7 @@
         background-color: #fff;
         width: 16px;
         height: 16px;
-        border: solid #000 4px;
+        border: solid var(--node-color) 4px;
         border-radius: 50%;
         box-sizing: border-box;
     }
@@ -336,7 +335,7 @@
         background-color: #fff;
         width: 16px;
         height: 16px;
-        border: solid #000 4px;
+        border: solid var(--node-color) 4px;
         border-radius: 50%;
         box-sizing: border-box;
         display: flex;
