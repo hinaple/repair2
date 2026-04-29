@@ -81,8 +81,8 @@ export default class Branch extends Node {
             disableAfterTrue: this.disableAfterTrue,
             disableAfterFalse: this.disableAfterFalse,
             scriptData: this.scriptData,
-            trueOutput: this.trueOutput(availableOuputIds),
-            falseOutput: this.falseOutput(availableOuputIds)
+            trueOutput: this.trueOutput.copyData(availableOuputIds),
+            falseOutput: this.falseOutput.copyData(availableOuputIds)
         };
     }
     //#endonly
