@@ -28,8 +28,26 @@
             const from = posFromViewport(l.fromCoord.x, l.fromCoord.y);
             const to = posFromViewport(l.toCoord.x, l.toCoord.y);
             ctx.moveTo(from.x, from.y);
+            console.log(l);
             if (l.noBezier) ctx.lineTo(to.x, to.y);
-            else if (to.x <= from.x) {
+            else if (l.fromId === l.output.to) {
+                ctx.bezierCurveTo(
+                    from.x + currentBezierOffset,
+                    from.y,
+                    from.x + currentBezierOffset,
+                    from.y - currentBezierOffset,
+                    (from.x + to.x) / 2,
+                    from.y - currentBezierOffset
+                );
+                ctx.bezierCurveTo(
+                    to.x - currentBezierOffset,
+                    to.y - currentBezierOffset,
+                    to.x - currentBezierOffset,
+                    to.y,
+                    to.x,
+                    to.y
+                );
+            } else if (to.x <= from.x) {
                 const yCenter = (from.y + to.y) / 2;
                 ctx.bezierCurveTo(
                     from.x + currentBezierOffset,
