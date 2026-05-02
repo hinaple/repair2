@@ -22,6 +22,7 @@ export default class Config {
     transparent = $state();
     devMode = $state();
     alwaysOnTop = $state();
+    suppressGlobalKeys = $state();
     constructor({
         title = "REPAIR v2",
         width = null,
@@ -35,6 +36,7 @@ export default class Config {
         transparent = false,
         devMode = true,
         alwaysOnTop = false,
+        suppressGlobalKeys = false,
         ...config
     } = {}) {
         this.title = title;
@@ -51,6 +53,7 @@ export default class Config {
         this.transparent = transparent;
         this.devMode = devMode;
         this.alwaysOnTop = alwaysOnTop;
+        this.suppressGlobalKeys = suppressGlobalKeys;
     }
 
     //#only play
@@ -85,11 +88,11 @@ export default class Config {
             style: this.style,
             editorShortcut: this.editorShortcut,
             editorPassword: this.editorPassword,
-            // multiScreen: this.multiScreen,
             screenConfig: this.screenConfig.storeData,
             transparent: this.transparent,
             alwaysOnTop: this.alwaysOnTop,
-            devMode: this.devMode
+            devMode: this.devMode,
+            suppressGlobalKeys: this.suppressGlobalKeys
         };
     }
     //#endonly

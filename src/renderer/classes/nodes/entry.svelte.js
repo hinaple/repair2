@@ -16,6 +16,8 @@ const EntryTemplate = {
     shortcut: {
         ctrlKey: true,
         shiftKey: true,
+        altKey: false,
+        metaKey: false,
         pressingTime: 0,
         key: null
     },

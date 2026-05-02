@@ -16,6 +16,7 @@ import { checkVscodeInstalled } from "./vscodeUtils.js";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
+import { getIsSuppressing, startSuppress, stopSuppress } from "./globalKey.js";
 
 /**
  * @type {BrowserWindow | null}
@@ -289,6 +290,7 @@ function createMainWindow() {
     mainWindow.on("ready-to-show", () => {
         closeSplash();
         mainWindow.show();
+        mainWindow.focus();
 
         applyDataConfig(true);
     });
@@ -305,6 +307,12 @@ function createMainWindow() {
             closeSplash();
             app.quit();
         }
+    });
+    mainWindow.on("focus", () => {
+        if (data?.config?.suppressGlobalKeys) startSuppress();
+    });
+    mainWindow.on("blur", () => {
+        stopSuppress();
     });
 }
 
@@ -557,6 +565,7 @@ function createEditorWindow() {
 
     editorWindow.on("ready-to-show", () => {
         editorWindow.show();
+        editorWindow.focus();
         if (data) editorWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
     });
 

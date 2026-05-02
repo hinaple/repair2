@@ -79,3 +79,9 @@
     setter={(d) => (data.devMode = d)}
     type="checkbox"
 />
+<InputField
+    label="시스템 키 비활성화"
+    value={data.suppressGlobalKeys}
+    setter={(d) => (data.suppressGlobalKeys = d)}
+    type="checkbox"
+/>
