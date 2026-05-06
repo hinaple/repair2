@@ -58,10 +58,22 @@
         setter={(d) => (data.data.payload.ctrlKey = d)}
     />
     <InputField
+        label="Alt 눌러야 감지"
+        value={data.data.payload.altKey}
+        type="checkbox"
+        setter={(d) => (data.data.payload.altKey = d)}
+    />
+    <InputField
         label="Shift 눌러야 감지"
         value={data.data.payload.shiftKey}
         type="checkbox"
         setter={(d) => (data.data.payload.shiftKey = d)}
+    />
+    <InputField
+        label="Win 눌러야 감지"
+        value={data.data.payload.metaKey}
+        type="checkbox"
+        setter={(d) => (data.data.payload.metaKey = d)}
     />
     <InputField
         label="감지 시간(초)"

@@ -16,7 +16,12 @@ import { checkVscodeInstalled } from "./vscodeUtils.js";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
-import { getIsSuppressing, startSuppress, stopSuppress } from "./globalKey.js";
+import {
+    getIsSuppressing,
+    setGlobalKeyListener,
+    startSuppress,
+    stopSuppress
+} from "./globalKey.js";
 
 /**
  * @type {BrowserWindow | null}
@@ -120,6 +125,10 @@ const serial = new SerialConnector(
         sendToEditor("serial-connected", port);
     }
 );
+
+setGlobalKeyListener((type, evt) => {
+    if (mainWindow?.isFocused?.()) sendToMain("global-key-event", type, evt);
+});
 
 let pluginList = {};
 async function updatePluginList() {
@@ -303,6 +312,7 @@ function createMainWindow() {
 
     mainWindow.on("closed", () => {
         mainWindow = null;
+        stopSuppress();
         if (!projectFileManager.importing) {
             closeSplash();
             app.quit();

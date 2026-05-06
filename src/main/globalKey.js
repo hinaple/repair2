@@ -1,5 +1,7 @@
 import { uIOhook, UiohookKey } from "@fainthit/uiohook-napi-suppress";
 
+export const GlobalKeycodeMap = new Map(Object.entries(UiohookKey).map((_) => [_[1], _[0]]));
+
 const SuppressingKeys = [
     { metaKey: true },
     { keycode: UiohookKey.F4, altKey: true },
@@ -7,22 +9,21 @@ const SuppressingKeys = [
     { keycode: UiohookKey.Escape, ctrlKey: true, shiftKey: true }
 ];
 
-let suppressId = null;
+const suppressId = uIOhook.registerSuppress(SuppressingKeys);
+uIOhook.toggleSuppress(suppressId, false);
 let isSuppressing = false;
 export function startSuppress() {
     if (isSuppressing) return;
 
-    if (suppressId === null) suppressId = uIOhook.registerSuppress(SuppressingKeys);
     isSuppressing = true;
 
     uIOhook.toggleSuppress(suppressId, true);
-
-    console.log("SUPPRESSING STARTED");
 }
 
 export function stopSuppress() {
-    if (suppressId === null || !isSuppressing) return;
+    if (!isSuppressing) return;
 
+    isSuppressing = false;
     uIOhook.toggleSuppress(suppressId, false);
 }
 
@@ -30,8 +31,19 @@ export function getIsSuppressing() {
     return isSuppressing;
 }
 
-uIOhook.on("keydown", (e) => {
-    console.log(e.type, e.keycode);
-});
+let globalKeyListener = null;
+export function setGlobalKeyListener(callback) {
+    globalKeyListener = callback;
+}
+
+uIOhook.addListener("keydown", (evt) => callGlobalKeyListener("keydown", evt));
+uIOhook.addListener("keyup", (evt) => callGlobalKeyListener("keyup", evt));
+
+function callGlobalKeyListener(type, evt) {
+    if (!globalKeyListener) return;
+
+    evt.key = GlobalKeycodeMap.get(evt.keycode);
+    globalKeyListener(type, evt);
+}
 
 uIOhook.start();

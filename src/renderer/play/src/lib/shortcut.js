@@ -1,10 +1,14 @@
+import { ipcRenderer } from "electron";
+
 let shortcuts = {};
 export default function initShortcuts(entryArr) {
     shortcuts = {};
     entryArr.forEach((e) => {
         const data = {
             ctrlKey: e.data.payload.ctrlKey,
+            altKey: e.data.payload.altKey,
             shiftKey: e.data.payload.shiftKey,
+            metaKey: e.data.payload.metaKey,
             pressingTime: e.data.payload.pressingTime,
             key: e.data.payload.key,
             entry: e
@@ -18,41 +22,39 @@ export default function initShortcuts(entryArr) {
     });
 }
 
-window.addEventListener(
-    "keydown",
-    (e) => {
-        const entries = shortcuts[e.key.toUpperCase()];
-        if (!entries) return;
-        entries
-            .filter((d) => (!d.ctrlKey || e.ctrlKey) && (!d.shiftKey || e.shiftKey))
-            .forEach((d) => {
-                if (!d.pressingTime) {
-                    d.entry.enter();
-                    return;
-                }
+ipcRenderer.addListener("global-key-event", (_, type, evt) => {
+    if (type === "keydown") keydownHandler(evt);
+    else if (type === "keyup") keyupHandler(evt);
+});
 
-                if (d.timeout || d.worked) return;
-                d.timeout = setTimeout(() => {
-                    d.timeout = null;
-                    d.worked = true;
-                    d.entry.enter();
-                }, d.pressingTime * 1000);
-            });
-    },
-    true
-);
-window.addEventListener(
-    "keyup",
-    (e) => {
-        const entries = shortcuts[e.key.toUpperCase()];
-        if (!entries) return;
-        entries.forEach((d) => {
-            d.worked = false;
-            if (d.timeout) {
-                clearTimeout(d.timeout);
-                d.timeout = null;
+const Specials = ["ctrlKey", "shiftKey", "metaKey", "altKey"];
+function keydownHandler(e) {
+    const entries = shortcuts[e.key.toUpperCase()];
+    if (!entries) return;
+    entries
+        .filter((d) => Specials.every((key) => !d[key] || e[key]))
+        .forEach((d) => {
+            if (!d.pressingTime) {
+                d.entry.enter();
+                return;
             }
+
+            if (d.timeout || d.worked) return;
+            d.timeout = setTimeout(() => {
+                d.timeout = null;
+                d.worked = true;
+                d.entry.enter();
+            }, d.pressingTime * 1000);
         });
-    },
-    true
-);
+}
+function keyupHandler(e) {
+    const entries = shortcuts[e.key.toUpperCase()];
+    if (!entries) return;
+    entries.forEach((d) => {
+        d.worked = false;
+        if (d.timeout) {
+            clearTimeout(d.timeout);
+            d.timeout = null;
+        }
+    });
+}

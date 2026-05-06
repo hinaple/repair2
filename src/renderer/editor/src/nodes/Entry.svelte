@@ -14,7 +14,9 @@
             return (
                 "단축키 " +
                 (entry.data.payload.ctrlKey ? "Ctrl+" : "") +
+                (entry.data.payload.altKey ? "Alt+" : "") +
                 (entry.data.payload.shiftKey ? "Shift+" : "") +
+                (entry.data.payload.metaKey ? "Win+" : "") +
                 entry.data.payload.key.toUpperCase()
             );
         if (entry.data.type === "Communication.serialData" && entry.data.payload.whenDataIs?.length)
