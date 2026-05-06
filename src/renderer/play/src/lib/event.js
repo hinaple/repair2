@@ -1,5 +1,5 @@
 import { getAppData } from "./appdata";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
 
 const eventMap = new Map();
 

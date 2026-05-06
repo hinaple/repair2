@@ -1,7 +1,7 @@
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
 import { emitRepairEvent } from "./event";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
 
 ipcRenderer.on("socket-income", (event, channel, data) => {
     if (channel === "connect") getAppData().enterEntry("Communication.Socket.connect");

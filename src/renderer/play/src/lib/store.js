@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
 
 export function getStore(key) {
     return ipcRenderer.sendSync("get-store", key);

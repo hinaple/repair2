@@ -1,5 +1,5 @@
 import Value from "@classes/value/value.svelte";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
 import { sendChanges } from "./runtimeMonitor";
 
 let variables = {};

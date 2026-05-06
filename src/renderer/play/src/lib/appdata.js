@@ -2,7 +2,7 @@ import "./pluginManager";
 import { ipcRenderer } from "electron";
 import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
 import initShortcuts from "./shortcut";
 import { sendTotalInfo } from "./runtimeMonitor";
 

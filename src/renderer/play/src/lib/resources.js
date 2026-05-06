@@ -1,6 +1,6 @@
 import { getAssetDir } from "@classes/utils";
 import { getAppData } from "./appdata";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
 import { sendChanges } from "./runtimeMonitor";
 
 export const preloads = {};
