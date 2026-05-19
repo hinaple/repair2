@@ -74,36 +74,17 @@
             dragOption.moveEasing = d;
         }}
     />
-    <InputField label="인식 좌표">
-        {#each dragOption.hotspots as hotspot, idx}
-            <InputField
-                label={`좌표${idx}`}
-                type="position"
-                value={hotspot}
-                background
-                style="padding: 5px 10px 10px 10px; margin-bottom: 5px;"
-                oninputremove={() =>
-                    addHistory({
-                        doFn: (idx) => dragOption.hotspots.splice(idx, 1),
-                        undoFn: ({ idx, pos }) => dragOption.hotspots.splice(idx, 0, pos),
-                        doData: idx,
-                        undoData: { idx: idx, pos: hotspot }
-                    })}
-            />
-        {/each}
-
-        <div
-            class="add"
-            onclick={() =>
-                addHistory({
-                    doFn: (pos) => dragOption.hotspots.push(pos),
-                    undoFn: () => dragOption.hotspots.pop(),
-                    doData: new Coord()
-                })}
-        >
-            좌표 추가
-        </div>
-    </InputField>
+    <InputField
+        label="인식 좌표"
+        type="position"
+        background
+        style="padding: 5px 10px 10px 10px; margin-bottom: 5px;"
+        seriesOption={{
+            array: dragOption.hotspots,
+            label: (idx) => `좌표${idx}`,
+            newData: () => new Coord()
+        }}
+    />
 {/if}
 
 <style>

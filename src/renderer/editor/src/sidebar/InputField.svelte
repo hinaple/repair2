@@ -50,11 +50,11 @@
 <div
     class={[
         "field",
-        (type === "checkbox" || row) && "row",
-        small && "small",
-        background && "background"
+        ...(seriesOption
+            ? []
+            : [(type === "checkbox" || row) && "row", small && "small", background && "background"])
     ]}
-    {style}
+    style={seriesOption ? null : style}
     onclick={() => {
         if (type === "checkbox") checkboxClick();
     }}
@@ -67,7 +67,7 @@
             <span>{label}</span>
             {#if oninputremove}
                 <button class="remove" onclick={oninputremove}>
-                    <Icon icon="bin" color="#fff" size="15" />
+                    <Icon icon="close" color="#fff" size="12" lineWidth={1.5} />
                 </button>
             {/if}
         </div>
@@ -88,6 +88,7 @@
                     <InputField
                         value={v}
                         setter={(d) => (array[i] = d)}
+                        label={seriesOption?.label?.(i) ?? null}
                         {type}
                         {manual}
                         {small}
@@ -100,9 +101,10 @@
                         {...type === "resource" && canRemoveNow
                             ? { removable: true, onremove: remove }
                             : {}}
+                        {...type === "position" && canRemoveNow ? { oninputremove: remove } : {}}
                         {...props}
                     />
-                    {#if type !== "resource" && canRemoveNow}
+                    {#if type !== "resource" && type !== "position" && canRemoveNow}
                         <button class="remove small" onclick={remove}>
                             <Icon icon="close" color="#fff" lineWidth={2} size={10} />
                         </button>
@@ -178,7 +180,6 @@
     }
     .field.background {
         background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
     }
     .field.row {
         flex-direction: row;
