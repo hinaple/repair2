@@ -13,7 +13,6 @@
     },
     "files": [
         "src",
-        "examples",
         "docs",
         "README.md"
     ],

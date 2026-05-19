@@ -14,63 +14,143 @@
         onremove = null
     } = $props();
 
+    const RESOURCE_BTN_HEIGHT = 80;
+
     let resource = $derived(appData.resources.find((r) => r.id === resourceId));
 
     let isSelecting = $state(false);
 
+    /** @type {HTMLDivElement} */
     let selectBtnEl = $state(null);
+    /** @type {HTMLDivElement} */
+    let containerEl = $state(null);
+    /** @type {HTMLDivElement} */
     let listEl = $state(null);
+    /** @type {HTMLInputElement} */
+    let inputEl = $state(null);
+    let searchString = $state("");
 
-    async function opened() {
+    let selectedResourceIdx = $state(0);
+
+    async function open() {
+        isSelecting = true;
+        searchString = "";
+        resourceList = appData.resources.filter((r) => !type || r.fileType === type);
+
         const selectBtnRect = selectBtnEl.getBoundingClientRect();
         await tick();
-        listEl.style.width = `${selectBtnRect.width}px`;
-        listEl.style.maxHeight = `${window.innerHeight / 2 - selectBtnRect.height / 2}px`;
+        inputEl.focus();
+
+        containerEl.style.width = `${selectBtnRect.width}px`;
+        containerEl.style.maxHeight = `${window.innerHeight / 2 - selectBtnRect.height / 2}px`;
         if (selectBtnRect.top + selectBtnRect.height / 2 < window.innerHeight / 2)
-            listEl.style.top = `${selectBtnRect.bottom}px`;
+            containerEl.style.top = `${selectBtnRect.bottom}px`;
         else {
-            listEl.style.top = `${selectBtnRect.top}px`;
-            listEl.style.transform = "translateY(-100%)";
+            containerEl.style.top = `${selectBtnRect.top}px`;
+            containerEl.style.transform = "translateY(-100%)";
         }
+        if (!resourceId) {
+            selectedResourceIdx = 0;
+            return;
+        }
+
+        focusBtn(
+            resourceList.findIndex((r) => r.id === resourceId),
+            { behavior: "instant", block: "start" }
+        );
+    }
+    function close() {
+        if (!isSelecting) return;
+
+        isSelecting = false;
+        searchString = "";
+        resourceList = [];
+    }
+    function focusBtn(idx, scrollOption = { behavior: "smooth", block: "nearest" }) {
+        selectedResourceIdx = idx;
+        listEl.children[selectedResourceIdx].scrollIntoView(scrollOption);
+    }
+
+    function selectResource(id) {
+        resourceId = id;
+        isSelecting = false;
+        onchange(id);
+    }
+
+    let resourceTitle = $derived(resource?.title || "할당된 자원 없음");
+    let resourceList = $state([]);
+
+    function onkeydown(e) {
+        if (e.key === "ArrowDown")
+            focusBtn(Math.min(resourceList.length - 1, selectedResourceIdx + 1));
+        else if (e.key === "ArrowUp") focusBtn(Math.max(0, selectedResourceIdx - 1));
+        else if (e.key === "Escape") close();
+        else if (e.key === "Enter" && selectedResourceIdx >= 0)
+            selectResource(resourceList[selectedResourceIdx].id);
+    }
+    async function oninput() {
+        resourceList = appData.resources.filter(
+            (r) =>
+                (!type || r.fileType === type) && (!searchString || r.title.includes(searchString))
+        );
+        const tempSelectedIdx = searchString
+            ? 0
+            : (resourceList.findIndex((r) => r.id === resourceId) ?? 0);
+        await tick();
+        focusBtn(tempSelectedIdx, {
+            behavior: "instant"
+        });
     }
 </script>
 
 {#if isSelecting}
     <div
+        bind:this={containerEl}
         class="resource-selector"
-        bind:this={listEl}
-        use:outClickAction={() => (isSelecting = false)}
-        use:outScrollAction={() => (isSelecting = false)}
+        style={`--resource-btn-height: ${RESOURCE_BTN_HEIGHT}px;`}
+        use:outClickAction={{ callback: close, excludes: [selectBtnEl] }}
+        use:outScrollAction={close}
     >
-        {#each appData.resources.filter((r) => (type ? r.fileType === type : true)) as option}
-            <div
-                class="resource"
-                onclick={() => {
-                    resourceId = option.id;
-                    isSelecting = false;
-                    onchange(option.id);
-                }}
-            >
-                <div class="preview">
-                    <ResourcePreview resource={option} controls={false} />
-                </div>
-                <div class="file-name">
-                    <span>{option.title}</span>
-                </div>
-            </div>
-        {:else}
-            <div class="no-resource">자원 없음</div>
-        {/each}
+        <div class={["search-zone", !searchString?.length && "hidden"]}>
+            <input
+                bind:this={inputEl}
+                bind:value={searchString}
+                type="text"
+                {onkeydown}
+                {oninput}
+            />
+        </div>
+        <div bind:this={listEl} class="resource-list">
+            {#each resourceList as option, i}
+                <button
+                    class={[
+                        "resource",
+                        resourceId === option.id && "selected",
+                        selectedResourceIdx === i && "focussed"
+                    ]}
+                    onclick={() => {
+                        selectResource(option.id);
+                    }}
+                >
+                    <ResourcePreview resource={option} controls={false} small />
+                    <div class="file-name">
+                        <span class={["resource-title", option.title.length > 10 && "small"]}
+                            >{option.title}</span
+                        >
+                    </div>
+                </button>
+            {:else}
+                <div class="no-resource">자원 없음</div>
+            {/each}
+        </div>
     </div>
 {/if}
 
 <div
-    class="select-btn"
+    class={["select-btn", isSelecting && "active"]}
     bind:this={selectBtnEl}
-    onclick={(evt) => {
-        evt.stopPropagation();
-        isSelecting = !isSelecting;
-        if (isSelecting) opened();
+    onclick={() => {
+        isSelecting ? close() : open();
     }}
 >
     <div class="preview">
@@ -81,7 +161,9 @@
         {/if}
     </div>
     <div class={["file-name", removable && "removable"]}>
-        <span>{resource?.title || "할당된 자원 없음"}</span>
+        <span class={["resource-title", resourceTitle.length > 10 && "small"]}>
+            {resourceTitle}
+        </span>
         {#if removable}
             <div
                 class="remove"
@@ -90,7 +172,7 @@
                     onremove();
                 }}
             >
-                <Icon icon="bin" color="#fff" size={13} />
+                <Icon icon="close" color="#fff" size={12} lineWidth={1.5} />
             </div>
         {/if}
     </div>
@@ -98,63 +180,98 @@
 
 <style>
     .resource-selector {
-        padding: 10px 0 10px 10px;
+        padding-left: 5px;
         box-sizing: border-box;
-        border-radius: 10px;
         width: 100%;
         max-height: 50vh;
         position: absolute;
         background-color: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(5px);
         z-index: 200;
+        box-shadow: rgba(0, 0, 0, 0.8) 0 0 8px;
+        display: flex;
+        flex-direction: column;
+    }
+    .search-zone {
+        flex: 0 0 auto;
+        width: 100%;
+        padding: 5px 18px 0 0;
+        box-sizing: border-box;
+        overflow: hidden;
+        input {
+            width: 100%;
+            display: block;
+            border: none;
+            background: none;
+            font: inherit;
+            border-bottom: solid #000 1px;
+            padding: 5px 2px;
+        }
+    }
+    .search-zone.hidden {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .resource-list {
+        width: 100%;
+        flex: 1 1 auto;
         overflow-y: auto;
         scrollbar-gutter: stable;
-        box-shadow: rgba(0, 0, 0, 0.8) 0 0 8px;
+        scroll-padding-block: 5px;
+        padding-block: 5px;
     }
-    .resource-selector::-webkit-scrollbar-thumb {
+    .resource-list::-webkit-scrollbar-thumb {
         background-color: #000;
     }
     .resource {
-        padding: 10px;
+        padding: 5px;
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
         box-sizing: border-box;
-        height: 80px;
+        height: var(--resource-btn-height);
         color: #000;
         font-weight: 600;
         cursor: pointer;
         overflow: hidden;
         gap: 5px;
+        width: 100%;
     }
     .resource:not(:last-child) {
         border-bottom: solid #000 1px;
     }
-    .resource:hover {
+    .resource:hover,
+    .resource.focussed {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+    .resource.selected {
         background-color: rgba(0, 0, 0, 0.2);
     }
 
     .select-btn {
         width: 100%;
-        padding: 10px;
+        padding: 5px 8px 5px 5px;
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
         box-sizing: border-box;
-        border-radius: 10px;
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: rgba(255, 255, 255, 0.2);
         height: 80px;
-        opacity: 0.8;
-        color: #000;
-        font-weight: 600;
+        color: #fff;
+        font-weight: 400;
         cursor: pointer;
         gap: 5px;
         overflow: hidden;
+        border: solid transparent 1px;
+
+        transition: border-color 200ms;
     }
-    .select-btn:hover {
-        opacity: 1;
+    .select-btn:hover,
+    .select-btn.active {
+        border-color: #fff;
     }
     .preview {
         flex: 1 1 100px;
@@ -179,20 +296,24 @@
         padding-block: 2px;
         box-sizing: border-box;
     }
+    .resource-title.small {
+        font-size: 14px;
+    }
     .remove {
-        padding: 8px;
-        border-radius: 10px;
-        background-color: #ff3939;
+        padding: 5px;
+        background-color: rgba(180, 0, 0, 0.8);
         cursor: pointer;
-        opacity: 0.8;
+        opacity: 0.6;
+        border: solid transparent 1px;
     }
     .remove:hover {
+        border-color: #fff;
         opacity: 1;
     }
     .preview:has(.question-mark) {
         flex: 0 0 auto;
         width: 80px !important;
-        height: 80px !important;
+        height: var(--resource-btn-height) !important;
         display: flex;
         align-items: center;
         justify-content: center;

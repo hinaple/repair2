@@ -95,12 +95,11 @@
     }
     .tabs {
         display: flex;
-        padding: 10px 10px 0 10px;
-        gap: 5px;
+        padding: 5px 5px 0 5px;
         background: rgba(0, 0, 0, 0.3);
     }
     .tab {
-        padding: 8px 15px;
+        padding: 5px 10px;
         border: none;
         background: transparent;
         color: #fff;

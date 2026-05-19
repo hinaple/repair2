@@ -76,6 +76,14 @@
         {@const array = seriesOption.array}
         <div class="series-container">
             {#each array as v, i}
+                {@const canRemoveNow = (seriesOption.min ?? 0) <= i}
+                {@const remove = () =>
+                    addHistory({
+                        doFn: (idx) => array.splice(idx, 1),
+                        undoFn: ({ value, idx }) => array.splice(idx, 0, value),
+                        doData: i,
+                        undoData: { value: array[i], idx: i }
+                    })}
                 <div class="series-field">
                     <InputField
                         value={v}
@@ -89,19 +97,13 @@
                         {oninputremove}
                         {background}
                         {style}
+                        {...type === "resource" && canRemoveNow
+                            ? { removable: true, onremove: remove }
+                            : {}}
                         {...props}
                     />
-                    {#if (seriesOption.min ?? 0) <= i}
-                        <button
-                            class="remove small"
-                            onclick={() =>
-                                addHistory({
-                                    doFn: (idx) => array.splice(idx, 1),
-                                    undoFn: ({ value, idx }) => array.splice(idx, 0, value),
-                                    doData: i,
-                                    undoData: { value: array[i], idx: i }
-                                })}
-                        >
+                    {#if type !== "resource" && canRemoveNow}
+                        <button class="remove small" onclick={remove}>
                             <Icon icon="close" color="#fff" lineWidth={2} size={10} />
                         </button>
                     {/if}

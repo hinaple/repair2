@@ -66,6 +66,12 @@ hr {
     outline-offset: 3px;
 }
 
+button {
+    border: none;
+    background: none;
+    font-family: inherit;
+}
+
 @font-face {
     font-family: "HelveticaExt";
     src: url(./assets/fonts/helveticaExt.woff);

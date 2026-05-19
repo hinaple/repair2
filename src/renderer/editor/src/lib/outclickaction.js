@@ -1,11 +1,14 @@
-export default function outClickAction(node, callback) {
-    const handleClick = (e) => {
-        if (!node.contains(e.target)) {
+export default function outClickAction(node, arg) {
+    if (typeof arg === "function") arg = { callback: arg, excludes: [] };
+    const { callback, excludes } = arg;
+
+    const handleDown = (e) => {
+        if (!node.contains(e.target) && !excludes.some((ex) => ex.contains(e.target))) {
             callback();
         }
     };
-    document.addEventListener("click", handleClick);
+    document.addEventListener("pointerdown", handleDown);
     return {
-        destroy: () => document.removeEventListener("click", handleClick)
+        destroy: () => document.removeEventListener("pointerdown", handleDown)
     };
 }
