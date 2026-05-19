@@ -6,13 +6,13 @@
     import { outClicked } from "../lib/contextMenu/contextUtils";
     import { appData } from "../lib/syncData.svelte";
 
-    let { variableSet, onmousedown, ...nodeData } = $props();
+    let { variableSet, onpointerdown, ...nodeData } = $props();
 
     function focusZoneMouseDown(evt) {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
         outClicked();
-        onmousedown();
+        onpointerdown();
     }
 
     let variableName = $derived(appData.findVariableById(variableSet.variable)?.name ?? "없음");
@@ -22,7 +22,7 @@
     node={variableSet}
     type="variableSet"
     title={variableSet.alias?.length ? variableSet.alias : "변수설정"}
-    {onmousedown}
+    {onpointerdown}
     outputs={[{ output: variableSet.output, id: variableSet.id }]}
     {...nodeData}
 >
@@ -33,11 +33,11 @@
                     pre="초기값: "
                     isFull
                     value={variableSet.value}
-                    onmousedown={focusZoneMouseDown}
+                    onpointerdown={focusZoneMouseDown}
                     parent={variableSet}
                 />
             </div>
-            <div class="variable" onmousedown={focusZoneMouseDown}>
+            <div class="variable" onpointerdown={focusZoneMouseDown}>
                 변수 {variableName}
             </div>
         </div>

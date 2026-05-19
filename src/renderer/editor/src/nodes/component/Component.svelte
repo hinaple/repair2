@@ -21,7 +21,7 @@
         reload("nodeMoved");
     });
 
-    function onmousedown(evt) {
+    function onpointerdown(evt) {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
         focusData("component", comp, {
@@ -55,13 +55,13 @@
 
 <div
     class={["component", $currentFocus.obj === comp && "focus", activated && "activated"]}
-    {onmousedown}
+    {onpointerdown}
 >
     <div class="head">
         <span>
             {comp.alias?.length ? comp.alias : "이름 없는 컴포넌트"}
         </span>
-        <div class="add" onmousedown={addElement}>
+        <div class="add" onpointerdown={addElement}>
             <Icon lineWidth={2} size={7} />
         </div>
     </div>

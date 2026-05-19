@@ -40,8 +40,8 @@ const TypeMap = {
     globalKeyPress: "keydown",
     videoEnd: "ended",
     "Mouse.click": "click",
-    "Mouse.down": "mousedown",
-    "Mouse.up": "mouseup",
+    "Mouse.down": "pointerdown",
+    "Mouse.up": "pointerup",
     "Drag.released": "dragreleased",
     "Drag.return": "dragreturn"
 };

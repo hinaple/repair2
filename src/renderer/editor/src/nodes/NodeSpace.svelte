@@ -54,7 +54,7 @@
     let prvMouse = null;
     let selectOrigin = $state(null);
     let selectBoxEl = $state(null);
-    function mousedown(evt) {
+    function pointerdown(evt) {
         if (evt.button === 0 && !readyToGrab && !get(grabbing)) {
             selectOrigin = { x1: evt.clientX, y1: evt.clientY };
         }
@@ -67,7 +67,7 @@
         realGrabbing = true;
         prvMouse = { x: evt.screenX, y: evt.screenY };
     }
-    function mousemove(evt) {
+    function pointermove(evt) {
         if (selectOrigin) {
             if (get(grabbing) !== "select") grabbing.set("select");
 
@@ -86,7 +86,7 @@
         moveViewport(-evt.screenX + prvMouse.x, -evt.screenY + prvMouse.y);
         prvMouse = { x: evt.screenX, y: evt.screenY };
     }
-    function mouseup(evt) {
+    function pointerup(evt) {
         if (selectOrigin) {
             if (selectOrigin.x2) {
                 const area = {
@@ -206,12 +206,17 @@
     }
 </script>
 
-<svelte:body onkeydown={keydown} onkeyup={keyup} onmousemove={mousemove} onmouseup={mouseup} />
+<svelte:body
+    onkeydown={keydown}
+    onkeyup={keyup}
+    onpointermove={pointermove}
+    onpointerup={pointerup}
+/>
 <div
     class="node-space"
     class:grabbing={realGrabbing}
     class:ready-to-grab={readyToGrab}
-    onmousedown={mousedown}
+    onpointerdown={pointerdown}
     onwheel={wheel}
     use:rightclick={contextmenu}
 >
@@ -222,25 +227,25 @@
                 <Sequence
                     sequence={node}
                     isLastHold={node.id === lastHold}
-                    onmousedown={() => (lastHold = node.id)}
+                    onpointerdown={() => (lastHold = node.id)}
                 />
             {:else if node.type === "branch"}
                 <Branch
                     branch={node}
                     isLastHold={node.id === lastHold}
-                    onmousedown={() => (lastHold = node.id)}
+                    onpointerdown={() => (lastHold = node.id)}
                 />
             {:else if node.type === "entry"}
                 <Entry
                     entry={node}
                     isLastHold={node.id === lastHold}
-                    onmousedown={() => (lastHold = node.id)}
+                    onpointerdown={() => (lastHold = node.id)}
                 />
             {:else if node.type === "variableSet"}
                 <VariableSet
                     variableSet={node}
                     isLastHold={node.id === lastHold}
-                    onmousedown={() => (lastHold = node.id)}
+                    onpointerdown={() => (lastHold = node.id)}
                 />
             {/if}
         {/each}

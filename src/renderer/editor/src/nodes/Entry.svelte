@@ -4,7 +4,7 @@
     import { startMonitoring } from "../lib/runtimeMonitor.svelte";
     import { onDestroy } from "svelte";
 
-    let { entry, isLastHold, onmousedown, ...nodeData } = $props();
+    let { entry, isLastHold, onpointerdown, ...nodeData } = $props();
 
     let title = $derived.by(() => {
         if (entry.alias?.length) return entry.alias;
@@ -41,7 +41,7 @@
     hasInput={entry.standbyMode}
     {title}
     {isLastHold}
-    {onmousedown}
+    {onpointerdown}
     {color}
     {...nodeData}
 />

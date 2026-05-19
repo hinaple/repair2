@@ -20,7 +20,7 @@
         innerOutputs = null,
         title,
         isLastHold,
-        onmousedown: bubbleMouseDown,
+        onpointerdown: bubbleMouseDown,
         body,
         minWidth = 200,
         hasInput = true,
@@ -125,7 +125,7 @@
         node.folded = folded;
     });
 
-    function onmousedown(evt) {
+    function onpointerdown(evt) {
         if (evt.button || get(grabbing) === "viewport") return;
         focusData(type, node, { clipboardFn });
         bubbleMouseDown(evt);
@@ -191,7 +191,7 @@
         type === "branch" && "branch"
     ]}
     bind:this={nodeEl}
-    onmousedowncapture={onmousedown}
+    onpointerdowncapture={onpointerdown}
     use:rightclick={contextmenu}
 >
     <div class="node-wrapper" style={`--node-color: ${color};`}>

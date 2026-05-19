@@ -9,7 +9,7 @@
     import { focusData } from "../sidebar/editUtils";
     import { genClipboardFn } from "../lib/clipboard";
 
-    let { sequence, isLastHold, onmousedown, ...nodeData } = $props();
+    let { sequence, isLastHold, onpointerdown, ...nodeData } = $props();
 
     function addStep(evt) {
         if (get(grabbing)) return;
@@ -42,7 +42,7 @@
     {innerOutputs}
     title={sequence.alias?.length ? sequence.alias : "이름 없는 시퀀스"}
     {isLastHold}
-    {onmousedown}
+    {onpointerdown}
     {...nodeData}
 >
     {#snippet body()}

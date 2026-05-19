@@ -54,7 +54,7 @@
     <div
         class={["container", $currentFocus.obj === listener && "focus"]}
         use:rightclick={contextmenu}
-        onmousedown={(evt) => {
+        onpointerdown={(evt) => {
             if (evt.button || get(grabbing)) return;
             evt.stopPropagation();
             focusData("listener", listener, { clipboardFn });

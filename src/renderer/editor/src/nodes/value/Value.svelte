@@ -49,7 +49,7 @@
 <div class={["value-wrapper", isFull && "full", isValueA && "right-border"]}>
     <div
         class={["value", $currentFocus.obj === value && "focus"]}
-        onmousedown={clickBase}
+        onpointerdown={clickBase}
         use:registerHighlight={{ type: "variable", data: value.baseValue, active: hlActive }}
     >
         <div class="base-value">
@@ -69,7 +69,7 @@
                 reload("nodeMoved");
             }}
         />
-        <div class="add" onmousedown={addProcess}>
+        <div class="add" onpointerdown={addProcess}>
             <Icon color="#000" lineWidth={2} />
         </div>
         <div class="empty-space"></div>

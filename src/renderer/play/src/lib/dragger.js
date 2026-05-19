@@ -87,7 +87,7 @@ export default class Dragger {
             endSnap();
         };
 
-        node.addEventListener("mousedown", (evt) => {
+        node.addEventListener("pointerdown", (evt) => {
             if (dragging) return;
             dragging = true;
             rendering = true;
@@ -100,7 +100,7 @@ export default class Dragger {
             render();
         });
         let currentHotspot = -1;
-        this.mousemove = (evt) => {
+        this.pointermove = (evt) => {
             if (!dragging) return;
             const realPos = {
                 x: (evt.screenX - startPos.x) / screenRatio.x,
@@ -119,7 +119,7 @@ export default class Dragger {
             }
             currentPos = realPos;
         };
-        this.mouseup = (evt) => {
+        this.pointerup = (evt) => {
             if (!dragging) return;
             const realPos = {
                 x: (evt.screenX - startPos.x) / screenRatio.x,
@@ -152,8 +152,8 @@ export default class Dragger {
 
             dragging = false;
         };
-        document.addEventListener("mousemove", this.mousemove);
-        document.addEventListener("mouseup", this.mouseup);
+        document.addEventListener("pointermove", this.pointermove);
+        document.addEventListener("pointerup", this.pointerup);
 
         this.currentSnap = null;
     }
@@ -174,7 +174,7 @@ export default class Dragger {
         return { x: rect.left, y: rect.top };
     }
     destroy() {
-        document.removeEventListener("mousemove", this.mousemove);
-        document.removeEventListener("mouseup", this.mouseup);
+        document.removeEventListener("pointermove", this.pointermove);
+        document.removeEventListener("pointerup", this.pointerup);
     }
 }
