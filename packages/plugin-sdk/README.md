@@ -93,4 +93,3 @@ Runtime plugins receive a call argument object. The current runtime calls `activ
 - `docs/context-api.md`: context API behavior, side effects, and cleanup rules.
 - `docs/compatibility-and-pitfalls.md`: common mistakes and compatibility notes.
 - `docs/ko/`: Korean translations.
-- `examples/`: small runtime and element plugin examples.
