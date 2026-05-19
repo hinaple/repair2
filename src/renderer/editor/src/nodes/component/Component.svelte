@@ -10,8 +10,10 @@
     import { onDestroy } from "svelte";
     import { pasted } from "../../lib/clipboard";
     import { genClipboardFn } from "../../lib/clipboard";
+    import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
 
     let { payload: compTemp, noGrab = false, nodeCountChanged } = $props();
+    // svelte-ignore state_referenced_locally
     const comp = compTemp;
 
     $effect(() => {
@@ -43,12 +45,18 @@
         evt.stopPropagation();
     }
 
+    let activated = $state(false);
+    startMonitoring("components", comp.id, (status) => (activated = status));
+
     onDestroy(() => {
         if (get(currentFocus).obj === comp) focusData("project");
     });
 </script>
 
-<div class={["component", $currentFocus.obj === comp && "focus"]} {onmousedown}>
+<div
+    class={["component", $currentFocus.obj === comp && "focus", activated && "activated"]}
+    {onmousedown}
+>
     <div class="head">
         <span>
             {comp.alias?.length ? comp.alias : "이름 없는 컴포넌트"}
@@ -76,6 +84,9 @@
         width: 100%;
         box-sizing: border-box;
         background-color: rgba(0, 0, 0, 0.2);
+    }
+    .component.activated {
+        background-color: rgba(228, 112, 45, 0.6);
     }
     .head {
         padding-left: 10px;

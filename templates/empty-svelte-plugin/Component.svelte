@@ -1,9 +1,14 @@
 <script>
-    let { root, dispatchEvent } = $props();
+    /** @typedef {import("@fainthit/repair2-plugin-sdk").RepairElementPluginContext} RepairElementPluginContext */
+
+    let { root, dispatchEvent, ctx } = $props();
+
+    const pluginLabel = ctx ? `${ctx.plugin.id} (${ctx.plugin.type})` : "No context";
 </script>
 
 <div class="plugin-container">
     <h1>Hello World!</h1>
+    <p>{pluginLabel}</p>
 </div>
 
 <style>

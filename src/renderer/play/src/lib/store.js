@@ -1,5 +1,6 @@
 import { ipcRenderer } from "electron";
 import { registerUtils } from "./repairUtils";
+import { registerPluginContextApi } from "./pluginContext";
 
 export function getStore(key) {
     return ipcRenderer.sendSync("get-store", key);
@@ -9,3 +10,4 @@ export function setStore(key, value) {
 }
 
 registerUtils("store", { get: getStore, set: setStore });
+registerPluginContextApi("store", { get: getStore, set: setStore });

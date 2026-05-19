@@ -138,9 +138,9 @@
     <InputField
         label="플러그인"
         value={data.payload}
-        setter={(d) => (data.payload = d)}
         type="plugin"
         pluginType="elements"
+        canUnselect={false}
     />
 {/if}
 <hr />

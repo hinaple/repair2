@@ -26,6 +26,7 @@
     import { fade } from "svelte/transition";
     import FrameUpdater from "../lib/frameUpdater";
     import VariableSet from "./VariableSet.svelte";
+    import LinesOld from "./lines/LinesOld.svelte";
 
     let readyToGrab = $state(false);
     function keydown(evt) {
@@ -34,6 +35,11 @@
             readyToGrab = true;
             grabbing.set(myGrab);
         }
+
+        // if (evt.key === "Tab") {
+        //     renderWithWebGL = !renderWithWebGL;
+        //     console.log("TOGGLE LINE RENDERER: ", renderWithWebGL ? "WebGL" : "Canvas");
+        // }
     }
     function keyup(evt) {
         if (evt.key === " ") {
@@ -128,23 +134,17 @@
     const frameUpdater = new FrameUpdater(() => {
         if (!viewportEl) return;
         const tempPos = posFromViewport(0, 0);
-        viewportEl.style.left = `${tempPos.x}px`;
-        viewportEl.style.top = `${tempPos.y}px`;
+        viewportEl.style.transform = `translate(${tempPos.x}px, ${tempPos.y}px) scale(${rInfo.ratio})`;
     });
 
-    function onResized() {
-        if (!viewportEl) return;
-        viewportEl.style.transform = `scale(${rInfo.ratio})`;
-        onMoved();
-    }
     function onMoved() {
         if (!viewportEl) return;
         frameUpdater.draw();
     }
-    const unsubs = [viewport.screen.subscribe(onResized), viewport.pos.subscribe(onMoved)];
+    const unsubs = [viewport.screen.subscribe(onMoved), viewport.pos.subscribe(onMoved)];
 
     onMount(() => {
-        onResized();
+        frameUpdater.draw();
     });
 
     onDestroy(() => {
@@ -199,6 +199,11 @@
             }
         }
     ];
+
+    let renderWithWebGL = $state(true);
+    function unsupported() {
+        renderWithWebGL = false;
+    }
 </script>
 
 <svelte:body onkeydown={keydown} onkeyup={keyup} onmousemove={mousemove} onmouseup={mouseup} />
@@ -240,7 +245,11 @@
             {/if}
         {/each}
     </div>
-    <Lines />
+    {#if renderWithWebGL}
+        <Lines {unsupported} />
+    {:else}
+        <LinesOld />
+    {/if}
 </div>
 {#if selectOrigin}
     <div
@@ -272,8 +281,8 @@
     }
     .viewport {
         position: absolute;
-        left: 50%;
-        top: 50%;
+        left: 0;
+        top: 0;
         pointer-events: none;
         transform-origin: left top;
     }

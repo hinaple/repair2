@@ -7,6 +7,7 @@
     import Preloads from "./stepEdits/Preloads.svelte";
     import Communication from "./stepEdits/Communications.svelte";
     import { pasted } from "../../lib/clipboard";
+    import RuntimePluginStep from "./stepEdits/RuntimePluginStep.svelte";
 
     const { data } = $props();
 </script>
@@ -81,6 +82,12 @@
         setter={(d) => (data.payload.entries = d)}
         type="checkbox"
     />
+    <InputField
+        label="런타임 플러그인 초기화"
+        value={data.payload.runtimePlugins}
+        setter={(d) => (data.payload.runtimePlugins = d)}
+        type="checkbox"
+    />
 {:else if data.type === "Others.eventEmit"}
     <InputField
         label="이벤트 채널"
@@ -107,13 +114,21 @@
         type="input"
     />
 {:else if data.type === "Others.executePlugin"}
-    <InputField label="플러그인" value={data.payload.plugin} type="plugin" pluginType="functions" />
+    <InputField
+        label="플러그인"
+        value={data.payload.plugin}
+        type="plugin"
+        pluginType="functions"
+        canUnselect={false}
+    />
     <InputField
         label="끝날 때까지 기다리기"
         value={data.payload.waitTillEnd}
         setter={(d) => (data.payload.waitTillEnd = d)}
         type="checkbox"
     />
+{:else if data.type === "Others.runtimePluginStep"}
+    <RuntimePluginStep {data} />
 {:else if data.type === "Others.script"}
     <InputField
         label="스크립트 코드"

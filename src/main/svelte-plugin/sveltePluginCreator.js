@@ -7,7 +7,8 @@ const execAsync = promisify(exec);
 
 const PACKAGE_JSON_TEMPLATE = {
     version: "1.0.0",
-    type: "module"
+    type: "module",
+    devDependencies: {}
 };
 
 async function copyFolder(from, to) {
@@ -46,9 +47,22 @@ async function copyFolder(from, to) {
 //     }
 // }
 
-async function makePackageJson(pluginPath, pluginName) {
+function toFileDependencyPath(fromDir, targetDir) {
+    const relativePath = path.relative(fromDir, targetDir).replaceAll(path.sep, "/");
+    if (!relativePath) return ".";
+    if (path.isAbsolute(relativePath) || /^[a-zA-Z]:\//.test(relativePath)) return relativePath;
+    if (relativePath.startsWith(".")) return relativePath;
+    return `./${relativePath}`;
+}
+
+async function makePackageJson(pluginPath, pluginName, sdkPackageDir) {
     const newPackageJson = { ...PACKAGE_JSON_TEMPLATE };
+    newPackageJson.devDependencies = { ...PACKAGE_JSON_TEMPLATE.devDependencies };
     newPackageJson.name = pluginName;
+    if (sdkPackageDir) {
+        newPackageJson.devDependencies["@fainthit/repair2-plugin-sdk"] =
+            `file:${toFileDependencyPath(pluginPath, sdkPackageDir)}`;
+    }
     await fs.writeFile(
         path.join(pluginPath, "package.json"),
         JSON.stringify(newPackageJson, null, 4),
@@ -67,7 +81,12 @@ async function runNpmInstall(dir) {
     }
 }
 
-export default async function createSveltePlugin(pluginDir, templateDir, pluginName) {
+export default async function createSveltePlugin(
+    pluginDir,
+    templateDir,
+    pluginName,
+    sdkPackageDir = null
+) {
     const targetDir = path.join(pluginDir, "svelte-plugins", pluginName);
 
     try {
@@ -77,7 +96,7 @@ export default async function createSveltePlugin(pluginDir, templateDir, pluginN
 
     await copyFolder(templateDir, targetDir);
     // await replacePluginName(targetDir, "my-plugin", pluginName);
-    await makePackageJson(targetDir, pluginName);
+    await makePackageJson(targetDir, pluginName, sdkPackageDir);
 
     console.log(`new plugin ${pluginName} is generated at ${targetDir}`);
 

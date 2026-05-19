@@ -55,6 +55,7 @@ export const StepTypes = {
     setVariable: "변수 값 설정",
     resetAllVariables: "변수 전체 초기화",
     executePlugin: "플러그인 실행",
+    runtimePluginStep: "런타임 플러그인 스텝",
     eventEmit: "이벤트 발생",
     script: "스크립트 실행",
     log: "로그 작성",
@@ -62,6 +63,7 @@ export const StepTypes = {
     "Others.setVariable": "변수 값 설정",
     "Others.resetAllVariables": "변수 전체 초기화",
     "Others.executePlugin": "플러그인 실행",
+    "Others.runtimePluginStep": "런타임 플러그인",
     "Others.eventEmit": "이벤트 발생",
     "Others.script": "스크립트 실행",
     "Others.log": "로그 작성"

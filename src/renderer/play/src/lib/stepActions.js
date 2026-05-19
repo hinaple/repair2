@@ -21,6 +21,7 @@ import { delay } from "./delay";
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
 import { sendChanges, sendTotalInfo } from "./runtimeMonitor";
+import { callRuntimePluginStep, restartRuntimePlugins } from "./runtimePlugins";
 
 let resetAbort = new AbortController();
 
@@ -63,9 +64,9 @@ const actions = {
             send: (s) => {
                 socketSend(
                     s.payload.channel,
-                    ...(s.payload.splitStr
-                        ? s.payload.data.split(s.payload.splitStr)
-                        : [s.payload.data])
+                    ...(Array.isArray(s.payload.data) || !s.payload.splitStr
+                        ? s.payload.data
+                        : s.payload.data.split(s.payload.splitStr))
                 );
             },
             disconnect: () => {
@@ -94,21 +95,25 @@ const actions = {
             if (s.payload.steps) clearWaitingSteps();
             if (s.payload.preloads) removePreloadsAll();
             if (s.payload.entries) getAppData().resetEntries();
+            if (s.payload.runtimePlugins) restartRuntimePlugins();
 
             sendTotalInfo();
         },
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
         resetAllVariables: () => resetAllVar(),
         executePlugin: (s) => {
-            return new Promise((res) => {
-                s.payload.plugin
-                    .use()
-                    .then((func) => func?.({ signal: resetAbort.signal }))
-                    .then((result = true) => {
-                        if (s.payload.waitTillEnd) res(result);
-                    });
-                if (!s.payload.waitTillEnd) res();
-            });
+            const prom = s.payload.plugin
+                .use()
+                .then((func) => func?.({ signal: resetAbort.signal }));
+            return s.payload.waitTillEnd ? prom : true;
+        },
+        runtimePluginStep: (s) => {
+            const prom = callRuntimePluginStep(
+                s.payload.pluginName,
+                s.payload.step,
+                s.payload.payloads
+            );
+            return s.payload.waitTillEnd ? prom : true;
         },
         eventEmit: (s) => {
             if (s.payload.channel) emitRepairEvent(s.payload.channel, s.payload.data);

@@ -10,6 +10,7 @@
     import SideBar from "./sidebar/SideBar.svelte";
     import { onMount } from "svelte";
     import { ipcRenderer } from "electron";
+    import { reload } from "./lib/stores";
 
     focusData("project");
 
@@ -30,6 +31,11 @@
 
     onMount(() => {
         ipcRenderer.send("monitor-event", "start");
+    });
+
+    document.fonts.ready.then(() => {
+        reload("nodeMoved");
+        console.log("fonts loaded");
     });
 </script>
 

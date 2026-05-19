@@ -1,9 +1,9 @@
 <script>
     import { getPluginList } from "@classes/utils";
     import { addHistory } from "../lib/workHistory";
-    import InputField from "./InputField.svelte";
+    import Attributes from "./Attributes.svelte";
 
-    let { plugin, type } = $props();
+    let { plugin, type, canUnselect = true } = $props();
 
     function onchange(evt) {
         addHistory({
@@ -18,7 +18,7 @@
 
 <div class="plugin-select">
     <select value={plugin.name} {onchange}>
-        <option value={"null"} selected>선택 안함</option>
+        <option value={null} selected hidden={!canUnselect}>선택 안함</option>
         {#await getPluginList(true) then pluginList}
             {#each pluginList[type] as pluginName}
                 <option value={pluginName}>{pluginName.replace(/\.js$/, "")}</option>
@@ -27,17 +27,7 @@
     </select>
     {#key plugin.name}
         {#if plugin.name && plugin.name !== "null" && plugin.imported && plugin.attributes?.length}
-            {#each plugin.attributes as attr}
-                <InputField
-                    type="textarea"
-                    autoResizeOpt={{ minHeight: 0 }}
-                    label={attr}
-                    value={plugin.payloads[attr]}
-                    setter={(d) => (plugin.payloads[attr] = d)}
-                    row
-                    small
-                />
-            {/each}
+            <Attributes attributes={plugin.attributes} {plugin} />
         {/if}
     {/key}
 </div>
@@ -47,7 +37,6 @@
         width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 5px;
     }
     select {
         padding: 2px 5px;
@@ -57,6 +46,5 @@
         font-size: 20px;
         color: #000;
         font-weight: 600;
-        margin-bottom: 10px;
     }
 </style>

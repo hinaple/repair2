@@ -9,6 +9,7 @@ export const rInfo = {
     RH: 0
 };
 
+let screenSize;
 export const viewport = {
     screen: writable({ width: 0, height: 0 }),
     size: writable(0),
@@ -16,7 +17,7 @@ export const viewport = {
 };
 
 function calcRatio() {
-    const screenSize = { width: window.innerWidth, height: window.innerHeight };
+    screenSize = { width: window.innerWidth, height: window.innerHeight };
     rInfo.ratio = Math.pow(10, get(viewport.size));
     rInfo.RW = screenSize.width / rInfo.ratio;
     rInfo.RH = screenSize.height / rInfo.ratio;
@@ -33,8 +34,7 @@ function removeAnchor(len, anchor, pos) {
     return pos + anchor - len / 2;
 }
 
-export function posFromViewport(x, y) {
-    const vpPos = get(viewport.pos);
+export function posFromViewport(x, y, vpPos = get(viewport.pos)) {
     return {
         x: posFromAnchor(rInfo.RW, vpPos.x, x) * rInfo.ratio,
         y: posFromAnchor(rInfo.RH, vpPos.y, y) * rInfo.ratio
@@ -64,6 +64,13 @@ export function setViewportSize(size, considerLimit = true) {
     outClicked();
     viewport.size.set(newSize);
     calcRatio();
+}
+
+export function isBoundOutViewport(x1, y1, x2, y2) {
+    return (
+        ((x1 < 0 && x2 < 0) || (x1 > screenSize.width && x2 > screenSize.width)) &&
+        ((y1 < 0 && y2 < 0) || (y1 > screenSize.height && y2 > screenSize.height))
+    );
 }
 
 export function resizeViewport(step, mousePos = null) {

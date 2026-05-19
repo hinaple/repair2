@@ -1,4 +1,22 @@
 import RepairElement from "./repairElement";
+import { disposePluginContext } from "../lib/pluginContext";
+import { reportPluginException } from "../lib/pluginReporter";
+
+function getComponentIdentity(componentData) {
+    return {
+        id: componentData.aliasOrId,
+        realId: componentData.id,
+        alias: componentData.alias ?? null
+    };
+}
+
+function getFrameIdentity(framePlugin) {
+    return {
+        id: framePlugin.name,
+        realId: framePlugin.name,
+        alias: null
+    };
+}
 
 export default class RepairComponent extends HTMLElement {
     constructor(componentData, showIntro = true) {
@@ -21,18 +39,31 @@ export default class RepairComponent extends HTMLElement {
         this.outroTransition = componentData.outroTransition;
 
         this.frameEl = null;
-        this.unsubscriber = componentData.frame.hmrSubscribe((tempFrame) => {
-            if (!tempFrame) return;
-            const prvFrame = this.frameEl;
-            this.frameEl = tempFrame;
-            this.appendChild(this.frameEl);
+        this.componentIdentity = getComponentIdentity(componentData);
+        this.frameIdentity = getFrameIdentity(componentData.frame);
+        this.unsubscriber = componentData.frame.hmrSubscribe(
+            (tempFrame) => {
+                if (!tempFrame) return;
+                const prvFrame = this.frameEl;
+                this.frameEl = tempFrame;
+                this.appendChild(this.frameEl);
 
-            if (!this.isConnected) return;
-            this.render();
-            if (prvFrame) this.removeChild(prvFrame);
-        });
+                if (!this.isConnected) return;
+                this.render();
+                if (prvFrame) {
+                    disposePluginContext(prvFrame.__repairPluginContext);
+                    this.removeChild(prvFrame);
+                }
+            },
+            {
+                component: this.componentIdentity,
+                frame: this.frameIdentity
+            }
+        );
 
-        this.elements = componentData.elements.list.map((e) => new RepairElement(e));
+        this.elements = componentData.elements.list.map(
+            (e) => new RepairElement(e, this.componentIdentity)
+        );
     }
 
     setZIndex(zIndex) {
@@ -60,27 +91,39 @@ export default class RepairComponent extends HTMLElement {
 
     startTransition(transition, isOutro = false) {
         return new Promise(async (res) => {
-            if (!transition.plugin) res();
+            try {
+                if (!transition.plugin) return res();
 
-            let keyframes = await transition.plugin.use();
-            if (!keyframes) res();
+                let keyframes = await transition.plugin.use(null, {
+                    component: this.componentIdentity
+                });
+                if (!keyframes) return res();
 
-            if (typeof keyframes === "function") keyframes = keyframes();
+                if (typeof keyframes === "function") keyframes = keyframes();
 
-            const ani = this.animate(keyframes, {
-                duration: transition.duration,
-                easing: transition.easing,
-                delay: transition.delay,
-                direction: isOutro ? "reverse" : "normal"
-            });
-            ani.addEventListener("finish", () => {
+                const ani = this.animate(keyframes, {
+                    duration: transition.duration,
+                    easing: transition.easing,
+                    delay: transition.delay,
+                    direction: isOutro ? "reverse" : "normal"
+                });
+                ani.addEventListener("finish", () => {
+                    res();
+                });
+            } catch (err) {
+                reportPluginException(
+                    { id: transition.plugin?.name, type: "transitions" },
+                    "Plugin transition failed.",
+                    err
+                );
                 res();
-            });
+            }
         });
     }
 
     disconnectedCallback() {
         this.elements.forEach((el) => el.destroy());
+        disposePluginContext(this.frameEl?.__repairPluginContext);
         this.unsubscriber?.();
     }
 }

@@ -1,3 +1,4 @@
+import PluginPointer from "./pluginPointer.svelte";
 import ScreenConfig from "./screenConfig.svelte";
 
 //#only play
@@ -23,6 +24,7 @@ export default class Config {
     devMode = $state();
     alwaysOnTop = $state();
     suppressGlobalKeys = $state();
+    runtimePlugins = $state();
     constructor({
         title = "REPAIR v2",
         width = null,
@@ -37,6 +39,7 @@ export default class Config {
         devMode = true,
         alwaysOnTop = false,
         suppressGlobalKeys = false,
+        runtimePlugins = [],
         ...config
     } = {}) {
         this.title = title;
@@ -54,6 +57,7 @@ export default class Config {
         this.devMode = devMode;
         this.alwaysOnTop = alwaysOnTop;
         this.suppressGlobalKeys = suppressGlobalKeys;
+        this.runtimePlugins = runtimePlugins.map((rp) => new PluginPointer(rp, "runtimes"));
     }
 
     //#only play
@@ -92,7 +96,8 @@ export default class Config {
             transparent: this.transparent,
             alwaysOnTop: this.alwaysOnTop,
             devMode: this.devMode,
-            suppressGlobalKeys: this.suppressGlobalKeys
+            suppressGlobalKeys: this.suppressGlobalKeys,
+            runtimePlugins: this.runtimePlugins.map((rp) => rp.storeData)
         };
     }
     //#endonly

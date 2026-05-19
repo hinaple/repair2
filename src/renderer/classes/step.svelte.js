@@ -50,7 +50,7 @@ const PayloadTemplates = {
             isTypeObj: true,
             connect: { url: null },
             connectService: { type: null, name: null },
-            send: { channel: null, data: null, splitStr: null },
+            send: { channel: null, data: [null] },
             disconnect: null
         }
     },
@@ -63,11 +63,13 @@ const PayloadTemplates = {
             components: true,
             steps: true,
             preloads: true,
-            entries: true
+            entries: true,
+            runtimePlugins: false
         },
         setVariable: { variableId: null, value: null },
         resetAllVariables: null,
         executePlugin: { isClass: true, class: executePlugin },
+        runtimePluginStep: { pluginName: null, step: null, payloads: {}, waitTillEnd: false },
         eventEmit: { channel: null, data: null },
         script: { code: null },
         log: { content: null }
@@ -80,6 +82,15 @@ export default class Step extends TypePayload {
         { id = genId(), type = null, title = null, payload = {} } = {},
         creatingOpt = null
     ) {
+        if (
+            (type?.join(".") ?? type) === "Communication.Socket.send" &&
+            !Array.isArray(payload.data)
+        ) {
+            payload.data =
+                typeof payload.data === "string"
+                    ? payload.data.split(payload.splitStr ?? null)
+                    : [payload.data];
+        }
         super({ type, payload, template: PayloadTemplates }, creatingOpt);
         this.id = id;
         this.title = title;
@@ -90,6 +101,12 @@ export default class Step extends TypePayload {
     get displayTitle() {
         if (this.title?.length) return this.title;
         if (this.type === "delay") return `딜레이 ${this.payload.delayMs}ms`;
+        if (
+            this.type === "Others.runtimePluginStep" &&
+            this.payload.pluginName &&
+            this.payload.step
+        )
+            return `${this.payload.pluginName.replace(/\.js$/, "")}-${this.payload.step}`;
         return null;
     }
     get storeData() {

@@ -42,8 +42,7 @@
 
     const frameUpdater = new FrameUpdater(async () => {
         if (!nodeEl) return;
-        nodeEl.style.left = `${node.nodePos.x}px`;
-        nodeEl.style.top = `${node.nodePos.y}px`;
+        nodeEl.style.transform = `translate(${node.nodePos.x}px, ${node.nodePos.y}px)`;
     }, 0);
     function applyNodePos() {
         frameUpdater.draw();
@@ -258,6 +257,8 @@
         flex-direction: column;
         box-shadow: rgba(0, 0, 0, 0.3) 3px 3px 4px;
         border-radius: 10px;
+        left: 0;
+        top: 0;
     }
     .wrapper:global(.grabbing) {
         backdrop-filter: blur(2px);

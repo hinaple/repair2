@@ -1,3 +1,6 @@
+// @ts-check
+/** @typedef {import("@fainthit/repair2-plugin-sdk").RepairElementPluginContext} RepairElementPluginContext */
+
 import "./component.css";
 
 import { mount, unmount } from "svelte";
@@ -7,10 +10,18 @@ import Component from "./Component.svelte";
 export default class SveltePlugin extends HTMLElement {
     static attributes = [];
 
-    constructor({ attributes = {}, isDev = false }) {
+    /**
+     * @param {{
+     *     attributes?: Record<string, unknown>,
+     *     isDev?: boolean,
+     *     ctx?: RepairElementPluginContext | null
+     * }} options
+     */
+    constructor({ attributes = {}, isDev = false, ctx = null }) {
         super();
         this.attachShadow({ mode: "open" });
         this.attributesObj = { ...attributes, isDev };
+        this.ctx = ctx;
     }
 
     connectedCallback() {
@@ -25,7 +36,8 @@ export default class SveltePlugin extends HTMLElement {
             props: {
                 ...this.attributesObj,
                 root: this.shadowRoot,
-                dispatchEvent
+                dispatchEvent,
+                ctx: this.ctx
             }
         });
 
@@ -44,6 +56,7 @@ export default class SveltePlugin extends HTMLElement {
     disconnectedCallback() {
         if (this.component) unmount(this.component);
         this.component = null;
+        this.ctx?.lifecycle?.dispose?.();
 
         destroyCss(__PLUGIN_NAME__);
     }

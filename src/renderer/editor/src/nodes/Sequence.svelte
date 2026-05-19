@@ -13,9 +13,7 @@
 
     function addStep(evt) {
         if (get(grabbing)) return;
-        const newStep = sequence.steps.addWithHistory(addHistory, {
-            afterChange: () => reload("nodeMoved")
-        });
+        const newStep = sequence.steps.addWithHistory(addHistory);
         const newClipboardFn = genClipboardFn("step", newStep, () =>
             sequence.steps.removeWithHistory(newStep, addHistory, () => reload("nodeMoved"))
         );

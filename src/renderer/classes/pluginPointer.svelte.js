@@ -6,9 +6,9 @@ export default class PluginPointer {
     payloads = $state({});
     imported = $state();
 
-    constructor({ name = "null", payloads = {} } = {}, type = "frames") {
+    constructor({ name = null, payloads = {} } = {}, type = "frames") {
         this.type = type;
-        this.name = name;
+        this.name = name === "null" ? null : name;
         this.payloads = payloads;
         this.imported = false;
         this.import();
@@ -30,7 +30,17 @@ export default class PluginPointer {
     }
 
     get attributes() {
-        return this.imported ? (this.imported.attributes ?? []) : [];
+        return this.imported?.attributes ?? [];
+    }
+    get steps() {
+        const rawSteps = this.imported?.steps;
+        if (!rawSteps) return;
+        return Array.isArray(rawSteps) ? rawSteps : Object.keys(rawSteps);
+    }
+    getStepAttributes(stepName) {
+        const rawSteps = this.imported?.steps;
+        if (!rawSteps) return;
+        return Array.isArray(rawSteps) ? [] : (rawSteps[stepName] ?? []);
     }
 
     //#only editor

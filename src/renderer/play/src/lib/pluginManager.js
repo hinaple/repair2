@@ -3,6 +3,8 @@ import { genId, importPlugin } from "@classes/utils";
 import { ipcRenderer } from "electron";
 import { requirePackage } from "./requirePackage";
 import { getAppData } from "./appdata";
+import { createPluginContext } from "./pluginContext";
+import { reportPluginException } from "./pluginReporter";
 
 const loadedPlugins = {};
 const importedModules = {};
@@ -20,9 +22,17 @@ async function loadModules(dependencies) {
     await Promise.all(
         Object.entries(dependencies).map(async ([name, version]) => {
             const nameVersion = `${name}@${version}`;
-            if (importedModules[nameVersion]) modules[name] = importedModules[nameVersion];
+            if (importedModules[nameVersion]) {
+                modules[name] = importedModules[nameVersion];
+                return;
+            }
 
-            const module = await requirePackage(name, version);
+            let module;
+            try {
+                module = await requirePackage(name, version);
+            } catch (err) {
+                throw new Error(`Failed to load dependency ${name}@${version}`, { cause: err });
+            }
             importedModules[nameVersion] = module;
             modules[name] = module;
         })
@@ -47,10 +57,18 @@ async function loadPlugin(type, name, forceLoad = false) {
     };
     loadedPlugins[type][name] = pluginObj;
     console.log(`Plugin loading: ${type} - ${name}`);
-    const imported = await importPlugin(type, name);
-    pluginObj.imported = imported;
-    if (imported)
-        pluginObj.modules = imported.dependencies ? await loadModules(imported.dependencies) : null;
+    try {
+        const imported = await importPlugin(type, name);
+        pluginObj.imported = imported;
+        if (imported)
+            pluginObj.modules = imported.dependencies
+                ? await loadModules(imported.dependencies)
+                : null;
+    } catch (err) {
+        reportPluginException({ id: name, type }, "Plugin load failed.", err);
+        pluginObj.imported = null;
+        pluginObj.modules = null;
+    }
 
     pluginObj.loading = false;
     pluginObj.onLoad.forEach((onLoad) => onLoad(pluginObj));
@@ -65,10 +83,10 @@ PluginPointer.prototype.import = function () {
 
 function getPluginAsync(type, name) {
     return new Promise((res) => {
-        if (!validPluginName(name)) res(null);
+        if (!validPluginName(name)) return res(null);
 
-        const pluginObj = loadedPlugins[type][name];
-        if (!pluginObj) res(null);
+        const pluginObj = loadedPlugins[type]?.[name];
+        if (!pluginObj) return res(null);
 
         if (pluginObj.loading) pluginObj.onLoad.push(res);
         else res(pluginObj);
@@ -83,44 +101,101 @@ function definePlugin(pluginClass, name) {
     customElements.define(basename, pluginClass);
 }
 
-PluginPointer.prototype.use = async function (pluginObj = null) {
+function safeCallPlugin(ctx, title, callback, fallback = null) {
+    try {
+        const result = callback();
+        if (result?.then)
+            return result.catch((err) => {
+                reportPluginException(ctx.plugin, title, err);
+                return fallback;
+            });
+        return result;
+    } catch (err) {
+        reportPluginException(ctx.plugin, title, err);
+        return fallback;
+    }
+}
+
+PluginPointer.prototype.use = async function (
+    pluginObj = null,
+    contextOptions = {},
+    forceCtx = undefined,
+    functionName = "function",
+    payloads = this.payloads
+) {
     if (!pluginObj) pluginObj = await getPluginAsync(this.type, this.name);
     if (!pluginObj || !pluginObj.imported) return null;
 
     if (this.type === "frames" || this.type === "elements") {
         const ce = pluginObj.imported;
-        definePlugin(ce, this.name);
-        const temp = new ce({
-            modules: pluginObj.modules,
-            attributes: this.payloads
+        const ctx =
+            forceCtx ??
+            createPluginContext({
+                pluginId: this.name,
+                pluginType: this.type,
+                ...contextOptions
+            });
+        const temp = safeCallPlugin(ctx, "Plugin element creation failed.", () => {
+            definePlugin(ce, this.name);
+            return new ce({
+                modules: pluginObj.modules,
+                attributes: payloads,
+                ctx
+            });
         });
+        if (!temp) {
+            ctx.lifecycle.dispose();
+            return null;
+        }
+        temp.__repairPluginContext = ctx;
         temp.id = this.name;
         this.attributes.forEach((attr) => {
-            temp.setAttribute(attr, this.payloads[attr]);
+            temp.setAttribute(attr, payloads[attr]);
         });
         return temp;
     }
 
-    if (this.type === "functions" || (this.type === "transitions" && this.imported?.function)) {
-        return (argument = null) =>
-            pluginObj.imported.function({
-                attributes: this.payloads,
-                modules: pluginObj.modules,
-                ...argument
+    if (
+        this.type === "functions" ||
+        this.type === "runtimes" ||
+        (this.type === "transitions" && pluginObj.imported?.[functionName])
+    ) {
+        const ctx =
+            forceCtx ??
+            createPluginContext({
+                pluginId: this.name,
+                pluginType: this.type,
+                ...contextOptions
             });
+        return (argument = null) =>
+            safeCallPlugin(ctx, "Plugin function execution failed.", () =>
+                pluginObj.imported[functionName]({
+                    attributes: payloads,
+                    modules: pluginObj.modules,
+                    ctx,
+                    ...argument
+                })
+            );
     }
     if (this.type === "transitions") return pluginObj.imported.keyframes ?? [];
 
     return pluginObj.imported;
 };
 
-PluginPointer.prototype.hmrSubscribe = function (callback) {
+PluginPointer.prototype.hmrSubscribe = function (callback, contextOptions = {}) {
     if (!validPluginName(this.name)) return null;
 
-    this.use().then(callback);
-    return subscribePluginHMR(this.type, this.name, async (pluginObj) =>
-        callback(await this.use(pluginObj))
-    );
+    const source = { id: this.name, type: this.type };
+    this.use(null, contextOptions)
+        .then(callback)
+        .catch((err) => reportPluginException(source, "Plugin HMR initial callback failed.", err));
+    return subscribePluginHMR(this.type, this.name, async (pluginObj) => {
+        try {
+            callback(await this.use(pluginObj, contextOptions));
+        } catch (err) {
+            reportPluginException(source, "Plugin HMR callback failed.", err);
+        }
+    });
 };
 
 const hmrSubscribers = {};
@@ -139,5 +214,11 @@ ipcRenderer.on("plugin-hmr", async (_, { type, name }) => {
     console.log(`Plugin HMR: ${type} - ${name}`);
     const pluginObj = await loadPlugin(type, name, true);
     if (!hmrSubscribers[type]?.[name]) return;
-    hmrSubscribers[type][name].forEach((callback) => callback(pluginObj));
+    hmrSubscribers[type][name].forEach((callback) => {
+        try {
+            callback(pluginObj);
+        } catch (err) {
+            reportPluginException({ id: name, type }, "Plugin HMR subscriber failed.", err);
+        }
+    });
 });

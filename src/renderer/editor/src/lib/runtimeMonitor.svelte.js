@@ -5,7 +5,8 @@ const RuntimeData = {
     variables: new Map(),
     steps: new Map(),
     preloads: new Set(),
-    entries: new Set()
+    entries: new Set(),
+    components: new Set()
 };
 
 ipcRenderer.addListener("monitor-info", (evt, channel, data) => {
@@ -22,6 +23,7 @@ function handleTotalInfo(obj) {
     RuntimeData.steps = new Map(obj.steps);
     RuntimeData.preloads = new Set(obj.preloads);
     RuntimeData.entries = new Set(obj.entries);
+    RuntimeData.components = new Set(obj.components);
 
     for (const type in RuntimeSubscriptions) {
         RuntimeSubscriptions[type]
@@ -35,7 +37,8 @@ const ChangesTotalTypeMap = {
     step: "steps",
     preload: "preloads",
     variable: "variables",
-    entry: "entries"
+    entry: "entries",
+    component: "components"
 };
 function handleChange(type, status, target, data = null) {
     if (!receivedTotal) return;
@@ -44,7 +47,14 @@ function handleChange(type, status, target, data = null) {
     else if (type === "preload") handlePreloadChange(status, target);
     else if (type === "variable") handleVariableChange(status, target, data);
     else if (type === "entry") handleEntryChange(status, target);
+    else if (type === "component") handleComponentChange(status, target);
 
+    if (type === "component" && status === "set") {
+        RuntimeSubscriptions.components.forEach((callback, id) =>
+            callback(getCurrentStatus("components", id))
+        );
+        return;
+    }
     const TotalType = ChangesTotalTypeMap[type];
     RuntimeSubscriptions[TotalType].get(target)?.(getCurrentStatus(TotalType, target));
 }
@@ -65,13 +75,15 @@ function handleEntryChange(status, target) {
     if (status === "activated") RuntimeData.entries.add(target);
     else if (status === "disabled") RuntimeData.entries.delete(target);
 }
+function handleComponentChange(status, target) {
+    if (status === "set") RuntimeData.components = new Set(target);
+    else if (status === "created") RuntimeData.components.add(target);
+    else if (status === "removed") RuntimeData.components.delete(target);
+}
 
-const RuntimeSubscriptions = {
-    steps: new Map(),
-    entries: new Map(),
-    variables: new Map(),
-    preloads: new Map()
-};
+const RuntimeSubscriptions = Object.fromEntries(
+    Object.keys(RuntimeData).map((k) => [k, new Map()])
+);
 
 export function startMonitoring(type, id, callback) {
     RuntimeSubscriptions[type].set(id, callback);

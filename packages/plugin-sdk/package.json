@@ -1,0 +1,21 @@
+{
+    "name": "@fainthit/repair2-plugin-sdk",
+    "version": "0.1.0",
+    "description": "Type helpers and public API contracts for REPAIR v2 plugins.",
+    "type": "module",
+    "main": "./src/index.js",
+    "types": "./src/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./src/index.d.ts",
+            "import": "./src/index.js"
+        }
+    },
+    "files": [
+        "src",
+        "examples",
+        "docs",
+        "README.md"
+    ],
+    "license": "UNLICENSED"
+}

@@ -1,6 +1,7 @@
 <script>
     import { appData } from "../lib/syncData.svelte";
     import { addHistory } from "../lib/workHistory";
+    import InputField from "./InputField.svelte";
     import Checkbox from "./Checkbox.svelte";
     import HistoryInput from "./HistoryInput.svelte";
     import PluginSelector from "./PluginSelector.svelte";
@@ -22,6 +23,7 @@
         previewer = false,
         oninputremove = null,
         background = false,
+        seriesOption = null,
         style,
         ...props
     } = $props();
@@ -70,7 +72,57 @@
             {/if}
         </div>
     {/if}
-    {#if children}
+    {#if seriesOption && seriesOption.array}
+        {@const array = seriesOption.array}
+        <div class="series-container">
+            {#each array as v, i}
+                <div class="series-field">
+                    <InputField
+                        value={v}
+                        setter={(d) => (array[i] = d)}
+                        {type}
+                        {manual}
+                        {small}
+                        {row}
+                        {children}
+                        {previewer}
+                        {oninputremove}
+                        {background}
+                        {style}
+                        {...props}
+                    />
+                    {#if (seriesOption.min ?? 0) <= i}
+                        <button
+                            class="remove small"
+                            onclick={() =>
+                                addHistory({
+                                    doFn: (idx) => array.splice(idx, 1),
+                                    undoFn: ({ value, idx }) => array.splice(idx, 0, value),
+                                    doData: i,
+                                    undoData: { value: array[i], idx: i }
+                                })}
+                        >
+                            <Icon icon="close" color="#fff" lineWidth={2} size={10} />
+                        </button>
+                    {/if}
+                </div>
+            {/each}
+            {#if (seriesOption.max ?? Infinity) > array.length}
+                <button
+                    class="plus"
+                    onclick={() =>
+                        addHistory({
+                            doFn: (newData) => array.push(newData),
+                            undoFn: () => array.pop(),
+                            doData: seriesOption.newData?.() ?? null
+                        })}
+                >
+                    <Icon icon="plus" color="#fff" size={13} lineWidth={1} />
+                    추가
+                </button>
+            {/if}
+        </div>
+    {:else if children}
         {@render children()}
     {:else if type === "input" || type === "number" || type === "textarea"}
         <HistoryInput {value} {type} {setter} {small} {previewer} {...props} />
@@ -151,6 +203,35 @@
     .row .label {
         flex: 0 0 auto;
     }
+    .series-container {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .series-field {
+        display: flex;
+        flex-direction: row;
+        gap: 2px;
+    }
+    .plus {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.2);
+        border: solid transparent 1px;
+        margin: 0;
+        padding: 5px 8px;
+        gap: 5px;
+        color: #fff;
+        box-sizing: border-box;
+        font-size: 16px;
+        cursor: pointer;
+
+        transition: border-color 200ms;
+    }
+    .plus:hover {
+        border-color: #fff;
+    }
     select {
         padding: 2px 5px;
         border: none;
@@ -175,6 +256,13 @@
         align-items: center;
         justify-content: center;
         border-radius: 5px;
+        padding: 0;
+    }
+    .remove.small {
+        flex: 0 0 auto;
+        width: 20px;
+        height: 100%;
+        max-height: 30px;
     }
     .remove:hover {
         background-color: rgba(255, 255, 255, 0.3);

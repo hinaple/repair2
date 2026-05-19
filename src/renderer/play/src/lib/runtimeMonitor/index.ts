@@ -3,10 +3,11 @@ import { getVariables } from "../variables";
 import { preloads } from "../resources";
 import { WaitingSteps } from "../stepActions";
 import { getAppData } from "../appdata";
+import { getComponents } from "../components";
 
-let changesBuffer: Array<Array<string>> = [];
+let changesBuffer: Array<Array<string | string[]>> = [];
 
-type ChangeType = "step" | "preload" | "variable" | "entry";
+type ChangeType = "step" | "preload" | "variable" | "entry" | "component";
 export function sendChanges(
     type: "step",
     status: "executed" | "started" | "ended",
@@ -24,10 +25,22 @@ export function sendChanges(
     status: "entered" | "disabled" | "activated",
     target: string
 ): void;
-export function sendChanges(type: ChangeType, status: string, target: string, data?: string): void {
+export function sendChanges(
+    type: "component",
+    status: "set" | "removed" | "cleared",
+    target?: string | string[]
+): void;
+export function sendChanges(
+    type: ChangeType,
+    status: string,
+    target?: string | string[],
+    data?: string
+): void {
     if (!monitoring) return;
 
-    changesBuffer.push(data ? [type, status, target, data] : [type, status, target]);
+    changesBuffer.push(
+        target ? (data ? [type, status, target, data] : [type, status, target]) : [type, status]
+    );
     readyToFlush();
 }
 
@@ -70,12 +83,14 @@ export function sendTotalInfo() {
         .filter((node: any) => node.type === "entry" && node.standbyMode && node.activated)
         .map((node: any) => node.id)
         .toArray();
+    const components = getComponents().map((c) => c.realId);
 
     ipcRenderer.send("monitor-info", "total", {
         variables,
         preloads: preloadedArr,
         steps,
-        entries
+        entries,
+        components
     });
 }
 

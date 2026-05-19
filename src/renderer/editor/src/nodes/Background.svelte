@@ -1,19 +1,32 @@
 <script>
     import { onDestroy, onMount } from "svelte";
-    import { viewport, rInfo } from "./viewport";
+    import { viewport, rInfo, posFromViewport } from "./viewport";
     import FrameUpdater from "../lib/frameUpdater";
 
     let canvas = $state(null);
+    /** @type {CanvasRenderingContext2D | null} */
     let ctx;
 
     let vpPos = { x: 0, y: 0 },
         WIDTH,
         HEIGHT;
 
+    const CENTER_CROSS_LEN = 20;
     const frameUpdater = new FrameUpdater(() => {
         if (!ctx) return;
 
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+        const crossSize = CENTER_CROSS_LEN * rInfo.ratio;
+        const CenterPos = posFromViewport(0, 0);
+        ctx.beginPath();
+        ctx.moveTo(CenterPos.x, CenterPos.y - crossSize);
+        ctx.lineTo(CenterPos.x, CenterPos.y + crossSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(CenterPos.x - crossSize, CenterPos.y);
+        ctx.lineTo(CenterPos.x + crossSize, CenterPos.y);
+        ctx.stroke();
 
         let limitedGap = dotGap / 2,
             RG;
@@ -31,8 +44,6 @@
             y: (PosInGap.y < 0 ? Math.abs(PosInGap.y) : limitedGap - PosInGap.y) * rInfo.ratio
         };
 
-        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-
         for (let x = FirstDotPos.x; x <= WIDTH; x += RG) {
             for (let y = FirstDotPos.y; y <= HEIGHT; y += RG) {
                 ctx.beginPath();
@@ -47,6 +58,9 @@
 
         canvas.width = WIDTH;
         canvas.height = HEIGHT;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.lineWidth = 2;
 
         frameUpdater.draw();
     }

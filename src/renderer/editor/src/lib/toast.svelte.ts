@@ -4,15 +4,31 @@ type EditFn = (editOpt: { title: string | null; content: string | null }) => boo
 
 type Toast = {
     id: string | null;
-    symbol: Symbol;
-    title: string;
+    symbol: symbol;
+    title: string | null;
     content: string | null;
     duration: number;
     closable: boolean;
-    timeout: NodeJS.Timeout | null;
+    timeout: ReturnType<typeof setTimeout> | null;
     destroy: () => void;
     edit: EditFn;
 };
+
+type ShowToastOptions =
+    | {
+          id: string | null;
+          title?: string | null;
+          content?: string | null;
+          duration?: number | null;
+          closable?: boolean | null;
+      }
+    | {
+          id?: string | null;
+          title: string | null;
+          content?: string | null;
+          duration?: number | null;
+          closable?: boolean | null;
+      };
 
 export const toasts: Toast[] = $state([]);
 
@@ -22,21 +38,7 @@ export function showToast({
     content = null,
     duration = null,
     closable = null
-}:
-    | {
-          id: string;
-          title?: string;
-          content?: string;
-          duration?: number;
-          closable?: boolean;
-      }
-    | {
-          id?: string;
-          title: string;
-          content?: string;
-          duration?: number;
-          closable?: boolean;
-      }): Toast {
+}: ShowToastOptions): Toast {
     console.log(
         `%c${title}${content ? `\n${content}` : ""}`,
         "font-family: system-ui; color: #fff; font-weight: bold;" +
@@ -50,7 +52,7 @@ export function showToast({
         content !== null && (alreadyToast.content = content);
         closable !== null && (alreadyToast.closable = closable);
         if (duration !== null) {
-            clearTimeout(alreadyToast.timeout);
+            if (alreadyToast.timeout) clearTimeout(alreadyToast.timeout);
             alreadyToast.timeout = duration > 0 ? setTimeout(alreadyToast.destroy, duration) : null;
         }
 
@@ -70,7 +72,7 @@ export function showToast({
         });
     const destroy = () => {
         if (destoryed) return;
-        clearTimeout(timeout);
+        if (timeout) clearTimeout(timeout);
         destoryed = true;
         const idx = toasts.findIndex((t) => t.symbol === symbol);
         if (idx === -1) return false;
@@ -84,7 +86,7 @@ export function showToast({
         title,
         content,
         duration: duration === null ? 3000 : duration,
-        closable: !closable,
+        closable: closable ?? true,
         destroy,
         edit,
         timeout
@@ -94,12 +96,18 @@ export function showToast({
     return toast;
 }
 
+function getPluginLabel(plugin: { id?: string; type?: string; instanceId?: string } | null = null) {
+    if (!plugin) return null;
+    return [plugin.id, plugin.type, plugin.instanceId].filter(Boolean).join(" / ") || null;
+}
+
 ipcRenderer.on("exporting", (evt, process) => {
     showToast({
         id: "exporting",
         title: "프로젝트 파일을 내보내고 있습니다.",
         content: `${process ? `${process}% ` : ""}내보내는 중`,
-        duration: 0
+        duration: 0,
+        closable: false
     });
 });
 ipcRenderer.on("exported", (evt, filepath) => {
@@ -153,4 +161,15 @@ ipcRenderer.on("socket-income", (evt, channel, data, url) => {
 
 ipcRenderer.on("custom-log", (evt, content) => {
     showToast({ title: content, duration: 5000 });
+});
+
+ipcRenderer.on("plugin-log", (evt, { level, title, detail, plugin }) => {
+    const pluginLabel = getPluginLabel(plugin);
+    showToast({
+        title,
+        content: [pluginLabel ? `Plugin: ${pluginLabel}` : null, detail]
+            .filter(Boolean)
+            .join("\n\n"),
+        duration: level === "error" || level === "warning" ? 8000 : 5000
+    });
 });

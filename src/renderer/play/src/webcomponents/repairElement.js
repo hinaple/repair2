@@ -5,6 +5,8 @@ import { subscribe } from "../lib/variables";
 import Dragger from "../lib/dragger";
 import amplifyVideo from "../lib/amplifyVideo";
 import RepairInput from "./repairInput";
+import { disposePluginContext } from "../lib/pluginContext";
+import { reportPluginException } from "../lib/pluginReporter";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -13,7 +15,7 @@ const regexMap = {
 };
 
 export default class RepairElement extends HTMLElement {
-    constructor(element) {
+    constructor(element, componentIdentity = null) {
         super();
 
         this.setAttribute("style", element.styleString);
@@ -23,6 +25,13 @@ export default class RepairElement extends HTMLElement {
         this.type = element.types[0];
 
         this.element = element;
+        this.componentIdentity = componentIdentity;
+        this.elementIdentity = {
+            id: element.alias || element.id,
+            realId: element.id,
+            alias: element.alias ?? null,
+            type: element.types[0]
+        };
 
         this.width = element.width;
         this.height = element.height;
@@ -60,6 +69,7 @@ export default class RepairElement extends HTMLElement {
             this.variableId = element.payload.variableId;
             if (this.variableId)
                 this.registerUnsubscriber(
+                    "variable",
                     subscribe(this.variableId, (value) => (this.realEl.value = value))
                 );
             this.realEl.addEventListener("input", (evt) => {
@@ -82,13 +92,22 @@ export default class RepairElement extends HTMLElement {
         } else if (this.type === "plugin") {
             this.registerUnsubscriber(
                 "hmr",
-                element.payload.hmrSubscribe((tempPlugin) => {
-                    if (!tempPlugin) return;
-                    if (this.realEl) this.realEl.remove();
-                    this.realEl = tempPlugin;
-                    this.rendered = false;
-                    this.render();
-                })
+                element.payload.hmrSubscribe(
+                    (tempPlugin) => {
+                        if (!tempPlugin) return;
+                        if (this.realEl) {
+                            disposePluginContext(this.realEl.__repairPluginContext);
+                            this.realEl.remove();
+                        }
+                        this.realEl = tempPlugin;
+                        this.rendered = false;
+                        this.render();
+                    },
+                    {
+                        component: this.componentIdentity,
+                        element: this.elementIdentity
+                    }
+                )
             );
         } else if (this.type === "image" || this.type === "video") {
             const resource = getAppData().findResourceById(element.payload.resourceId);
@@ -192,12 +211,26 @@ export default class RepairElement extends HTMLElement {
                     )
                         return;
                     else if (l.types[0] === "plugin") {
-                        if (
-                            await l.payload
-                                .use()
-                                .then((func) => func?.({ channel: l.payload.channel, event: evt }))
-                        )
+                        try {
+                            if (
+                                await l.payload
+                                    .use(null, {
+                                        component: this.componentIdentity,
+                                        element: this.elementIdentity
+                                    })
+                                    .then((func) =>
+                                        func?.({ channel: l.payload.channel, event: evt })
+                                    )
+                            )
+                                return;
+                        } catch (err) {
+                            reportPluginException(
+                                { id: l.payload?.name, type: "functions" },
+                                "Plugin listener failed.",
+                                err
+                            );
                             return;
+                        }
                     }
 
                     activeListener(l);
@@ -236,6 +269,7 @@ export default class RepairElement extends HTMLElement {
         this.render();
     }
     destroy() {
+        disposePluginContext(this.realEl?.__repairPluginContext);
         if (this.unsubscribers)
             Object.values(this.unsubscribers).forEach((unsubscriber) => unsubscriber?.());
         if (this.globalEvents)

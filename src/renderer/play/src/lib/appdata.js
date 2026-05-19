@@ -5,6 +5,8 @@ import { registerVariables } from "./variables";
 import { registerUtils } from "./repairUtils";
 import initShortcuts from "./shortcut";
 import { sendTotalInfo } from "./runtimeMonitor";
+import { activateRuntimePlugins, deactivateRuntimePlugins } from "./runtimePlugins";
+import { registerPluginContextApi } from "./pluginContext";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -14,6 +16,7 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
     appdata = new AppDataClass(data);
     registerVariables(appdata.variables);
     initShortcuts(appdata.findAllEntry("shortcut"));
+    activateRuntimePlugins(appdata.config.runtimePlugins);
 
     sendTotalInfo();
 
@@ -39,6 +42,10 @@ ipcRenderer.on("global-css", (event, css) => {
     globalStyles.textContent = css;
 });
 
+window.addEventListener("beforeunload", () => {
+    deactivateRuntimePlugins();
+});
+
 /**
  * @returns {AppDataClass}
  */
@@ -56,3 +63,4 @@ export function getSizeRatio() {
 
 registerUtils("getAppData", getAppData);
 registerUtils("getSizeRatio", getSizeRatio);
+registerPluginContextApi("appDataGetter", getAppData);

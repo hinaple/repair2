@@ -1,4 +1,5 @@
 <script>
+    import PluginPointer from "@classes/pluginPointer.svelte";
     import { screenConfigTypes } from "../../lib/translate";
     import InputField from "../InputField.svelte";
 
@@ -52,6 +53,14 @@
     value={data.transparent}
     setter={(d) => (data.transparent = d)}
     type="checkbox"
+/>
+<hr />
+<InputField
+    label="런타임 플러그인"
+    seriesOption={{ array: data.runtimePlugins, newData: () => new PluginPointer({}, "runtimes") }}
+    type="plugin"
+    pluginType="runtimes"
+    canUnselect={false}
 />
 <hr />
 <InputField
