@@ -64,7 +64,7 @@ const PayloadTemplates = {
             steps: true,
             preloads: true,
             entries: true,
-            runtimePlugins: false
+            runtimePlugins: true
         },
         setVariable: { variableId: null, value: null },
         resetAllVariables: null,
