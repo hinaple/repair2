@@ -98,7 +98,7 @@ export function resizeViewport(step, mousePos = null) {
 const padding = 100;
 const sideBarWidth = 300;
 export function fitViewportToNodes(nodes) {
-    if (!nodes || nodes.length === 0) {
+    if (!nodes || nodes.size === 0) {
         setViewportSize(0);
         viewport.pos.set({ x: 0, y: 0 });
         return;
