@@ -6,7 +6,7 @@
 </script>
 
 <div class="transition-input">
-    <PluginSelector plugin={transition.plugin} type="transitions" pluginType="transitions" />
+    <PluginSelector plugin={transition.plugin} type="transition" />
     {#if transition.plugin.name}
         <InputField
             label="지속시간(ms)"

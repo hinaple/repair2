@@ -6,7 +6,7 @@ import PluginPointer from "./pluginPointer.svelte";
 class executePlugin {
     waitTillEnd = $state();
     constructor({ plugin = {}, waitTillEnd = false }) {
-        this.plugin = new PluginPointer(plugin, "functions");
+        this.plugin = new PluginPointer(plugin, "function");
         this.waitTillEnd = waitTillEnd;
     }
     //#only editor
@@ -106,7 +106,7 @@ export default class Step extends TypePayload {
             this.payload.pluginName &&
             this.payload.step
         )
-            return `${this.payload.pluginName.replace(/\.js$/, "")}-${this.payload.step}`;
+            return `${this.payload.step}(${this.payload.pluginName})`;
         return null;
     }
     get storeData() {

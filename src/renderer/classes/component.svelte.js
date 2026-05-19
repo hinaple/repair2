@@ -35,7 +35,7 @@ export default class Component {
         this.unbreakable = unbreakable;
         this.visible = visible;
         this.style = style;
-        this.frame = new PluginPointer(frame, "frames");
+        this.frame = new PluginPointer(frame, "frame");
         this.introTransition = new Transition(introTransition);
         this.outroTransition = new Transition(outroTransition);
     }

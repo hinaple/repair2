@@ -39,7 +39,7 @@
     placeholder="inline CSS code"
     autoResizeOpt={{ minHeight: 50 }}
 />
-<InputField label="프레임" value={data.frame} type="plugin" pluginType="frames" />
+<InputField label="프레임" value={data.frame} type="plugin" pluginType="frame" />
 <hr />
 <ToggleZone label="트랜지션 설정">
     <InputField label="인트로" value={data.introTransition} type="transition" />

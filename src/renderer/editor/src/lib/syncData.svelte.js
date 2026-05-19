@@ -37,7 +37,8 @@ function getStoreData() {
         nodes: nodesSD,
         variables: variablesSD,
         resources: resourcesSD,
-        viewport: viewportSD
+        viewport: viewportSD,
+        VERSION: __APP_VERSION__
     };
 }
 

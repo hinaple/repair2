@@ -92,9 +92,9 @@
                 size={8}
             />
         </div>
-        <span>
+        <div class="title">
             {step.displayTitle ?? StepTypes[step.type] ?? "빈 스텝"}
-        </span>
+        </div>
     </div>
     {#if step.type === "Component.create"}
         <Component payload={step.payload} {noGrab} {nodeCountChanged} />
@@ -127,5 +127,13 @@
         display: flex;
         flex-direction: row;
         align-items: center;
+    }
+    .title {
+        width: calc(100% - 25px);
+        flex: 0 0 auto;
+        overflow-x: hidden;
+        white-space: pre;
+        text-overflow: ellipsis;
+        word-break: break-all;
     }
 </style>

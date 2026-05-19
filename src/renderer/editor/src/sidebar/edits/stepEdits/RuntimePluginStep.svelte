@@ -2,20 +2,19 @@
     import Attributes from "../../Attributes.svelte";
     import { appData } from "../../../lib/syncData.svelte";
     import InputField from "../../InputField.svelte";
+    import { plugins } from "../../../lib/plugins.svelte";
 
     const { data } = $props();
 
     let runtimePluginNames = $derived(
-        appData.config.runtimePlugins.map((p) => p.name).filter((p) => p)
+        appData.config.runtimePlugins
+            .map((p) => p.name)
+            .filter((p) => p && plugins.plugins.runtime[p].steps)
     );
     let runtimePluginDisplayName = $derived(
         runtimePluginNames.includes(data.payload.pluginName) ? data.payload.pluginName : null
     );
-    let runtimePluginPointer = $derived(
-        runtimePluginDisplayName
-            ? appData.config.runtimePlugins.find((p) => p.name === runtimePluginDisplayName)
-            : null
-    );
+    let runtimePluginInfo = $derived(plugins.plugins.runtime?.[runtimePluginDisplayName]);
 </script>
 
 <InputField
@@ -23,22 +22,22 @@
     value={runtimePluginDisplayName}
     setter={(d) => (data.payload.pluginName = d)}
     type="select"
-    options={Object.fromEntries(runtimePluginNames.map((p) => [p, p.replace(/\.js$/, "")]))}
+    options={runtimePluginNames}
 />
 <div class="step-edit-zone">
-    {#if runtimePluginPointer}
+    {#if runtimePluginInfo && runtimePluginInfo.steps}
         <InputField
             label="스텝"
             value={data.payload.step}
             setter={(d) => (data.payload.step = d)}
             type="select"
-            options={runtimePluginPointer?.steps ?? []}
+            options={Object.keys(runtimePluginInfo.steps ?? {})}
         />
     {/if}
-    {#if runtimePluginPointer && data.payload.step}
+    {#if runtimePluginInfo && data.payload.step}
         {#key data.payload.step}
             <Attributes
-                attributes={runtimePluginPointer.getStepAttributes?.(data.payload.step)}
+                attributes={runtimePluginInfo?.steps[data.payload.step]}
                 plugin={data.payload}
             />
         {/key}

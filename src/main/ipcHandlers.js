@@ -10,7 +10,6 @@ export function setupIpcHandlers({
     getGlobalCss,
     getMainWindow,
     getPluginList,
-    getPluginManager,
     getStore,
     createEditorWindow,
     findService,
@@ -19,23 +18,21 @@ export function setupIpcHandlers({
     sendToEditor,
     sendToMain,
     serial,
-    socket,
-    updatePluginList
+    socket
 }) {
     //#region plugin IPCs
-    ipcMain.on("getPluginList", async (event, update) => {
-        if (update) await updatePluginList();
+    ipcMain.on("getPluginList", (event, update) => {
         event.returnValue = getPluginList();
     });
 
-    ipcMain.handle("plugin:install-package", async (event, { name, version }) => {
-        try {
-            const packageInfo = await getPluginManager().installPackage(name, version);
-            return { success: true, packageInfo };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    });
+    // ipcMain.handle("plugin:install-package", async (event, { name, version }) => {
+    //     try {
+    //         const packageInfo = await getPluginManager().installPackage(name, version);
+    //         return { success: true, packageInfo };
+    //     } catch (error) {
+    //         return { success: false, error: error.message };
+    //     }
+    // });
     //#endregion
 
     //#region appdata IPCs

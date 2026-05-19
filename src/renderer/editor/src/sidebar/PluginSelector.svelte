@@ -1,7 +1,7 @@
 <script>
-    import { getPluginList } from "@classes/utils";
     import { addHistory } from "../lib/workHistory";
     import Attributes from "./Attributes.svelte";
+    import { plugins } from "../lib/plugins.svelte";
 
     let { plugin, type, canUnselect = true } = $props();
 
@@ -19,15 +19,14 @@
 <div class="plugin-select">
     <select value={plugin.name} {onchange}>
         <option value={null} selected hidden={!canUnselect}>선택 안함</option>
-        {#await getPluginList(true) then pluginList}
-            {#each pluginList[type] as pluginName}
-                <option value={pluginName}>{pluginName.replace(/\.js$/, "")}</option>
-            {/each}
-        {/await}
+        {#each Object.keys(plugins.plugins[type]) as pluginName}
+            <option value={pluginName}>{pluginName}</option>
+        {/each}
     </select>
     {#key plugin.name}
-        {#if plugin.name && plugin.name !== "null" && plugin.imported && plugin.attributes?.length}
-            <Attributes attributes={plugin.attributes} {plugin} />
+        {@const currentPlugin = plugins.plugins[type][plugin.name]}
+        {#if plugin.name && currentPlugin && currentPlugin.attributes?.length}
+            <Attributes attributes={currentPlugin.attributes} {plugin} />
         {/if}
     {/key}
 </div>

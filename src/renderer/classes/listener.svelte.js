@@ -5,7 +5,7 @@ import TypePayload from "./typePayload.svelte";
 class PluginListener {
     constructor({ channel = null, plugin = {} } = {}) {
         this.channel = channel;
-        this.plugin = new PluginPointer(plugin, "functions");
+        this.plugin = new PluginPointer(plugin, "function");
     }
     //#only editor
     get storeData() {

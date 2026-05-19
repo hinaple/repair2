@@ -15,7 +15,7 @@ import { checkVscodeInstalled } from "./vscodeUtils.js";
 import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
-import { createPluginListManager } from "./pluginListManager.js";
+// import { createPluginListManager } from "./pluginListManager.js";
 import { createProjectRuntimeWatchers } from "./projectRuntimeWatchers.js";
 import { setupIpcHandlers } from "./ipcHandlers.js";
 import {
@@ -25,6 +25,8 @@ import {
     stopSuppress
 } from "./globalKey.js";
 import makeLog from "./logger.js";
+import { PluginManager } from "./plugin/index.js";
+import { migrateProject } from "./migrateProject.js";
 
 /**
  * @type {BrowserWindow | null}
@@ -34,6 +36,7 @@ let mainWindow;
  * @type {BrowserWindow | null}
  */
 let editorWindow;
+/** @type {PluginManager} */
 let pluginManager;
 
 let data;
@@ -49,9 +52,9 @@ const templateDir = is.dev
 
 const emptySveltePluginDir = join(templateDir, "empty-svelte-plugin");
 
-async function initializePluginSystem() {
-    pluginManager = new PluginPackageManager(pluginDir, join(dataDir, "packages"));
-    await pluginManager.initialize();
+function setPluginManager() {
+    pluginManager = new PluginManager({ pluginDir });
+    return pluginManager.initialize();
 }
 
 const projectFileManager = new ProjectFileManager(dataDir, {
@@ -87,7 +90,7 @@ const projectFileManager = new ProjectFileManager(dataDir, {
 
 initPluginDir(pluginDir);
 
-const PluginTypes = ["elements", "frames", "functions", "transitions", "runtimes"];
+// const PluginTypes = ["elements", "frames", "functions", "transitions", "runtimes"];
 function sendToMain(channel, ...params) {
     if (mainWindow) mainWindow.webContents.send(channel, ...params);
 }
@@ -122,17 +125,17 @@ setGlobalKeyListener((type, evt) => {
     if (mainWindow?.isFocused?.()) sendToMain("global-key-event", type, evt);
 });
 
-const pluginListManager = createPluginListManager(pluginDir, PluginTypes);
-const updatePluginList = () => pluginListManager.update();
+// const pluginListManager = createPluginListManager(pluginDir, PluginTypes);
+// const updatePluginList = () => pluginListManager.update();
 const pluginSdkPackageDir = join(app.getPath("userData"), "sdk", "repair2-plugin-sdk");
 const runtimeWatchers = createProjectRuntimeWatchers({
     styleDir,
     pluginDir,
-    pluginTypes: PluginTypes,
+    // pluginTypes: PluginTypes,
     sendToMain,
     getIsEditorOn: () => isEditorOn,
-    getPluginManager: () => pluginManager,
-    updatePluginList
+    getPluginManager: () => pluginManager
+    // updatePluginList
 });
 
 function saveData(tempData) {
@@ -167,8 +170,24 @@ async function loadData() {
     } catch (err) {
         await importDefaultProject();
     }
-    await pluginListManager.ensureDirectories(["svelte-plugins"]);
-    await Promise.all([updatePluginList(), runtimeWatchers.loadGlobalCss()]);
+    // await pluginListManager.ensureDirectories(["svelte-plugins"]);
+    // await Promise.all([updatePluginList(), runtimeWatchers.loadGlobalCss()]);
+    const migrateResult = await migrateProject({
+        currentVersion: __APP_VERSION__,
+        data,
+        dataDir,
+        pluginDir
+    });
+    sendStartupInfo("플러그인 정보를 읽는 중...");
+    await Promise.all([setPluginManager(), runtimeWatchers.loadGlobalCss()]);
+    if (migrateResult) {
+        dialog.showMessageBox({
+            message: "구버전 프로젝트",
+            detail: "호환이 불가능한 버전의 프로젝트입니다. 일부 데이터에 손실이 있을 수 있습니다.",
+            type: "warning",
+            noLink: true
+        });
+    }
     return true;
 }
 
@@ -396,6 +415,13 @@ function createEditorWindow() {
                     click: () => {
                         shell.openPath(dataDir);
                     }
+                },
+                {
+                    label: "플러그인 강제 다시 로드",
+                    click: () => {
+                        if (!pluginManager) return;
+                        pluginManager.updateAllPluginInfo();
+                    }
                 }
             ]
         },
@@ -573,8 +599,6 @@ if (!app.requestSingleInstanceLock()) {
             await Promise.all([new Promise((res) => setTimeout(res, 3000)), loadData()]);
         }
 
-        await initializePluginSystem();
-
         setupIpcHandlers({
             assetDir,
             dataDir,
@@ -582,8 +606,7 @@ if (!app.requestSingleInstanceLock()) {
             getEditorWindow: () => editorWindow,
             getGlobalCss: () => runtimeWatchers.getGlobalCss(),
             getMainWindow: () => mainWindow,
-            getPluginList: () => pluginListManager.get(),
-            getPluginManager: () => pluginManager,
+            getPluginList: () => pluginManager.simplePluginList,
             getStore: () => store,
             createEditorWindow,
             findService,
@@ -592,8 +615,7 @@ if (!app.requestSingleInstanceLock()) {
             sendToEditor,
             sendToMain,
             serial,
-            socket,
-            updatePluginList
+            socket
         });
 
         if (is.dev) {

@@ -60,14 +60,14 @@ async function loadPlugin(type, name, forceLoad = false) {
     try {
         const imported = await importPlugin(type, name);
         pluginObj.imported = imported;
-        if (imported)
-            pluginObj.modules = imported.dependencies
-                ? await loadModules(imported.dependencies)
-                : null;
+        // if (imported)
+        //     pluginObj.modules = imported.dependencies
+        //         ? await loadModules(imported.dependencies)
+        //         : null;
     } catch (err) {
         reportPluginException({ id: name, type }, "Plugin load failed.", err);
         pluginObj.imported = null;
-        pluginObj.modules = null;
+        // pluginObj.modules = null;
     }
 
     pluginObj.loading = false;
@@ -126,7 +126,7 @@ PluginPointer.prototype.use = async function (
     if (!pluginObj) pluginObj = await getPluginAsync(this.type, this.name);
     if (!pluginObj || !pluginObj.imported) return null;
 
-    if (this.type === "frames" || this.type === "elements") {
+    if (this.type === "frame" || this.type === "element") {
         const ce = pluginObj.imported;
         const ctx =
             forceCtx ??
@@ -138,7 +138,7 @@ PluginPointer.prototype.use = async function (
         const temp = safeCallPlugin(ctx, "Plugin element creation failed.", () => {
             definePlugin(ce, this.name);
             return new ce({
-                modules: pluginObj.modules,
+                // modules: pluginObj.modules,
                 attributes: payloads,
                 ctx
             });
@@ -156,9 +156,9 @@ PluginPointer.prototype.use = async function (
     }
 
     if (
-        this.type === "functions" ||
-        this.type === "runtimes" ||
-        (this.type === "transitions" && pluginObj.imported?.[functionName])
+        this.type === "function" ||
+        this.type === "runtime" ||
+        (this.type === "transition" && pluginObj.imported?.[functionName])
     ) {
         const ctx =
             forceCtx ??
@@ -171,13 +171,13 @@ PluginPointer.prototype.use = async function (
             safeCallPlugin(ctx, "Plugin function execution failed.", () =>
                 pluginObj.imported[functionName]({
                     attributes: payloads,
-                    modules: pluginObj.modules,
+                    // modules: pluginObj.modules,
                     ctx,
                     ...argument
                 })
             );
     }
-    if (this.type === "transitions") return pluginObj.imported.keyframes ?? [];
+    if (this.type === "transition") return pluginObj.imported.keyframes ?? [];
 
     return pluginObj.imported;
 };

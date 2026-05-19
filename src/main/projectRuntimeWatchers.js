@@ -5,11 +5,11 @@ import { join } from "path";
 export function createProjectRuntimeWatchers({
     styleDir,
     pluginDir,
-    pluginTypes,
+    // pluginTypes,
     sendToMain,
     getIsEditorOn,
-    getPluginManager,
-    updatePluginList
+    getPluginManager
+    // updatePluginList
 }) {
     let globalCss = "";
     const watchers = { css: null, plugins: null };
@@ -27,10 +27,7 @@ export function createProjectRuntimeWatchers({
     async function loadGlobalCss() {
         try {
             globalCss = (await fs.readFile(join(styleDir, "global.css"))).toString();
-            globalCss = globalCss.replace(
-                /%FONTS%/g,
-                join(styleDir, "fonts").replace(/\\/g, "/")
-            );
+            globalCss = globalCss.replace(/%FONTS%/g, join(styleDir, "fonts").replace(/\\/g, "/"));
             sendToMain("global-css", globalCss);
         } catch {
             globalCss = "";
@@ -53,7 +50,7 @@ export function createProjectRuntimeWatchers({
 
     function watchPlugins() {
         if (watchers.plugins) return;
-
+        return;
         watchers.plugins = watch(pluginDir, { recursive: true }, (type, filename) => {
             if (!getIsEditorOn() || !filename) return;
             const dirs = filename.split(/\\|\//);

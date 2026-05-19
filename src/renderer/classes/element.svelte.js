@@ -25,7 +25,7 @@ const PayloadTemplates = {
         maxLength: null,
         securityText: null
     },
-    plugin: { isClass: true, class: PluginPointer, argument: "elements" }
+    plugin: { isClass: true, class: PluginPointer, argument: "element" }
 };
 
 export default class Element extends TypePayload {

@@ -225,7 +225,7 @@ export default class RepairElement extends HTMLElement {
                                 return;
                         } catch (err) {
                             reportPluginException(
-                                { id: l.payload?.name, type: "functions" },
+                                { id: l.payload?.name, type: "function" },
                                 "Plugin listener failed.",
                                 err
                             );

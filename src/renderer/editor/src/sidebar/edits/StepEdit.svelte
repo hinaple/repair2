@@ -118,7 +118,7 @@
         label="플러그인"
         value={data.payload.plugin}
         type="plugin"
-        pluginType="functions"
+        pluginType="function"
         canUnselect={false}
     />
     <InputField

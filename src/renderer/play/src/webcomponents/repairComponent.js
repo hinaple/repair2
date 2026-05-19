@@ -112,7 +112,7 @@ export default class RepairComponent extends HTMLElement {
                 });
             } catch (err) {
                 reportPluginException(
-                    { id: transition.plugin?.name, type: "transitions" },
+                    { id: transition.plugin?.name, type: "transition" },
                     "Plugin transition failed.",
                     err
                 );

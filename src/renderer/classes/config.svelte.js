@@ -57,7 +57,7 @@ export default class Config {
         this.devMode = devMode;
         this.alwaysOnTop = alwaysOnTop;
         this.suppressGlobalKeys = suppressGlobalKeys;
-        this.runtimePlugins = runtimePlugins.map((rp) => new PluginPointer(rp, "runtimes"));
+        this.runtimePlugins = runtimePlugins.map((rp) => new PluginPointer(rp, "runtime"));
     }
 
     //#only play

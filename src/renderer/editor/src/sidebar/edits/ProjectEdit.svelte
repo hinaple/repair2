@@ -57,9 +57,9 @@
 <hr />
 <InputField
     label="런타임 플러그인"
-    seriesOption={{ array: data.runtimePlugins, newData: () => new PluginPointer({}, "runtimes") }}
+    seriesOption={{ array: data.runtimePlugins, newData: () => new PluginPointer({}, "runtime") }}
     type="plugin"
-    pluginType="runtimes"
+    pluginType="runtime"
     canUnselect={false}
 />
 <hr />

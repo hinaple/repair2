@@ -6,23 +6,26 @@ export default class PluginPointer {
     payloads = $state({});
     imported = $state();
 
-    constructor({ name = null, payloads = {} } = {}, type = "frames") {
+    constructor({ name = null, payloads = {} } = {}, type = "frame") {
         this.type = type;
         this.name = name === "null" ? null : name;
         this.payloads = payloads;
         this.imported = false;
-        this.import();
+        // this.import();
+        //#only play
+        this.ready?.();
+        //#endonly
     }
 
-    async import() {
-        if (!this.name || this.name === "null") {
-            this.imported = null;
-            return null;
-        }
+    // async import() {
+    //     if (!this.name || this.name === "null") {
+    //         this.imported = null;
+    //         return null;
+    //     }
 
-        this.imported = await importPlugin(this.type, this.name);
-        return this.imported;
-    }
+    //     this.imported = null; //await importPlugin(this.type, this.name);
+    //     return this.imported;
+    // }
 
     setName(name) {
         this.name = name;

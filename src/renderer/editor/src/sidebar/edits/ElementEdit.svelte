@@ -139,7 +139,7 @@
         label="플러그인"
         value={data.payload}
         type="plugin"
-        pluginType="elements"
+        pluginType="element"
         canUnselect={false}
     />
 {/if}

@@ -8,7 +8,7 @@ export default class Transition {
         this.duration = duration;
         this.easing = easing;
         this.delay = delay;
-        this.plugin = new PluginPointer(plugin, "transitions");
+        this.plugin = new PluginPointer(plugin, "transition");
     }
     //#only editor
     get storeData() {
