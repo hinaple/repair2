@@ -3,6 +3,15 @@ import { join } from "node:path";
 import { PLUGIN_TYPES, PluginManifest, RawManifest } from "./type";
 
 const MANIFEST = "manifest.json";
+export type ManifestReadResult =
+    | { ok: true; data: RawManifest }
+    | {
+          ok: false;
+          reason: string;
+          detail?: string;
+          error?: any;
+          silent?: boolean;
+      };
 
 export function normalizeManifest(mani: RawManifest): PluginManifest {
     const {
@@ -27,15 +36,56 @@ export function normalizeManifest(mani: RawManifest): PluginManifest {
     }
     return result;
 }
-export async function getManifest(pluginDir: string, dir: string) {
+export async function getManifest(pluginDir: string, dir: string): Promise<ManifestReadResult> {
+    const manifestPath = join(pluginDir, dir, MANIFEST);
+    let result = "";
     try {
-        const result = (await fs.readFile(join(pluginDir, dir, MANIFEST), "utf8")).toString();
-        if (!result) return false;
-        const data = JSON.parse(result);
-        return (
-            !!(data && data.name && data.type && PLUGIN_TYPES.some((t) => t === data.type)) && data
-        );
-    } catch {
-        return false;
+        result = (await fs.readFile(manifestPath, "utf8")).toString();
+    } catch (error: any) {
+        return {
+            ok: false,
+            reason: "read-failed",
+            detail: `Manifest file could not be read: ${manifestPath}`,
+            error,
+            silent: error?.code === "ENOENT"
+        };
     }
+
+    if (!result) {
+        return {
+            ok: false,
+            reason: "empty",
+            detail: `Manifest file is empty: ${manifestPath}`
+        };
+    }
+
+    let data: any;
+    try {
+        data = JSON.parse(result);
+    } catch (error) {
+        return {
+            ok: false,
+            reason: "parse-failed",
+            detail: `Manifest JSON could not be parsed: ${manifestPath}`,
+            error
+        };
+    }
+
+    if (!data?.name || !data?.type) {
+        return {
+            ok: false,
+            reason: "missing-required-fields",
+            detail: `Manifest requires "name" and "type": ${manifestPath}`
+        };
+    }
+
+    if (!PLUGIN_TYPES.some((t) => t === data.type)) {
+        return {
+            ok: false,
+            reason: "invalid-type",
+            detail: `Invalid plugin type "${data.type}": ${manifestPath}`
+        };
+    }
+
+    return { ok: true, data };
 }

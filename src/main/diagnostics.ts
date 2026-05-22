@@ -19,6 +19,7 @@ type DiagnosticPayload = {
     editor?: boolean;
     logType?: string | null;
 };
+export type ReportDiagnostic = (payload: DiagnosticPayload) => Promise<any> | any;
 
 type DiagnosticReporterOptions = {
     makeLog?: (type: string, content: string) => Promise<string>;
@@ -31,6 +32,7 @@ type DiagnosticReporterOptions = {
 };
 
 const LEVELS = new Set(["debug", "info", "warning", "error"]);
+const LOG_SEGMENT_MAX_LENGTH = 16;
 
 function normalizeLevel(level: DiagnosticPayload["level"]): DiagnosticLevel {
     return typeof level === "string" && LEVELS.has(level) ? (level as DiagnosticLevel) : "info";
@@ -64,13 +66,35 @@ function getDialogType(level: DiagnosticLevel) {
     return "info";
 }
 
+function compactSegment(value: string) {
+    if (value.length <= LOG_SEGMENT_MAX_LENGTH) return value;
+
+    const sideLength = Math.floor((LOG_SEGMENT_MAX_LENGTH - 4) / 2);
+    const left = value.slice(0, sideLength);
+    const right = value.slice(value.length - sideLength);
+    return `${left}....${right}`;
+}
+
+function normalizeLogSegment(value: string) {
+    const normalized = value
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+    return compactSegment(normalized || "diagnostic");
+}
+
+function shouldLogByDefault(level: DiagnosticLevel) {
+    return level === "error" || level === "warning";
+}
+
 export function createDiagnosticReporter({
     makeLog,
     sendToEditor,
     getEditorWindow,
     getMainWindow,
     dialog
-}: DiagnosticReporterOptions) {
+}: DiagnosticReporterOptions): ReportDiagnostic {
     return async function reportDiagnostic({
         level = "info",
         title = "Application message",
@@ -89,11 +113,11 @@ export function createDiagnosticReporter({
         const detailText = [stringify(detail), stringify(error)].filter(Boolean).join("\n\n");
         let finalDetail = detailText;
 
-        const shouldLog = log ?? normalizedLevel === "error";
+        const shouldLog = log ?? shouldLogByDefault(normalizedLevel);
         if (shouldLog && typeof makeLog === "function") {
             try {
                 const logFile = await makeLog(
-                    logType ?? `${source}-${normalizedLevel}`,
+                    normalizeLogSegment(logType ?? `${source}-${normalizedLevel}`),
                     [
                         title,
                         source ? `Source: ${source}` : null,
@@ -118,15 +142,6 @@ export function createDiagnosticReporter({
             });
         }
 
-        if (editor && source === "plugin" && typeof sendToEditor === "function") {
-            sendToEditor("plugin-log", {
-                level: normalizedLevel,
-                title,
-                detail: finalDetail,
-                plugin: normalizedSubject
-            });
-        }
-
         if (!dialogue || !dialog?.showMessageBox) {
             return {
                 level: normalizedLevel,
@@ -138,13 +153,15 @@ export function createDiagnosticReporter({
         }
 
         const parentWindow = getEditorWindow?.() ?? getMainWindow?.();
-        await dialog.showMessageBox(parentWindow, {
+        const messageBoxOptions = {
             type: getDialogType(normalizedLevel),
             title,
             message: title,
             detail: finalDetail,
             noLink: true
-        });
+        };
+        if (parentWindow) await dialog.showMessageBox(parentWindow, messageBoxOptions);
+        else await dialog.showMessageBox(messageBoxOptions);
 
         return {
             level: normalizedLevel,

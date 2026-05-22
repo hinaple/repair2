@@ -1,6 +1,7 @@
 import { join } from "path";
 import { PluginInfo } from "./type";
 import { createRequire } from "module";
+import type { ReportDiagnostic } from "../diagnostics";
 
 const require = createRequire(import.meta.url);
 
@@ -106,9 +107,17 @@ class RuntimePluginInstance {
 export default class MainRuntimePluginEngine {
     private pluginDir: string;
     private plugins: Map<string, RuntimePluginData> = new Map();
+    private reportDiagnostic?: ReportDiagnostic;
 
-    constructor({ pluginDir }: { pluginDir: string }) {
+    constructor({
+        pluginDir,
+        reportDiagnostic = null
+    }: {
+        pluginDir: string;
+        reportDiagnostic?: ReportDiagnostic | null;
+    }) {
         this.pluginDir = pluginDir;
+        this.reportDiagnostic = reportDiagnostic ?? undefined;
     }
     updatePlugin(pluginInfo: PluginInfo, forceImport = false) {
         if (pluginInfo.type !== "runtime" || !pluginInfo.main) return null;
@@ -136,7 +145,16 @@ export default class MainRuntimePluginEngine {
                     tempData.imported = null;
                 }
 
-                console.error(`PLUGIN LOAD FAILED: ${pluginInfo.name}`, err);
+                this.reportDiagnostic?.({
+                    level: "error",
+                    title: "Runtime main plugin load failed.",
+                    detail: `Plugin: ${pluginInfo.name}`,
+                    error: err,
+                    source: "plugin",
+                    subject: { id: pluginInfo.name, type: pluginInfo.type },
+                    dialogue: false,
+                    logType: "plugin-runtime-main-load-error"
+                });
                 return null;
             });
         this.plugins.set(pluginInfo.name, tempData);

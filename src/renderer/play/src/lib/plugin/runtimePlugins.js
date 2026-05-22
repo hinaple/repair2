@@ -1,6 +1,6 @@
 import PluginPointer from "@classes/pluginPointer.svelte";
 import { createPluginContext } from "./pluginContext";
-import { reportPluginException } from "./pluginReporter";
+import { reportPluginException, reportPluginIssue } from "./pluginReporter";
 import { ipcRenderer } from "electron";
 import { safeCallPlugin } from "./pluginManager";
 
@@ -79,14 +79,25 @@ async function activateRuntimePlugin(
             return;
         }
 
-        const call = (functionName, attributes, args) =>
-            safeCallPlugin(ctx, "Plugin function execution failed.", () =>
-                plugin?.[functionName]({
+        const call = (functionName, attributes, args) => {
+            const targetMethod = plugin?.[functionName];
+            if (typeof targetMethod !== "function") {
+                reportPluginIssue(
+                    ctx.plugin,
+                    `Runtime plugin step does not exist: ${functionName}`,
+                    `Plugin "${pointer.name}" does not define "${functionName}".`
+                );
+                return null;
+            }
+
+            return safeCallPlugin(ctx, "Plugin function execution failed.", () =>
+                targetMethod({
                     attributes,
                     ctx,
                     ...args
                 })
             );
+        };
 
         const runtimeData = {
             call,

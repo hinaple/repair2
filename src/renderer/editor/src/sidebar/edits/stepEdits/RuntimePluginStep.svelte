@@ -9,7 +9,7 @@
     let runtimePluginNames = $derived(
         appData.config.runtimePlugins
             .map((p) => p.name)
-            .filter((p) => p && plugins.plugins.runtime[p].steps)
+            .filter((p) => p && plugins.plugins.runtime?.[p]?.steps)
     );
     let runtimePluginDisplayName = $derived(
         runtimePluginNames.includes(data.payload.pluginName) ? data.payload.pluginName : null
@@ -34,7 +34,7 @@
             options={Object.keys(runtimePluginInfo.steps ?? {})}
         />
     {/if}
-    {#if runtimePluginInfo && data.payload.step}
+    {#if runtimePluginInfo && data.payload.step && runtimePluginInfo?.steps[data.payload.step]}
         {#key data.payload.step}
             <Attributes
                 attributes={runtimePluginInfo?.steps[data.payload.step]}

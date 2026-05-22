@@ -17,7 +17,7 @@ import { basename, extname, join } from "path";
  *     getStore: any,
  *     createEditorWindow: any,
  *     findService: any,
- *     makeLog: any,
+ *     reportDiagnostic: any,
  *     saveData: any,
  *     sendToEditor: any,
  *     sendToMain: any,
@@ -36,7 +36,7 @@ export function setupIpcHandlers({
     getStore,
     createEditorWindow,
     findService,
-    makeLog,
+    reportDiagnostic,
     saveData,
     sendToEditor,
     sendToMain,
@@ -207,34 +207,14 @@ export function setupIpcHandlers({
 
     ipcMain.on("plugin-log", async (evt, payload = {}) => {
         const level = payload.level ?? "info";
-        const title = payload.title ?? "Plugin message";
-        let detail = payload.detail ?? "";
-
-        if (level === "error") {
-            try {
-                const logFile = await makeLog(
-                    "plugin-error",
-                    [title, payload.plugin ? JSON.stringify(payload.plugin, null, 4) : null, detail]
-                        .filter(Boolean)
-                        .join("\n\n")
-                );
-                detail = [detail, `A plugin error occurred: ${logFile}`]
-                    .filter(Boolean)
-                    .join("\n\n");
-            } catch {}
-        }
-
-        sendToEditor("plugin-log", { level, title, detail, plugin: payload.plugin ?? null });
-
-        if (!payload.dialogue) return;
-
-        const parentWindow = getEditorWindow() ?? getMainWindow();
-        dialog.showMessageBox(parentWindow, {
-            type: level === "error" ? "error" : level === "warning" ? "warning" : "info",
-            title,
-            message: title,
-            detail,
-            noLink: true
+        await reportDiagnostic?.({
+            level,
+            title: payload.title ?? "Plugin message",
+            detail: payload.detail ?? "",
+            source: "plugin",
+            subject: payload.plugin ?? null,
+            dialogue: level === "error" && !!payload.dialogue,
+            logType: `plugin-${level}`
         });
     });
     //#endregion

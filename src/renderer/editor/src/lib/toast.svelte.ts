@@ -101,6 +101,17 @@ function getPluginLabel(plugin: { id?: string; type?: string; instanceId?: strin
     return [plugin.id, plugin.type, plugin.instanceId].filter(Boolean).join(" / ") || null;
 }
 
+function getDiagnosticSubjectLabel(
+    source: string | null = null,
+    subject: { id?: string; type?: string; instanceId?: string } | null = null
+) {
+    const subjectLabel = getPluginLabel(subject);
+    const subjectTitle = source === "plugin" ? "Plugin" : "Subject";
+    return [source ? `Source: ${source}` : null, subjectLabel ? `${subjectTitle}: ${subjectLabel}` : null]
+        .filter(Boolean)
+        .join("\n");
+}
+
 ipcRenderer.on("exporting", (evt, process) => {
     showToast({
         id: "exporting",
@@ -163,13 +174,11 @@ ipcRenderer.on("custom-log", (evt, content) => {
     showToast({ title: content, duration: 5000 });
 });
 
-ipcRenderer.on("plugin-log", (evt, { level, title, detail, plugin }) => {
-    const pluginLabel = getPluginLabel(plugin);
+ipcRenderer.on("diagnostic-log", (evt, { level, title, detail, source, subject }) => {
+    const subjectLabel = getDiagnosticSubjectLabel(source, subject);
     showToast({
         title,
-        content: [pluginLabel ? `Plugin: ${pluginLabel}` : null, detail]
-            .filter(Boolean)
-            .join("\n\n"),
+        content: [subjectLabel, detail].filter(Boolean).join("\n\n"),
         duration: level === "error" || level === "warning" ? 8000 : 5000
     });
 });

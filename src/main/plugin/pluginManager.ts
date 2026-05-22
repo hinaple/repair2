@@ -4,6 +4,7 @@ import { PLUGIN_TYPES, PluginType, PluginManifest, RawManifest, PluginInfo } fro
 import { buildPlugin } from "./pluginBuild";
 import { getManifest, normalizeManifest } from "./pluginManifest";
 import MainRuntimePluginEngine from "./runtimeMain";
+import type { ReportDiagnostic } from "../diagnostics";
 
 type PluginData = {
     building?: Promise<any> | null;
@@ -14,16 +15,26 @@ export class PluginManager {
     private pluginDir: string;
     private _isDev: boolean;
     private updated: boolean;
+    private reportDiagnostic?: ReportDiagnostic;
 
     mainRuntime: MainRuntimePluginEngine;
 
     plugins: Map<string, { info: PluginInfo; data: PluginData }>;
-    constructor({ pluginDir, isDev = false }: { pluginDir: string; isDev: boolean }) {
+    constructor({
+        pluginDir,
+        isDev = false,
+        reportDiagnostic = null
+    }: {
+        pluginDir: string;
+        isDev: boolean;
+        reportDiagnostic?: ReportDiagnostic | null;
+    }) {
         this.pluginDir = pluginDir;
         this.plugins = new Map();
         this._isDev = isDev;
         this.updated = false;
-        this.mainRuntime = new MainRuntimePluginEngine({ pluginDir });
+        this.reportDiagnostic = reportDiagnostic ?? undefined;
+        this.mainRuntime = new MainRuntimePluginEngine({ pluginDir, reportDiagnostic });
     }
     async initialize() {
         if (this.updated) return;
@@ -54,7 +65,16 @@ export class PluginManager {
                 this.mainRuntime.updatePlugin(p.info, true);
         } catch (err) {
             if (p) this.plugins.delete(p.info.name);
-            console.error(`PLUGIN UPDATE FAILED: ${dir}`, err);
+            await this.reportDiagnostic?.({
+                level: "error",
+                title: "Plugin update failed.",
+                detail: `Plugin directory: ${dir}`,
+                error: err,
+                source: "plugin",
+                subject: p ? { id: p.info.name, type: p.info.type } : { id: dir, type: "unknown" },
+                dialogue: false,
+                logType: "plugin-update-error"
+            });
         }
     }
     private ensureDirectories() {
@@ -71,8 +91,24 @@ export class PluginManager {
         return dirs;
     }
     async updatePluginInfo(dir: string) {
-        const rawManifest: RawManifest = await getManifest(this.pluginDir, dir);
-        if (!rawManifest) return null;
+        const manifestResult = await getManifest(this.pluginDir, dir);
+        if (manifestResult.ok === false) {
+            if (!manifestResult.silent) {
+                await this.reportDiagnostic?.({
+                    level: "warning",
+                    title: "Plugin manifest is invalid.",
+                    detail: manifestResult.detail ?? `Plugin directory: ${dir}`,
+                    error: manifestResult.error,
+                    source: "plugin",
+                    subject: { id: dir, type: "unknown", reason: manifestResult.reason },
+                    dialogue: false,
+                    logType: "plugin-manifest-warning"
+                });
+            }
+            return null;
+        }
+
+        const rawManifest: RawManifest = manifestResult.data;
         const manifest = normalizeManifest(rawManifest);
         const plugin: { info: PluginInfo; data: PluginData } = {
             info: {

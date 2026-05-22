@@ -21,6 +21,7 @@ import {
     stopSuppress
 } from "./globalKey.js";
 import makeLog from "./logger.js";
+import { createDiagnosticReporter } from "./diagnostics.js";
 import { PluginManager } from "./plugin/pluginManager.js";
 import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
@@ -51,8 +52,24 @@ const templateDir = is.dev
 
 const emptySveltePluginDir = join(templateDir, "empty-svelte-plugin");
 
+function sendToMain(channel, ...params) {
+    if (mainWindow) mainWindow.webContents.send(channel, ...params);
+}
+setSendToWin(sendToMain);
+function sendToEditor(channel, ...params) {
+    if (editorWindow) editorWindow.webContents.send(channel, ...params);
+}
+
+const reportDiagnostic = createDiagnosticReporter({
+    makeLog,
+    sendToEditor,
+    getEditorWindow: () => editorWindow,
+    getMainWindow: () => mainWindow,
+    dialog
+});
+
 function setPluginManager(isDev = false) {
-    pluginManager = new PluginManager({ pluginDir, isDev });
+    pluginManager = new PluginManager({ pluginDir, isDev, reportDiagnostic });
     return pluginManager.initialize();
 }
 
@@ -84,16 +101,9 @@ const projectFileManager = new ProjectFileManager(dataDir, {
     },
     afterExport: (filePath) => {
         sendToEditor("exported", filePath);
-    }
+    },
+    reportDiagnostic
 });
-
-function sendToMain(channel, ...params) {
-    if (mainWindow) mainWindow.webContents.send(channel, ...params);
-}
-setSendToWin(sendToMain);
-function sendToEditor(channel, ...params) {
-    if (editorWindow) editorWindow.webContents.send(channel, ...params);
-}
 
 const socket = new SocketConnector((channel, data, url) => {
     if (!mainWindow) return;
@@ -140,13 +150,22 @@ function saveData(tempData) {
     applyDataConfig();
     return fs
         .writeFile(join(dataDir, "data.json"), JSON.stringify(data))
-        .catch((e) => {
-            console.error(e);
-            return false;
-        })
         .then(() => {
             consumeAfterSave();
             return true;
+        })
+        .catch(async (e) => {
+            afterSave = null;
+            await reportDiagnostic({
+                level: "error",
+                title: "프로젝트 저장 실패",
+                detail: "프로젝트 데이터를 저장하는 중 오류가 발생했습니다.",
+                error: e,
+                source: "project",
+                dialogue: true,
+                logType: "project-save-error"
+            });
+            return false;
         });
 }
 
@@ -542,7 +561,7 @@ if (!app.requestSingleInstanceLock()) {
             getStore: () => store,
             createEditorWindow,
             findService,
-            makeLog,
+            reportDiagnostic,
             saveData,
             sendToEditor,
             sendToMain,

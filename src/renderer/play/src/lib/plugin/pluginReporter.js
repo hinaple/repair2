@@ -38,7 +38,7 @@ export function reportPluginIssue(source, title, detail = null, level = "warning
         level,
         source,
         title: `[Plugin ${level}] ${title}`,
-        detail: [`Plugin: ${getPluginLabel(source)}`, detail].filter(Boolean).join("\n\n"),
+        detail,
         dialogue: level === "error" || level === "warning"
     });
 }
