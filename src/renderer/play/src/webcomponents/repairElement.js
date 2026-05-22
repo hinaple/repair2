@@ -5,8 +5,8 @@ import { subscribe } from "../lib/variables";
 import Dragger from "../lib/dragger";
 import amplifyVideo from "../lib/amplifyVideo";
 import RepairInput from "./repairInput";
-import { disposePluginContext } from "../lib/pluginContext";
-import { reportPluginException } from "../lib/pluginReporter";
+import { disposePluginContext } from "../lib/plugin/pluginContext";
+import { reportPluginException } from "../lib/plugin/pluginReporter";
 
 const regexMap = {
     english: /[a-z]/gi,

@@ -1,6 +1,6 @@
 import { genId } from "@classes/utils";
 import { emitPluginEvent, addPluginEventListener } from "./pluginEventBus";
-import { emitRepairEvent, addRepairEventListener } from "./event";
+import { emitRepairEvent, addRepairEventListener } from "../event";
 import {
     providePluginService,
     usePluginService,
@@ -12,9 +12,9 @@ import {
     listComponentHandles,
     resolveComponentHandleId,
     subscribeComponentHandles
-} from "./componentRegistry";
-import { clearComponents, modifyComponentByAlias, removeComponentByAlias } from "./components";
-import { getVariableIdByName, getVarByName, setVarByName, subscribeVarByName } from "./variables";
+} from "../componentRegistry";
+import { clearComponents, modifyComponentByAlias, removeComponentByAlias } from "../components";
+import { getVariableIdByName, getVarByName, setVarByName, subscribeVarByName } from "../variables";
 import {
     addPreloadByTitle,
     genElementByTitle,
@@ -25,9 +25,9 @@ import {
     isPreloadedByTitle,
     listResources,
     removePreloadByTitle
-} from "./resources";
+} from "../resources";
 import { reportPluginIssue, reportPluginException, sendPluginLog } from "./pluginReporter";
-import { serialSend, socketSend } from "./communication";
+import { serialSend, socketSend } from "../communication";
 
 const typeMap = {
     runtime: "runtime",

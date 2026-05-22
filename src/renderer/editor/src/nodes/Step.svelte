@@ -92,8 +92,10 @@
                 size={8}
             />
         </div>
-        <div class="title">
-            {step.displayTitle ?? StepTypes[step.type] ?? "빈 스텝"}
+        <div class="title-wrapper">
+            <div class="title">
+                {step.displayTitle ?? StepTypes[step.type] ?? "빈 스텝"}
+            </div>
         </div>
     </div>
     {#if step.type === "Component.create"}
@@ -103,7 +105,7 @@
 
 <style>
     .step {
-        min-width: 100%;
+        width: 100%;
         font-weight: 600;
         display: flex;
         flex-direction: column;
@@ -127,13 +129,20 @@
         display: flex;
         flex-direction: row;
         align-items: center;
+        overflow-x: hidden;
+    }
+    .title-wrapper {
+        height: 100%;
+        width: calc(100% - 25px);
+        position: relative;
     }
     .title {
-        width: calc(100% - 25px);
-        flex: 0 0 auto;
-        overflow-x: hidden;
-        white-space: pre;
+        transform: translateY(5.5px);
+        width: 100%;
+        position: absolute;
         text-overflow: ellipsis;
         word-break: break-all;
+        overflow-x: hidden;
+        white-space: nowrap;
     }
 </style>

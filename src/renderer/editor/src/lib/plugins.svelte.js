@@ -4,11 +4,10 @@ const PLUGIN_TYPES = ["runtime", "element", "transition", "function", "frame"];
 export const plugins = $state({ plugins: Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}])) });
 
 export async function requestUpdatePluginList() {
-    plugins.plugins = await ipcRenderer.sendSync("getPluginList");
-    console.log(plugins.plugins);
+    plugins.plugins = await ipcRenderer.invoke("plugin:get-list", true);
 }
 requestUpdatePluginList();
 
-ipcRenderer.on("plugin-info", (_, plugins) => {
+ipcRenderer.on("plugin-list", (_, plugins) => {
     plugins.plugins = plugins;
 });

@@ -1,5 +1,3 @@
-import { importPlugin } from "./utils.js";
-
 export default class PluginPointer {
     type = null;
     name = $state();
@@ -11,39 +9,14 @@ export default class PluginPointer {
         this.name = name === "null" ? null : name;
         this.payloads = payloads;
         this.imported = false;
-        // this.import();
+
         //#only play
         this.ready?.();
         //#endonly
     }
 
-    // async import() {
-    //     if (!this.name || this.name === "null") {
-    //         this.imported = null;
-    //         return null;
-    //     }
-
-    //     this.imported = null; //await importPlugin(this.type, this.name);
-    //     return this.imported;
-    // }
-
     setName(name) {
         this.name = name;
-        this.import();
-    }
-
-    get attributes() {
-        return this.imported?.attributes ?? [];
-    }
-    get steps() {
-        const rawSteps = this.imported?.steps;
-        if (!rawSteps) return;
-        return Array.isArray(rawSteps) ? rawSteps : Object.keys(rawSteps);
-    }
-    getStepAttributes(stepName) {
-        const rawSteps = this.imported?.steps;
-        if (!rawSteps) return;
-        return Array.isArray(rawSteps) ? [] : (rawSteps[stepName] ?? []);
     }
 
     //#only editor

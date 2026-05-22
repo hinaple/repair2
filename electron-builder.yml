@@ -4,11 +4,8 @@ directories:
     buildResources: build
 extraFiles:
     - templates/**/*
-    - plugin-devtool/**/*
     - from: packages/plugin-sdk
       to: sdk/repair2-plugin-sdk
-    # - from: plugin-devtool
-    #   to: resources/plugin-devtool
 files:
     - "!**/.vscode/*"
     - "!src/*"

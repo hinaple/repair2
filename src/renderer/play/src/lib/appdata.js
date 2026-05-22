@@ -1,12 +1,13 @@
-import "./pluginManager";
+import "./plugin/pluginManager";
 import { ipcRenderer } from "electron";
 import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
 import { registerUtils } from "./repairUtils";
 import initShortcuts from "./shortcut";
 import { sendTotalInfo } from "./runtimeMonitor";
-import { activateRuntimePlugins, deactivateRuntimePlugins } from "./runtimePlugins";
-import { registerPluginContextApi } from "./pluginContext";
+import { activateRuntimePlugins, deactivateRuntimePlugins } from "./plugin/runtimePlugins";
+import { registerPluginContextApi } from "./plugin/pluginContext";
+import { afterPluginImported } from "./plugin/pluginManager";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -31,7 +32,6 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
 
     globalStyles.textContent = data.globalStyles;
 }
-updateData();
 
 ipcRenderer.on("data", (event, data) => {
     console.log(data);

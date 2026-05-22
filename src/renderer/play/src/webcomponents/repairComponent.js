@@ -1,6 +1,6 @@
 import RepairElement from "./repairElement";
-import { disposePluginContext } from "../lib/pluginContext";
-import { reportPluginException } from "../lib/pluginReporter";
+import { disposePluginContext } from "../lib/plugin/pluginContext";
+import { reportPluginException } from "../lib/plugin/pluginReporter";
 
 function getComponentIdentity(componentData) {
     return {

@@ -21,7 +21,8 @@ import { delay } from "./delay";
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
 import { sendChanges, sendTotalInfo } from "./runtimeMonitor";
-import { callRuntimePluginStep, restartRuntimePlugins } from "./runtimePlugins";
+import { callRuntimePluginStep, restartRuntimePlugins } from "./plugin/runtimePlugins";
+import { customLog } from "./logger";
 
 let resetAbort = new AbortController();
 
@@ -127,12 +128,7 @@ const actions = {
         },
         log: (s) => {
             ipcRenderer.send("custom-log", s.payload.content);
-            console.log(
-                `%cLOG%c${(s.payload.content.includes("\n") ? "\n" : "") + s.payload.content}`,
-                "font-family: system-ui; color: #fff; font-weight: bold;" +
-                    "display: inline-block; background-color: #140959; padding: 3px 15px; border-radius: 3px; margin-right: 5px;",
-                ""
-            );
+            customLog(s.payload.content);
         }
     }
 };

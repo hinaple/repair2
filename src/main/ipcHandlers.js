@@ -1,7 +1,30 @@
+/** @typedef { import("./plugin/pluginManager").PluginManager } PluginManager */
+
 import { ipcMain, dialog } from "electron";
 import fs from "fs/promises";
 import { basename, extname, join } from "path";
 
+/**
+ *
+ * @param {{
+ *     assetDir: string,
+ *     dataDir: string,
+ *     getData: any,
+ *     getEditorWindow: any,
+ *     getGlobalCss: any,
+ *     getMainWindow: any,
+ *     getPluginManager: () => PluginManager,
+ *     getStore: any,
+ *     createEditorWindow: any,
+ *     findService: any,
+ *     makeLog: any,
+ *     saveData: any,
+ *     sendToEditor: any,
+ *     sendToMain: any,
+ *     serial: any,
+ *     socket: any,
+ * }} options
+ */
 export function setupIpcHandlers({
     assetDir,
     dataDir,
@@ -9,7 +32,7 @@ export function setupIpcHandlers({
     getEditorWindow,
     getGlobalCss,
     getMainWindow,
-    getPluginList,
+    getPluginManager,
     getStore,
     createEditorWindow,
     findService,
@@ -21,18 +44,29 @@ export function setupIpcHandlers({
     socket
 }) {
     //#region plugin IPCs
-    ipcMain.on("getPluginList", (event, update) => {
-        event.returnValue = getPluginList();
+    ipcMain.handle("plugin:get-list", (evt, withTypes = false) => {
+        return withTypes
+            ? getPluginManager().pluginListWithTypes
+            : getPluginManager().simplePluginList;
     });
 
-    // ipcMain.handle("plugin:install-package", async (event, { name, version }) => {
-    //     try {
-    //         const packageInfo = await getPluginManager().installPackage(name, version);
-    //         return { success: true, packageInfo };
-    //     } catch (error) {
-    //         return { success: false, error: error.message };
-    //     }
-    // });
+    ipcMain.handle(
+        "plugin:runtime:activate",
+        async (evt, pluginName, { rendererMethods, attributes }) => {
+            console.log("PLUGIN ACTIVATING: ", pluginName);
+            const instance = await getPluginManager().mainRuntime.createInstance(pluginName);
+            if (!instance) return null;
+            await instance.activate(rendererMethods, attributes);
+            return instance.mainMethods;
+        }
+    );
+
+    ipcMain.handle("plugin:runtime:to-main", (evt, { pluginName, methodName, args }) => {
+        const instance = getPluginManager().mainRuntime.getPluginInstance(pluginName);
+        if (!instance) return null;
+        return instance.callMainMethod(methodName, args);
+    });
+
     //#endregion
 
     //#region appdata IPCs

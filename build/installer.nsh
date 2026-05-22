@@ -1,20 +1,4 @@
 !macro customInstall
-    DetailPrint "개발도구 설치중"
-    
-    StrCpy $0 "$INSTDIR\plugin-devtool" ; source
-
-    ReadEnvStr $1 "APPDATA"
-    StrCpy $2 "$1\repair2\plugin-devtool" ; dest
-
-    ExecWait 'cmd /C rmdir /Q "$2\plugin"'
-    RMDir /r "$2"
-
-    CreateDirectory "$2"
-    
-    CopyFiles /SILENT "$0\*.*" "$2"
-    
-    RMDir /r $0
-
     DetailPrint "Plugin SDK installing..."
 
     StrCpy $0 "$INSTDIR\sdk" ; source

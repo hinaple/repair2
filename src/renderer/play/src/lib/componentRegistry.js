@@ -1,4 +1,4 @@
-import { reportPluginException } from "./pluginReporter";
+import { reportPluginException } from "./plugin/pluginReporter";
 
 let readComponents = () => [];
 const subscribers = new Set();

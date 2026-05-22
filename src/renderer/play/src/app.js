@@ -5,7 +5,7 @@ import VariableSet from "@classes/nodes/variableSet.svelte";
 import ValueProcess from "@classes/value/valueProcess";
 
 import { enToKo, koToEn } from "./lib/enKoConvert";
-import { getAppData } from "./lib/appdata";
+import { getAppData, updateData } from "./lib/appdata";
 import { stepExecute } from "./lib/stepActions";
 import { ipcRenderer } from "electron";
 import { setVar } from "./lib/variables";
@@ -14,8 +14,7 @@ import "./lib/editorOpen";
 import "./lib/store";
 import Entry from "@classes/nodes/entry.svelte";
 import { sendChanges } from "./lib/runtimeMonitor";
-
-console.log(getAppData());
+import { afterPluginImported } from "./lib/plugin/pluginManager";
 
 const disabledNodes = [];
 Output.prototype.goto = function () {
@@ -81,7 +80,11 @@ Entry.prototype.onDisabled = function () {
 };
 
 window.addEventListener("load", () => {
-    getAppData().enterEntry("startup");
+    afterPluginImported().then(() => {
+        updateData();
+        ipcRenderer.send("play-win-ready");
+        getAppData().enterEntry("startup");
+    });
 });
 
 ipcRenderer.on("request-execute", (event, { type, id }) => {

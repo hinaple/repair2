@@ -1,4 +1,5 @@
 import { ipcRenderer } from "electron";
+import { customLog } from "../logger";
 
 function stringify(value) {
     if (value instanceof Error) return value.stack || value.message;
@@ -15,7 +16,13 @@ function getPluginLabel(source) {
     return [source.id, source.type, source.instanceId].filter(Boolean).join(" / ");
 }
 
-export function sendPluginLog({ level = "info", source = null, title, detail = null, dialogue = false }) {
+export function sendPluginLog({
+    level = "info",
+    source = null,
+    title,
+    detail = null,
+    dialogue = false
+}) {
     ipcRenderer.send("plugin-log", {
         level,
         plugin: source,
@@ -23,6 +30,7 @@ export function sendPluginLog({ level = "info", source = null, title, detail = n
         detail,
         dialogue
     });
+    customLog(`PLUGIN: ${source?.id ?? "unknown"}\n${title}`);
 }
 
 export function reportPluginIssue(source, title, detail = null, level = "warning") {

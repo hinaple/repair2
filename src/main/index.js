@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, Menu, dialog } from "electron";
+import { app, shell, BrowserWindow, Menu, dialog, ipcMain } from "electron";
 import { join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
 import fs, { readdir } from "fs/promises";
@@ -8,14 +8,10 @@ import Store from "electron-store";
 import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
-import PluginPackageManager from "./plugin-package-manager";
 import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "./screenManager";
-import createSveltePlugin from "./svelte-plugin/sveltePluginCreator.js";
 import { checkVscodeInstalled } from "./vscodeUtils.js";
-import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
-// import { createPluginListManager } from "./pluginListManager.js";
 import { createProjectRuntimeWatchers } from "./projectRuntimeWatchers.js";
 import { setupIpcHandlers } from "./ipcHandlers.js";
 import {
@@ -25,8 +21,11 @@ import {
     stopSuppress
 } from "./globalKey.js";
 import makeLog from "./logger.js";
-import { PluginManager } from "./plugin/index.js";
+import { PluginManager } from "./plugin/pluginManager.js";
 import { migrateProject } from "./migrateProject.js";
+import { setSendToWin } from "./plugin/runtimeMain.js";
+import electronPrompt from "electron-prompt";
+import { createPluginWithPrompt } from "./plugin/createEmptyPlugin.js";
 
 /**
  * @type {BrowserWindow | null}
@@ -52,8 +51,8 @@ const templateDir = is.dev
 
 const emptySveltePluginDir = join(templateDir, "empty-svelte-plugin");
 
-function setPluginManager() {
-    pluginManager = new PluginManager({ pluginDir });
+function setPluginManager(isDev = false) {
+    pluginManager = new PluginManager({ pluginDir, isDev });
     return pluginManager.initialize();
 }
 
@@ -88,12 +87,10 @@ const projectFileManager = new ProjectFileManager(dataDir, {
     }
 });
 
-initPluginDir(pluginDir);
-
-// const PluginTypes = ["elements", "frames", "functions", "transitions", "runtimes"];
 function sendToMain(channel, ...params) {
     if (mainWindow) mainWindow.webContents.send(channel, ...params);
 }
+setSendToWin(sendToMain);
 function sendToEditor(channel, ...params) {
     if (editorWindow) editorWindow.webContents.send(channel, ...params);
 }
@@ -141,7 +138,6 @@ const runtimeWatchers = createProjectRuntimeWatchers({
 function saveData(tempData) {
     data = { ...tempData, updatedAt: new Date().getTime() };
     applyDataConfig();
-    updateData(data);
     return fs
         .writeFile(join(dataDir, "data.json"), JSON.stringify(data))
         .catch((e) => {
@@ -178,16 +174,17 @@ async function loadData() {
         dataDir,
         pluginDir
     });
-    sendStartupInfo("플러그인 정보를 읽는 중...");
-    await Promise.all([setPluginManager(), runtimeWatchers.loadGlobalCss()]);
+    sendStartupInfo("플러그인 처리 중...");
+    await Promise.all([setPluginManager(!!data.config?.devMode), runtimeWatchers.loadGlobalCss()]);
     if (migrateResult) {
         dialog.showMessageBox({
             message: "구버전 프로젝트",
-            detail: "호환이 불가능한 버전의 프로젝트입니다. 일부 데이터에 손실이 있을 수 있습니다.",
+            detail: "호환되지 않는 기능이 포함된 버전의 프로젝트입니다. 일부 데이터에 손실이 있을 수 있습니다.",
             type: "warning",
             noLink: true
         });
     }
+    sendStartupInfo("Repair2 실행 중...");
     return true;
 }
 
@@ -242,13 +239,15 @@ function createMainWindow() {
     });
     mainWindow.setMenu(null);
 
-    mainWindow.on("ready-to-show", () => {
+    ipcMain.once("play-win-ready", () => {
         closeSplash();
         mainWindow.show();
         mainWindow.focus();
 
         applyDataConfig(true);
     });
+    // mainWindow.on("ready-to-show", () => {
+    // });
 
     if (is.dev) {
         mainWindow.loadURL("http://localhost:3100");
@@ -360,67 +359,9 @@ function createEditorWindow() {
                 },
                 { type: "separator" },
                 {
-                    label: "빈 Svelte 플러그인 생성",
-                    click: async () => {
-                        const name = await prompt(
-                            {
-                                title: "Svelte 플러그인 생성",
-                                label: "플러그인 이름:",
-                                buttonLabels: {
-                                    ok: "확인",
-                                    cancel: "취소"
-                                },
-                                height: 200
-                            },
-                            editorWindow
-                        );
-                        if (!name) return;
-                        const result = await createSveltePlugin(
-                            pluginDir,
-                            emptySveltePluginDir,
-                            name,
-                            pluginSdkPackageDir
-                        );
-                        if (!result.done) {
-                            dialog.showMessageBox(editorWindow, {
-                                type: "error",
-                                message: "플러그인 생성 중 오류가 발생했습니다.",
-                                detail: result.error,
-                                noLink: true
-                            });
-                            return;
-                        }
-                        if (isVscodeInstalled) {
-                            const confirm = await dialog.showMessageBox({
-                                type: "info",
-                                title: "Svelte 플러그인",
-                                message: "플러그인 개발도구를 시작할까요?",
-                                buttons: ["확인", "취소"],
-                                cancelId: 1,
-                                defaultId: 0,
-                                noLink: true
-                            });
-                            if (confirm.response === 0) {
-                                // openVsCode(result.dir);
-                                openPluginDevtool(result.dir, name);
-                                return;
-                            }
-                        }
-                        shell.openPath(result.dir);
-                    },
-                    accelerator: "CommandOrControl+Shift+N"
-                },
-                {
                     label: "데이터 폴더 열기",
                     click: () => {
                         shell.openPath(dataDir);
-                    }
-                },
-                {
-                    label: "플러그인 강제 다시 로드",
-                    click: () => {
-                        if (!pluginManager) return;
-                        pluginManager.updateAllPluginInfo();
                     }
                 }
             ]
@@ -459,36 +400,27 @@ function createEditorWindow() {
                     click: () => {
                         mainWindow.webContents.toggleDevTools();
                     }
-                },
-                { type: "separator" },
+                }
+            ]
+        },
+        {
+            label: "플러그인",
+            submenu: [
                 {
-                    label: "플러그인 개발 도구",
+                    label: "새 플러그인 생성",
+                    click: () => {
+                        createPluginWithPrompt({
+                            parentWindow: editorWindow,
+                            pluginDir,
+                            templateDir
+                        });
+                    }
+                },
+                {
+                    label: "플러그인 강제 다시 로드",
                     click: async () => {
-                        const sveltePlugins = (
-                            await readdir(join(pluginDir, "svelte-plugins"), {
-                                withFileTypes: true
-                            })
-                        )
-                            .filter((e) => e.isDirectory())
-                            .map((e) => e.name);
-                        const target = await prompt(
-                            {
-                                title: "REPAIR 플러그인 개발 도구",
-                                label: "플러그인 선택",
-                                buttonLabels: { ok: "확인", cancel: "취소" },
-                                type: "select",
-                                selectOptions: sveltePlugins.reduce((obj, n) => {
-                                    obj[n] = n;
-                                    return obj;
-                                }, {}),
-                                height: 200
-                            },
-                            editorWindow
-                        );
-                        if (!target) return;
-                        if (isVscodeInstalled)
-                            openPluginDevtool(join(pluginDir, "svelte-plugins", target), target);
-                        else shell.openPath(result.dir);
+                        if (!pluginManager) return;
+                        await pluginManager.updateAllPluginInfo(true);
                     }
                 }
             ]
@@ -606,7 +538,7 @@ if (!app.requestSingleInstanceLock()) {
             getEditorWindow: () => editorWindow,
             getGlobalCss: () => runtimeWatchers.getGlobalCss(),
             getMainWindow: () => mainWindow,
-            getPluginList: () => pluginManager.simplePluginList,
+            getPluginManager: () => pluginManager,
             getStore: () => store,
             createEditorWindow,
             findService,

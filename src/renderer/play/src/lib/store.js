@@ -1,6 +1,6 @@
 import { ipcRenderer } from "electron";
 import { registerUtils } from "./repairUtils";
-import { registerPluginContextApi } from "./pluginContext";
+import { registerPluginContextApi } from "./plugin/pluginContext";
 
 export function getStore(key) {
     return ipcRenderer.sendSync("get-store", key);
