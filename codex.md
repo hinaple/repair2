@@ -9,3 +9,11 @@ When documenting runtime plugins with a main entry, describe the activation orde
 - Plugin authors should not assume renderer method calls from main `activate()` run immediately.
 - Renderer method calls from main `activate()` can be delayed while the renderer runtime is still loading and initializing.
 - Renderer methods that depend on renderer-side initialization should be designed with this delayed execution behavior in mind.
+
+## Planned editor plugin management
+
+Future editor work should add plugin management UI:
+
+- Show the available plugin list in the editor.
+- Allow each plugin to be toggled on or off from the editor.
+- Collect and display logs separately for each plugin.

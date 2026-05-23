@@ -56,8 +56,12 @@
     ];
 
     let hlData = $derived.by(() => {
-        if (step.type === "setVariable")
+        if (step.type === "Others.setVariable")
             return { type: "variable", data: step.payload?.variableId, active: true };
+        else if (step.type === "Others.executePlugin")
+            return { type: "plugin", data: step.payload?.plugin.name, active: true };
+        else if (step.type === "Others.runtimePluginStep")
+            return { type: "plugin", data: step.payload?.pluginName, active: true };
         return { active: false };
     });
 

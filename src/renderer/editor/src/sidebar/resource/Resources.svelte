@@ -76,7 +76,7 @@
         flex-direction: column;
         gap: 10px;
         overflow: hidden;
-        padding-block: 30px;
+        padding-bottom: 30px;
         align-items: center;
     }
     .list {
@@ -84,11 +84,11 @@
         width: 100%;
         flex: 1 1 auto;
         overflow-y: auto;
-        padding-inline: 20px 6px;
+        padding: 5px 0 0 4px;
         scrollbar-gutter: stable;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 5px;
         box-sizing: border-box;
     }
     .add {

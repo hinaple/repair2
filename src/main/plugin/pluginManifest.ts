@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { join } from "node:path";
 import { PLUGIN_TYPES, PluginManifest, RawManifest } from "./type";
 
-const MANIFEST = "manifest.json";
+export const MANIFEST = "manifest.json";
 export type ManifestReadResult =
     | { ok: true; data: RawManifest }
     | {
@@ -36,8 +36,8 @@ export function normalizeManifest(mani: RawManifest): PluginManifest {
     }
     return result;
 }
-export async function getManifest(pluginDir: string, dir: string): Promise<ManifestReadResult> {
-    const manifestPath = join(pluginDir, dir, MANIFEST);
+export async function getManifest(...dirs: string[]): Promise<ManifestReadResult> {
+    const manifestPath = join(...dirs, MANIFEST);
     let result = "";
     try {
         result = (await fs.readFile(manifestPath, "utf8")).toString();

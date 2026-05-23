@@ -38,12 +38,12 @@
     {:else}
         <div class="top">
             <div class="name">{variable.name?.length ? variable.name : "이름 없는 변수"}</div>
-            <div class="icon" onclick={edit}>
-                <Icon icon="edit" color="#fff" size={15} />
-            </div>
-            <div class="icon" onclick={remove}>
-                <Icon icon="bin" color="#fff" size={15} />
-            </div>
+            <button class="icon" onclick={edit}>
+                <Icon icon="edit" color="#fff" size={16} />
+            </button>
+            <button class="icon" onclick={remove}>
+                <Icon icon="bin" color="#fff" size={16} />
+            </button>
         </div>
         {#if variable.defaultValue?.length}
             <div class="value">{variable.defaultValue}</div>
@@ -59,18 +59,28 @@
 <style>
     .variable {
         display: flex;
-        gap: 5px;
         flex-direction: column;
         width: 100%;
-        background-color: rgba(255, 255, 255, 0.2);
-        padding: 10px;
+        /* background-color: rgba(255, 255, 255, 0.1); */
+        padding: 5px 7px 5px 10px;
         box-sizing: border-box;
         border-radius: 10px;
     }
+    .variable:has(> :nth-child(2)) {
+        padding: 5px 5px 10px 10px;
+    }
+    .variable:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
     .variable.editing {
         opacity: 1;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .icon {
+        border-radius: 5px;
+        padding: 5px;
+
         opacity: 0;
         cursor: pointer;
     }
@@ -78,12 +88,12 @@
         opacity: 0.5;
     }
     .icon:hover {
+        background-color: rgba(255, 255, 255, 0.2);
         opacity: 1 !important;
     }
     .top {
         display: flex;
         align-items: center;
-        gap: 10px;
     }
     .name {
         flex: 1 1 auto;
@@ -97,6 +107,7 @@
         font-size: 14px;
         font-weight: 400;
         pointer-events: none;
+        margin-left: 5px;
     }
     .edit-zone {
         display: flex;
@@ -104,9 +115,10 @@
         gap: 10px;
     }
     .runtime-value {
+        margin: 3px 5px 0 5px;
         padding: 3px 5px;
         border-radius: 5px;
-        background-color: rgba(255, 255, 255, 0.7);
-        color: #000;
+        background-color: rgba(247, 141, 79, 0.6);
+        color: #fff;
     }
 </style>

@@ -27,6 +27,7 @@ import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
 import electronPrompt from "electron-prompt";
 import { createPluginWithPrompt } from "./plugin/createEmptyPlugin.js";
+import { dataDir, assetDir, pluginDir, styleDir, templateDir } from "./dirs.js";
 
 /**
  * @type {BrowserWindow | null}
@@ -40,15 +41,6 @@ let editorWindow;
 let pluginManager;
 
 let data;
-
-const dataDir = join(app.getPath("userData"), is.dev ? "dev_project" : "project");
-const assetDir = join(dataDir, "assets");
-const pluginDir = join(dataDir, "plugins");
-const styleDir = join(dataDir, "styles");
-
-const templateDir = is.dev
-    ? join(__dirname, "../../templates")
-    : join(app.getPath("exe"), "..", "templates");
 
 const emptySveltePluginDir = join(templateDir, "empty-svelte-plugin");
 
@@ -69,7 +61,7 @@ const reportDiagnostic = createDiagnosticReporter({
 });
 
 function setPluginManager(isDev = false) {
-    pluginManager = new PluginManager({ pluginDir, isDev, reportDiagnostic });
+    pluginManager = new PluginManager({ isDev, reportDiagnostic });
     return pluginManager.initialize();
 }
 

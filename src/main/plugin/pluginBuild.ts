@@ -12,11 +12,15 @@ function isExternalImport(id: string) {
     );
 }
 
-export function buildPlugin(pluginInfo: PluginInfo, { pluginDir }: { pluginDir: string }) {
-    const root = join(pluginDir, pluginInfo.path);
+async function getSveltePlugin() {
+    const { svelte } = await import("@sveltejs/vite-plugin-svelte");
+    return svelte;
+}
+
+export function buildPlugin(pluginInfo: PluginInfo, { pluginPath }: { pluginPath: string }) {
     const rendererBuild = build({
         configFile: false,
-        root,
+        root: pluginPath,
         build: {
             lib: {
                 entry: pluginInfo.entry,
@@ -29,7 +33,7 @@ export function buildPlugin(pluginInfo: PluginInfo, { pluginDir }: { pluginDir: 
                 }
             },
             outDir: pluginInfo.outDir,
-            cssCodeSplit: true,
+            cssCodeSplit: false,
             emptyOutDir: true,
             assetsInlineLimit: Infinity
         }
@@ -38,7 +42,7 @@ export function buildPlugin(pluginInfo: PluginInfo, { pluginDir }: { pluginDir: 
 
     const mainBuild = build({
         configFile: false,
-        root,
+        root: pluginPath,
         ssr: {
             target: "node",
             external: true

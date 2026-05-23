@@ -73,6 +73,8 @@
             return { type: "variable", data: element.payload?.variableId, active: true };
         if (element.type === "image" || element.type === "video")
             return { type: "resource", data: element.payload?.resourceId, active: true };
+        if (element.type === "plugin")
+            return { type: "plugin", data: element.payload?.name, active: true };
         return { active: false };
     });
 </script>

@@ -158,7 +158,7 @@ PluginPointer.prototype.use = async function (
 };
 
 PluginPointer.prototype.hmrSubscribe = function (callback, contextOptions = {}) {
-    if (!validPluginName(this.name)) return null;
+    if (!this.name) return null;
 
     const source = { id: this.name, type: this.type };
     this.use(null, contextOptions)

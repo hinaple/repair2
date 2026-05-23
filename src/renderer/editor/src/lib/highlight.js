@@ -45,6 +45,10 @@ export function hoverHighlight(node, { type, data }) {
                 activeHighlight(mine.type, mine.data);
                 FU.draw();
             }
+        },
+        destroy() {
+            node.removeEventListener("mouseenter", mouseenter);
+            node.removeEventListener("mouseleave", mouseleave);
         }
     };
 }

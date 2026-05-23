@@ -31,4 +31,7 @@ export type PluginInfo = PluginManifest & {
     path: string;
     distFile: string;
     mainDistFile?: string;
+    linked?: {
+        sourcePath: string;
+    };
 };

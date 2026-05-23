@@ -48,7 +48,7 @@ function pluginNameValidate(name) {
 export async function createEmptyPlugin(
     name,
     entry,
-    { pluginDir, templateDir, skipNameValidation }
+    { link = false, root, templateDir, skipNameValidation }
 ) {
     const type = ENTRY_TYPE_MAP[entry];
     if (!type) return { error: `Unknown plugin type: ${entry}` };
@@ -59,7 +59,7 @@ export async function createEmptyPlugin(
         name = validateResult.name;
     }
 
-    const targetDir = join(pluginDir, name);
+    const targetDir = join(root, name);
     const alreadyExists = await fs
         .access(targetDir)
         .then(() => true)
@@ -79,7 +79,12 @@ export async function createEmptyPlugin(
     return { dir: targetDir };
 }
 
-export async function createPluginWithPrompt({ parentWindow, pluginDir, templateDir }) {
+export async function createPluginWithPrompt({
+    parentWindow,
+    pluginDir,
+    templateDir,
+    pluginLinkService
+}) {
     let name = await electronPrompt(
         {
             title: "RepairV2",
@@ -120,7 +125,7 @@ export async function createPluginWithPrompt({ parentWindow, pluginDir, template
         parentWindow
     );
     if (!entryType) return;
-    const result = await createEmptyPlugin(name, entryType, { pluginDir, templateDir });
+    const result = await createEmptyPlugin(name, entryType, { root: pluginDir, templateDir });
     if (result.error) {
         dialog.showMessageBox(parentWindow, {
             message: "플러그인 생성 중 오류가 발생했습니다.",

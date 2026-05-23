@@ -1,10 +1,12 @@
 import fs from "fs/promises";
 import { join } from "path";
-import { PLUGIN_TYPES, PluginType, PluginManifest, RawManifest, PluginInfo } from "./type";
+import { PLUGIN_TYPES, PluginType, RawManifest, PluginInfo } from "./type";
 import { buildPlugin } from "./pluginBuild";
 import { getManifest, normalizeManifest } from "./pluginManifest";
 import MainRuntimePluginEngine from "./runtimeMain";
 import type { ReportDiagnostic } from "../diagnostics";
+import { pluginDir } from "../dirs";
+import { createPluginLinkService, PluginLinks, PluginLinkService } from "./pluginLinks";
 
 type PluginData = {
     building?: Promise<any> | null;
@@ -12,34 +14,33 @@ type PluginData = {
 };
 
 export class PluginManager {
-    private pluginDir: string;
     private _isDev: boolean;
     private updated: boolean;
     private reportDiagnostic?: ReportDiagnostic;
 
+    pluginLinkService: PluginLinkService;
     mainRuntime: MainRuntimePluginEngine;
 
     plugins: Map<string, { info: PluginInfo; data: PluginData }>;
     constructor({
-        pluginDir,
         isDev = false,
         reportDiagnostic = null
     }: {
-        pluginDir: string;
         isDev: boolean;
         reportDiagnostic?: ReportDiagnostic | null;
     }) {
-        this.pluginDir = pluginDir;
         this.plugins = new Map();
         this._isDev = isDev;
         this.updated = false;
         this.reportDiagnostic = reportDiagnostic ?? undefined;
+        this.pluginLinkService = createPluginLinkService({ reportDiagnostic });
         this.mainRuntime = new MainRuntimePluginEngine({ pluginDir, reportDiagnostic });
     }
     async initialize() {
         if (this.updated) return;
 
         await this.ensureDirectories();
+        await this.pluginLinkService.getPluginLinks();
         await this.updateAllPluginInfo();
         console.log("PLUGINS: ", [...this.plugins.keys()].join(", "));
     }
@@ -78,10 +79,10 @@ export class PluginManager {
         }
     }
     private ensureDirectories() {
-        return fs.access(this.pluginDir).catch(() => fs.mkdir(this.pluginDir));
+        return fs.access(pluginDir).catch(() => fs.mkdir(pluginDir));
     }
     private async getPluginDirList() {
-        const dirs: string[] = (await fs.readdir(this.pluginDir, { withFileTypes: true })).reduce(
+        const dirs: string[] = (await fs.readdir(pluginDir, { withFileTypes: true })).reduce(
             (dirs: string[], dirent) => {
                 if (dirent.isDirectory()) dirs.push(dirent.name);
                 return dirs;
@@ -91,7 +92,7 @@ export class PluginManager {
         return dirs;
     }
     async updatePluginInfo(dir: string) {
-        const manifestResult = await getManifest(this.pluginDir, dir);
+        const manifestResult = await getManifest(pluginDir, dir);
         if (manifestResult.ok === false) {
             if (!manifestResult.silent) {
                 await this.reportDiagnostic?.({
@@ -110,17 +111,41 @@ export class PluginManager {
 
         const rawManifest: RawManifest = manifestResult.data;
         const manifest = normalizeManifest(rawManifest);
+        if (this.plugins.has(manifest.name)) {
+            const duplicatedPlugin = this.plugins.get(manifest.name);
+            await this.reportDiagnostic?.({
+                level: "warning",
+                title: "Duplicated plugin name.",
+                detail: [
+                    `Plugin name: ${manifest.name}`,
+                    `Ignored directory: ${dir}`,
+                    duplicatedPlugin?.info.path
+                        ? `Already registered directory: ${duplicatedPlugin.info.path}`
+                        : null
+                ]
+                    .filter(Boolean)
+                    .join("\n"),
+                source: "plugin",
+                subject: { id: manifest.name, type: manifest.type },
+                dialogue: false,
+                logType: "plugin-duplicated-name-warning"
+            });
+            return null;
+        }
+
+        const sourceDir = this.pluginLinkService.getCachedPluginLinks()[manifest.name]?.sourcePath;
         const plugin: { info: PluginInfo; data: PluginData } = {
             info: {
-                path: dir,
+                path: sourceDir ?? dir,
                 distFile: join(dir, manifest.outDir, "index.js"),
+                ...(manifest.main
+                    ? { mainDistFile: join(dir, manifest.main.outDir, "index.cjs") }
+                    : null),
+                ...(sourceDir ? { linked: { sourcePath: sourceDir } } : null),
                 ...manifest
             },
             data: {}
         };
-        if (manifest.main) {
-            plugin.info.mainDistFile = join(dir, manifest.main.outDir, "index.cjs");
-        }
         this.plugins.set(manifest.name, plugin);
         return plugin;
     }
@@ -136,7 +161,7 @@ export class PluginManager {
     }
     private async isBuilt(pluginInfo: PluginInfo) {
         const files = [pluginInfo.distFile, pluginInfo.mainDistFile].filter(Boolean);
-        return Promise.all(files.map((file) => fs.access(join(this.pluginDir, file as string))))
+        return Promise.all(files.map((file) => fs.access(join(pluginDir, file as string))))
             .then(() => true)
             .catch(() => false);
     }
@@ -146,7 +171,9 @@ export class PluginManager {
         const { info, data } = plugin;
         if (!data.building) {
             console.log("PLUGIN BUILDING: ", pluginName);
-            data.building = buildPlugin(info, { pluginDir: this.pluginDir })
+            data.building = buildPlugin(info, {
+                pluginPath: info.linked ? info.linked.sourcePath : join(pluginDir, info.path)
+            })
                 .then((result) => {
                     data.ready = true;
                     console.log("PLUGIN BUILT: ", pluginName);

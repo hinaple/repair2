@@ -16,7 +16,7 @@
 </script>
 
 <div
-    class={["resource", isPreloaded && "preloaded"]}
+    class={["resource", isPreloaded && "preloaded", resource.folded && "folded"]}
     use:hoverHighlight={{ type: "resource", data: resource.id }}
 >
     <div class="top" onclick={() => (resource.folded = !resource.folded)}>
@@ -40,9 +40,9 @@
                 small
                 row
             />
-            <div class="remove" onclick={remove}>
-                <Icon icon="bin" color="#fff" size={15} />
-            </div>
+            <button class="remove" onclick={remove}>
+                <Icon icon="bin" color="#fff" size={16} />
+            </button>
         </div>
     {/if}
 </div>
@@ -52,14 +52,15 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.1);
         box-sizing: border-box;
         border-radius: 10px;
     }
-    .resource.preloaded {
-        outline: solid #ff8000 3px;
+    .resource.preloaded .top {
+        background-color: #e15300;
     }
     .top {
+        border-radius: 10px 10px 0 0;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -67,6 +68,9 @@
         padding: 10px 5px 10px 10px;
         width: 100%;
         box-sizing: border-box;
+    }
+    .resource.folded > .top {
+        border-radius: 10px;
     }
     .name {
         flex: 1 1 auto;
@@ -111,9 +115,9 @@
         margin-block: 15px;
     }
     .remove {
-        margin: 15px 5px 0 auto;
-        padding: 10px;
-        border-radius: 10px;
+        margin: 5px 0 0 auto;
+        padding: 6px;
+        border-radius: 5px;
         background-color: #ff3939;
         cursor: pointer;
         opacity: 0.8;

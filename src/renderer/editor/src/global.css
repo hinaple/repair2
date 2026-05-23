@@ -61,7 +61,8 @@ hr {
     outline: dashed var(--outline-width) #ff8000;
 }
 .hl-variable,
-.hl-resource {
+.hl-resource,
+.hl-plugin {
     outline: solid var(--outline-width) #ffe734;
     outline-offset: 3px;
 }
