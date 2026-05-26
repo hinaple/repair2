@@ -3,9 +3,9 @@ export default class TypePayload {
     type = $derived(this.types.join("."));
     payload = $state(null);
     #template = {};
-    constructor({ type = [], payload, template }) {
+    constructor({ type = [], payload, template }, creatingOpt = null) {
         this.#template = template;
-        this.changeType(type, payload);
+        this.changeType(type, payload, false, creatingOpt);
     }
     getTemplateWithTypes(steps = this.types) {
         if (!steps.length) return this.#template;
@@ -17,27 +17,15 @@ export default class TypePayload {
     get currentTemplate() {
         return this.getTemplateWithTypes();
     }
-    get typeTree() {
-        const tree = [Object.keys(this.#template)];
-        this.types.reduce((currentObj, currentStep, i) => {
-            const nextObj = currentObj[currentStep];
-            if (nextObj?.isTypeObj) {
-                const keys = Object.keys(nextObj);
-                tree.push(keys.toSpliced(keys.indexOf("isTypeObj"), 1));
-            }
-            return nextObj;
-        }, this.#template);
-        return tree;
-    }
-    genPayload(payload = {}, currentTemplate = this.currentTemplate) {
+    genPayload(payload = {}, currentTemplate = this.currentTemplate, creatingOpt = null) {
         if (currentTemplate?.isTypeObj) return;
 
         if (!currentTemplate) return payload;
         else if (currentTemplate.isClass)
-            return new currentTemplate.class(payload, currentTemplate.argument ?? null);
+            return new currentTemplate.class(payload, currentTemplate.argument ?? creatingOpt);
         return { ...currentTemplate, ...payload };
     }
-    changeType(types = [], payload = {}, raw = false) {
+    changeType(types = [], payload = {}, raw = false, creatingOpt = null) {
         if (!Array.isArray(types)) this.types = [types];
         else this.types = [...types];
 
@@ -52,7 +40,27 @@ export default class TypePayload {
             return;
         }
 
-        this.payload = this.genPayload(payload, currentTemplate);
+        this.payload = this.genPayload(payload, currentTemplate, creatingOpt);
+    }
+    get shortType() {
+        return this.types.join(".");
+    }
+    get lastType() {
+        return this.types[this.types.length - 1];
+    }
+
+    //#only editor
+    get typeTree() {
+        const tree = [Object.keys(this.#template)];
+        this.types.reduce((currentObj, currentStep, i) => {
+            const nextObj = currentObj[currentStep];
+            if (nextObj?.isTypeObj) {
+                const keys = Object.keys(nextObj);
+                tree.push(keys.toSpliced(keys.indexOf("isTypeObj"), 1));
+            }
+            return nextObj;
+        }, this.#template);
+        return tree;
     }
     changeTypeWithHistory(addHistory, type, typeDepth = this.types.length) {
         const newTypes = [...this.types];
@@ -68,23 +76,20 @@ export default class TypePayload {
             undoData: { types: this.types.map((t) => t), payload: this.payload, that: this }
         });
     }
-    get shortType() {
-        return this.types.join(".");
-    }
     get storeData() {
         return {
             type: this.types.map((t) => t),
             payload: this.payload?.storeData ?? $state.snapshot(this.payload)
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
             type: this.types.map((t) => t),
             payload:
-                this.payload?.copyData ?? this.payload?.storeData ?? $state.snapshot(this.payload)
+                this.payload?.copyData?.(availableOuputIds) ??
+                this.payload?.storeData ??
+                $state.snapshot(this.payload)
         };
     }
-    get lastType() {
-        return this.types[this.types.length - 1];
-    }
+    //#endonly
 }

@@ -3,14 +3,21 @@ import { grabbing } from "./stores";
 import { rInfo } from "../nodes/viewport";
 
 export default class Grabber {
-    constructor({ container, handle = null, onMoved, onMoveStart = null, onMoveEnd = null }) {
+    constructor({
+        container,
+        handle = null,
+        onMoved,
+        onMoveStart = null,
+        onMoveEnd = null,
+        inNodeSpace = true
+    }) {
         this.container = container;
         this.handle = handle ?? container;
         const myGrab = Symbol();
 
         let prvMouse;
         let actuallyMoved = false;
-        this.handle.addEventListener("mousedown", (evt) => {
+        this.handle.addEventListener("pointerdown", (evt) => {
             if (get(grabbing) || evt.button) return;
             grabbing.set(myGrab);
             this.container.classList.add("grabbing");
@@ -19,7 +26,7 @@ export default class Grabber {
             if (onMoveStart) onMoveStart({ px: prvMouse.x, py: prvMouse.y });
         });
 
-        this.mousemove = (evt) => {
+        this.pointermove = (evt) => {
             if (get(grabbing) !== myGrab) {
                 this.container.classList.remove("grabbing");
                 return;
@@ -28,14 +35,14 @@ export default class Grabber {
             actuallyMoved = true;
             const currentMouse = { x: evt.clientX, y: evt.clientY };
             onMoved({
-                dx: (currentMouse.x - prvMouse.x) / rInfo.ratio,
-                dy: (currentMouse.y - prvMouse.y) / rInfo.ratio,
+                dx: (currentMouse.x - prvMouse.x) / (inNodeSpace ? rInfo.ratio : 1),
+                dy: (currentMouse.y - prvMouse.y) / (inNodeSpace ? rInfo.ratio : 1),
                 px: currentMouse.x,
                 py: currentMouse.y
             });
             prvMouse = currentMouse;
         };
-        this.mouseup = (evt) => {
+        this.pointerup = (evt) => {
             if (get(grabbing) !== myGrab || (evt && evt.button)) return;
             grabbing.set(null);
             this.container.classList.remove("grabbing");
@@ -43,12 +50,12 @@ export default class Grabber {
             actuallyMoved = false;
         };
 
-        document.body.addEventListener("mousemove", this.mousemove);
-        document.body.addEventListener("mouseup", this.mouseup);
+        document.body.addEventListener("pointermove", this.pointermove);
+        document.body.addEventListener("pointerup", this.pointerup);
     }
     destroy() {
-        this.mouseup();
-        document.body.removeEventListener("mousemove", this.mousemove);
-        document.body.removeEventListener("mouseup", this.mouseup);
+        this.pointerup();
+        document.body.removeEventListener("pointermove", this.pointermove);
+        document.body.removeEventListener("pointerup", this.pointerup);
     }
 }

@@ -33,13 +33,4 @@
         flex-direction: column;
         gap: 3px;
     }
-    select {
-        padding: 2px 5px;
-        border: none;
-        background-color: #fff;
-        font-family: "Pretend";
-        font-size: 20px;
-        color: #000;
-        font-weight: 600;
-    }
 </style>

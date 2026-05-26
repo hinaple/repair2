@@ -1,32 +1,34 @@
-import Config from "./config.svelte";
 import Resource from "./resource.svelte";
 import Variable from "./variable.svelte";
 import { NodeClasses } from "./utils";
+import Config from "./config.svelte";
 
 export default class AppData {
     resources = $state([]);
     variables = $state([]);
-    nodes = $state([]);
+    nodes = new Map();
     constructor({ config = {}, resources = [], variables = [], nodes = [] } = {}) {
         this.config = new Config(config);
         this.resources = resources.map((r) => new Resource(r));
         this.variables = variables.map((r) => new Variable(r));
-        this.nodes = nodes.map((node) => new NodeClasses[node.type](node));
+        this.nodes = new Map(nodes.map((node) => [node.id, new NodeClasses[node.type](node)]));
     }
+    findVariableById(id) {
+        return this.variables.find((v) => v.id === id);
+    }
+    findNodeById(id) {
+        return this.nodes.get(id);
+    }
+
+    //#only play
     findResourceByTitle(title) {
         return this.resources.find((r) => r.title === title);
     }
     findResourceById(id) {
         return this.resources.find((r) => r.id === id);
     }
-    findVariableById(id) {
-        return this.variables.find((v) => v.id === id);
-    }
-    findNodeById(id) {
-        return this.nodes.find((node) => node.id === id);
-    }
     findAllEntry(entryType, data = null) {
-        return this.nodes.filter((node) => {
+        return this.nodes.values().filter((node) => {
             if (node.type !== "entry" || entryType !== node.data.shortType) return false;
             if (!node.data.payload || !data) return true;
 
@@ -54,37 +56,15 @@ export default class AppData {
     }
     resetEntries() {
         this.nodes.forEach((e) => {
-            if (e.type !== "entry" || !e.standbyMode) return;
-            e.activated = false;
+            if (e.type !== "entry") return;
+            e.disable();
         });
     }
     findSequence(id) {
-        return this.nodes.find((node) => node.type === "sequence" && node.id === id);
+        return this.nodes.values().find((node) => node.type === "sequence" && node.id === id);
     }
     findBranch(id) {
-        return this.nodes.find((node) => node.type === "branch" && node.id === id);
+        return this.nodes.values().find((node) => node.type === "branch" && node.id === id);
     }
-    addNodeWithHistory(addHistory, node) {
-        addHistory({
-            doFn: (d) => {
-                this.nodes.push(d);
-            },
-            undoFn: () => {
-                this.nodes.pop();
-            },
-            doData: node
-        });
-    }
-    addManyNodeWithHistory(addHistory, nodes) {
-        addHistory({
-            doFn: (nodes) => {
-                this.nodes.push(...nodes);
-            },
-            undoFn: (from) => {
-                this.nodes.splice(from);
-            },
-            doData: nodes,
-            undoData: this.nodes.length
-        });
-    }
+    //#endonly
 }

@@ -46,7 +46,7 @@
 <div
     class={["value-process", $currentFocus.obj === valueProcess && "focus"]}
     bind:this={el}
-    onmousedown={(evt) => {
+    onpointerdown={(evt) => {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
         focusData("valueProcess", valueProcess, { clipboardFn });

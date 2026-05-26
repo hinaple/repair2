@@ -1,9 +1,10 @@
 export default class Sortable {
     list = $state();
-    constructor(payloads, elementClass) {
+    constructor(payloads, elementClass, creatingOpt = null) {
         this.elementClass = elementClass;
-        this.list = payloads.map((p) => new elementClass(p));
+        this.list = payloads.map((p) => new elementClass(p, creatingOpt || undefined));
     }
+    //#only editor
     add(v) {
         this.list = [...this.list, v];
     }
@@ -63,7 +64,8 @@ export default class Sortable {
     get storeData() {
         return this.list.map((s) => s.storeData);
     }
-    get copyData() {
-        return this.list.map((s) => s.copyData);
+    copyData(availableOuputIds = null) {
+        return this.list.map((s) => s.copyData(availableOuputIds));
     }
+    //#endonly
 }

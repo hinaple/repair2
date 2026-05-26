@@ -7,6 +7,7 @@
     import Preloads from "./stepEdits/Preloads.svelte";
     import Communication from "./stepEdits/Communications.svelte";
     import { pasted } from "../../lib/clipboard";
+    import RuntimePluginStep from "./stepEdits/RuntimePluginStep.svelte";
 
     const { data } = $props();
 </script>
@@ -22,7 +23,7 @@
             focusData("component", data.payload, {
                 preview: data.payload,
                 clipboardFn: {
-                    paste: (_, string) => pasted(string, { type: "component", obj: data.payload })
+                    paste: () => pasted({ type: "component", obj: data.payload })
                 }
             });
     }}
@@ -64,9 +65,9 @@
         type="checkbox"
     />
     <InputField
-        label="딜레이 초기화"
-        value={data.payload.delays}
-        setter={(d) => (data.payload.delays = d)}
+        label="스텝 초기화"
+        value={data.payload.steps}
+        setter={(d) => (data.payload.steps = d)}
         type="checkbox"
     />
     <InputField
@@ -79,6 +80,12 @@
         label="활성 진입점 초기화"
         value={data.payload.entries}
         setter={(d) => (data.payload.entries = d)}
+        type="checkbox"
+    />
+    <InputField
+        label="런타임 플러그인 초기화"
+        value={data.payload.runtimePlugins}
+        setter={(d) => (data.payload.runtimePlugins = d)}
         type="checkbox"
     />
 {:else if data.type === "Others.eventEmit"}
@@ -107,13 +114,21 @@
         type="input"
     />
 {:else if data.type === "Others.executePlugin"}
-    <InputField label="플러그인" value={data.payload.plugin} type="plugin" pluginType="functions" />
+    <InputField
+        label="플러그인"
+        value={data.payload.plugin}
+        type="plugin"
+        pluginType="function"
+        canUnselect={false}
+    />
     <InputField
         label="끝날 때까지 기다리기"
         value={data.payload.waitTillEnd}
         setter={(d) => (data.payload.waitTillEnd = d)}
         type="checkbox"
     />
+{:else if data.type === "Others.runtimePluginStep"}
+    <RuntimePluginStep {data} />
 {:else if data.type === "Others.script"}
     <InputField
         label="스크립트 코드"

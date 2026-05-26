@@ -9,12 +9,12 @@
         menuEl.style.left = `${$contextMenu.pos.x}px`;
         menuEl.style.top = `${$contextMenu.pos.y}px`;
     });
-    function onmousedown(evt) {
+    function onpointerdown(evt) {
         if (get(contextMenu) && menuEl && !menuEl.contains(evt.target)) outClicked();
     }
 </script>
 
-<svelte:body {onmousedown} />
+<svelte:body {onpointerdown} />
 {#if $contextMenu}
     <div class="context-menu" bind:this={menuEl}>
         {#each $contextMenu.items as item}
@@ -45,7 +45,7 @@
 <style>
     .context-menu {
         position: fixed;
-        z-index: 101;
+        z-index: var(--contextmenu-z);
         background-color: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(4px);
         box-shadow: rgba(0, 0, 0, 0.3) 3px 3px 10px;

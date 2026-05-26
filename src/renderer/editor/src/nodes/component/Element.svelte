@@ -73,6 +73,8 @@
             return { type: "variable", data: element.payload?.variableId, active: true };
         if (element.type === "image" || element.type === "video")
             return { type: "resource", data: element.payload?.resourceId, active: true };
+        if (element.type === "plugin")
+            return { type: "plugin", data: element.payload?.name, active: true };
         return { active: false };
     });
 </script>
@@ -80,7 +82,7 @@
 <div
     class={["element", $currentFocus.obj === element && "focus"]}
     bind:this={el}
-    onmousedown={(evt) => {
+    onpointerdown={(evt) => {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
         focusData("element", element, { preview: parent, clipboardFn });
@@ -96,7 +98,7 @@
         <div class="title">
             {element.alias?.length ? element.alias : ElementTypes[element.type]}
         </div>
-        <div class="add" onmousedown={addListener}>
+        <div class="add" onpointerdown={addListener}>
             <Icon icon="arrow" size={9} lineWidth={1.5} />
         </div>
     </div>

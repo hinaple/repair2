@@ -1,9 +1,12 @@
-import "./pluginManager";
+import "./plugin/pluginManager";
 import { ipcRenderer } from "electron";
 import AppDataClass from "@classes/appData.svelte";
 import { registerVariables } from "./variables";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
 import initShortcuts from "./shortcut";
+import { sendTotalInfo } from "./runtimeMonitor";
+import { activateRuntimePlugins, deactivateAll } from "./plugin/runtimePlugins";
+import { registerPluginContextApi } from "./plugin/pluginContext";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -13,6 +16,9 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
     appdata = new AppDataClass(data);
     registerVariables(appdata.variables);
     initShortcuts(appdata.findAllEntry("shortcut"));
+    activateRuntimePlugins(appdata.config.runtimePlugins);
+
+    sendTotalInfo();
 
     if (appdata.config.width)
         document.body.style.setProperty("--gamezone-width", `${appdata.config.width}px`);
@@ -25,7 +31,6 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
 
     globalStyles.textContent = data.globalStyles;
 }
-updateData();
 
 ipcRenderer.on("data", (event, data) => {
     console.log(data);
@@ -34,6 +39,10 @@ ipcRenderer.on("data", (event, data) => {
 
 ipcRenderer.on("global-css", (event, css) => {
     globalStyles.textContent = css;
+});
+
+window.addEventListener("beforeunload", () => {
+    deactivateAll();
 });
 
 /**
@@ -47,9 +56,10 @@ export function getSizeRatio() {
     const ratio = (appdata.config.sizeRatio || "1")
         .toString()
         .split(",")
-        .map((n) => n);
+        .map((n) => +n);
     return ratio.length === 2 ? ratio : [ratio[0], ratio[0]];
 }
 
 registerUtils("getAppData", getAppData);
 registerUtils("getSizeRatio", getSizeRatio);
+registerPluginContextApi("appDataGetter", getAppData);

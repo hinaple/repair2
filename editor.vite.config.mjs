@@ -2,11 +2,13 @@ import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { resolve } from "path";
 import renderer from "vite-plugin-electron-renderer";
+import onlyBlockPlugin from "./vitePlugins/only-block-plugin.mjs";
 
 export default defineConfig({
     root: "src/renderer/editor",
     cacheDir: "node_modules/.vite-editor",
     plugins: [
+        onlyBlockPlugin({ target: "editor", dir: "src/renderer/classes" }),
         svelte({
             onwarn: (warning, handler) => {
                 if (!warning.code.startsWith("a11y")) handler(warning);

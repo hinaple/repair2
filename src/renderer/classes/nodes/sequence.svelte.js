@@ -4,21 +4,30 @@ import Sortable from "../sortable.svelte";
 import AdvancedNode from "./advancedNode";
 
 export default class Sequence extends AdvancedNode {
-    constructor({ steps = [], output = {}, ...nodeData } = {}) {
+    constructor({ steps = [], output = {}, ...nodeData } = {}, creatingOpt = null) {
         super("sequence", nodeData);
-        this.steps = new Sortable(steps, Step);
-        this.output = new Output(output);
+        this.steps = new Sortable(steps, Step, creatingOpt);
+        this.output = new Output(output, creatingOpt);
     }
+    //#only play
     async execute() {
         for (const step of this.steps.list) {
             if ((await step.execute()) === false) return;
         }
         this.output.goto();
     }
+    //#endonly
+
+    //#only editor
     get storeData() {
         return { ...super.storeData, steps: this.steps.storeData, output: this.output };
     }
-    get copyData() {
-        return { ...super.copyData, steps: this.steps.copyData };
+    copyData(availableOuputIds = null) {
+        return {
+            ...super.copyData(),
+            steps: this.steps.copyData(availableOuputIds),
+            output: this.output.copyData(availableOuputIds)
+        };
     }
+    //#endonly
 }

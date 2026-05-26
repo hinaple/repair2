@@ -1,0 +1,26 @@
+{
+    "name": "@fainthit/repair2-plugin-sdk",
+    "version": "0.2.0",
+    "description": "Type-first authoring contracts for REPAIR2 plugins.",
+    "type": "module",
+    "main": "./src/index.js",
+    "types": "./src/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./src/index.d.ts",
+            "import": "./src/index.js"
+        },
+        "./plugin-manifest.schema.json": "./plugin-manifest.schema.json"
+    },
+    "files": [
+        "src/index.js",
+        "src/index.d.ts",
+        "src/shared.d.ts",
+        "src/context.d.ts",
+        "src/plugin.d.ts",
+        "src/runtime.d.ts",
+        "plugin-manifest.schema.json",
+        "README.md"
+    ],
+    "license": "MIT"
+}

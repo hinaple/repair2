@@ -1,8 +1,10 @@
 <script>
     import Node from "./Node.svelte";
     import { EntryTypes } from "../lib/translate";
+    import { startMonitoring } from "../lib/runtimeMonitor.svelte";
+    import { onDestroy } from "svelte";
 
-    let { entry, isLastHold, onmousedown, ...nodeData } = $props();
+    let { entry, isLastHold, onpointerdown, ...nodeData } = $props();
 
     let title = $derived.by(() => {
         if (entry.alias?.length) return entry.alias;
@@ -12,7 +14,9 @@
             return (
                 "단축키 " +
                 (entry.data.payload.ctrlKey ? "Ctrl+" : "") +
+                (entry.data.payload.altKey ? "Alt+" : "") +
                 (entry.data.payload.shiftKey ? "Shift+" : "") +
+                (entry.data.payload.metaKey ? "Win+" : "") +
                 entry.data.payload.key.toUpperCase()
             );
         if (entry.data.type === "Communication.serialData" && entry.data.payload.whenDataIs?.length)
@@ -21,6 +25,13 @@
             return `소켓 데이터 수신(${entry.data.payload.channel}${entry.data.payload.data?.length ? ":" + entry.data.payload.data : ""})`;
         return EntryTypes[entry.data.type];
     });
+
+    let color = $state(!entry.standbyMode ? "#000" : "#555555");
+    const unsub = startMonitoring("entries", entry.id, (isActivated) => {
+        color = entry.standbyMode ? (isActivated ? "#e15300" : "#555555") : "#000";
+    });
+
+    onDestroy(unsub);
 </script>
 
 <Node
@@ -30,6 +41,7 @@
     hasInput={entry.standbyMode}
     {title}
     {isLastHold}
-    {onmousedown}
+    {onpointerdown}
+    {color}
     {...nodeData}
 />

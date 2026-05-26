@@ -2,6 +2,7 @@
     import InputField from "../InputField.svelte";
     import ToggleZone from "./ToggleZone.svelte";
     import { reloadPreview } from "../editUtils";
+    import Toggles from "../../lib/Toggles.svelte";
 
     const { data } = $props();
 </script>
@@ -12,13 +13,31 @@
     setter={(d) => (data.alias = d)}
     placeholder="이름 없는 컴포넌트"
 />
-<InputField
-    label="보호됨"
-    value={data.unbreakable}
-    setter={(d) => (data.unbreakable = d)}
-    type="checkbox"
+<Toggles
+    toggles={[
+        {
+            trueIcon: "locked",
+            falseIcon: "unlocked",
+            value: data.unbreakable,
+            setter: (d) => (data.unbreakable = d)
+        },
+        {
+            trueIcon: "visible",
+            falseIcon: "invisible",
+            value: data.visible,
+            setter: (d) => (data.visible = d)
+        }
+    ]}
+    style="margin-block: -8px;"
 />
-<InputField label="표시" value={data.visible} setter={(d) => (data.visible = d)} type="checkbox" />
+<hr />
+<!-- //     <InputField
+//     label="보호됨"
+//     value={data.unbreakable}
+//     setter={(d) => (data.unbreakable = d)}
+//     type="checkbox"
+// />
+// <InputField label="표시" value={data.visible} setter={(d) => (data.visible = d)} type="checkbox" /> -->
 <InputField label="위치" value={data.pos} type="position" previewer oninput={reloadPreview} />
 <InputField
     label="Z축 위치"
@@ -39,7 +58,7 @@
     placeholder="inline CSS code"
     autoResizeOpt={{ minHeight: 50 }}
 />
-<InputField label="프레임" value={data.frame} type="plugin" pluginType="frames" />
+<InputField label="프레임" value={data.frame} type="plugin" pluginType="frame" />
 <hr />
 <ToggleZone label="트랜지션 설정">
     <InputField label="인트로" value={data.introTransition} type="transition" />

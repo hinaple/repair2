@@ -13,7 +13,7 @@ function setCurrentCursor(v) {
 export function addHistory({ doFn, undoFn = null, doData = null, undoData = null }) {
     doFn(doData);
     if (history.length > currentCursor) history = history.toSpliced(currentCursor);
-    const tempHistory = { redo: doFn, undo: undoFn || doFn, doData, undoData: undoData };
+    const tempHistory = { redo: doFn, undo: undoFn || doFn, doData, undoData };
     history.push(tempHistory);
     console.log("NEW HISTORY", history[currentCursor]);
     setCurrentCursor(currentCursor + 1);

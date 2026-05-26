@@ -9,7 +9,3 @@ const app = mount(App, {
 });
 
 export default app;
-
-globalThis.LitElement = HTMLElement;
-globalThis.html = () => {};
-globalThis.css = () => {};

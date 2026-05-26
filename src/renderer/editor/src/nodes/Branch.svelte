@@ -6,13 +6,13 @@
     import { ComparisonOperatorTypes } from "../lib/translate";
     import { outClicked } from "../lib/contextMenu/contextUtils";
 
-    let { branch, onmousedown, ...nodeData } = $props();
+    let { branch, onpointerdown, ...nodeData } = $props();
 
     function focusZoneMouseDown(evt) {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
         outClicked();
-        onmousedown();
+        onpointerdown();
     }
 </script>
 
@@ -20,7 +20,7 @@
     node={branch}
     type="branch"
     title={branch.alias?.length ? branch.alias : "분기"}
-    {onmousedown}
+    {onpointerdown}
     minWidth={350}
     outputs={[
         { output: branch.trueOutput, id: `${branch.id}_true`, label: "참" },
@@ -35,17 +35,17 @@
                     pre="값A: "
                     isValueA
                     value={branch.valueA}
-                    onmousedown={focusZoneMouseDown}
+                    onpointerdown={focusZoneMouseDown}
                     parent={branch}
                 />
                 <Value
                     pre="값B: "
                     value={branch.valueB}
-                    onmousedown={focusZoneMouseDown}
+                    onpointerdown={focusZoneMouseDown}
                     parent={branch}
                 />
             </div>
-            <div class="operator" onmousedown={focusZoneMouseDown}>
+            <div class="operator" onpointerdown={focusZoneMouseDown}>
                 {ComparisonOperatorTypes[branch.operator] ?? "?"}
             </div>
         </div>

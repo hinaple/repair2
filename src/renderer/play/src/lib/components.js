@@ -1,8 +1,11 @@
 import RepairComponent from "../webcomponents/repairComponent";
+import { notifyComponentSubscribers, setComponentReader } from "./componentRegistry";
+import { sendChanges } from "./runtimeMonitor";
 
 const gamezone = document.getElementById("gamezone");
 
 let components = [];
+setComponentReader(() => components);
 
 function getDuplicatedComponentIdx(component) {
     return components.findIndex(
@@ -24,6 +27,8 @@ export function addComponent(component) {
 
     if (idx === -1) components.push(newComponent);
     else components[idx] = newComponent;
+    notifyComponentSubscribers();
+    sendChanges("component", "created", component.id);
 }
 async function removeComponentFromDOM(component, playOutro = true) {
     if (!component.visible) return;
@@ -36,8 +41,10 @@ async function removeComponentByIdx(idx, willBeReplaced = false) {
 
     const tempComp = components[idx];
     if (!willBeReplaced) components.splice(idx, 1);
+    sendChanges("component", "removed", tempComp.realId);
 
     removeComponentFromDOM(tempComp, !willBeReplaced);
+    if (!willBeReplaced) notifyComponentSubscribers();
 }
 
 export function removeComponentByAlias(alias, ignoreUnbreakable = false) {
@@ -52,6 +59,12 @@ export function clearComponents(ignoreUnbreakable = false) {
 
     if (ignoreUnbreakable) components = [];
     else components = components.filter((c) => c?.unbreakable);
+    notifyComponentSubscribers();
+    sendChanges(
+        "component",
+        "set",
+        components.map((c) => c.realId)
+    );
 }
 export function modifyComponentByAlias(alias, modifyKey, modifyValue) {
     const idx = getComponentIdx(alias);
@@ -63,15 +76,23 @@ export function modifyComponentByAlias(alias, modifyKey, modifyValue) {
         else removeComponentFromDOM(currentComp);
 
         currentComp.visible = !!modifyValue;
+        notifyComponentSubscribers();
         return;
     }
     if (modifyKey === "style") {
         currentComp.renderStyle(modifyValue || "");
+        notifyComponentSubscribers();
         return;
     }
     if (modifyKey === "zIndex") {
         currentComp.setZIndex(modifyValue);
+        notifyComponentSubscribers();
         return;
     }
     currentComp[modifyKey] = modifyValue;
+    notifyComponentSubscribers();
+}
+
+export function getComponents() {
+    return components;
 }

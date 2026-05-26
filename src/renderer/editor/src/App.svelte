@@ -8,6 +8,10 @@
     import NodeSpace from "./nodes/NodeSpace.svelte";
     import { focusData } from "./sidebar/editUtils";
     import SideBar from "./sidebar/SideBar.svelte";
+    import { onMount } from "svelte";
+    import { ipcRenderer } from "electron";
+    import { reload } from "./lib/stores";
+    import Modal from "./lib/modal/ModalDisplay.svelte";
 
     focusData("project");
 
@@ -25,14 +29,24 @@
     }
 
     $inspect(appData);
+
+    onMount(() => {
+        ipcRenderer.send("monitor-event", "start");
+    });
+
+    document.fonts.ready.then(() => {
+        reload("nodeMoved");
+        console.log("fonts loaded");
+    });
 </script>
 
 <svelte:window {onkeydown} />
 <div class="info">REPAIR v{__APP_VERSION__}</div>
-<NodeSpace />
-<ToastDisplay />
 <ContextMenu />
+<ToastDisplay />
+<Modal />
 <SideBar />
+<NodeSpace />
 
 <style>
     .info {
@@ -43,6 +57,6 @@
         font-size: 12px;
         opacity: 0.8;
         pointer-events: none;
-        z-index: 99999;
+        z-index: var(--info-z);
     }
 </style>

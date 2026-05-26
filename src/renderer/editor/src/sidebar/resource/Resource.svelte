@@ -5,21 +5,32 @@
     import FoldArrow from "../../lib/FoldArrow.svelte";
     import ResourcePreview from "../../lib/ResourcePreview.svelte";
     import { changeResourceFile } from "./selectResourceFile";
+    import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
+    import { onDestroy } from "svelte";
 
     let { resource, remove } = $props();
+
+    let isPreloaded = $state(false);
+    const unsub = startMonitoring("preloads", resource.id, (f) => (isPreloaded = f));
+    onDestroy(unsub);
 </script>
 
-<div class="resource" use:hoverHighlight={{ type: "resource", data: resource.id }}>
+<div
+    class={["resource", isPreloaded && "preloaded", resource.folded && "folded"]}
+    use:hoverHighlight={{ type: "resource", data: resource.id }}
+>
     <div class="top" onclick={() => (resource.folded = !resource.folded)}>
         <div class="name">{resource.title}</div>
         <FoldArrow folded={resource.folded} />
     </div>
     {#if !resource.folded}
         <div class="body">
-            <ResourcePreview {resource} />
+            <div class="preview-wrapper">
+                <ResourcePreview {resource} />
+            </div>
             <div class="src" onclick={() => changeResourceFile(resource)}>
                 <span>{resource.src ?? "선택된 파일 없음"}</span>
-                <div class="select-file">파일 선택</div>
+                <button class="select-file">파일 선택</button>
             </div>
             <hr />
             <InputField
@@ -31,9 +42,9 @@
                 small
                 row
             />
-            <div class="remove" onclick={remove}>
-                <Icon icon="bin" color="#fff" size={15} />
-            </div>
+            <button class="remove" onclick={remove}>
+                <Icon icon="bin" color="#fff" size={16} />
+            </button>
         </div>
     {/if}
 </div>
@@ -43,9 +54,18 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        background-color: rgba(255, 255, 255, 0.2);
+        border: solid rgba(255, 255, 255, 0.2) 1px;
         box-sizing: border-box;
         border-radius: 10px;
+        overflow: hidden;
+        flex: 0 0 auto;
+    }
+    .resource:hover,
+    .resource:not(.folded) {
+        border-color: #fff;
+    }
+    .resource.preloaded .top {
+        background-color: #e15300;
     }
     .top {
         display: flex;
@@ -70,6 +90,12 @@
         padding: 20px 10px;
         box-sizing: border-box;
     }
+    .preview-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-height: 200px;
+    }
     .src {
         display: flex;
         flex-direction: row;
@@ -85,11 +111,12 @@
         margin-left: auto;
         padding: 5px 8px;
         background-color: rgba(255, 255, 255, 0.8);
-        border-radius: 10px;
+        border-radius: 5px;
         color: #000;
         opacity: 0.8;
         font-weight: 600;
         font-size: 14px;
+        cursor: pointer;
     }
     .src:hover > .select-file {
         opacity: 1;
@@ -99,9 +126,9 @@
         margin-block: 15px;
     }
     .remove {
-        margin: 15px 5px 0 auto;
-        padding: 10px;
-        border-radius: 10px;
+        margin: 5px 0 0 auto;
+        padding: 6px;
+        border-radius: 5px;
         background-color: #ff3939;
         cursor: pointer;
         opacity: 0.8;

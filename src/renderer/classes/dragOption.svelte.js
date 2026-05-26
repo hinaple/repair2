@@ -28,6 +28,7 @@ export default class DragOption {
         this.snapDuration = snapDuration;
         this.moveEasing = moveEasing;
     }
+    //#only editor
     get storeData() {
         return this.use
             ? {
@@ -42,4 +43,5 @@ export default class DragOption {
               }
             : {};
     }
+    //#endonly
 }

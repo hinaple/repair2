@@ -9,6 +9,7 @@
     import { onDestroy } from "svelte";
     import registerHighlight from "../lib/highlight";
     import { genClipboardFn } from "../lib/clipboard";
+    import { startMonitoring } from "../lib/runtimeMonitor.svelte";
 
     let {
         item: step,
@@ -23,12 +24,6 @@
         step.type;
         step.title;
         reload("nodeMoved");
-    });
-
-    onDestroy(() => {
-        if (get(currentFocus).obj === step) {
-            focusData("project");
-        }
     });
 
     const clipboardFn = genClipboardFn("step", step, remove);
@@ -61,16 +56,30 @@
     ];
 
     let hlData = $derived.by(() => {
-        if (step.type === "setVariable")
+        if (step.type === "Others.setVariable")
             return { type: "variable", data: step.payload?.variableId, active: true };
+        else if (step.type === "Others.executePlugin")
+            return { type: "plugin", data: step.payload?.plugin.name, active: true };
+        else if (step.type === "Others.runtimePluginStep")
+            return { type: "plugin", data: step.payload?.pluginName, active: true };
         return { active: false };
+    });
+
+    let activated = $state(false);
+    const unsub = startMonitoring("steps", step.id, (f) => (activated = f));
+
+    onDestroy(() => {
+        unsub();
+        if (get(currentFocus).obj === step) {
+            focusData("project");
+        }
     });
 </script>
 
 <div
-    class={["step", $currentFocus.obj === step && "focus"]}
+    class={["step", $currentFocus.obj === step && "focus", activated && "activated"]}
     bind:this={el}
-    onmousedown={(evt) => {
+    onpointerdown={(evt) => {
         if (evt.button || get(grabbing)) return;
         evt.stopPropagation();
         focusData("step", step, { clipboardFn });
@@ -81,11 +90,17 @@
 >
     <div class="info">
         <div class="handle" bind:this={handle}>
-            <Icon icon="hamburger" color="rgba(0, 0, 0, 0.5)" size={8} />
+            <Icon
+                icon="hamburger"
+                color={activated ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
+                size={8}
+            />
         </div>
-        <span>
-            {step.displayTitle ?? StepTypes[step.type] ?? "빈 스텝"}
-        </span>
+        <div class="title-wrapper">
+            <div class="title">
+                {step.displayTitle ?? StepTypes[step.type] ?? "빈 스텝"}
+            </div>
+        </div>
     </div>
     {#if step.type === "Component.create"}
         <Component payload={step.payload} {noGrab} {nodeCountChanged} />
@@ -94,11 +109,15 @@
 
 <style>
     .step {
-        min-width: 100%;
+        width: 100%;
         font-weight: 600;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+    }
+    .step.activated {
+        background-color: #e15300;
+        color: #fff;
     }
     .handle {
         box-sizing: border-box;
@@ -114,5 +133,20 @@
         display: flex;
         flex-direction: row;
         align-items: center;
+        overflow-x: hidden;
+    }
+    .title-wrapper {
+        height: 100%;
+        width: calc(100% - 25px);
+        position: relative;
+    }
+    .title {
+        transform: translateY(5.5px);
+        width: 100%;
+        position: absolute;
+        text-overflow: ellipsis;
+        word-break: break-all;
+        overflow-x: hidden;
+        white-space: nowrap;
     }
 </style>

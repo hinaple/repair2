@@ -1,3 +1,4 @@
+import { reload } from "../../lib/stores";
 import { get, writable } from "svelte/store";
 
 export const lines = writable([]);
@@ -22,9 +23,10 @@ export function removeLine(fromId) {
     if (targetIdx === -1) return;
     lines.update((arr) => arr.toSpliced(targetIdx, 1));
 }
-export function getAllConnectedNodes(nodeId) {
+export function getAllConnectedLines(nodeId) {
     return get(lines).filter((l) => l.output.to === nodeId);
 }
 export function setAllOutput(lines, toId = null) {
     lines.forEach((l) => (l.output.to = toId));
+    reload("nodeMoved");
 }

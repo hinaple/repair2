@@ -6,12 +6,14 @@ import PluginPointer from "./pluginPointer.svelte";
 class executePlugin {
     waitTillEnd = $state();
     constructor({ plugin = {}, waitTillEnd = false }) {
-        this.plugin = new PluginPointer(plugin, "functions");
+        this.plugin = new PluginPointer(plugin, "function");
         this.waitTillEnd = waitTillEnd;
     }
+    //#only editor
     get storeData() {
         return { plugin: this.plugin.storeData, waitTillEnd: this.waitTillEnd };
     }
+    //#endonly
 }
 
 const PayloadTemplates = {
@@ -48,7 +50,7 @@ const PayloadTemplates = {
             isTypeObj: true,
             connect: { url: null },
             connectService: { type: null, name: null },
-            send: { channel: null, data: null, splitStr: null },
+            send: { channel: null, data: [null] },
             disconnect: null
         }
     },
@@ -59,13 +61,15 @@ const PayloadTemplates = {
             audios: true,
             variables: true,
             components: true,
-            delays: true,
+            steps: true,
             preloads: true,
-            entries: true
+            entries: true,
+            runtimePlugins: true
         },
         setVariable: { variableId: null, value: null },
         resetAllVariables: null,
         executePlugin: { isClass: true, class: executePlugin },
+        runtimePluginStep: { pluginName: null, step: null, payloads: {}, waitTillEnd: false },
         eventEmit: { channel: null, data: null },
         script: { code: null },
         log: { content: null }
@@ -74,17 +78,37 @@ const PayloadTemplates = {
 
 export default class Step extends TypePayload {
     title = $state();
-    constructor({ id = genId(), type = null, title = null, payload = {} } = {}) {
-        super({ type, payload, template: PayloadTemplates });
+    constructor(
+        { id = genId(), type = null, title = null, payload = {} } = {},
+        creatingOpt = null
+    ) {
+        if (
+            (type?.join(".") ?? type) === "Communication.Socket.send" &&
+            !Array.isArray(payload.data)
+        ) {
+            payload.data =
+                typeof payload.data === "string"
+                    ? payload.data.split(payload.splitStr ?? null)
+                    : [payload.data];
+        }
+        super({ type, payload, template: PayloadTemplates }, creatingOpt);
         this.id = id;
         this.title = title;
     }
+    execute() {}
+
+    //#only editor
     get displayTitle() {
         if (this.title?.length) return this.title;
         if (this.type === "delay") return `딜레이 ${this.payload.delayMs}ms`;
+        if (
+            this.type === "Others.runtimePluginStep" &&
+            this.payload.pluginName &&
+            this.payload.step
+        )
+            return `${this.payload.step}(${this.payload.pluginName})`;
         return null;
     }
-    execute() {}
     get storeData() {
         return {
             id: this.id,
@@ -92,10 +116,11 @@ export default class Step extends TypePayload {
             title: this.title
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
-            ...super.copyData,
+            ...super.copyData(availableOuputIds),
             title: this.title
         };
     }
+    //#endonly
 }

@@ -4,9 +4,8 @@ directories:
     buildResources: build
 extraFiles:
     - templates/**/*
-    - plugin-devtool/**/*
-    # - from: plugin-devtool
-    #   to: resources/plugin-devtool
+    - from: packages/plugin-sdk
+      to: sdk/repair2-plugin-sdk
 files:
     - "!**/.vscode/*"
     - "!src/*"
@@ -15,6 +14,7 @@ files:
     - "!{.env,.env.*,.npmrc,pnpm-lock.yaml}"
 asarUnpack:
     - resources/**
+    - node_modules/svelte/**
 win:
     executableName: repair2
     icon: resources/logo.png

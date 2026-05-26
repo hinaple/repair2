@@ -5,15 +5,16 @@ import VariableSet from "@classes/nodes/variableSet.svelte";
 import ValueProcess from "@classes/value/valueProcess";
 
 import { enToKo, koToEn } from "./lib/enKoConvert";
-import { getAppData } from "./lib/appdata";
-import stepExecute from "./lib/stepActions";
+import { getAppData, updateData } from "./lib/appdata";
+import { stepExecute } from "./lib/stepActions";
 import { ipcRenderer } from "electron";
 import { setVar } from "./lib/variables";
 import "./lib/communication";
 import "./lib/editorOpen";
 import "./lib/store";
-
-console.log(getAppData());
+import Entry from "@classes/nodes/entry.svelte";
+import { sendChanges } from "./lib/runtimeMonitor";
+import { afterPluginImported } from "./lib/plugin/pluginManager";
 
 const disabledNodes = [];
 Output.prototype.goto = function () {
@@ -68,8 +69,22 @@ ValueProcess.prototype.process = function (before) {
     return string;
 };
 
+Entry.prototype.onEntered = function () {
+    sendChanges("entry", "entered", this.id);
+};
+Entry.prototype.onActivated = function () {
+    sendChanges("entry", "activated", this.id);
+};
+Entry.prototype.onDisabled = function () {
+    sendChanges("entry", "disabled", this.id);
+};
+
 window.addEventListener("load", () => {
-    getAppData().enterEntry("startup");
+    afterPluginImported().then(() => {
+        updateData();
+        ipcRenderer.send("play-win-ready");
+        getAppData().enterEntry("startup");
+    });
 });
 
 ipcRenderer.on("request-execute", (event, { type, id }) => {

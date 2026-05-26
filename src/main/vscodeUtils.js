@@ -2,7 +2,7 @@ import { exec } from "child_process";
 
 export function checkVscodeInstalled() {
     return new Promise((res) => {
-        exec("code --v", (error, stdout, stderr) => {
+        exec("code -v", (error, stdout, stderr) => {
             if (error) res(false);
             else res(true);
         });

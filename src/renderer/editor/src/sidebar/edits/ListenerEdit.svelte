@@ -42,7 +42,7 @@
         placeholder="항상 발동"
     />
 {:else if data.type === "plugin"}
-    <InputField label="플러그인" value={data.payload.plugin} type="plugin" pluginType="functions" />
+    <InputField label="플러그인" value={data.payload.plugin} type="plugin" pluginType="function" />
 {/if}
 
 <hr />

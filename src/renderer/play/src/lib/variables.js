@@ -1,8 +1,11 @@
 import Value from "@classes/value/value.svelte";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
+import { sendChanges } from "./runtimeMonitor";
 
 let variables = {};
-export default variables;
+export function getVariables() {
+    return variables;
+}
 
 export function registerVariables(varArr) {
     variables = {};
@@ -20,10 +23,28 @@ export function getVar(id) {
     return variables[id]?.value;
 }
 
+export function getVariableIdByName(variableName) {
+    return Object.entries(variables).find(([, variable]) => variable.name === variableName)?.[0] ?? null;
+}
+
+export function getVarByName(variableName) {
+    const id = getVariableIdByName(variableName);
+    return id ? getVar(id) : undefined;
+}
+
 export function setVar(id, value) {
     if (!variables[id]) return;
     variables[id].value = value;
     variables[id].subscriptions.forEach((c) => c(value));
+
+    sendChanges("variable", "changed", id, value);
+}
+
+export function setVarByName(variableName, value) {
+    const id = getVariableIdByName(variableName);
+    if (!id) return false;
+    setVar(id, value);
+    return true;
 }
 
 export function resetAllVar() {
@@ -41,8 +62,14 @@ export function subscribe(id, callback) {
     };
 }
 
+export function subscribeVarByName(variableName, callback) {
+    const id = getVariableIdByName(variableName);
+    if (!id) return null;
+    return subscribe(id, callback);
+}
+
 function repairVar(name) {
-    const vId = Object.entries(variables).find(([k, v]) => v.name === name)[0];
+    const vId = getVariableIdByName(name);
     if (!vId) console.error("Variable named", name, "does not exist.");
     return vId;
 }

@@ -3,8 +3,14 @@
     import InputField from "../InputField.svelte";
     import outClickAction from "../../lib/outclickaction";
     import { hoverHighlight } from "../../lib/highlight";
+    import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
+    import { onDestroy } from "svelte";
 
     let { variable, isEditing, edit, blur, remove } = $props();
+
+    let runtimeValue = $state(null);
+    const unsub = startMonitoring("variables", variable.id, (v) => (runtimeValue = v));
+    onDestroy(unsub);
 </script>
 
 <div
@@ -32,15 +38,20 @@
     {:else}
         <div class="top">
             <div class="name">{variable.name?.length ? variable.name : "이름 없는 변수"}</div>
-            <div class="icon" onclick={edit}>
-                <Icon icon="edit" color="#fff" size={15} />
-            </div>
-            <div class="icon" onclick={remove}>
-                <Icon icon="bin" color="#fff" size={15} />
-            </div>
+            <button class="icon" onclick={edit}>
+                <Icon icon="edit" color="#fff" size={16} />
+            </button>
+            <button class="icon" onclick={remove}>
+                <Icon icon="bin" color="#fff" size={16} />
+            </button>
         </div>
         {#if variable.defaultValue?.length}
             <div class="value">{variable.defaultValue}</div>
+        {/if}
+        {#if runtimeValue && variable.defaultValue !== runtimeValue}
+            <div class="runtime-value">
+                {runtimeValue}
+            </div>
         {/if}
     {/if}
 </div>
@@ -48,18 +59,28 @@
 <style>
     .variable {
         display: flex;
-        gap: 5px;
         flex-direction: column;
         width: 100%;
-        background-color: rgba(255, 255, 255, 0.2);
-        padding: 10px;
+        padding: 5px 7px 5px 10px;
         box-sizing: border-box;
         border-radius: 10px;
+        border: solid transparent 1px;
+    }
+    .variable:has(> :nth-child(2)) {
+        padding: 5px 5px 10px 10px;
+    }
+    .variable:hover {
+        border-color: rgba(255, 255, 255, 0.2);
     }
     .variable.editing {
         opacity: 1;
+        padding: 10px;
+        border-color: #4e86ff;
     }
     .icon {
+        border-radius: 5px;
+        padding: 5px;
+
         opacity: 0;
         cursor: pointer;
     }
@@ -67,12 +88,12 @@
         opacity: 0.5;
     }
     .icon:hover {
+        background-color: rgba(255, 255, 255, 0.1);
         opacity: 1 !important;
     }
     .top {
         display: flex;
         align-items: center;
-        gap: 10px;
     }
     .name {
         flex: 1 1 auto;
@@ -86,10 +107,18 @@
         font-size: 14px;
         font-weight: 400;
         pointer-events: none;
+        margin-left: 5px;
     }
     .edit-zone {
         display: flex;
         flex-direction: column;
         gap: 10px;
+    }
+    .runtime-value {
+        margin: 3px 5px 0 5px;
+        padding: 3px 5px;
+        border-radius: 5px;
+        background-color: rgba(247, 141, 79, 0.6);
+        color: #fff;
     }
 </style>

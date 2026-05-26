@@ -1,4 +1,23 @@
 import RepairElement from "./repairElement";
+import { disposePluginContext } from "../lib/plugin/pluginContext";
+import { reportPluginException } from "../lib/plugin/pluginReporter";
+import { pluginAppended } from "../lib/plugin/pluginStyles";
+
+function getComponentIdentity(componentData) {
+    return {
+        id: componentData.aliasOrId,
+        realId: componentData.id,
+        alias: componentData.alias ?? null
+    };
+}
+
+function getFrameIdentity(framePlugin) {
+    return {
+        id: framePlugin.name,
+        realId: framePlugin.name,
+        alias: null
+    };
+}
 
 export default class RepairComponent extends HTMLElement {
     constructor(componentData, showIntro = true) {
@@ -20,19 +39,33 @@ export default class RepairComponent extends HTMLElement {
         this.introTransition = componentData.introTransition;
         this.outroTransition = componentData.outroTransition;
 
+        this.componentIdentity = getComponentIdentity(componentData);
+        this.elements = componentData.elements.list.map(
+            (e) => new RepairElement(e, this.componentIdentity)
+        );
+
         this.frameEl = null;
-        this.unsubscriber = componentData.frame.hmrSubscribe((tempFrame) => {
-            if (!tempFrame) return;
-            const prvFrame = this.frameEl;
-            this.frameEl = tempFrame;
-            this.appendChild(this.frameEl);
+        this.frameIdentity = getFrameIdentity(componentData.frame);
+        this.unsubscriber = componentData.frame.hmrSubscribe(
+            (tempFrame) => {
+                if (!tempFrame) return;
+                const prvFrame = this.frameEl;
+                this.frameEl = tempFrame;
+                pluginAppended("frame", componentData.frame.name);
 
-            if (!this.isConnected) return;
-            this.render();
-            if (prvFrame) this.removeChild(prvFrame);
-        });
+                this.render();
+                this.appendChild(this.frameEl);
 
-        this.elements = componentData.elements.list.map((e) => new RepairElement(e));
+                if (prvFrame) {
+                    disposePluginContext(prvFrame.__repairPluginContext);
+                    this.removeChild(prvFrame);
+                }
+            },
+            {
+                component: this.componentIdentity,
+                frame: this.frameIdentity
+            }
+        );
     }
 
     setZIndex(zIndex) {
@@ -49,7 +82,7 @@ export default class RepairComponent extends HTMLElement {
     }
 
     render() {
-        this.elements.forEach((el) => (this.frameEl ?? this).appendChild(el));
+        (this.frameEl ?? this).append(...this.elements);
     }
 
     connectedCallback() {
@@ -60,27 +93,39 @@ export default class RepairComponent extends HTMLElement {
 
     startTransition(transition, isOutro = false) {
         return new Promise(async (res) => {
-            if (!transition.plugin) res();
+            try {
+                if (!transition.plugin) return res();
 
-            let keyframes = await transition.plugin.use();
-            if (!keyframes) res();
+                let keyframes = await transition.plugin.use(null, {
+                    component: this.componentIdentity
+                });
+                if (!keyframes) return res();
 
-            if (typeof keyframes === "function") keyframes = keyframes();
+                if (typeof keyframes === "function") keyframes = keyframes();
 
-            const ani = this.animate(keyframes, {
-                duration: transition.duration,
-                easing: transition.easing,
-                delay: transition.delay,
-                direction: isOutro ? "reverse" : "normal"
-            });
-            ani.addEventListener("finish", () => {
+                const ani = this.animate(keyframes, {
+                    duration: transition.duration,
+                    easing: transition.easing,
+                    delay: transition.delay,
+                    direction: isOutro ? "reverse" : "normal"
+                });
+                ani.addEventListener("finish", () => {
+                    res();
+                });
+            } catch (err) {
+                reportPluginException(
+                    { id: transition.plugin?.name, type: "transition" },
+                    "Plugin transition failed.",
+                    err
+                );
                 res();
-            });
+            }
         });
     }
 
     disconnectedCallback() {
         this.elements.forEach((el) => el.destroy());
+        disposePluginContext(this.frameEl?.__repairPluginContext);
         this.unsubscriber?.();
     }
 }

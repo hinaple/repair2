@@ -1,5 +1,7 @@
+import PluginPointer from "./pluginPointer.svelte";
 import ScreenConfig from "./screenConfig.svelte";
 
+//#only play
 const styleMap = {
     width: ["width: ", "px"],
     height: ["height: ", "px"],
@@ -7,6 +9,7 @@ const styleMap = {
     sizeRatio: ["transform: scale(", ")"],
     style: ["", ""]
 };
+//#endonly
 
 export default class Config {
     title = $state();
@@ -17,10 +20,11 @@ export default class Config {
     style = $state();
     editorShortcut = $state();
     editorPassword = $state();
-    // multiScreen = $state();
     transparent = $state();
     devMode = $state();
     alwaysOnTop = $state();
+    suppressGlobalKeys = $state();
+    runtimePlugins = $state();
     constructor({
         title = "REPAIR v2",
         width = null,
@@ -34,6 +38,8 @@ export default class Config {
         transparent = false,
         devMode = true,
         alwaysOnTop = false,
+        suppressGlobalKeys = false,
+        runtimePlugins = [],
         ...config
     } = {}) {
         this.title = title;
@@ -44,14 +50,17 @@ export default class Config {
         this.style = style;
         this.editorShortcut = editorShortcut;
         this.editorPassword = editorPassword;
-        // this.multiScreen = config.multiScreen;
         if (!this.screenConfig && config.multiScreen !== undefined)
             this.screenConfig = { type: config.multiScreen ? "fullMultiScreen" : "fullscreen" };
         this.screenConfig = new ScreenConfig(screenConfig);
         this.transparent = transparent;
         this.devMode = devMode;
         this.alwaysOnTop = alwaysOnTop;
+        this.suppressGlobalKeys = suppressGlobalKeys;
+        this.runtimePlugins = runtimePlugins.map((rp) => new PluginPointer(rp, "runtime"));
     }
+
+    //#only play
     get styleString() {
         return (
             (this.transparent ? "background-color: transparent;" : "") +
@@ -69,6 +78,9 @@ export default class Config {
             ";"
         );
     }
+    //#endonly
+
+    //#only editor
     get storeData() {
         return {
             ...this,
@@ -80,11 +92,13 @@ export default class Config {
             style: this.style,
             editorShortcut: this.editorShortcut,
             editorPassword: this.editorPassword,
-            // multiScreen: this.multiScreen,
             screenConfig: this.screenConfig.storeData,
             transparent: this.transparent,
             alwaysOnTop: this.alwaysOnTop,
-            devMode: this.devMode
+            devMode: this.devMode,
+            suppressGlobalKeys: this.suppressGlobalKeys,
+            runtimePlugins: this.runtimePlugins.map((rp) => rp.storeData)
         };
     }
+    //#endonly
 }

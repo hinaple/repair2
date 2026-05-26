@@ -33,6 +33,8 @@ export default class Resource {
     get title() {
         return this.alias?.length ? this.alias : this.src ? basename(this.src) : "이름 없는 자원";
     }
+
+    //#only editor
     get storeData() {
         return {
             id: this.id,
@@ -40,4 +42,5 @@ export default class Resource {
             alias: this.alias
         };
     }
+    //#endonly
 }

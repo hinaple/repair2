@@ -1,41 +1,120 @@
-import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from "electron";
-import { basename, extname, join } from "path";
+import { app, shell, BrowserWindow, Menu, dialog, ipcMain } from "electron";
+import { join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
 import fs, { readdir } from "fs/promises";
-import { watch } from "fs";
 import prompt from "electron-prompt";
 import Store from "electron-store";
 
 import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
-import PluginPackageManager from "./plugin-package-manager";
 import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "./screenManager";
-import createSveltePlugin from "./svelte-plugin/sveltePluginCreator.js";
-import { checkVscodeInstalled, openVsCode } from "./vscodeUtils.js";
-import { initPluginDir, openPluginDevtool, updateData } from "./svelte-plugin/pluginDevTool.js";
+import { checkVscodeInstalled } from "./vscodeUtils.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
+import { setupIpcHandlers } from "./ipcHandlers.js";
+import {
+    getIsSuppressing,
+    setGlobalKeyListener,
+    startSuppress,
+    stopSuppress
+} from "./globalKey.js";
+import makeLog from "./logger.js";
+import { createDiagnosticReporter } from "./diagnostics.js";
+import { PluginManager } from "./plugin/pluginManager.js";
+import { migrateProject } from "./migrateProject.js";
+import { setSendToWin } from "./plugin/runtimeMain.js";
+import electronPrompt from "electron-prompt";
+import { dataDir, assetDir, pluginDir, styleDir, templateDir } from "./dirs.js";
+import { createHmr } from "./hmrs.js";
 
-let mainWindow, editorWindow;
+/**
+ * @type {BrowserWindow | null}
+ */
+let mainWindow;
+/**
+ * @type {BrowserWindow | null}
+ */
+let editorWindow;
+/** @type {PluginManager} */
 let pluginManager;
 
 let data;
 
-const dataDir = join(app.getPath("userData"), is.dev ? "dev_project" : "project");
-const assetDir = join(dataDir, "assets");
-const pluginDir = join(dataDir, "plugins");
-const styleDir = join(dataDir, "styles");
-
-const templateDir = is.dev
-    ? join(__dirname, "../../templates")
-    : join(app.getPath("exe"), "..", "templates");
-
 const emptySveltePluginDir = join(templateDir, "empty-svelte-plugin");
 
-async function initializePluginSystem() {
-    pluginManager = new PluginPackageManager(pluginDir, join(dataDir, "packages"));
-    await pluginManager.initialize();
+function sendToMain(channel, ...params) {
+    if (mainWindow) mainWindow.webContents.send(channel, ...params);
+}
+setSendToWin(sendToMain);
+function sendToEditor(channel, ...params) {
+    if (editorWindow) editorWindow.webContents.send(channel, ...params);
+}
+
+const reportDiagnostic = createDiagnosticReporter({
+    makeLog,
+    sendToEditor,
+    getEditorWindow: () => editorWindow,
+    getMainWindow: () => mainWindow,
+    dialog
+});
+
+let cssCode = "";
+async function updateCss() {
+    try {
+        cssCode = String(await fs.readFile(join(styleDir, "global.css"))).replace(
+            /%FONTS%/g,
+            join(styleDir, "fonts").replace(/\\/g, "/")
+        );
+    } catch (err) {
+        reportDiagnostic({
+            level: "error",
+            title: "Failed to load global.css file",
+            error: err,
+            source: "style",
+            dialogue: false,
+            logType: "global-css"
+        });
+    }
+    return cssCode;
+}
+
+const hmr = createHmr({
+    onHmr({ type, data }) {
+        if (type === "css") {
+            updateCss().then((css) => sendToMain("global-css", css));
+            return;
+        }
+
+        if (!pluginManager) return;
+        if (data) pluginManager.updatePlugin(data, true);
+        else pluginManager.updateAllPluginInfo(false);
+    },
+    active: false,
+    styleDir,
+    pluginDir,
+    dataDir
+});
+function setPluginManager(isDev = false) {
+    if (pluginManager) pluginManager.closeWatchers();
+    pluginManager = new PluginManager({
+        isDev,
+        reportDiagnostic,
+        onupdate: ({ type, updateData }) => {
+            if (type === "single") {
+                sendToEditor("plugin:update", updateData);
+                sendToMain("plugin:update", updateData);
+                return;
+            }
+            const pluginList = pluginManager.simplePluginList;
+            sendToEditor("plugin:list", pluginList);
+            sendToMain("plugin:list", pluginList, updateData.buildChanges);
+        },
+        onhmr: (pluginInfo) => {
+            sendToMain("plugin-hmr", pluginInfo);
+        }
+    });
+    return pluginManager.initialize();
 }
 
 const projectFileManager = new ProjectFileManager(dataDir, {
@@ -50,7 +129,8 @@ const projectFileManager = new ProjectFileManager(dataDir, {
             mainWindow.close();
             mainWindow = null;
         }
-        closeAllWatchers();
+        hmr.stopWatching();
+        pluginManager?.closeAllWatchers();
     },
     importProgress: sendStartupInfo,
     afterImport: async () => {
@@ -66,26 +146,9 @@ const projectFileManager = new ProjectFileManager(dataDir, {
     },
     afterExport: (filePath) => {
         sendToEditor("exported", filePath);
-    }
+    },
+    reportDiagnostic
 });
-
-initPluginDir(pluginDir);
-
-function closeAllWatchers() {
-    Object.keys(watchers).forEach((key) => {
-        if (!watchers[key]) return;
-
-        watchers[key].close();
-        watchers[key] = null;
-    });
-    console.log("All watchers closed");
-}
-
-const PluginTypes = ["elements", "frames", "functions", "transitions"];
-
-function sendToEditor(channel, ...params) {
-    if (editorWindow) editorWindow.webContents.send(channel, ...params);
-}
 
 const socket = new SocketConnector((channel, data, url) => {
     if (!mainWindow) return;
@@ -93,7 +156,7 @@ const socket = new SocketConnector((channel, data, url) => {
     console.log("SOCKET INCOMING:", channel);
 
     sendToEditor("socket-income", channel, data, url);
-    mainWindow.webContents.send("socket-income", channel, data);
+    sendToMain("socket-income", channel, data);
 });
 
 const serial = new SerialConnector(
@@ -103,40 +166,41 @@ const serial = new SerialConnector(
         console.log("SERIAL INCOMING:", data);
 
         sendToEditor("serial-income", data);
-        mainWindow.webContents.send("serial-income", data);
+        sendToMain("serial-income", data);
     },
     (port) => {
         sendToEditor("serial-connected", port);
     }
 );
 
-let pluginList = {};
-async function updatePluginList() {
-    console.log("Updating plugin list");
-    pluginList = {};
-    await Promise.all(
-        PluginTypes.map((type) => {
-            return new Promise((res) => {
-                fs.readdir(join(pluginDir, type))
-                    .then((files) => {
-                        pluginList[type] = files;
-                        res();
-                    })
-                    .catch(() => {
-                        res();
-                    });
-            });
-        })
-    );
-    return pluginList;
-}
+setGlobalKeyListener((type, evt) => {
+    if (mainWindow?.isFocused?.()) sendToMain("global-key-event", type, evt);
+});
 
-async function saveData(tempData) {
+const pluginSdkPackageDir = join(app.getPath("userData"), "sdk", "repair2-plugin-sdk");
+
+function saveData(tempData) {
     data = { ...tempData, updatedAt: new Date().getTime() };
-    return await fs.writeFile(join(dataDir, "data.json"), JSON.stringify(data)).catch((e) => {
-        console.error(e);
-        return false;
-    });
+    applyDataConfig();
+    return fs
+        .writeFile(join(dataDir, "data.json"), JSON.stringify(data))
+        .then(() => {
+            consumeAfterSave();
+            return true;
+        })
+        .catch(async (e) => {
+            afterSave = null;
+            await reportDiagnostic({
+                level: "error",
+                title: "프로젝트 저장 실패",
+                detail: "프로젝트 데이터를 저장하는 중 오류가 발생했습니다.",
+                error: e,
+                source: "project",
+                dialogue: true,
+                logType: "project-save-error"
+            });
+            return false;
+        });
 }
 
 function importDefaultProject() {
@@ -144,67 +208,6 @@ function importDefaultProject() {
     return projectFileManager.importProject(join(templateDir, "projects/default.repair"));
 }
 
-let globalCss = "";
-let watchers = { css: null };
-async function loadGlobalCss() {
-    try {
-        globalCss = (await fs.readFile(join(styleDir, "global.css"))).toString();
-        globalCss = globalCss.replace(/%FONTS%/g, join(styleDir, "fonts").replace(/\\/g, "/"));
-        if (mainWindow) mainWindow.webContents.send("global-css", globalCss);
-    } catch (err) {
-        globalCss = "";
-    }
-}
-function watchGlobalStyles() {
-    if (watchers.css) return;
-
-    watchers.css = watch(join(styleDir, "global.css"), (eventType) => {
-        if (!isEditorOn) return;
-        if (eventType === "change") {
-            console.log("Global CSS file has changed");
-            loadGlobalCss();
-        }
-    });
-    console.log("CSS watcher activated");
-}
-
-const pluginHotReloadTimeouts = {};
-function watchPlugins() {
-    if (watchers.plugins) return;
-
-    watchers.plugins = watch(pluginDir, { recursive: true }, (type, filename) => {
-        if (!isEditorOn || !filename) return;
-        const dirs = filename.split(/\\|\//);
-        if (dirs.length > 2 || !PluginTypes.includes(dirs[0])) return;
-
-        if (type === "rename") {
-            updatePluginList();
-            return;
-        }
-        if (type !== "change") return;
-
-        if (filename === "dependencies.json") {
-            console.log("Plugin dependencies updating");
-            pluginManager.updateDependencies();
-            return;
-        }
-        if (dirs.length !== 2) return;
-
-        if (pluginHotReloadTimeouts[filename]) clearTimeout(pluginHotReloadTimeouts[filename]);
-
-        pluginHotReloadTimeouts[filename] = setTimeout(() => {
-            delete pluginHotReloadTimeouts[filename];
-            console.log(`Plugin Editted: ${dirs[0]} - ${dirs[1]}`);
-
-            if (mainWindow)
-                mainWindow.webContents.send("plugin-hmr", {
-                    type: dirs[0],
-                    name: dirs[1]
-                });
-        }, 100);
-    });
-    console.log("Plugin watcher activated");
-}
 async function loadData() {
     sendStartupInfo("데이터 파일 로드 중...");
     try {
@@ -216,7 +219,24 @@ async function loadData() {
     } catch (err) {
         await importDefaultProject();
     }
-    await Promise.all([updatePluginList(), loadGlobalCss()]);
+
+    const migrateResult = await migrateProject({
+        currentVersion: __APP_VERSION__,
+        data,
+        dataDir,
+        pluginDir
+    });
+    sendStartupInfo("플러그인 처리 중...");
+    await Promise.all([setPluginManager(!!data.config?.devMode), updateCss()]);
+    if (migrateResult) {
+        dialog.showMessageBox({
+            message: "구버전 프로젝트",
+            detail: "호환되지 않는 기능이 포함된 버전의 프로젝트입니다. 일부 데이터에 손실이 있을 수 있습니다.",
+            type: "warning",
+            noLink: true
+        });
+    }
+    sendStartupInfo("Repair2 실행 중...");
     return true;
 }
 
@@ -224,12 +244,9 @@ let isMultiScreen = null;
 function applyDataConfig(forceUpdate = false) {
     if (!data?.config) return;
 
-    if (data.config?.devMode) {
-        watchGlobalStyles();
-        watchPlugins();
-    } else if (watchers.css || watchers.plugins) {
-        closeAllWatchers();
-    }
+    const devMode = !!data.config?.devMode;
+    hmr.setActive(devMode);
+    if (pluginManager) pluginManager.isDev = !!data.config?.devMode;
 
     if (!mainWindow) return;
 
@@ -240,8 +257,6 @@ function applyDataConfig(forceUpdate = false) {
     if (!data.config.screenConfig && data.config.multiScreen !== undefined) {
         isMultiScreen = data.config.multiScreen;
 
-        if (isMultiScreen) app.commandLine.appendSwitch("disable-gpu-compositing");
-        else app.commandLine.removeSwitch("disable-gpu-compositing");
         const area = isMultiScreen ? getFullScreenArea() : getPrimaryScreenArea();
 
         mainWindow.setBounds?.(area);
@@ -265,7 +280,8 @@ function createMainWindow() {
             sandbox: false,
             nodeIntegration: true,
             contextIsolation: false,
-            webSecurity: false
+            webSecurity: false,
+            backgroundThrottling: false
         },
         title: data?.config?.title ?? "REPAIRv2",
         frame: false,
@@ -277,9 +293,10 @@ function createMainWindow() {
     });
     mainWindow.setMenu(null);
 
-    mainWindow.on("ready-to-show", () => {
+    ipcMain.once("play-win-ready", () => {
         closeSplash();
         mainWindow.show();
+        mainWindow.focus();
 
         applyDataConfig(true);
     });
@@ -291,14 +308,27 @@ function createMainWindow() {
     }
 
     mainWindow.on("closed", () => {
+        mainWindow = null;
+        stopSuppress();
         if (!projectFileManager.importing) {
             closeSplash();
             app.quit();
         }
     });
+    mainWindow.on("focus", () => {
+        if (data?.config?.suppressGlobalKeys) startSuppress();
+    });
+    mainWindow.on("blur", () => {
+        stopSuppress();
+    });
 }
 
 let afterSave;
+function consumeAfterSave() {
+    afterSave?.();
+    afterSave = null;
+}
+
 let isEditorOn = false;
 let isVscodeInstalled = null;
 function createEditorWindow() {
@@ -381,56 +411,6 @@ function createEditorWindow() {
                 },
                 { type: "separator" },
                 {
-                    label: "빈 Svelte 플러그인 생성",
-                    click: async () => {
-                        const name = await prompt(
-                            {
-                                title: "Svelte 플러그인 생성",
-                                label: "플러그인 이름:",
-                                buttonLabels: {
-                                    ok: "확인",
-                                    cancel: "취소"
-                                },
-                                height: 200
-                            },
-                            editorWindow
-                        );
-                        if (!name) return;
-                        const result = await createSveltePlugin(
-                            pluginDir,
-                            emptySveltePluginDir,
-                            name
-                        );
-                        if (!result.done) {
-                            dialog.showMessageBox(editorWindow, {
-                                type: "error",
-                                message: "플러그인 생성 중 오류가 발생했습니다.",
-                                detail: result.error,
-                                noLink: true
-                            });
-                            return;
-                        }
-                        if (isVscodeInstalled) {
-                            const confirm = await dialog.showMessageBox({
-                                type: "info",
-                                title: "Svelte 플러그인",
-                                message: "플러그인 개발도구를 시작할까요?",
-                                buttons: ["확인", "취소"],
-                                cancelId: 1,
-                                defaultId: 0,
-                                noLink: true
-                            });
-                            if (confirm.response === 0) {
-                                // openVsCode(result.dir);
-                                openPluginDevtool(result.dir, name);
-                                return;
-                            }
-                        }
-                        shell.openPath(result.dir);
-                    },
-                    accelerator: "CommandOrControl+Shift+N"
-                },
-                {
                     label: "데이터 폴더 열기",
                     click: () => {
                         shell.openPath(dataDir);
@@ -472,36 +452,21 @@ function createEditorWindow() {
                     click: () => {
                         mainWindow.webContents.toggleDevTools();
                     }
-                },
-                { type: "separator" },
+                }
+            ]
+        },
+        {
+            label: "플러그인",
+            submenu: [
                 {
-                    label: "플러그인 개발 도구",
+                    label: "새 플러그인 생성",
+                    click: () => sendToEditor("showPluginCreateModal")
+                },
+                {
+                    label: "플러그인 전체 다시 빌드",
                     click: async () => {
-                        const sveltePlugins = (
-                            await readdir(join(pluginDir, "svelte-plugins"), {
-                                withFileTypes: true
-                            })
-                        )
-                            .filter((e) => e.isDirectory())
-                            .map((e) => e.name);
-                        const target = await prompt(
-                            {
-                                title: "REPAIR 플러그인 개발 도구",
-                                label: "플러그인 선택",
-                                buttonLabels: { ok: "확인", cancel: "취소" },
-                                type: "select",
-                                selectOptions: sveltePlugins.reduce((obj, n) => {
-                                    obj[n] = n;
-                                    return obj;
-                                }, {}),
-                                height: 200
-                            },
-                            editorWindow
-                        );
-                        if (!target) return;
-                        if (isVscodeInstalled)
-                            openPluginDevtool(join(pluginDir, "svelte-plugins", target), target);
-                        else shell.openPath(result.dir);
+                        if (!pluginManager) return;
+                        await pluginManager.updateAllPluginInfo(true);
                     }
                 }
             ]
@@ -547,6 +512,7 @@ function createEditorWindow() {
 
     editorWindow.on("ready-to-show", () => {
         editorWindow.show();
+        editorWindow.focus();
         if (data) editorWindow.setAlwaysOnTop(!!data?.config?.alwaysOnTop, "screen-saver");
     });
 
@@ -564,6 +530,7 @@ function createEditorWindow() {
     editorWindow.on("close", () => {
         isEditorOn = false;
         editorWindow = null;
+        sendToMain("monitor-event", "end");
     });
 }
 
@@ -599,10 +566,8 @@ if (!app.requestSingleInstanceLock()) {
         if (!mainWindow) return;
 
         await appOpenedWithProject(argv, true);
-        // mainWindow?.show?.();
     });
 
-    // app.commandLine.appendSwitch("disable-gpu-compositing");
     app.on("ready", async () => {
         electronApp.setAppUserModelId("com.repair2");
 
@@ -611,9 +576,24 @@ if (!app.requestSingleInstanceLock()) {
             await Promise.all([new Promise((res) => setTimeout(res, 3000)), loadData()]);
         }
 
-        await initializePluginSystem();
-
-        setupIpcHandlers();
+        setupIpcHandlers({
+            assetDir,
+            dataDir,
+            getData: () => data,
+            getEditorWindow: () => editorWindow,
+            getGlobalCss: () => cssCode,
+            getMainWindow: () => mainWindow,
+            getPluginManager: () => pluginManager,
+            getStore: () => store,
+            createEditorWindow,
+            findService,
+            reportDiagnostic,
+            saveData,
+            sendToEditor,
+            sendToMain,
+            serial,
+            socket
+        });
 
         if (is.dev) {
             setTimeout(() => {
@@ -622,7 +602,6 @@ if (!app.requestSingleInstanceLock()) {
             }, 1000);
         } else {
             createMainWindow();
-            // createEditorWindow();
         }
     });
 }
@@ -630,173 +609,5 @@ if (!app.requestSingleInstanceLock()) {
 app.on("window-all-closed", () => {
     app.quit();
 });
-
-function setupIpcHandlers() {
-    //#region plugin IPCs
-    ipcMain.on("getPluginList", async (event, update) => {
-        if (update) await updatePluginList();
-        event.returnValue = pluginList;
-    });
-
-    ipcMain.handle("plugin:install-package", async (event, { name, version }) => {
-        try {
-            const packageInfo = await pluginManager.installPackage(name, version);
-            return { success: true, packageInfo };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    });
-    //#endregion
-
-    //#region appdata IPCs
-    ipcMain.on("request-data", (evt) => {
-        evt.returnValue = { ...data, globalStyles: globalCss };
-    });
-
-    ipcMain.handle("update-data", async (evt, tempData) => {
-        await saveData(tempData);
-        afterSave?.();
-        afterSave = null;
-        applyDataConfig();
-        mainWindow.webContents.send("data", { ...data, globalStyles: globalCss });
-        updateData(data);
-        return true;
-    });
-    //#endregion
-
-    //#region editor IPCs
-    ipcMain.on("editor-on", () => {
-        if (!isEditorOn) createEditorWindow();
-        else editorWindow.focus();
-    });
-
-    ipcMain.on("unsaved", () => {
-        if (!editorWindow) return;
-        editorWindow.setTitle("Editor ●");
-    });
-
-    ipcMain.on("saved", () => {
-        if (!editorWindow) return;
-        editorWindow.setTitle("Editor");
-    });
-    //#endregion
-
-    //#region asset IPCs
-    ipcMain.on("getDataDir", (evt) => {
-        evt.returnValue = dataDir;
-    });
-
-    ipcMain.on("selectFile", async (event, opt) => {
-        event.returnValue = await dialog.showOpenDialogSync(opt);
-    });
-
-    ipcMain.on("dialogue", async (event, opt) => {
-        event.returnValue = await dialog.showMessageBoxSync({ ...opt, noLink: true });
-    });
-
-    ipcMain.on("copyInfoAsset", async (event, srcs) => {
-        event.returnValue = await Promise.all(
-            srcs.map(
-                (s) =>
-                    new Promise(async (res) => {
-                        const ext = extname(s);
-                        const bn = basename(s, ext);
-                        let filename = basename(s);
-                        for (let duplicatedCount = 2; ; duplicatedCount++) {
-                            if (
-                                await fs
-                                    .access(join(assetDir, filename), fs.constants.F_OK)
-                                    .then(() => false)
-                                    .catch(() => true)
-                            )
-                                break;
-                            filename = `${bn}(${duplicatedCount})${ext}`;
-                        }
-                        await fs.copyFile(s, join(assetDir, filename));
-                        res(filename);
-                    })
-            )
-        );
-    });
-    //#endregion
-
-    //#region preview IPCs
-    ipcMain.on("request-execute", (event, { type, id }) => {
-        mainWindow.webContents.send("request-execute", { type, id });
-    });
-
-    ipcMain.on("layout-preview", (event, { compData }) => {
-        mainWindow.webContents.send("layout-preview", { compData });
-    });
-
-    ipcMain.on("preview-content-visible", (event, visible) => {
-        mainWindow.webContents.send("preview-content-visible", visible);
-    });
-
-    ipcMain.on("stop-preview", () => {
-        mainWindow.webContents.send("stop-preview");
-    });
-    //#endregion
-
-    //#region communication IPCs
-
-    ipcMain.on("socket-connect", (event, urls) => {
-        socket
-            .connect(typeof urls === "string" ? urls.trim().split("\n") : urls)
-            .then((connected) => {
-                if (!connected) sendToEditor("socket-failed");
-            });
-    });
-    ipcMain.on("socket-connect-service", (event, type, name) => {
-        if (socket.connected) return;
-        findService(type, name)
-            .then((urls) => {
-                socket.connect(urls).then((connected) => {
-                    if (!connected) sendToEditor("socket-failed");
-                });
-            })
-            .catch(() => {});
-    });
-    ipcMain.on("socket-send", (event, channel, ...data) => {
-        socket.send(channel, ...data);
-    });
-    ipcMain.on("socket-disconnect", () => {
-        socket.disconnect();
-    });
-
-    ipcMain.on("serial-open", (event, alias, port, baudRate) => {
-        serial.open(alias, port, baudRate);
-    });
-    ipcMain.on("serial-send", (event, data) => {
-        serial.send(data);
-    });
-    ipcMain.on("serial-close", () => {
-        serial.close();
-    });
-
-    //#endregion
-
-    //#region player monitoring IPCs
-
-    ipcMain.on("executed-start", (event, { type, id }) => {
-        sendToEditor("start-executed", { type, id });
-    });
-    ipcMain.on("executed-end", (event, { type, id }) => {
-        sendToEditor("end-executed", { type, id });
-    });
-
-    ipcMain.on("custom-log", (evt, content) => {
-        sendToEditor("custom-log", content);
-    });
-
-    //#endregion
-
-    ipcMain.on("get-store", (evt, key) => {
-        evt.returnValue = store.get(key);
-    });
-    ipcMain.on("set-store", (evt, key, value) => {
-        store.set(key, value);
-    });
-}
 
 const store = new Store();

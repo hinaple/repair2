@@ -10,8 +10,7 @@
     import outputNode from "./lines/output";
     import FrameUpdater from "../lib/frameUpdater";
     import { currentFocus as CurrentFocus, focusData } from "../sidebar/editUtils";
-    import { genClipboardFn } from "../lib/clipboard";
-    import { removeNodeWithHistory } from "../lib/syncData.svelte";
+    import { appData } from "../lib/syncData.svelte";
     import { ipcRenderer } from "electron";
 
     let {
@@ -21,16 +20,19 @@
         innerOutputs = null,
         title,
         isLastHold,
-        onmousedown: bubbleMouseDown,
+        onpointerdown: bubbleMouseDown,
         body,
         minWidth = 200,
-        hasInput = true
+        hasInput = true,
+        color = "#000"
     } = $props();
 
     $effect(() => {
         title;
         reload("nodeMoved");
     });
+
+    const clipboardFn = node.clipboardFn;
 
     let nodeEl, handleEl;
     let grabber;
@@ -40,8 +42,7 @@
 
     const frameUpdater = new FrameUpdater(async () => {
         if (!nodeEl) return;
-        nodeEl.style.left = `${node.nodePos.x}px`;
-        nodeEl.style.top = `${node.nodePos.y}px`;
+        nodeEl.style.transform = `translate(${node.nodePos.x}px, ${node.nodePos.y}px)`;
     }, 0);
     function applyNodePos() {
         frameUpdater.draw();
@@ -54,19 +55,18 @@
             currentFocus = cf;
             isFocused =
                 cf.obj === node || (cf.type === "nodes" && cf.arr.some((n) => n.obj === node));
-        })
+        }),
+        () => grabber?.destroy?.()
     ];
 
     onMount(() => {
         applyNodePos();
         let movingNodes = null;
-        let multipleGrabbing = false;
         grabber = new Grabber({
             container: nodeEl,
             handle: handleEl,
             onMoveStart: () => {
                 if (currentFocus.type === "nodes") {
-                    multipleGrabbing = true;
                     movingNodes = currentFocus.arr.map((n) => ({
                         node: n.obj,
                         from: {
@@ -125,19 +125,11 @@
         node.folded = folded;
     });
 
-    function getFocusData() {
-        return { type, obj: node, data: { clipboardFn } };
-    }
-
-    function onmousedown(evt) {
+    function onpointerdown(evt) {
         if (evt.button || get(grabbing) === "viewport") return;
         focusData(type, node, { clipboardFn });
         bubbleMouseDown(evt);
     }
-
-    const clipboardFn = genClipboardFn(type, node, () => removeNodeWithHistory(node), {
-        excludes: [(type === "branch" || type === "entry") && "paste"]
-    });
 
     const contextmenu = [
         type === "entry" && {
@@ -171,7 +163,7 @@
         {
             label: "삭제",
             click: () => {
-                removeNodeWithHistory(node);
+                appData.removeNode(node);
                 return true;
             },
             action: "remove"
@@ -180,16 +172,14 @@
 
     node.requestRect = () => nodeEl.getBoundingClientRect();
     node.applyNodePos = applyNodePos;
-    node.getFocusData = getFocusData;
 
     onDestroy(() => {
-        unsubs.forEach((us) => us());
+        unsubs.forEach((us) => us?.());
         if (!node) return;
 
-        if (currentFocus.obj === node) focusData("project");
+        if (isFocused) focusData("project");
         delete node.requestRect;
         delete node.applyNodePos;
-        delete node.getFocusData;
     });
 </script>
 
@@ -201,10 +191,10 @@
         type === "branch" && "branch"
     ]}
     bind:this={nodeEl}
-    onmousedowncapture={onmousedown}
+    onpointerdowncapture={onpointerdown}
     use:rightclick={contextmenu}
 >
-    <div class="node-wrapper">
+    <div class="node-wrapper" style={`--node-color: ${color};`}>
         <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
             <div
                 class="head"
@@ -250,7 +240,6 @@
 <style>
     .wrapper {
         position: absolute;
-        backdrop-filter: blur(1.3px);
         border-radius: 10px;
     }
     .wrapper.last-hold {
@@ -267,14 +256,13 @@
         flex-direction: column;
         box-shadow: rgba(0, 0, 0, 0.3) 3px 3px 4px;
         border-radius: 10px;
-    }
-    .wrapper:global(.grabbing) {
-        backdrop-filter: blur(2px);
+        left: 0;
+        top: 0;
     }
     .head {
         color: #fff;
         flex: 0 0 auto;
-        background-color: #000;
+        background-color: var(--node-color);
         cursor: grab;
         font-weight: 600;
         display: flex;
@@ -313,7 +301,7 @@
         background-color: #fff;
         width: 16px;
         height: 16px;
-        border: solid #000 4px;
+        border: solid var(--node-color) 4px;
         border-radius: 50%;
         box-sizing: border-box;
     }
@@ -344,7 +332,7 @@
         background-color: #fff;
         width: 16px;
         height: 16px;
-        border: solid #000 4px;
+        border: solid var(--node-color) 4px;
         border-radius: 50%;
         box-sizing: border-box;
         display: flex;

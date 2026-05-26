@@ -1,0 +1,9 @@
+* {
+    -webkit-user-drag: none;
+}
+*:not(input) {
+    user-select: none;
+}
+img {
+    display: block;
+}

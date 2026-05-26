@@ -2,8 +2,7 @@
     import InputField from "../InputField.svelte";
     import { EntryTypes } from "../../lib/translate";
     import { addHistory } from "../../lib/workHistory";
-    import { getAllConnectedNodes, setAllOutput } from "../../nodes/lines/line";
-    import { reload } from "../../lib/stores";
+    import { getAllConnectedLines, setAllOutput } from "../../nodes/lines/line";
 
     const { data } = $props();
 </script>
@@ -24,21 +23,18 @@
             });
             return;
         }
-        const connectedNodes = getAllConnectedNodes(data.id);
-        console.log(data.id, connectedNodes);
+        const connectedLines = getAllConnectedLines(data.id);
         addHistory({
-            doFn: ({ value, nodes }) => {
+            doFn: ({ value, lines }) => {
                 data.standbyMode = value;
-                setAllOutput(nodes, null);
-                reload("nodeMoved");
+                setAllOutput(lines, null);
             },
-            undoFn: ({ value, nodes, targetEntryId }) => {
+            undoFn: ({ value, lines, targetEntryId }) => {
                 data.standbyMode = value;
-                setAllOutput(nodes, targetEntryId);
-                reload("nodeMoved");
+                setAllOutput(lines, targetEntryId);
             },
-            doData: { value: !d, nodes: connectedNodes },
-            undoData: { value: !!d, nodes: connectedNodes, targetEntryId: data.id }
+            doData: { value: !d, lines: connectedLines },
+            undoData: { value: !!d, lines: connectedLines, targetEntryId: data.id }
         });
     }}
 />
@@ -62,10 +58,22 @@
         setter={(d) => (data.data.payload.ctrlKey = d)}
     />
     <InputField
+        label="Alt 눌러야 감지"
+        value={data.data.payload.altKey}
+        type="checkbox"
+        setter={(d) => (data.data.payload.altKey = d)}
+    />
+    <InputField
         label="Shift 눌러야 감지"
         value={data.data.payload.shiftKey}
         type="checkbox"
         setter={(d) => (data.data.payload.shiftKey = d)}
+    />
+    <InputField
+        label="Win 눌러야 감지"
+        value={data.data.payload.metaKey}
+        type="checkbox"
+        setter={(d) => (data.data.payload.metaKey = d)}
     />
     <InputField
         label="감지 시간(초)"

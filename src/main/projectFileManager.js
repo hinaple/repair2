@@ -1,11 +1,11 @@
 import { app, dialog, shell } from "electron";
 import { emptyDir } from "fs-extra";
 import { join } from "path";
-import makeLog from "./logger";
 import { createWriteStream } from "fs";
 import archiver from "archiver";
 import StreamZip from "node-stream-zip";
 import { readdir } from "fs/promises";
+import { closeSplash } from "./splash";
 
 export default class ProjectFileManager {
     constructor(
@@ -15,7 +15,8 @@ export default class ProjectFileManager {
             importProgress = null,
             afterImport = null,
             exportProgress = null,
-            afterExport = null
+            afterExport = null,
+            reportDiagnostic = null
         }
     ) {
         this.dataDir = dataDir;
@@ -24,6 +25,7 @@ export default class ProjectFileManager {
         this.afterImport = afterImport;
         this.exportProgress = exportProgress;
         this.afterExport = afterExport;
+        this.reportDiagnostic = reportDiagnostic;
 
         this.exporting = false;
         this.importing = false;
@@ -109,15 +111,18 @@ export default class ProjectFileManager {
                 this.afterImport?.();
                 res();
             } catch (error) {
-                console.error(error);
-                const logFile = await makeLog("error", JSON.stringify(error, null, 4));
-                await dialog.showMessageBox({
-                    type: "error",
-                    title: "프로젝트 불러오기",
-                    message: "프로젝트를 불러오는 중 오류가 발생했습니다.",
-                    detail: `에러 로그: ${logFile}`
-                });
                 rej(error);
+                closeSplash();
+                await this.reportDiagnostic?.({
+                    level: "error",
+                    title: "프로젝트 불러오기",
+                    detail: "프로젝트를 불러오는 중 오류가 발생했습니다.",
+                    error,
+                    source: "project",
+                    editor: false,
+                    dialogue: true,
+                    logType: "project-import-error"
+                });
                 app.quit();
             }
         });

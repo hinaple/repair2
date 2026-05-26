@@ -7,38 +7,32 @@ export default class Branch extends Node {
     scriptData = $state();
     disableAfterTrue = $state();
     disableAfterFalse = $state();
-    constructor({
-        valueA = {},
-        valueB = {},
-        operator = "equals",
-        scriptData = null,
-        trueOutput = {},
-        falseOutput = {},
-        disableAfterTrue = false,
-        disableAfterFalse = false,
-        ...nodeData
-    }) {
+    constructor(
+        {
+            valueA = {},
+            valueB = {},
+            operator = "equals",
+            scriptData = null,
+            trueOutput = {},
+            falseOutput = {},
+            disableAfterTrue = false,
+            disableAfterFalse = false,
+            ...nodeData
+        },
+        creatingOpt = null
+    ) {
         super("branch", nodeData);
         this.valueA = new Value(valueA);
         this.valueB = new Value(valueB);
-        this.trueOutput = new Output(trueOutput);
-        this.falseOutput = new Output(falseOutput);
+        this.trueOutput = new Output(trueOutput, creatingOpt);
+        this.falseOutput = new Output(falseOutput, creatingOpt);
 
         this.operator = operator;
         this.scriptData = scriptData;
         this.disableAfterTrue = disableAfterTrue;
         this.disableAfterFalse = disableAfterFalse;
     }
-    setValueWithHistory(addHistory, value, isValueA, afterChange = null) {
-        addHistory({
-            doFn: (value) => {
-                this[isValueA ? "valueA" : "valueB"] = value;
-                afterChange?.();
-            },
-            doData: value,
-            undoData: this[isValueA ? "valueA" : "valueB"]
-        });
-    }
+    //#only play
     compare(a, b) {
         if (this.operator === "equals") return a == b;
         if (this.operator === "includes") return a.includes(b);
@@ -62,6 +56,9 @@ export default class Branch extends Node {
         if (this.isTrue) this.trueOutput.goto();
         else this.falseOutput.goto();
     }
+    //#endonly
+
+    //#only editor
     get storeData() {
         return {
             ...super.storeData,
@@ -75,15 +72,18 @@ export default class Branch extends Node {
             falseOutput: this.falseOutput
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
-            ...super.copyData,
-            valueA: this.valueA.copyData,
-            valueB: this.valueB.copyData,
+            ...super.copyData(),
+            valueA: this.valueA.copyData(),
+            valueB: this.valueB.copyData(),
             operator: this.operator,
             disableAfterTrue: this.disableAfterTrue,
             disableAfterFalse: this.disableAfterFalse,
-            scriptData: this.scriptData
+            scriptData: this.scriptData,
+            trueOutput: this.trueOutput.copyData(availableOuputIds),
+            falseOutput: this.falseOutput.copyData(availableOuputIds)
         };
     }
+    //#endonly
 }

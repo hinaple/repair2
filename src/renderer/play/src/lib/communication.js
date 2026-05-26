@@ -1,12 +1,12 @@
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
 import { emitRepairEvent } from "./event";
-import { registerUtils } from "./globalUtils";
+import { registerUtils } from "./repairUtils";
 
-ipcRenderer.on("socket-income", (event, channel, data) => {
+ipcRenderer.on("socket-income", (event, channel, ...data) => {
     if (channel === "connect") getAppData().enterEntry("Communication.Socket.connect");
-    else getAppData().enterEntry("Communication.Socket.ondata", { channel, data });
-    emitRepairEvent("socket", channel, data);
+    else getAppData().enterEntry("Communication.Socket.ondata", { channel, data: data?.[0] });
+    emitRepairEvent("socket", channel, ...data);
     console.log(`SOCKET DATA INCOME | channel: "${channel}", data: "${data}"`);
 });
 

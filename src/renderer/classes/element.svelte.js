@@ -25,7 +25,7 @@ const PayloadTemplates = {
         maxLength: null,
         securityText: null
     },
-    plugin: { isClass: true, class: PluginPointer, argument: "elements" }
+    plugin: { isClass: true, class: PluginPointer, argument: "element" }
 };
 
 export default class Element extends TypePayload {
@@ -37,22 +37,25 @@ export default class Element extends TypePayload {
     childStyle = $state();
     className = $state();
     absolute = $state();
-    constructor({
-        id = genId(),
-        alias = null,
-        type = "empty",
-        payload = {},
-        absolute = false,
-        pos = {},
-        width = null,
-        height = null,
-        style = null,
-        childStyle = null,
-        className = null,
-        fullscreen = false,
-        listeners = [],
-        dragOption = {}
-    } = {}) {
+    constructor(
+        {
+            id = genId(),
+            alias = null,
+            type = "empty",
+            payload = {},
+            absolute = false,
+            pos = {},
+            width = null,
+            height = null,
+            style = null,
+            childStyle = null,
+            className = null,
+            fullscreen = false,
+            listeners = [],
+            dragOption = {}
+        } = {},
+        creatingOpt = null
+    ) {
         super({ type, payload, template: PayloadTemplates });
         this.id = id;
         this.alias = alias;
@@ -64,9 +67,10 @@ export default class Element extends TypePayload {
         this.style = style;
         this.childStyle = childStyle;
         this.className = className;
-        this.listeners = new Sortable(listeners, Listener);
+        this.listeners = new Sortable(listeners, Listener, creatingOpt);
         this.dragOption = new DragOption(dragOption);
     }
+    //#only play
     getStyleString(absolute, pos) {
         if (this.fullscreen)
             return (
@@ -80,6 +84,8 @@ export default class Element extends TypePayload {
     get styleString() {
         return this.getStyleString(this.absolute, this.pos);
     }
+    //#endonly
+    //#only editor
     get storeData() {
         return {
             ...super.storeData,
@@ -97,9 +103,9 @@ export default class Element extends TypePayload {
             dragOption: this.dragOption.storeData
         };
     }
-    get copyData() {
+    copyData(availableOuputIds = null) {
         return {
-            ...super.storeData,
+            ...super.copyData(availableOuputIds),
             alias: this.alias,
             width: this.width,
             height: this.height,
@@ -109,8 +115,9 @@ export default class Element extends TypePayload {
             pos: this.pos.storeData,
             absolute: this.absolute,
             fullscreen: this.fullscreen,
-            listeners: this.listeners.copyData,
+            listeners: this.listeners.copyData(availableOuputIds),
             dragOption: this.dragOption.storeData
         };
     }
+    //#endonly
 }

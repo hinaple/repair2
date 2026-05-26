@@ -17,9 +17,14 @@ import {
 } from "./communication";
 import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
-import { clearDelays, delay } from "./delay";
+import { delay } from "./delay";
 import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
+import { sendChanges, sendTotalInfo } from "./runtimeMonitor";
+import { callRuntimePluginStep, restartRuntimePlugins } from "./plugin/runtimePlugins";
+import { customLog } from "./logger";
+
+let resetAbort = new AbortController();
 
 const actions = {
     Component: {
@@ -60,9 +65,9 @@ const actions = {
             send: (s) => {
                 socketSend(
                     s.payload.channel,
-                    ...(s.payload.splitStr
-                        ? s.payload.data.split(s.payload.splitStr)
-                        : [s.payload.data])
+                    ...(Array.isArray(s.payload.data) || !s.payload.splitStr
+                        ? s.payload.data
+                        : s.payload.data.split(s.payload.splitStr))
                 );
             },
             disconnect: () => {
@@ -82,30 +87,34 @@ const actions = {
         }
     },
 
-    delay: (s) => delay(s.payload.delayMs),
+    delay: (s) => delay(s.payload.delayMs, resetAbort.signal),
     Others: {
         customReset: (s) => {
             if (s.payload.audios) resetAudio();
             if (s.payload.variables) resetAllVar();
             if (s.payload.components) clearComponents(true);
-            if (s.payload.delays) clearDelays();
+            if (s.payload.steps) clearWaitingSteps();
             if (s.payload.preloads) removePreloadsAll();
-            if (s.payload.entries) {
-                getAppData().resetEntries();
-            }
+            if (s.payload.entries) getAppData().resetEntries();
+            if (s.payload.runtimePlugins) restartRuntimePlugins();
+
+            sendTotalInfo();
         },
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
         resetAllVariables: () => resetAllVar(),
         executePlugin: (s) => {
-            return new Promise((res) => {
-                s.payload.plugin
-                    .use()
-                    .then((func) => func?.())
-                    .then((result = true) => {
-                        if (s.payload.waitTillEnd) res(result);
-                    });
-                if (!s.payload.waitTillEnd) res();
-            });
+            const prom = s.payload.plugin
+                .use()
+                .then((func) => func?.({ signal: resetAbort.signal }));
+            return s.payload.waitTillEnd ? prom : true;
+        },
+        runtimePluginStep: (s) => {
+            const prom = callRuntimePluginStep(
+                s.payload.pluginName,
+                s.payload.step,
+                s.payload.payloads
+            );
+            return s.payload.waitTillEnd ? prom : true;
         },
         eventEmit: (s) => {
             if (s.payload.channel) emitRepairEvent(s.payload.channel, s.payload.data);
@@ -119,19 +128,43 @@ const actions = {
         },
         log: (s) => {
             ipcRenderer.send("custom-log", s.payload.content);
-            console.log(
-                `%cLOG%c${(s.payload.content.includes("\n") ? "\n" : "") + s.payload.content}`,
-                "font-family: system-ui; color: #fff; font-weight: bold;" +
-                    "display: inline-block; background-color: #140959; padding: 3px 15px; border-radius: 3px; margin-right: 5px;",
-                ""
-            );
+            customLog(s.payload.content);
         }
     }
 };
 
-export default function stepExecute(step) {
-    const action = step.types.reduce((acc, type) => acc[type], actions);
-    if (action) return action(step);
+export const WaitingSteps = new Map();
 
-    return null;
+export function stepExecute(step) {
+    const action = step.types.reduce((acc, type) => acc[type], actions);
+    if (!action) return null;
+
+    let actionResult = action(step);
+    if (!actionResult?.then) {
+        sendChanges("step", "executed", step.id);
+        return actionResult;
+    }
+
+    return new Promise((resolve) => {
+        sendChanges("step", "started", step.id);
+        const s = Symbol();
+        WaitingSteps.set(s, {
+            resolve,
+            id: step.id
+        });
+        actionResult.then((result) => {
+            const data = WaitingSteps.get(s);
+            if (!data) return;
+            data.resolve(result);
+            sendChanges("step", "ended", data.id);
+            WaitingSteps.delete(s);
+        });
+    });
+}
+
+export function clearWaitingSteps() {
+    WaitingSteps.forEach(({ resolve }) => resolve(false));
+    WaitingSteps.clear();
+    resetAbort.abort();
+    resetAbort = new AbortController();
 }

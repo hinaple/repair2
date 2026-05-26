@@ -8,6 +8,7 @@ export default class Variable {
         this.name = name;
         this.defaultValue = defaultValue;
     }
+    //#only editor
     get storeData() {
         return {
             ...this,
@@ -15,4 +16,5 @@ export default class Variable {
             defaultValue: this.defaultValue
         };
     }
+    //#endonly
 }

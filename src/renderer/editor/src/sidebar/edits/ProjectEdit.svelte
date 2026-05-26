@@ -1,4 +1,5 @@
 <script>
+    import PluginPointer from "@classes/pluginPointer.svelte";
     import { screenConfigTypes } from "../../lib/translate";
     import InputField from "../InputField.svelte";
 
@@ -29,7 +30,6 @@
         value={data.screenConfig.payload.y}
         setter={(d) => (data.screenConfig.payload.y = d)}
     />
-    <hr />
 {/if}
 <hr />
 <InputField
@@ -56,6 +56,14 @@
 />
 <hr />
 <InputField
+    label="런타임 플러그인"
+    seriesOption={{ array: data.runtimePlugins, newData: () => new PluginPointer({}, "runtime") }}
+    type="plugin"
+    pluginType="runtime"
+    canUnselect={false}
+/>
+<hr />
+<InputField
     label="편집기 단축키"
     value={data.editorShortcut}
     setter={(d) => (data.editorShortcut = d)}
@@ -78,5 +86,11 @@
     label="플러그인 HMR 활성화"
     value={data.devMode}
     setter={(d) => (data.devMode = d)}
+    type="checkbox"
+/>
+<InputField
+    label="시스템 키 비활성화"
+    value={data.suppressGlobalKeys}
+    setter={(d) => (data.suppressGlobalKeys = d)}
     type="checkbox"
 />
