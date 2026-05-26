@@ -1,6 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
-import { root } from "./dirs";
 
 /** @type {BrowserWindow | null} */
 let splashWindow = null;
@@ -40,7 +39,7 @@ export function showSplash(isDev = false) {
     });
 
     splashWindow.loadFile(
-        join(root, isDev ? "src/renderer/splash/index.html" : "splash/index.html")
+        join(__dirname, isDev ? "../../src/renderer/splash/index.html" : "../splash/index.html")
     );
 
     splashWindow.on("close", (evt) => {

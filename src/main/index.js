@@ -24,7 +24,7 @@ import { createDiagnosticReporter } from "./diagnostics.js";
 import { PluginManager } from "./plugin/pluginManager.js";
 import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
-import { dataDir, assetDir, pluginDir, styleDir, templateDir, root } from "./dirs.js";
+import { dataDir, assetDir, pluginDir, styleDir, templateDir } from "./dirs.js";
 import { createHmr } from "./hmrs.js";
 
 /**
@@ -313,7 +313,7 @@ function createMainWindow() {
     if (is.dev) {
         mainWindow.loadURL("http://localhost:3100");
     } else {
-        mainWindow.loadFile(join(root, "play/index.html"));
+        mainWindow.loadFile(join(__dirname, "../play/index.html"));
     }
 
     mainWindow.on("closed", () => {
@@ -533,7 +533,7 @@ function createEditorWindow() {
     if (is.dev) {
         editorWindow.loadURL("http://localhost:3101");
     } else {
-        editorWindow.loadFile(join(root, "editor/index.html"));
+        editorWindow.loadFile(join(__dirname, "../editor/index.html"));
     }
 
     editorWindow.on("close", () => {
