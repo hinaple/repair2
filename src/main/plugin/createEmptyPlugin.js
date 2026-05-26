@@ -92,14 +92,14 @@ export async function createEmptyPlugin(
         fs.writeFile(join(targetDir, "manifest.json"), JSON.stringify(manifest, null, 4), "utf8"),
         fs.cp(join(pluginTemplateDir, "entries", entry), targetDir, { recursive: true }),
         fs.cp(join(pluginTemplateDir, "base"), targetDir, { recursive: true }),
-        copySdk(targetDir)
+        copyModule(targetDir, SDK_NAME)
     ]);
     console.log(`New ${entry} plugin created at: ${targetDir}.`);
     return { dir: targetDir };
 }
 
-function copySdk(targetDir) {
-    return fs.cp(sdkDir, join(targetDir, "node_modules/@fainthit/repair2-plugin-sdk"), {
+function copyModule(targetDir, module) {
+    return fs.cp(sdkDir, join(targetDir, "node_modules", module), {
         recursive: true
     });
 }
