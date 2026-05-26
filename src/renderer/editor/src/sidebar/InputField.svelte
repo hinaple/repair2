@@ -183,7 +183,7 @@
         box-sizing: border-box;
     }
     .field.background {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
     }
     .field.row {
         flex-direction: row;
@@ -231,7 +231,7 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
         border: solid transparent 1px;
         margin: 0;
         padding: 5px 8px;
@@ -272,6 +272,6 @@
     }
     .remove:hover {
         opacity: 1;
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--w-o1);
     }
 </style>

@@ -23,7 +23,7 @@
         justify-content: space-between;
         cursor: pointer;
         box-sizing: border-box;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
         margin-bottom: 20px;
         border: solid transparent 1px;
 
@@ -39,7 +39,7 @@
     .bottom {
         width: 100%;
         height: 5px;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
         flex: 0 0 auto;
         margin-bottom: 20px;
         border: solid 1px;

@@ -28,7 +28,7 @@
 
     let color = $state(!entry.standbyMode ? "#000" : "#555555");
     const unsub = startMonitoring("entries", entry.id, (isActivated) => {
-        color = entry.standbyMode ? (isActivated ? "#e15300" : "#555555") : "#000";
+        color = entry.standbyMode ? (isActivated ? "var(--orange)" : "#555555") : "#000";
     });
 
     onDestroy(unsub);

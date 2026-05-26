@@ -83,7 +83,7 @@
     .component {
         width: 100%;
         box-sizing: border-box;
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: var(--b-o2);
     }
     .component.activated {
         background-color: rgba(228, 112, 45, 0.6);
@@ -107,6 +107,6 @@
         cursor: pointer;
     }
     .add:hover {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: var(--b-o1);
     }
 </style>

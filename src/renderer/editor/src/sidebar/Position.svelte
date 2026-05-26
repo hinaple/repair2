@@ -111,7 +111,7 @@
         border-bottom-right-radius: 5px;
     }
     .dot.current {
-        border-color: #4e86ff;
+        border-color: var(--blue-bright);
         background-color: rgba(78, 134, 255, 0.5);
     }
     .dot:not(.current):hover {
@@ -142,7 +142,7 @@
         height: 100%;
         width: 30px;
         flex: 0 0 auto;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
         color: #fff;
         font-weight: 300;
         display: flex;
@@ -157,8 +157,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: rgba(255, 255, 255, 0.2);
-        color: rgba(255, 255, 255, 0.8);
+        background-color: var(--w-o2);
+        color: var(--w-o8);
         border-radius: 5px;
         font-weight: 400;
     }

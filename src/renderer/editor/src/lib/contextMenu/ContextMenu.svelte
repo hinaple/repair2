@@ -46,9 +46,9 @@
     .context-menu {
         position: fixed;
         z-index: var(--contextmenu-z);
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: var(--w-o8);
         backdrop-filter: blur(4px);
-        box-shadow: rgba(0, 0, 0, 0.3) 3px 3px 10px;
+        box-shadow: var(--b-o3) 3px 3px 10px;
         border: solid #000 1px;
         display: flex;
         flex-direction: column;
@@ -66,7 +66,7 @@
     }
     .item:hover,
     .item:focus {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: var(--b-o1);
     }
     .seperator {
         width: 100%;

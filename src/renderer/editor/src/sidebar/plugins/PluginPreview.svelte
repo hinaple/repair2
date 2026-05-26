@@ -47,7 +47,7 @@
         height: 30px;
     }
     .plugin:hover {
-        border-color: rgba(255, 255, 255, 0.2);
+        border-color: var(--w-o2);
     }
     .name {
         margin-right: auto;
@@ -66,6 +66,6 @@
         display: block;
     }
     .more:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--w-o1);
     }
 </style>

@@ -58,8 +58,8 @@
 
         canvas.width = WIDTH;
         canvas.height = HEIGHT;
-        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-        ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.fillStyle = "var(--b-o4)";
+        ctx.strokeStyle = "var(--b-o4)";
         ctx.lineWidth = 2;
 
         frameUpdater.draw();
