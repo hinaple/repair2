@@ -4,8 +4,7 @@ directories:
     buildResources: build
 extraFiles:
     - templates/**/*
-    - from: packages/plugin-sdk
-      to: sdk/repair2-plugin-sdk
+    - packages/**/*
 files:
     - "!**/.vscode/*"
     - "!src/*"
@@ -26,7 +25,7 @@ nsis:
     perMachine: true
     oneClick: false
     allowToChangeInstallationDirectory: true
-    include: build/installer.nsh
+    # include: build/installer.nsh
 linux:
     target:
         - AppImage

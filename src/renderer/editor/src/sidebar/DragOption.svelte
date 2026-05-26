@@ -85,19 +85,3 @@
         }}
     />
 {/if}
-
-<style>
-    .add {
-        cursor: pointer;
-        background-color: #fff;
-        color: #000;
-        font-weight: 600;
-        opacity: 0.8;
-        padding: 10px;
-        text-align: center;
-        border-radius: 10px;
-    }
-    .add:hover {
-        opacity: 1;
-    }
-</style>

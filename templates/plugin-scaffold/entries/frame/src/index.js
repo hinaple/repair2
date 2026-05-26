@@ -1,4 +1,9 @@
+// @ts-check
+
+/** @typedef {import("@fainthit/repair2-plugin-sdk").FrameOptions} FrameOptions */
+
 export default class ExampleElement extends HTMLElement {
+    /** @param {FrameOptions} [options] */
     constructor({ attributes, ctx } = {}) {
         super();
         this.ctx = ctx;

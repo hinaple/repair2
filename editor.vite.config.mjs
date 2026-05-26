@@ -11,7 +11,8 @@ export default defineConfig({
         onlyBlockPlugin({ target: "editor", dir: "src/renderer/classes" }),
         svelte({
             onwarn: (warning, handler) => {
-                if (!warning.code.startsWith("a11y")) handler(warning);
+                if (!warning.code.startsWith("a11y") && warning.code !== "state_referenced_locally")
+                    handler(warning);
             }
         }),
         renderer()

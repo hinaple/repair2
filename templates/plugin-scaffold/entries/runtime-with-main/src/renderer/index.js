@@ -1,3 +1,9 @@
+// @ts-check
+
+/** @typedef {Record<string, (...args: unknown[]) => Promise<unknown>>} MainMethods */
+/** @typedef {Record<string, (...args: unknown[]) => void>} RendererMethods */
+
+/** @type {import("@fainthit/repair2-plugin-sdk").RuntimeFactory<Record<string, unknown>, MainMethods, RendererMethods>} */
 export default () => {
     let ctx, attr, main;
     return {

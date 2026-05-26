@@ -11,6 +11,3 @@
         seriesOption={{ array: data.payload.resourceArr }}
     />
 {/if}
-
-<style>
-</style>

@@ -1,16 +1,14 @@
+// @ts-check
+
 import "./component.css";
 
 import { mount, unmount } from "svelte";
 import Component from "./Component.svelte";
 
+/** @typedef {import("@fainthit/repair2-plugin-sdk").FrameOptions & { isDev?: boolean }} SvelteFrameOptions */
+
 export default class SvelteElement extends HTMLElement {
-    /**
-     * @param {{
-     *     attributes?: Record<string, unknown>,
-     *     isDev?: boolean,
-     *     ctx?: RepairElementPluginContext | null
-     * }} options
-     */
+    /** @param {SvelteFrameOptions} [options] */
     constructor({ attributes = {}, isDev = false, ctx = null }) {
         super();
         this.attributesObj = { ...attributes, ctx, isDev };

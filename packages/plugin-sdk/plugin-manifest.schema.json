@@ -80,7 +80,8 @@
             "required": ["name", "type"],
             "properties": {
                 "$schema": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "JSON Schema URL for editor validation."
                 },
                 "name": {
                     "$ref": "#/$defs/pluginName"
@@ -128,10 +129,10 @@
                         "main": {
                             "$ref": "#/$defs/runtimeMainOptions"
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "elementPluginManifest": {
             "allOf": [
@@ -152,10 +153,10 @@
                             "type": "boolean",
                             "default": false
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "framePluginManifest": {
             "allOf": [
@@ -176,10 +177,10 @@
                             "type": "boolean",
                             "default": false
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "functionPluginManifest": {
             "allOf": [
@@ -196,10 +197,10 @@
                             "$ref": "#/$defs/relativePath",
                             "default": "dist"
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "transitionPluginManifest": {
             "allOf": [
@@ -216,10 +217,10 @@
                             "$ref": "#/$defs/relativePath",
                             "default": "dist"
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         }
     }
 }

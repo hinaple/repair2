@@ -1,8 +1,12 @@
 import { dialog, shell } from "electron";
 import fs from "fs/promises";
 import { join } from "path";
-import { pluginDir, templateDir } from "../dirs";
+import { pluginDir, sdkDir, templateDir } from "../dirs";
 import { pathExists } from "../pathExists";
+
+const PLUGIN_SDK_VERSION = __SDK_VERSION__;
+const SDK_NAME = "@fainthit/repair2-plugin-sdk";
+const SCHEMA_PATH = `./node_modules/${SDK_NAME}/plugin-manifest.schema.json`;
 
 const ENTRY_TYPE_MAP = {
     runtime: "runtime",
@@ -16,7 +20,7 @@ const ENTRY_TYPE_MAP = {
 };
 
 const DEFAULT_MANIFEST = {
-    attr: []
+    attributes: []
 };
 
 const MANIFEST_ENTRIES = {
@@ -67,21 +71,35 @@ export async function createEmptyPlugin(
     const targetDir = join(link ? root : pluginDir, name);
     const alreadyExists = await pathExists(targetDir);
     if (alreadyExists) return { error: `${targetDir} is already exists` };
+    const manifest = {
+        $schema: SCHEMA_PATH,
+        name,
+        type,
+        ...DEFAULT_MANIFEST,
+        ...(MANIFEST_ENTRIES[entry] ?? {})
+    };
     const pkg = {
         name,
         devDependencies: {
-            ...(entry === "svelte-element" || entry === "svelte-frame"
-                ? { svelte: __SVELTE_VERSION__ }
-                : null)
+            [SDK_NAME]: PLUGIN_SDK_VERSION,
+            ...(manifest.svelte ? { svelte: __SVELTE_VERSION__ } : null)
         }
     };
-    const manifest = { name, type, ...DEFAULT_MANIFEST, ...(MANIFEST_ENTRIES[entry] ?? {}) };
     await fs.mkdir(targetDir, { recursive: true });
-    await fs.writeFile(join(targetDir, "package.json"), JSON.stringify(pkg, null, 4), "utf8");
-    await fs.writeFile(join(targetDir, "manifest.json"), JSON.stringify(manifest, null, 4), "utf8");
     const pluginTemplateDir = join(templatePath, "plugin-scaffold");
-    await fs.cp(join(pluginTemplateDir, "entries", entry), targetDir, { recursive: true });
-    await fs.cp(join(pluginTemplateDir, "base"), targetDir, { recursive: true });
+    await Promise.all([
+        fs.writeFile(join(targetDir, "package.json"), JSON.stringify(pkg, null, 4), "utf8"),
+        fs.writeFile(join(targetDir, "manifest.json"), JSON.stringify(manifest, null, 4), "utf8"),
+        fs.cp(join(pluginTemplateDir, "entries", entry), targetDir, { recursive: true }),
+        fs.cp(join(pluginTemplateDir, "base"), targetDir, { recursive: true }),
+        copySdk(targetDir)
+    ]);
     console.log(`New ${entry} plugin created at: ${targetDir}.`);
     return { dir: targetDir };
+}
+
+function copySdk(targetDir) {
+    return fs.cp(sdkDir, join(targetDir, "node_modules/@fainthit/repair2-plugin-sdk"), {
+        recursive: true
+    });
 }
