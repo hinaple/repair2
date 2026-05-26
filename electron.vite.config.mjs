@@ -1,4 +1,4 @@
-import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+import { defineConfig } from "electron-vite";
 import { readFileSync } from "fs";
 
 const pkg = JSON.parse(readFileSync("./package.json", "utf8"));
@@ -9,8 +9,6 @@ const sdkVersion = `^${sdkPkg.version}`;
 
 export default defineConfig({
     main: {
-        plugins: [externalizeDepsPlugin()],
-
         define: {
             __APP_VERSION__: JSON.stringify(pkg.version),
             __SVELTE_VERSION__: JSON.stringify(svelteVersion),

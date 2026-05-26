@@ -2,7 +2,6 @@ import { app, shell, BrowserWindow, Menu, dialog, ipcMain } from "electron";
 import { join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
 import fs, { readdir } from "fs/promises";
-import prompt from "electron-prompt";
 import Store from "electron-store";
 
 import SerialConnector from "./communication/serial";

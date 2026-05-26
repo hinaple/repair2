@@ -1,7 +1,9 @@
-import { build, type Plugin } from "vite";
+import type { Plugin } from "vite";
 import { PluginInfo } from "./type";
 import { join } from "path";
 import { builtinModules } from "module";
+import { is } from "@electron-toolkit/utils";
+import { root } from "../dirs";
 
 function styleInjectPlugin(pluginInfo: PluginInfo): Plugin {
     const styleKey = `${pluginInfo.type}:${pluginInfo.name}`;
@@ -47,6 +49,19 @@ async function getSveltePlugin() {
     return cachedSveltePlugin;
 }
 
+type Build = typeof import("vite").build;
+let _build: Build | null = null;
+async function getBuild() {
+    if (!_build)
+        _build = (
+            await import(
+                is.dev
+                    ? "vite"
+                    : `file://${join(root, "resources/app.asar.unpacked/node_modules/vite/dist/node/index.js")}`
+            )
+        ).build as Build;
+    return _build;
+}
 export async function buildPlugin(
     pluginInfo: PluginInfo,
     { pluginPath, watch = false }: { pluginPath: string; watch: boolean }
@@ -56,6 +71,8 @@ export async function buildPlugin(
     const isFrameOrElement = pluginInfo.type === "element" || pluginInfo.type === "frame";
     if (isFrameOrElement && pluginInfo.svelte) rendererPlugins.push((await getSveltePlugin())());
     if (isFrameOrElement) rendererPlugins.push(styleInjectPlugin(pluginInfo));
+
+    const build = await getBuild();
 
     const rendererBuild = build({
         configFile: false,
