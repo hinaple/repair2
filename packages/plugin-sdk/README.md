@@ -1,95 +1,73 @@
 # @fainthit/repair2-plugin-sdk
 
-Type contracts and small development helpers for REPAIR v2 plugins.
+Type-first authoring contracts for REPAIR2 plugins.
 
-The SDK describes the public plugin surface. The play renderer creates the real `ctx` object; the SDK does not import REPAIR internals.
+This package provides TypeScript and JSDoc type definitions for plugin authors. It describes the public plugin shapes, injected context APIs, runtime bridge contracts, and manifest schema used by REPAIR2.
 
-## How Plugins Use This SDK
+The package is intentionally type-only. It does not register plugins, load manifests, build source files, or provide runtime helpers. REPAIR2 supplies those behaviors when the plugin is installed and executed.
 
-Installed REPAIR copies the SDK into app data:
+## Install
 
-```text
-%APPDATA%/repair2/sdk/repair2-plugin-sdk
+```sh
+npm install --save-dev @fainthit/repair2-plugin-sdk
 ```
 
-Project plugins live under:
+## Usage
 
-```text
-%APPDATA%/repair2/project/plugins/{pluginType}
-```
-
-Vanilla JS plugins are single runtime files. They should usually use JSDoc type imports from the app-data SDK package and should not runtime-import SDK helpers. From `project/plugins/elements/my-plugin.js`, the SDK path is:
-
-```js
-/** @typedef {import("../../../sdk/repair2-plugin-sdk").RepairElementPluginContext} RepairElementPluginContext */
-```
-
-Svelte plugin source projects live under `project/plugins/svelte-plugins/{name}` and have a build step, so they can install and import the package. New Svelte plugin projects should point to the app-data SDK:
-
-```json
-{
-    "devDependencies": {
-        "@fainthit/repair2-plugin-sdk": "file:../../../../sdk/repair2-plugin-sdk"
-    }
-}
-```
-
-## Runtime Plugin Sketch
+Use JSDoc type imports from JavaScript plugin code:
 
 ```js
 // @ts-check
-/** @typedef {import("../../../sdk/repair2-plugin-sdk").RepairRuntimePlugin} RepairRuntimePlugin */
-
-/** @type {RepairRuntimePlugin} */
+/** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default {
-    activate({ ctx }) {
-        return ctx.components.subscribe((components) => {
-            ctx.logger.info(
-                "Current components:",
-                components.map((component) => component.id)
-            );
-        });
+    function({ ctx }) {
+        ctx.logger.info("hello");
     }
 };
 ```
 
-## Svelte/Build Plugin Helper Sketch
+Or import types from TypeScript:
 
-```js
-import { defineElementPlugin } from "@fainthit/repair2-plugin-sdk";
+```ts
+import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 
-export default defineElementPlugin(MyElement);
+const plugin: RuntimeExport = {
+    activate({ ctx }) {
+        ctx.logger.info("runtime activated");
+    }
+};
+
+export default plugin;
 ```
 
-Helpers mainly preserve types and perform light development validation. They do not register plugins by themselves; REPAIR still loads built plugins from project plugin directories.
+Plugin exports may be plain objects or factory functions, depending on the plugin type. The exported SDK types model both forms where the runtime supports them.
 
-## Context Availability
+## Manifest schema
 
-Current context APIs:
+Use the schema in `manifest.json` for editor completion and validation:
 
-- `ctx.plugin`
-- `ctx.component`
-- `ctx.element`
-- `ctx.frame`
-- `ctx.logger`
-- `ctx.events`
-- `ctx.components`
-- `ctx.variables`
-- `ctx.resources`
-- `ctx.app`
-- `ctx.communication`
-- `ctx.store`
-- `ctx.services`
-- `ctx.lifecycle`
+```json
+{
+    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+    "name": "my-plugin",
+    "type": "function"
+}
+```
 
-The SDK exposes type-specific contexts such as `RepairRuntimePluginContext`, `RepairElementPluginContext`, `RepairFramePluginContext`, `RepairFunctionPluginContext`, and `RepairTransitionPluginContext`. `RepairPluginContext` remains as a compatibility union type.
+The schema is exported as `@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json`.
 
-Runtime plugins receive a call argument object. The current runtime calls `activate({ attributes, modules, ctx })`, so destructure `ctx` from that object.
+## Main types
 
-## More Docs
+- `RuntimeExport`
+- `ElementExport`
+- `FrameExport`
+- `FunctionExport`
+- `TransitionExport`
+- `RuntimeMainExport`
+- `PluginContext`
 
-- `docs/plugin-authoring-guide.md`: start-to-finish plugin authoring flow.
-- `docs/plugin-types.md`: when to use each plugin type and what lifecycle is safe.
-- `docs/context-api.md`: context API behavior, side effects, and cleanup rules.
-- `docs/compatibility-and-pitfalls.md`: common mistakes and compatibility notes.
-- `docs/ko/`: Korean translations.
+## Context
+
+Plugin code receives `ctx` from REPAIR2 at runtime. `PluginContext` is the shared context surface, while more specific context types narrow the available APIs for runtime, element, frame, function, and transition plugins.
+
+The SDK types describe the contract only. A plugin should use the injected `ctx` value instead of constructing context objects itself.

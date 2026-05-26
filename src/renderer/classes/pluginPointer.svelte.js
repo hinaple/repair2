@@ -9,10 +9,6 @@ export default class PluginPointer {
         this.name = name === "null" ? null : name;
         this.payloads = payloads;
         this.imported = false;
-
-        //#only play
-        this.ready?.();
-        //#endonly
     }
 
     setName(name) {

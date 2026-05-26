@@ -10,7 +10,32 @@ const activeRuntimePlugins = new Map();
 /** @type {RuntimePluginConfigs} */
 let currentRuntimePluginConfigs = new Map();
 
-function disposeRuntimePlugin({ ctx, disposes = [], pendingRendererCalls }) {
+function createActivationId(pluginName, generation, localGeneration) {
+    const random = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
+    return `${pluginName}:${generation}:${localGeneration}:${random}`;
+}
+
+function disposeMainRuntimePlugin(runtimeData, pluginName) {
+    if (!runtimeData?.mainActivated) return;
+    runtimeData.mainActivated = false;
+    ipcRenderer
+        .invoke("plugin:runtime:deactivate", {
+            pluginName,
+            activationId: runtimeData.activationId
+        })
+        .catch((err) =>
+            reportPluginException(
+                runtimeData.ctx?.plugin ?? { id: pluginName, type: "runtime" },
+                "Runtime main plugin deactivation failed.",
+                err
+            )
+        );
+}
+
+function disposeRuntimePlugin(runtimeData) {
+    const { ctx, disposes = [], pendingRendererCalls } = runtimeData;
+    runtimeData.rendererReady = false;
+
     if (Array.isArray(pendingRendererCalls)) pendingRendererCalls.length = 0;
 
     try {
@@ -58,15 +83,18 @@ function deactivateRuntimePlugin(pluginName) {
     const runtimeData = activeRuntimePlugins.get(pluginName);
     if (!runtimeData) return;
     runtimeData.hmrUnsub?.();
+    disposeMainRuntimePlugin(runtimeData, pluginName);
     disposeRuntimePlugin(runtimeData);
     activeRuntimePlugins.delete(pluginName);
 }
 
 export function deactivateAll() {
-    activeRuntimePlugins.forEach(({ ctx, disposes, pendingRendererCalls, hmrUnsub }) => {
-        disposeRuntimePlugin({ ctx, disposes, pendingRendererCalls });
+    activeRuntimePlugins.forEach((runtimeData) => {
+        const { hmrUnsub } = runtimeData;
+        disposeRuntimePlugin(runtimeData);
         hmrUnsub?.();
     });
+    ipcRenderer.send("plugin:runtime:deactivate-all");
     activeRuntimePlugins.clear();
     currentRuntimePluginConfigs.clear();
 }
@@ -87,7 +115,9 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
         (plugin, pluginInfo) => {
             async function setup() {
                 const myLocalGen = ++localGen;
+                const activationId = createActivationId(pluginName, generation, myLocalGen);
                 let ctx = null;
+                let runtimeData = null;
                 try {
                     if (isDeadGeneration(myLocalGen)) return;
                     ctx = createPluginContext({
@@ -120,11 +150,13 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                         );
                     };
 
-                    const runtimeData = {
+                    runtimeData = {
                         call,
                         plugin,
                         ctx,
+                        activationId,
                         disposes: [],
+                        mainActivated: false,
                         rendererReady: false,
                         pendingRendererCalls: [],
                         hmrUnsub,
@@ -132,6 +164,7 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                     };
                     const previous = activeRuntimePlugins.get(pluginName);
                     if (previous) {
+                        disposeMainRuntimePlugin(previous, pluginName);
                         disposeRuntimePlugin(previous);
                         if (hmrUnsub !== previous.hmrUnsub) previous.hmrUnsub?.();
                     }
@@ -143,11 +176,13 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                             "plugin:runtime:activate",
                             pluginName,
                             {
+                                activationId,
                                 rendererMethods: Object.keys(plugin?.renderer ?? {}),
                                 attributes: payloads
                             }
                         );
                         console.log("MAIN METHODS: ", mainMethods);
+                        if (Array.isArray(mainMethods)) runtimeData.mainActivated = true;
                         if (mainMethods)
                             main = Object.fromEntries(
                                 mainMethods.map((methodName) => [
@@ -155,6 +190,7 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                                     (...args) =>
                                         ipcRenderer.invoke("plugin:runtime:to-main", {
                                             pluginName,
+                                            activationId,
                                             methodName,
                                             args
                                         })
@@ -166,6 +202,7 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                         isDeadGeneration(myLocalGen) ||
                         activeRuntimePlugins.get(pluginName) !== runtimeData
                     ) {
+                        disposeMainRuntimePlugin(runtimeData, pluginName);
                         disposeRuntimePlugin(runtimeData);
                         if (activeRuntimePlugins.get(pluginName) === runtimeData)
                             activeRuntimePlugins.delete(pluginName);
@@ -178,6 +215,7 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                         plugin?.dispose
                     ];
                     if (isDeadGeneration(myLocalGen)) {
+                        disposeMainRuntimePlugin(runtimeData, pluginName);
                         disposeRuntimePlugin({
                             ctx,
                             disposes: tempDisposes,
@@ -196,7 +234,9 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                         "Runtime plugin activation failed.",
                         err
                     );
-                    ctx?.lifecycle.dispose();
+                    disposeMainRuntimePlugin(runtimeData, pluginName);
+                    if (runtimeData) disposeRuntimePlugin(runtimeData);
+                    else ctx?.lifecycle.dispose();
                     const target = activeRuntimePlugins.get(pluginName);
                     if (target?.ctx === ctx) {
                         target.pendingRendererCalls.length = 0;
@@ -252,13 +292,18 @@ export function restartRuntimePlugins() {
     });
 }
 
-ipcRenderer.on("plugin:runtime:to-renderer", (evt, { pluginName, methodName, args }) => {
-    const target = activeRuntimePlugins.get(pluginName);
-    if (!target) return;
-    if (!target.rendererReady) {
-        target.pendingRendererCalls.push({ methodName, args });
-        return;
-    }
+ipcRenderer.on(
+    "plugin:runtime:to-renderer",
+    (evt, { pluginName, activationId, methodName, args }) => {
+        const target = activeRuntimePlugins.get(pluginName);
+        if (!target) return;
+        if (target.activationId !== activationId) return;
+        if (target.ctx?.lifecycle?.disposed) return;
+        if (!target.rendererReady) {
+            target.pendingRendererCalls.push({ methodName, args });
+            return;
+        }
 
-    callRendererMethod(target, methodName, args);
-});
+        callRendererMethod(target, methodName, args);
+    }
+);

@@ -1,6 +1,5 @@
 import chokidar, { FSWatcher } from "chokidar";
 import path, { join } from "path";
-import fs from "fs/promises";
 import { MANIFEST } from "./plugin/pluginManifest";
 import { PLUGIN_LINK } from "./plugin/pluginLinks";
 

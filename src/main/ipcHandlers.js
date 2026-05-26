@@ -56,17 +56,36 @@ export function setupIpcHandlers({
 
     ipcMain.handle(
         "plugin:runtime:activate",
-        async (evt, pluginName, { rendererMethods, attributes }) => {
+        async (evt, pluginName, { activationId, rendererMethods, attributes }) => {
             console.log("PLUGIN ACTIVATING: ", pluginName);
-            const instance = await getPluginManager().mainRuntime.createInstance(pluginName);
+            const instance = await getPluginManager().mainRuntime.createInstance(
+                pluginName,
+                activationId
+            );
             if (!instance) return null;
-            await instance.activate(rendererMethods, attributes);
-            return instance.mainMethods;
+            try {
+                await instance.activate(rendererMethods, attributes);
+                return instance.mainMethods;
+            } catch (err) {
+                getPluginManager().mainRuntime.disposeInstance(pluginName, activationId);
+                throw err;
+            }
         }
     );
 
-    ipcMain.handle("plugin:runtime:to-main", (evt, { pluginName, methodName, args }) => {
-        const instance = getPluginManager().mainRuntime.getPluginInstance(pluginName);
+    ipcMain.handle("plugin:runtime:deactivate", (evt, { pluginName, activationId }) => {
+        return getPluginManager().mainRuntime.disposeInstance(pluginName, activationId);
+    });
+
+    ipcMain.on("plugin:runtime:deactivate-all", () => {
+        getPluginManager().mainRuntime.disposeAll();
+    });
+
+    ipcMain.handle("plugin:runtime:to-main", (evt, { pluginName, activationId, methodName, args }) => {
+        const instance = getPluginManager().mainRuntime.getActiveInstance(
+            pluginName,
+            activationId
+        );
         if (!instance) return null;
         return instance.callMainMethod(methodName, args);
     });

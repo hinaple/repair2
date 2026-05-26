@@ -4,14 +4,14 @@ export default function () {
         activate({ ctx, attributes, renderer }) {
             console.log("MAIN ACTIVATED");
             r = renderer;
+            return () => {
+                console.log("DISPOSED");
+            };
         },
         main: {
             foo(str) {
                 r.bar(str);
             }
-        },
-        dispose() {
-            console.log("DISPOSED");
         }
     };
 }

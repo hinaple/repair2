@@ -37,13 +37,15 @@ type RuntimePluginData = {
 };
 
 class RuntimePluginInstance {
+    activationId: string;
     pluginInfo: PluginInfo;
     methods: PluginMethods;
     ctx?: Record<string, any>;
     disposers: Set<() => any> = new Set();
     active: boolean = false;
     disposed: boolean = false;
-    constructor(pluginInfo: PluginInfo, imported: ImportedPlugin) {
+    constructor(pluginInfo: PluginInfo, imported: ImportedPlugin, activationId: string) {
+        this.activationId = activationId;
         this.pluginInfo = pluginInfo;
         this.methods = typeof imported === "function" ? imported() : imported;
     }
@@ -60,6 +62,7 @@ class RuntimePluginInstance {
                 (...args) =>
                     sendToRenderer("plugin:runtime:to-renderer", {
                         pluginName: this.pluginInfo.name,
+                        activationId: this.activationId,
                         methodName,
                         args
                     })
@@ -75,14 +78,20 @@ class RuntimePluginInstance {
                 }
             }
         };
-        const activeResult = await this.methods?.activate?.({
-            ctx: this.ctx,
-            attributes,
-            renderer
-        });
-        if (typeof activeResult === "function") this.disposers.add(activeResult);
+        try {
+            const activeResult = await this.methods?.activate?.({
+                ctx: this.ctx,
+                attributes,
+                renderer
+            });
+            if (typeof activeResult === "function") this.disposers.add(activeResult);
+        } catch (err) {
+            this.dispose();
+            throw err;
+        }
     }
     callMainMethod(methodName: string, args: any[]) {
+        if (this.disposed) return null;
         return this.methods?.main?.[methodName]?.(...args);
     }
     onDispose(disposer: () => any) {
@@ -125,7 +134,13 @@ export default class MainRuntimePluginEngine {
         if (!forceImport && this.plugins.has(pluginInfo.name))
             return this.getPlugin(pluginInfo.name);
 
-        const tempData: RuntimePluginData = { info: pluginInfo, imported: null };
+        const previous = this.plugins.get(pluginInfo.name);
+
+        const tempData: RuntimePluginData = {
+            info: pluginInfo,
+            imported: null,
+            instance: previous?.instance
+        };
         console.log(
             `LOADING PLUGIN: ${pluginInfo.name}(${join(this.pluginDir, pluginInfo.mainDistFile as string)})`
         );
@@ -172,21 +187,39 @@ export default class MainRuntimePluginEngine {
     }
     getPluginInstance(pluginName: string) {
         const target = this.plugins.get(pluginName);
-        console.log(target);
         if (!target || !target?.instance) return null;
         return target.instance;
     }
-    async createInstance(pluginName: string) {
+    getActiveInstance(pluginName: string, activationId: string) {
+        const instance = this.getPluginInstance(pluginName);
+        if (!instance || instance.activationId !== activationId || instance.disposed) return null;
+        return instance;
+    }
+    async createInstance(pluginName: string, activationId: string) {
         let plugin = await this.getPlugin(pluginName);
-        if (!plugin) return null;
         const target = this.plugins.get(pluginName) as RuntimePluginData;
+        if (!plugin) {
+            this.disposeInstance(pluginName);
+            return null;
+        }
         if (target.instance) target.instance.dispose();
-        target.instance = new RuntimePluginInstance(target.info, plugin);
+        target.instance = new RuntimePluginInstance(target.info, plugin, activationId);
         return target.instance;
+    }
+    disposeInstance(pluginName: string, activationId?: string) {
+        const target = this.plugins.get(pluginName);
+        const instance = target?.instance;
+        if (!target || !instance) return false;
+        if (activationId && instance.activationId !== activationId) return false;
+
+        instance.dispose();
+        if (target.instance === instance) delete target.instance;
+        return true;
     }
     disposeAll() {
         this.plugins.forEach((p) => {
             if (p.instance) p.instance.dispose();
+            delete p.instance;
         });
     }
 }

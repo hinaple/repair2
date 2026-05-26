@@ -1,0 +1,225 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://schemas.repair2.dev/plugin-manifest.schema.json",
+    "title": "REPAIR2 Plugin Manifest",
+    "description": "Manifest schema for a REPAIR2 plugin directory.",
+    "type": "object",
+    "oneOf": [
+        { "$ref": "#/$defs/runtimePluginManifest" },
+        { "$ref": "#/$defs/elementPluginManifest" },
+        { "$ref": "#/$defs/framePluginManifest" },
+        { "$ref": "#/$defs/functionPluginManifest" },
+        { "$ref": "#/$defs/transitionPluginManifest" }
+    ],
+    "$defs": {
+        "pluginName": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$",
+            "description": "Plugin id/name. Scaffolded plugins are normalized to lowercase kebab-case."
+        },
+        "relativePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path relative to the plugin root directory."
+        },
+        "attributeList": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            },
+            "uniqueItems": true,
+            "default": []
+        },
+        "runtimeSteps": {
+            "description": "Runtime step declarations. Array form declares step names only. Object form maps step names to optional attribute names.",
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "uniqueItems": true
+                },
+                {
+                    "type": "object",
+                    "propertyNames": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "additionalProperties": {
+                        "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/attributeList" }]
+                    }
+                }
+            ],
+            "default": {}
+        },
+        "runtimeMainOptions": {
+            "type": "object",
+            "description": "Optional main-process entry for a runtime plugin.",
+            "properties": {
+                "entry": {
+                    "$ref": "#/$defs/relativePath",
+                    "default": "src/main/index.js"
+                },
+                "outDir": {
+                    "$ref": "#/$defs/relativePath",
+                    "default": "dist/main"
+                }
+            },
+            "additionalProperties": false,
+            "default": {
+                "entry": "src/main/index.js",
+                "outDir": "dist/main"
+            }
+        },
+        "baseManifest": {
+            "type": "object",
+            "required": ["name", "type"],
+            "properties": {
+                "$schema": {
+                    "type": "string"
+                },
+                "name": {
+                    "$ref": "#/$defs/pluginName"
+                },
+                "type": {
+                    "enum": ["runtime", "element", "frame", "function", "transition"]
+                },
+                "entry": {
+                    "$ref": "#/$defs/relativePath",
+                    "description": "Renderer/plugin entry. Defaults to src/index.js, or src/renderer/index.js when runtime main is enabled."
+                },
+                "outDir": {
+                    "$ref": "#/$defs/relativePath",
+                    "description": "Renderer/plugin output directory. Defaults to dist, or dist/renderer when runtime main is enabled."
+                },
+                "attributes": {
+                    "$ref": "#/$defs/attributeList",
+                    "description": "Public plugin attributes shown/configured by REPAIR2."
+                },
+                "attr": {
+                    "$ref": "#/$defs/attributeList",
+                    "deprecated": true,
+                    "description": "Legacy alias for attributes. Prefer attributes."
+                }
+            }
+        },
+        "runtimePluginManifest": {
+            "allOf": [
+                { "$ref": "#/$defs/baseManifest" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "const": "runtime" },
+                        "entry": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "src/index.js"
+                        },
+                        "outDir": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "dist"
+                        },
+                        "steps": {
+                            "$ref": "#/$defs/runtimeSteps"
+                        },
+                        "main": {
+                            "$ref": "#/$defs/runtimeMainOptions"
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },
+        "elementPluginManifest": {
+            "allOf": [
+                { "$ref": "#/$defs/baseManifest" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "const": "element" },
+                        "entry": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "src/index.js"
+                        },
+                        "outDir": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "dist"
+                        },
+                        "svelte": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },
+        "framePluginManifest": {
+            "allOf": [
+                { "$ref": "#/$defs/baseManifest" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "const": "frame" },
+                        "entry": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "src/index.js"
+                        },
+                        "outDir": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "dist"
+                        },
+                        "svelte": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },
+        "functionPluginManifest": {
+            "allOf": [
+                { "$ref": "#/$defs/baseManifest" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "const": "function" },
+                        "entry": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "src/index.js"
+                        },
+                        "outDir": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "dist"
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },
+        "transitionPluginManifest": {
+            "allOf": [
+                { "$ref": "#/$defs/baseManifest" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "const": "transition" },
+                        "entry": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "src/index.js"
+                        },
+                        "outDir": {
+                            "$ref": "#/$defs/relativePath",
+                            "default": "dist"
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        }
+    }
+}

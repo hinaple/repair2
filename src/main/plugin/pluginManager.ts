@@ -139,8 +139,12 @@ export class PluginManager {
             p = updateInfoResult?.plugin;
             readyResult = await this.ready(p.info.name, forceBuild, this._isDev);
 
+            if (updateInfoResult.previous?.type === "runtime")
+                this.mainRuntime.disposeInstance(updateInfoResult.previous.name);
+
             if (p.info.type === "runtime" && p.info.main)
                 await this.mainRuntime.updatePlugin(p.info, readyResult.builtNow);
+            else if (p.info.type === "runtime") this.mainRuntime.disposeInstance(p.info.name);
 
             if (!allBuilding)
                 this._onupdate?.({
