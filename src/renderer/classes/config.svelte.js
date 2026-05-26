@@ -26,7 +26,7 @@ export default class Config {
     suppressGlobalKeys = $state();
     runtimePlugins = $state();
     constructor({
-        title = "REPAIR v2",
+        title = "REPAIR v2.4.9",
         width = null,
         height = null,
         sizeRatio = 1,

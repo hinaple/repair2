@@ -4,7 +4,7 @@
     StrCpy $0 "$INSTDIR\plugin-devtool" ; source
 
     ReadEnvStr $1 "APPDATA"
-    StrCpy $2 "$1\repair2\plugin-devtool" ; dest
+    StrCpy $2 "$1\repair2.4.9\plugin-devtool" ; dest
 
     ExecWait 'cmd /C rmdir /Q "$2\plugin"'
     RMDir /r "$2"
@@ -20,7 +20,7 @@
     StrCpy $0 "$INSTDIR\sdk" ; source
 
     ReadEnvStr $1 "APPDATA"
-    StrCpy $2 "$1\repair2\sdk" ; dest
+    StrCpy $2 "$1\repair2.4.9\sdk" ; dest
 
     RMDir /r "$2"
 

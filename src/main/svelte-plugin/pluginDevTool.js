@@ -5,6 +5,7 @@ import { checkVscodeInstalled, openVsCode } from "../vscodeUtils";
 import { exec, spawn } from "child_process";
 import { promisify } from "util";
 import makeLog from "../logger";
+import "../appIdentity.js";
 
 const execAsync = promisify(exec);
 

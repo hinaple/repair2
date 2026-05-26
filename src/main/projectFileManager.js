@@ -35,7 +35,7 @@ export default class ProjectFileManager {
             const result = await dialog.showSaveDialog({
                 title: "프로젝트 내보내기",
                 defaultPath: join(app.getPath("documents"), `${projectName}.repair`),
-                filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
+                filters: [{ name: "REPAIR v2.4.9 Project", extensions: ["repair"] }]
             });
             if (!result || result.canceled) {
                 res(false);
@@ -140,7 +140,7 @@ export default class ProjectFileManager {
         const result = await dialog.showOpenDialog({
             title: "프로젝트 불러오기",
             properties: ["openFile"],
-            filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
+            filters: [{ name: "REPAIR v2.4.9 Project", extensions: ["repair"] }]
         });
         if (!result || result.canceled) return false;
 

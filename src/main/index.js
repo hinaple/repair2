@@ -18,6 +18,7 @@ import { findService } from "./communication/bonjour.js";
 import { createPluginListManager } from "./pluginListManager.js";
 import { createProjectRuntimeWatchers } from "./projectRuntimeWatchers.js";
 import { setupIpcHandlers } from "./ipcHandlers.js";
+import { APP_ID } from "./appIdentity.js";
 import {
     getIsSuppressing,
     setGlobalKeyListener,
@@ -182,7 +183,7 @@ function applyDataConfig(forceUpdate = false) {
 
     mainWindow.setAlwaysOnTop(!!data.config?.alwaysOnTop, "screen-saver");
     if (editorWindow) editorWindow.setAlwaysOnTop(!!data.config?.alwaysOnTop, "screen-saver");
-    mainWindow.setTitle?.(data.config?.title ?? "REPAIRv2");
+    mainWindow.setTitle?.(data.config?.title ?? "REPAIR v2.4.9");
 
     if (!data.config.screenConfig && data.config.multiScreen !== undefined) {
         isMultiScreen = data.config.multiScreen;
@@ -213,7 +214,7 @@ function createMainWindow() {
             webSecurity: false,
             backgroundThrottling: false
         },
-        title: data?.config?.title ?? "REPAIRv2",
+        title: data?.config?.title ?? "REPAIR v2.4.9",
         frame: false,
         transparent: true,
         resizable: false,
@@ -300,7 +301,7 @@ function createEditorWindow() {
                         if (
                             response === 0 &&
                             !(await projectFileManager.exportProject(
-                                (data?.config?.title ?? "REPAIRv2").replace(/\s/g, "_")
+                                (data?.config?.title ?? "REPAIR v2.4.9").replace(/\s/g, "_")
                             ))
                         )
                             return;
@@ -334,7 +335,7 @@ function createEditorWindow() {
                         sendToEditor("request-save");
                         afterSave = () =>
                             projectFileManager.exportProject(
-                                (data?.config?.title ?? "REPAIRv2").replace(/\s/g, "_")
+                                (data?.config?.title ?? "REPAIR v2.4.9").replace(/\s/g, "_")
                             );
                     },
                     accelerator: "CommandOrControl+Shift+S"
@@ -566,7 +567,7 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     app.on("ready", async () => {
-        electronApp.setAppUserModelId("com.repair2");
+        electronApp.setAppUserModelId(APP_ID);
 
         if (!(await appOpenedWithProject(process.argv, false))) {
             showSplash(is.dev);

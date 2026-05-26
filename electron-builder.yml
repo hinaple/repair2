@@ -1,5 +1,5 @@
-appId: com.repair2.app
-productName: repair2
+appId: com.beyondspace.repair2.4.9
+productName: repair2.4.9
 directories:
     buildResources: build
 extraFiles:
@@ -18,7 +18,7 @@ files:
 asarUnpack:
     - resources/**
 win:
-    executableName: repair2
+    executableName: repair2.4.9
     icon: resources/logo.png
 nsis:
     artifactName: ${name}-${version}-setup.${ext}
@@ -39,8 +39,8 @@ linux:
 appImage:
     artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-fileAssociations:
-    - ext: repair
-      description: "Repair v2 Project"
-      name: "Repair v2 Project"
-      icon: resources/project.png
+# fileAssociations:
+#     - ext: repair
+#       description: "Repair v2 Project"
+#       name: "Repair v2 Project"
+#       icon: resources/project.png

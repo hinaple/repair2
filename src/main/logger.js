@@ -1,6 +1,7 @@
 import { app } from "electron";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import "./appIdentity.js";
 
 const LogDir = join(app.getPath("userData"), "logs");
 mkdir(LogDir, { recursive: true });

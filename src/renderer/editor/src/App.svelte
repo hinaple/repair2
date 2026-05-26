@@ -40,7 +40,7 @@
 </script>
 
 <svelte:window {onkeydown} />
-<div class="info">REPAIR v{__APP_VERSION__}</div>
+<div class="info">REPAIR 2.4.9 v{__APP_VERSION__}</div>
 <NodeSpace />
 <ToastDisplay />
 <ContextMenu />
