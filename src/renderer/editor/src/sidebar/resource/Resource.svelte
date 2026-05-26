@@ -25,10 +25,12 @@
     </div>
     {#if !resource.folded}
         <div class="body">
-            <ResourcePreview {resource} />
+            <div class="preview-wrapper">
+                <ResourcePreview {resource} />
+            </div>
             <div class="src" onclick={() => changeResourceFile(resource)}>
                 <span>{resource.src ?? "선택된 파일 없음"}</span>
-                <div class="select-file">파일 선택</div>
+                <button class="select-file">파일 선택</button>
             </div>
             <hr />
             <InputField
@@ -52,15 +54,20 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        background-color: rgba(255, 255, 255, 0.1);
+        border: solid rgba(255, 255, 255, 0.2) 1px;
         box-sizing: border-box;
         border-radius: 10px;
+        overflow: hidden;
+        flex: 0 0 auto;
+    }
+    .resource:hover,
+    .resource:not(.folded) {
+        border-color: #fff;
     }
     .resource.preloaded .top {
         background-color: #e15300;
     }
     .top {
-        border-radius: 10px 10px 0 0;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -68,9 +75,6 @@
         padding: 10px 5px 10px 10px;
         width: 100%;
         box-sizing: border-box;
-    }
-    .resource.folded > .top {
-        border-radius: 10px;
     }
     .name {
         flex: 1 1 auto;
@@ -85,6 +89,12 @@
         border-top: solid #fff 1px;
         padding: 20px 10px;
         box-sizing: border-box;
+    }
+    .preview-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-height: 200px;
     }
     .src {
         display: flex;
@@ -101,11 +111,12 @@
         margin-left: auto;
         padding: 5px 8px;
         background-color: rgba(255, 255, 255, 0.8);
-        border-radius: 10px;
+        border-radius: 5px;
         color: #000;
         opacity: 0.8;
         font-weight: 600;
         font-size: 14px;
+        cursor: pointer;
     }
     .src:hover > .select-file {
         opacity: 1;

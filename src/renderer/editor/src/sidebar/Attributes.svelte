@@ -26,6 +26,7 @@
         flex-direction: column;
         gap: 8px;
         padding: 10px 10px 12px 10px;
-        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 5px;
+        border: solid rgba(255, 255, 255, 0.2) 1px;
     }
 </style>

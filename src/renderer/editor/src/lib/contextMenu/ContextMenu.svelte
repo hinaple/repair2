@@ -45,7 +45,7 @@
 <style>
     .context-menu {
         position: fixed;
-        z-index: 101;
+        z-index: var(--contextmenu-z);
         background-color: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(4px);
         box-shadow: rgba(0, 0, 0, 0.3) 3px 3px 10px;

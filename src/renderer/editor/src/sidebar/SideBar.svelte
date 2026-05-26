@@ -1,5 +1,5 @@
 <script>
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { currentFocus as currentFocusStore } from "./editUtils";
     import SideBarOptions from "./sideBarTitles";
 
@@ -18,6 +18,7 @@
     import Resources from "./resource/Resources.svelte";
     import VariableSetEdit from "./edits/VariableSetEdit.svelte";
     import Plugins from "./plugins/Plugins.svelte";
+    // import Grabber from "../lib/grabber";
 
     const EditComponents = {
         project: ProjectEdit,
@@ -48,6 +49,11 @@
         resources: "Resources",
         plugins: "Plugins"
     };
+
+    // let resizer = $state(null);
+    // onMount(() => {
+    //     const grabber = new Grabber({container: resizer})
+    // })
 </script>
 
 <div class="side-bar">
@@ -59,6 +65,7 @@
         {/each}
     </div>
 
+    <!-- <div bind:this={resizer} class="resizer"></div> -->
     <div class="side-bar-body">
         {#if currentTab === "edit"}
             <div class="title">{SideBarOptions[currentFocus.type]}</div>
@@ -87,7 +94,7 @@
         right: 0;
         width: 300px;
         height: 100%;
-        z-index: 100;
+        z-index: var(--sidebar-z);
         color: #fff;
         padding: 0;
         box-sizing: border-box;
@@ -157,9 +164,10 @@
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        padding: 20px 6px 70px 20px;
+        padding-block: 20px 70px;
         gap: 15px;
         box-sizing: border-box;
         scrollbar-gutter: stable;
+        padding-left: 14px;
     }
 </style>

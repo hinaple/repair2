@@ -240,7 +240,6 @@
 <style>
     .wrapper {
         position: absolute;
-        backdrop-filter: blur(1.3px);
         border-radius: 10px;
     }
     .wrapper.last-hold {
@@ -259,9 +258,6 @@
         border-radius: 10px;
         left: 0;
         top: 0;
-    }
-    .wrapper:global(.grabbing) {
-        backdrop-filter: blur(2px);
     }
     .head {
         color: #fff;

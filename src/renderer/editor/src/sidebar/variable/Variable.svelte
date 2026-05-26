@@ -61,21 +61,21 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        /* background-color: rgba(255, 255, 255, 0.1); */
         padding: 5px 7px 5px 10px;
         box-sizing: border-box;
         border-radius: 10px;
+        border: solid transparent 1px;
     }
     .variable:has(> :nth-child(2)) {
         padding: 5px 5px 10px 10px;
     }
     .variable:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
     }
     .variable.editing {
         opacity: 1;
         padding: 10px;
-        background-color: rgba(255, 255, 255, 0.2);
+        border-color: #4e86ff;
     }
     .icon {
         border-radius: 5px;
@@ -88,7 +88,7 @@
         opacity: 0.5;
     }
     .icon:hover {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.1);
         opacity: 1 !important;
     }
     .top {

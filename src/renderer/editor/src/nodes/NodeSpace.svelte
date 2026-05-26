@@ -33,13 +33,7 @@
         if (evt.target.tagName === "INPUT" || evt.target.tagName === "TEXTAREA") return;
         if (evt.key === " " && !get(grabbing)) {
             readyToGrab = true;
-            grabbing.set(myGrab);
         }
-
-        // if (evt.key === "Tab") {
-        //     renderWithWebGL = !renderWithWebGL;
-        //     console.log("TOGGLE LINE RENDERER: ", renderWithWebGL ? "WebGL" : "Canvas");
-        // }
     }
     function keyup(evt) {
         if (evt.key === " ") {

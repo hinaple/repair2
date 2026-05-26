@@ -7,6 +7,7 @@ import amplifyVideo from "../lib/amplifyVideo";
 import RepairInput from "./repairInput";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
+import { pluginAppended } from "../lib/plugin/pluginStyles";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -247,6 +248,7 @@ export default class RepairElement extends HTMLElement {
         });
 
         this.appendChild(this.realEl);
+        if (this.type === "plugin") pluginAppended("element", this.element.payload.name);
         if (this.willFocus) this.realEl.focus();
         if (this.type === "video") this.realEl.play();
 

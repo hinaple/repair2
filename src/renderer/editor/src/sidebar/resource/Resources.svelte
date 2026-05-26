@@ -18,16 +18,16 @@
         );
         let doCopy = false;
         if (outAssets.length) {
-            const result = await ipcRenderer.sendSync("dialogue", {
+            const result = await ipcRenderer.invoke("dialogue", {
                 type: "question",
                 title: "다른 폴더의 파일이 있습니다.",
                 message: `${outAssets.join("\n")}\n\n위 파일들을 자원 폴더에 복사하시겠습니까?`,
                 buttons: ["자원 폴더에 복사", "건너뛰기"],
                 cancelId: 1
             });
-            doCopy = result === 0;
+            doCopy = result.response === 0;
         }
-        if (doCopy) outAssets = await ipcRenderer.sendSync("copyInfoAsset", outAssets);
+        if (doCopy) outAssets = await ipcRenderer.invoke("copyInfoAsset", outAssets);
         const resourceArr = [...inAssets, ...(doCopy ? outAssets : [])].map(
             (s) => new ResourceClass({ src: s, folded: false })
         );

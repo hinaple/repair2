@@ -9,10 +9,22 @@
 </script>
 
 <div class="plugin" use:hoverHighlight={{ type: "plugin", data: info.name }}>
-    <span>
+    {#if info.svelte}
+        <Icon icon="svelte" color={!info.ready ? "#ff3636" : "#fff"} size={16} />
+    {/if}
+    <span class={["name", (!info.ready || info.error) && "error"]}>
         {info.name}
     </span>
-    <div class="type">{info.type}</div>
+    {#if !info.ready}
+        <Icon icon="warn" color="#ff3636" size={16} />
+    {/if}
+    {#if info.linked}
+        <Icon
+            icon={info.linked.linked ? "linked" : "unlinked"}
+            color="rgba(255, 255, 255, .6)"
+            size={16}
+        />
+    {/if}
     <button bind:this={moreBtn} class="more"
         ><Icon icon="ellipsis" color="#fff" size={14} />
     </button>
@@ -20,40 +32,40 @@
 
 <style>
     .plugin {
+        flex: 0 0 auto;
         width: 100%;
         border-radius: 5px;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        padding: 5px 0 8px 10px;
-        position: relative;
+        padding-inline: 5px 3px;
+        border: solid transparent 1px;
+        flex-direction: row;
         gap: 5px;
+        align-items: center;
+        font-weight: 300;
+        height: 30px;
     }
     .plugin:hover {
-        background-color: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.2);
     }
-    .type {
-        background-color: rgba(255, 255, 255, 0.8);
-        color: #000;
-        font-size: 14px;
-        padding: 0px 3px;
-        border-radius: 5px;
+    .name {
+        margin-right: auto;
+    }
+    .error {
         font-weight: 600;
-        width: fit-content;
+        color: #ff3636;
     }
     .more {
         padding: 5px 5px;
         border-radius: 5px;
+        display: none;
         cursor: pointer;
-        position: absolute;
-        right: 3px;
-        top: 3px;
-        opacity: 0;
     }
     .plugin:hover > .more {
-        opacity: 1;
+        display: block;
     }
     .more:hover {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.1);
     }
 </style>

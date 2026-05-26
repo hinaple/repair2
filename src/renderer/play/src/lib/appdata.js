@@ -5,9 +5,8 @@ import { registerVariables } from "./variables";
 import { registerUtils } from "./repairUtils";
 import initShortcuts from "./shortcut";
 import { sendTotalInfo } from "./runtimeMonitor";
-import { activateRuntimePlugins, deactivateRuntimePlugins } from "./plugin/runtimePlugins";
+import { activateRuntimePlugins, deactivateAll } from "./plugin/runtimePlugins";
 import { registerPluginContextApi } from "./plugin/pluginContext";
-import { afterPluginImported } from "./plugin/pluginManager";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -43,7 +42,7 @@ ipcRenderer.on("global-css", (event, css) => {
 });
 
 window.addEventListener("beforeunload", () => {
-    deactivateRuntimePlugins();
+    deactivateAll();
 });
 
 /**

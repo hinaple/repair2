@@ -3,7 +3,14 @@ import { grabbing } from "./stores";
 import { rInfo } from "../nodes/viewport";
 
 export default class Grabber {
-    constructor({ container, handle = null, onMoved, onMoveStart = null, onMoveEnd = null }) {
+    constructor({
+        container,
+        handle = null,
+        onMoved,
+        onMoveStart = null,
+        onMoveEnd = null,
+        inNodeSpace = true
+    }) {
         this.container = container;
         this.handle = handle ?? container;
         const myGrab = Symbol();
@@ -28,8 +35,8 @@ export default class Grabber {
             actuallyMoved = true;
             const currentMouse = { x: evt.clientX, y: evt.clientY };
             onMoved({
-                dx: (currentMouse.x - prvMouse.x) / rInfo.ratio,
-                dy: (currentMouse.y - prvMouse.y) / rInfo.ratio,
+                dx: (currentMouse.x - prvMouse.x) / (inNodeSpace ? rInfo.ratio : 1),
+                dy: (currentMouse.y - prvMouse.y) / (inNodeSpace ? rInfo.ratio : 1),
                 px: currentMouse.x,
                 py: currentMouse.y
             });

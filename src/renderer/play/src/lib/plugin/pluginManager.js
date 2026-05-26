@@ -4,49 +4,66 @@ import { ipcRenderer } from "electron";
 import { getAppData } from "../appdata";
 import { createPluginContext } from "./pluginContext";
 import { reportPluginException } from "./pluginReporter";
-import { importPlugin } from "./pluginImport";
+import { dynamicImportPlugin } from "./pluginImport";
+import { PLUGIN_TYPES } from "@classes/utils";
 
-const PLUGIN_TYPES = ["runtime", "element", "transition", "function", "frame"];
+/** @type {Record<string, Record<string, { info: PluginInfo, imported: any, importing: Promise<any> | null }>>} */
 const plugins = Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}]));
 
 async function requestUpdatePluginList() {
     await ipcRenderer.invoke("plugin:get-list").then(updateAllPlugin);
 }
-function updateAllPlugin(pluginList) {
-    PLUGIN_TYPES.map((t) => {
-        plugins[t] = {};
+function updateAllPlugin(pluginList, forceImports = []) {
+    PLUGIN_TYPES.forEach((t) => {
+        plugins[t] = Object.fromEntries(
+            Object.entries(plugins[t]).filter(([name]) => pluginList[name]?.type === t)
+        );
     });
-    return Promise.all(Object.values(pluginList).map(updatePlugin));
+    return Promise.all(
+        Object.values(pluginList).map((pluginInfo) =>
+            updatePlugin(pluginInfo, forceImports.includes(pluginInfo.name))
+        )
+    );
 }
 
-function updatePlugin(pluginInfo, forceImport = false) {
-    if (!forceImport && plugins[pluginInfo.type][pluginInfo.name])
-        return getPlugin(pluginInfo.type, pluginInfo.name);
-
-    const tempData = { info: pluginInfo, imported: null };
-    console.log("LOADING PLUGIN: ", pluginInfo.name);
-    tempData.importing = importPlugin(pluginInfo.distFile)
+function importPlugin(pluginData) {
+    pluginData.importing = dynamicImportPlugin(pluginData.info.distFile)
         .then((p) => {
-            if (plugins[pluginInfo.type][pluginInfo.name] !== tempData) return { _expired: true };
+            if (plugins[pluginData.info.type][pluginData.info.name] !== pluginData)
+                return { _expired: true };
 
-            tempData.importing = null;
-            tempData.imported = p;
-            console.log("PLUGIN LOADED: ", pluginInfo.name);
+            pluginData.importing = null;
+            pluginData.imported = p;
+            console.log("PLUGIN LOADED: ", pluginData.info.name);
+            callHmr(pluginData.info, p);
             return p;
         })
         .catch((err) => {
-            if (plugins[pluginInfo.type][pluginInfo.name] === tempData) {
-                tempData.importing = null;
-                tempData.imported = null;
+            if (plugins[pluginData.info.type][pluginData.info.name] === pluginData) {
+                pluginData.importing = null;
+                pluginData.imported = null;
             }
 
             reportPluginException(
-                { id: pluginInfo.name, type: pluginInfo.type },
+                { id: pluginData.info.name, type: pluginData.info.type },
                 "Plugin importing failed.",
                 err
             );
             return null;
         });
+}
+function updatePlugin(pluginInfo, forceImport = false) {
+    if (!forceImport && plugins[pluginInfo.type][pluginInfo.name]) {
+        plugins[pluginInfo.type][pluginInfo.name].info = pluginInfo;
+        return getPlugin(pluginInfo.type, pluginInfo.name);
+    }
+
+    if (!pluginInfo.ready) return;
+
+    const tempData = { info: pluginInfo, imported: null };
+    console.log("LOADING PLUGIN: ", pluginInfo.name);
+    importPlugin(tempData);
+
     plugins[pluginInfo.type][pluginInfo.name] = tempData;
     return getPlugin(pluginInfo.type, pluginInfo.name);
 }
@@ -92,31 +109,32 @@ PluginPointer.prototype.getInfo = function () {
     return plugins[this.type][this.name]?.info;
 };
 
-PluginPointer.prototype.use = async function (
+export async function usePlugin({
+    type,
+    name,
     plugin = null,
     contextOptions = {},
     forceCtx = undefined,
     functionName = "function",
-    payloads = this.payloads
-) {
-    if (!plugin) plugin = await getPlugin(this.type, this.name);
+    payloads = {}
+}) {
+    if (!plugin) plugin = await getPlugin(type, name);
     if (!plugin) return null;
 
-    if (this.type === "runtime") return plugin;
+    if (type === "runtime") return plugin;
 
-    if (this.type === "frame" || this.type === "element") {
+    if (type === "frame" || type === "element") {
         const ce = plugin;
         const ctx =
             forceCtx ??
             createPluginContext({
-                pluginId: this.name,
-                pluginType: this.type,
+                pluginId: name,
+                pluginType: type,
                 ...contextOptions
             });
         const temp = safeCallPlugin(ctx, "Plugin element creation failed.", () => {
-            definePlugin(ce, this.name);
+            definePlugin(ce, name);
             return new ce({
-                // modules: pluginObj.modules,
                 attributes: payloads,
                 ctx
             });
@@ -126,88 +144,120 @@ PluginPointer.prototype.use = async function (
             return null;
         }
         temp.__repairPluginContext = ctx;
-        temp.id = this.name;
-        this.attributes.forEach((attr) => {
-            temp.setAttribute(attr, payloads[attr]);
-        });
+        temp.id = name;
         return temp;
     }
 
     if (typeof plugin === "function") plugin = await plugin(); //plugin can be a factory
-    if (this.type === "function" || (this.type === "transition" && plugin?.[functionName])) {
+    if (type === "function" || (type === "transition" && plugin?.[functionName])) {
         const ctx =
             forceCtx ??
             createPluginContext({
-                pluginId: this.name,
-                pluginType: this.type,
+                pluginId: name,
+                pluginType: type,
                 ...contextOptions
             });
         return (argument = null) =>
             safeCallPlugin(ctx, "Plugin function execution failed.", () =>
                 plugin?.[functionName]({
                     attributes: payloads,
-                    // modules: pluginObj.modules,
                     ctx,
                     ...argument
                 })
             );
     }
-    if (this.type === "transition") return plugin?.keyframes ?? [];
+    if (type === "transition") return plugin?.keyframes ?? [];
 
     return plugin;
+}
+
+PluginPointer.prototype.use = async function (
+    plugin = null,
+    contextOptions = {},
+    forceCtx = undefined,
+    functionName = "function",
+    payloads = this.payloads
+) {
+    if (!this.name) return null;
+
+    return usePlugin({
+        plugin,
+        type: this.type,
+        name: this.name,
+        contextOptions,
+        forceCtx,
+        functionName,
+        payloads
+    });
 };
 
 PluginPointer.prototype.hmrSubscribe = function (callback, contextOptions = {}) {
     if (!this.name) return null;
 
-    const source = { id: this.name, type: this.type };
-    this.use(null, contextOptions)
-        .then(callback)
-        .catch((err) => reportPluginException(source, "Plugin HMR initial callback failed.", err));
-    return subscribePluginHMR(this.type, this.name, async (plugin) => {
-        try {
-            callback(await this.use(plugin, contextOptions));
-        } catch (err) {
-            reportPluginException(source, "Plugin HMR callback failed.", err);
-        }
-    });
+    return subscribePluginHMR(this.type, this.name, { contextOptions }, callback);
 };
 
 /** @type {Record<string, Record<string, Set<(any) => any>>>} */
 const hmrSubscribers = {};
-export default function subscribePluginHMR(type, pluginName, callback) {
+export default function subscribePluginHMR(type, pluginName, useParams = {}, callback) {
+    const source = { id: pluginName, type: type };
+
     if (!hmrSubscribers[type]) hmrSubscribers[type] = {};
     let targetSet = hmrSubscribers[type][pluginName];
     if (!targetSet) {
         targetSet = new Set();
         hmrSubscribers[type][pluginName] = targetSet;
     }
-    targetSet.add(callback);
-    return () => {
-        targetSet.delete(callback);
+    const fn = async (plugin, pluginInfo) => {
+        try {
+            callback(await usePlugin({ plugin, type, name: pluginName, ...useParams }), pluginInfo);
+        } catch (err) {
+            reportPluginException(source, "Plugin HMR callback failed.", err);
+        }
     };
+
+    let unsubscribed = false;
+    getPlugin(type, pluginName)
+        .then((plugin) => usePlugin({ type, name: pluginName, plugin, ...useParams }))
+        .then((using) => callback(using, plugins[type][pluginName].info))
+        .catch((err) => reportPluginException(source, "Plugin HMR initial callback failed.", err))
+        .finally(() => {
+            if (!unsubscribed) targetSet.add(fn);
+        });
+
+    return () => {
+        unsubscribed = true;
+        targetSet.delete(fn);
+    };
+}
+
+async function callHmr(pluginInfo, plugin) {
+    const targetSet = hmrSubscribers[pluginInfo.type]?.[pluginInfo.name];
+    if (!targetSet) return;
+    targetSet.forEach((callback) => {
+        Promise.resolve()
+            .then(() => callback(plugin, pluginInfo))
+            .catch((err) => {
+                reportPluginException(
+                    { id: pluginInfo.name, type: pluginInfo.type },
+                    "Plugin HMR subscriber failed.",
+                    err
+                );
+            });
+    });
 }
 
 ipcRenderer.on("plugin-hmr", async (_, pluginInfo) => {
     if (!getAppData().config.devMode) return;
     console.log("Plugin HMR:", pluginInfo.name);
-    const plugin = await updatePlugin(pluginInfo);
-    if (plugin?._expired) return;
-    const targetSet = hmrSubscribers[pluginInfo.type]?.[pluginInfo.name];
-    if (!targetSet) return;
-    targetSet.forEach((callback) => {
-        try {
-            callback(plugin);
-        } catch (err) {
-            reportPluginException(
-                { id: pluginInfo.name, type: pluginInfo.type },
-                "Plugin HMR subscriber failed.",
-                err
-            );
-        }
-    });
+    updatePlugin({ ...pluginInfo, ready: true }, true);
 });
 
-ipcRenderer.on("plugin-list", (_, p) => {
-    updateAllPlugin(p);
+ipcRenderer.on("plugin:list", (_, p, changedPlugins) => {
+    updateAllPlugin(p, changedPlugins);
+});
+
+ipcRenderer.on("plugin:update", (_, { info, previous, buildChanged }) => {
+    if (previous) delete plugins[previous.type]?.[previous.name];
+    updatePlugin(info, buildChanged);
 });

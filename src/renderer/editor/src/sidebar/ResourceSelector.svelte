@@ -204,8 +204,10 @@
             border: none;
             background: none;
             font: inherit;
-            border-bottom: solid #000 1px;
+            border-bottom: solid #000 1px !important;
             padding: 5px 2px;
+            border-radius: 0;
+            color: #000;
         }
     }
     .search-zone.hidden {

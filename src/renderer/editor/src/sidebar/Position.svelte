@@ -37,70 +37,41 @@
         {/each}
     </div>
     <div class="lines">
-        <div class="line">
-            x
-            {#if position.x.origin === "center"}
-                <div class="disabled">중앙</div>
-            {:else}
-                <HistoryInput
-                    value={position.x.distance}
-                    setter={(d) => {
-                        position.x.distance = +d;
-                        oninput?.();
-                    }}
-                    type="number"
-                    placeholder="0"
-                    {previewer}
-                />
-                <div
-                    class="unit"
-                    onclick={() => {
-                        addHistory({
-                            doFn: ({ value, position }) => {
-                                position.x.relative = value;
-                                oninput?.();
-                            },
-                            doData: { value: !position.x.relative, position },
-                            undoData: { value: position.x.relative, position }
-                        });
-                    }}
-                >
-                    {position.x.relative ? "%" : "px"}
-                </div>
-            {/if}
-        </div>
-        <div class="line">
-            y
-            {#if position.y.origin === "center"}
-                <div class="disabled">중앙</div>
-            {:else}
-                <HistoryInput
-                    value={position.y.distance}
-                    setter={(d) => {
-                        position.y.distance = +d;
-                        oninput?.();
-                    }}
-                    type="number"
-                    placeholder="0"
-                    {previewer}
-                />
-                <div
-                    class="unit"
-                    onclick={() => {
-                        addHistory({
-                            doFn: ({ value, position }) => {
-                                position.y.relative = value;
-                                oninput?.();
-                            },
-                            doData: { value: !position.y.relative, position },
-                            undoData: { value: position.y.relative, position }
-                        });
-                    }}
-                >
-                    {position.y.relative ? "%" : "px"}
-                </div>
-            {/if}
-        </div>
+        {#each ["x", "y"] as axis}
+            {@const a = position[axis]}
+            <div class="line">
+                {axis.toUpperCase()}
+                {#if a.origin === "center"}
+                    <div class="disabled">중앙</div>
+                {:else}
+                    <HistoryInput
+                        value={a.distance}
+                        setter={(d) => {
+                            a.distance = +d;
+                            oninput?.();
+                        }}
+                        type="number"
+                        placeholder="0"
+                        {previewer}
+                    />
+                    <div
+                        class="unit"
+                        onclick={() => {
+                            addHistory({
+                                doFn: ({ value, axis }) => {
+                                    axis.relative = value;
+                                    oninput?.();
+                                },
+                                doData: { value: !a.relative, axis: a },
+                                undoData: { value: a.relative, axis: a }
+                            });
+                        }}
+                    >
+                        {a.relative ? "%" : "px"}
+                    </div>
+                {/if}
+            </div>
+        {/each}
     </div>
 </div>
 
@@ -120,24 +91,38 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(3, 1fr);
-        gap: 10px;
+        gap: 5px;
     }
     .dot {
         cursor: pointer;
-        border: solid #fff 2px;
+        border: solid rgba(255, 255, 255, 0.4) 1px;
         box-sizing: border-box;
     }
+    .dot:nth-child(1) {
+        border-top-left-radius: 5px;
+    }
+    .dot:nth-child(3) {
+        border-top-right-radius: 5px;
+    }
+    .dot:nth-child(7) {
+        border-bottom-left-radius: 5px;
+    }
+    .dot:nth-child(9) {
+        border-bottom-right-radius: 5px;
+    }
     .dot.current {
-        background-color: #fff;
+        border-color: #4e86ff;
+        background-color: rgba(78, 134, 255, 0.5);
     }
     .dot:not(.current):hover {
-        background-color: rgba(255, 255, 255, 0.3);
+        border-color: #fff;
+        /* background-color: rgba(255, 255, 255, 0.3); */
     }
     .lines {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        gap: 10px;
+        gap: 8px;
         width: 100%;
     }
     .line {
@@ -145,25 +130,26 @@
         flex-direction: row;
         align-items: center;
         gap: 5px;
-        height: 30px;
+        height: 25px;
         width: 100%;
     }
     .line :global(input) {
         flex: 1 1 auto;
         width: 100%;
-        height: 30px;
+        height: 25px;
     }
     .unit {
         height: 100%;
         width: 30px;
         flex: 0 0 auto;
-        background-color: rgba(255, 255, 255, 0.8);
-        color: #000;
-        font-weight: 600;
+        background-color: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        font-weight: 300;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
+        border-radius: 5px;
     }
     .disabled {
         width: 100%;
@@ -171,9 +157,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #fff;
-        color: #000;
-        opacity: 0.4;
-        font-weight: 600;
+        background-color: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+        border-radius: 5px;
+        font-weight: 400;
     }
 </style>

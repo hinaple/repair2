@@ -38,7 +38,7 @@
         pointer-events: none;
         gap: 10px;
         width: 320px;
-        z-index: 99;
+        z-index: var(--toast-z);
     }
     .toast {
         pointer-events: all;

@@ -28,6 +28,7 @@ import {
 } from "../resources";
 import { reportPluginIssue, reportPluginException, sendPluginLog } from "./pluginReporter";
 import { serialSend, socketSend } from "../communication";
+import { pluginDisposed } from "./pluginStyles";
 
 const typeMap = {
     runtime: "runtime",
@@ -103,6 +104,7 @@ function createLifecycle(plugin) {
         dispose() {
             if (disposed) return;
             disposed = true;
+            pluginDisposed(plugin.type, plugin.id);
             disposers.forEach(runDisposer);
             disposers.clear();
         },

@@ -1,3 +1,11 @@
+:root {
+    --sidebar-z: 100;
+    --modal-z: 110;
+    --toast-z: 120;
+    --info-z: 150;
+    --contextmenu-z: 200;
+}
+
 body {
     --viewport-ratio: 1;
     --outline-width: max(calc(4px / var(--viewport-ratio)), 3px);
@@ -49,10 +57,11 @@ svg {
 
 hr {
     box-sizing: border-box;
-    margin-block: 20px;
+    margin-block: 10px;
     padding: 0;
     width: 100%;
-    border: solid #fff 1px;
+    background-color: #fff;
+    opacity: 0.6;
 }
 .focus {
     outline: solid var(--outline-width) #2b6eff;
@@ -65,6 +74,68 @@ hr {
 .hl-plugin {
     outline: solid var(--outline-width) #ffe734;
     outline-offset: 3px;
+}
+
+input,
+textarea,
+select {
+    padding: 2px 4px;
+    border: solid transparent 1px;
+    background-color: rgba(255, 255, 255, 0.2);
+    font-family: "Pretend";
+    font-size: 16px;
+    color: #fff;
+    font-weight: 400;
+    box-sizing: border-box;
+    display: block;
+    border-radius: 5px;
+    letter-spacing: 0.04em;
+}
+select {
+    padding-inline: 0;
+}
+input.small,
+textarea.small,
+select.small {
+    padding: 3px 4px;
+    font-size: 14px;
+}
+input:hover,
+textarea:hover,
+select:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+option {
+    background-color: #1e1e1e;
+}
+textarea::placeholder,
+input::placeholder {
+    color: #fff;
+    opacity: 0.6;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+}
+textarea {
+    resize: none;
+}
+.code {
+    font-family: "Consolas";
+    font-size: 16px;
+    background-color: #2b002a;
+    color: #fff;
+    font-weight: 400;
+    border: solid rgba(185, 116, 185, 0.5) 1px;
+    letter-spacing: 0;
+}
+.code:hover {
+    border-color: rgba(185, 116, 185, 0.8);
+}
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #4e86ff !important;
 }
 
 button {

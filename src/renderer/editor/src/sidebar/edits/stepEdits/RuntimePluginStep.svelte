@@ -9,12 +9,12 @@
     let runtimePluginNames = $derived(
         appData.config.runtimePlugins
             .map((p) => p.name)
-            .filter((p) => p && plugins.plugins.runtime?.[p]?.steps)
+            .filter((p) => p && plugins.runtime?.[p]?.steps)
     );
     let runtimePluginDisplayName = $derived(
         runtimePluginNames.includes(data.payload.pluginName) ? data.payload.pluginName : null
     );
-    let runtimePluginInfo = $derived(plugins.plugins.runtime?.[runtimePluginDisplayName]);
+    let runtimePluginInfo = $derived(plugins.runtime?.[runtimePluginDisplayName]);
 </script>
 
 <InputField
@@ -54,5 +54,6 @@
     .step-edit-zone {
         display: flex;
         flex-direction: column;
+        gap: 3px;
     }
 </style>

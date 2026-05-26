@@ -14,20 +14,21 @@
             fill="none"
             viewBox="0 0 6 5"
         >
-            <path stroke="#000" d="m1 2 1.5 1.5L5 1" transition:draw={{ duration: 200 }} />
+            <path stroke="#fff" d="m1 2 1.5 1.5L5 1" transition:draw={{ duration: 200 }} />
         </svg>
     {/if}
 </div>
 
 <style>
     .checkbox {
-        width: 20px;
-        height: 20px;
-        background-color: #fff;
+        width: 18px;
+        height: 18px;
+        background-color: rgba(255, 255, 255, 0.2);
         position: relative;
         cursor: pointer;
-        border: solid #000 1px;
+        /* border: solid #000 1px; */
         box-sizing: border-box;
+        border-radius: 5px;
     }
     .inner {
         width: 100%;
@@ -37,5 +38,9 @@
         top: 50%;
         transform: translate(-50%, -50%);
         transition: all 200ms ease;
+
+        path {
+            stroke-width: 0.6px;
+        }
     }
 </style>

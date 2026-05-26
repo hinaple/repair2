@@ -1,8 +1,10 @@
 /** @typedef { import("./plugin/pluginManager").PluginManager } PluginManager */
 
-import { ipcMain, dialog } from "electron";
+import { ipcMain, dialog, shell } from "electron";
 import fs from "fs/promises";
 import { basename, extname, join } from "path";
+import { createEmptyPlugin } from "./plugin/createEmptyPlugin";
+import { pathExists } from "./pathExists";
 
 /**
  *
@@ -43,11 +45,13 @@ export function setupIpcHandlers({
     serial,
     socket
 }) {
+    ipcMain.on("open-dir", (evt, dir) => {
+        shell.openPath(dir);
+    });
+
     //#region plugin IPCs
-    ipcMain.handle("plugin:get-list", (evt, withTypes = false) => {
-        return withTypes
-            ? getPluginManager().pluginListWithTypes
-            : getPluginManager().simplePluginList;
+    ipcMain.handle("plugin:get-list", (evt) => {
+        return getPluginManager().simplePluginList;
     });
 
     ipcMain.handle(
@@ -65,6 +69,30 @@ export function setupIpcHandlers({
         const instance = getPluginManager().mainRuntime.getPluginInstance(pluginName);
         if (!instance) return null;
         return instance.callMainMethod(methodName, args);
+    });
+
+    ipcMain.handle("plugin:create", async (evt, { name, type, isExternal }) => {
+        let path = null;
+        if (isExternal) {
+            const selected = await dialog.showOpenDialog(getEditorWindow() ?? getMainWindow(), {
+                title: "Select the plugin directory",
+                properties: ["openDirectory"]
+            });
+            if (selected.canceled) return { canceled: true };
+            path = selected.filePaths[0];
+        }
+        const createResult = await createEmptyPlugin(name, type, { link: isExternal, root: path });
+        if (createResult.error) return { canceled: true, error: createResult.error };
+        if (isExternal) {
+            const linkResult = await getPluginManager().pluginLinkService.addPluginLink(
+                createResult.dir,
+                false
+            );
+            if (!linkResult) return { canceled: true };
+        }
+        shell.openPath(createResult.dir);
+        await getPluginManager().updateAllPluginInfo();
+        return { dir: createResult.dir };
     });
 
     //#endregion
@@ -105,16 +133,19 @@ export function setupIpcHandlers({
         evt.returnValue = dataDir;
     });
 
-    ipcMain.on("selectFile", async (event, opt) => {
-        event.returnValue = await dialog.showOpenDialogSync(opt);
+    ipcMain.handle("selectFile", (event, opt) => {
+        return dialog.showOpenDialog(getEditorWindow() ?? getMainWindow(), opt);
     });
 
-    ipcMain.on("dialogue", async (event, opt) => {
-        event.returnValue = await dialog.showMessageBoxSync({ ...opt, noLink: true });
+    ipcMain.handle("dialogue", (event, opt) => {
+        return dialog.showMessageBox(getEditorWindow() ?? getMainWindow(), {
+            ...opt,
+            noLink: true
+        });
     });
 
-    ipcMain.on("copyInfoAsset", async (event, srcs) => {
-        event.returnValue = await Promise.all(
+    ipcMain.handle("copyInfoAsset", (event, srcs) => {
+        return Promise.all(
             srcs.map(
                 (s) =>
                     new Promise(async (res) => {
@@ -122,13 +153,7 @@ export function setupIpcHandlers({
                         const bn = basename(s, ext);
                         let filename = basename(s);
                         for (let duplicatedCount = 2; ; duplicatedCount++) {
-                            if (
-                                await fs
-                                    .access(join(assetDir, filename), fs.constants.F_OK)
-                                    .then(() => false)
-                                    .catch(() => true)
-                            )
-                                break;
+                            if (!(await pathExists(join(assetDir, filename)))) break;
                             filename = `${bn}(${duplicatedCount})${ext}`;
                         }
                         await fs.copyFile(s, join(assetDir, filename));

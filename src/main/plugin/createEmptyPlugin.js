@@ -2,6 +2,8 @@ import { dialog, shell } from "electron";
 import electronPrompt from "electron-prompt";
 import fs from "fs/promises";
 import { join } from "path";
+import { pluginDir, templateDir } from "../dirs";
+import { pathExists } from "../pathExists";
 
 const ENTRY_TYPE_MAP = {
     runtime: "runtime",
@@ -10,7 +12,8 @@ const ENTRY_TYPE_MAP = {
     frame: "frame",
     function: "function",
     transition: "transition",
-    "svelte-element": "element"
+    "svelte-element": "element",
+    "svelte-frame": "frame"
 };
 
 const DEFAULT_MANIFEST = {
@@ -32,6 +35,9 @@ const MANIFEST_ENTRIES = {
     },
     "svelte-element": {
         svelte: true
+    },
+    "svelte-frame": {
+        svelte: true
     }
 };
 
@@ -48,7 +54,7 @@ function pluginNameValidate(name) {
 export async function createEmptyPlugin(
     name,
     entry,
-    { link = false, root, templateDir, skipNameValidation }
+    { link = false, root, templatePath = templateDir, skipNameValidation }
 ) {
     const type = ENTRY_TYPE_MAP[entry];
     if (!type) return { error: `Unknown plugin type: ${entry}` };
@@ -59,20 +65,22 @@ export async function createEmptyPlugin(
         name = validateResult.name;
     }
 
-    const targetDir = join(root, name);
-    const alreadyExists = await fs
-        .access(targetDir)
-        .then(() => true)
-        .catch(() => false);
+    const targetDir = join(link ? root : pluginDir, name);
+    const alreadyExists = await pathExists(targetDir);
     if (alreadyExists) return { error: `${targetDir} is already exists` };
     const pkg = {
-        name
+        name,
+        devDependencies: {
+            ...(entry === "svelte-element" || entry === "svelte-frame"
+                ? { svelte: __SVELTE_VERSION__ }
+                : null)
+        }
     };
     const manifest = { name, type, ...DEFAULT_MANIFEST, ...(MANIFEST_ENTRIES[entry] ?? {}) };
     await fs.mkdir(targetDir, { recursive: true });
     await fs.writeFile(join(targetDir, "package.json"), JSON.stringify(pkg, null, 4), "utf8");
     await fs.writeFile(join(targetDir, "manifest.json"), JSON.stringify(manifest, null, 4), "utf8");
-    const pluginTemplateDir = join(templateDir, "plugin-scaffold");
+    const pluginTemplateDir = join(templatePath, "plugin-scaffold");
     await fs.cp(join(pluginTemplateDir, "entries", entry), targetDir, { recursive: true });
     await fs.cp(join(pluginTemplateDir, "base"), targetDir, { recursive: true });
     console.log(`New ${entry} plugin created at: ${targetDir}.`);

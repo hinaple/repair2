@@ -7,8 +7,8 @@ export type PluginManifest = {
     entry: string;
     outDir: string;
     attributes: string[];
-    steps?: Record<string, null | string[]>;
     svelte?: boolean;
+    steps?: Record<string, null | string[]>;
     main?: {
         outDir: string;
         entry: string;
@@ -26,12 +26,15 @@ export type RawManifest = {
         outDir?: string;
         entry?: string;
     };
+    svelte?: boolean;
 };
 export type PluginInfo = PluginManifest & {
+    dir: string;
     path: string;
     distFile: string;
     mainDistFile?: string;
     linked?: {
         sourcePath: string;
+        linked: boolean;
     };
 };

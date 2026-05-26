@@ -1,6 +1,7 @@
 import RepairElement from "./repairElement";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
+import { pluginAppended } from "../lib/plugin/pluginStyles";
 
 function getComponentIdentity(componentData) {
     return {
@@ -38,18 +39,23 @@ export default class RepairComponent extends HTMLElement {
         this.introTransition = componentData.introTransition;
         this.outroTransition = componentData.outroTransition;
 
-        this.frameEl = null;
         this.componentIdentity = getComponentIdentity(componentData);
+        this.elements = componentData.elements.list.map(
+            (e) => new RepairElement(e, this.componentIdentity)
+        );
+
+        this.frameEl = null;
         this.frameIdentity = getFrameIdentity(componentData.frame);
         this.unsubscriber = componentData.frame.hmrSubscribe(
             (tempFrame) => {
                 if (!tempFrame) return;
                 const prvFrame = this.frameEl;
                 this.frameEl = tempFrame;
+                pluginAppended("frame", componentData.frame.name);
+
+                this.render();
                 this.appendChild(this.frameEl);
 
-                if (!this.isConnected) return;
-                this.render();
                 if (prvFrame) {
                     disposePluginContext(prvFrame.__repairPluginContext);
                     this.removeChild(prvFrame);
@@ -59,10 +65,6 @@ export default class RepairComponent extends HTMLElement {
                 component: this.componentIdentity,
                 frame: this.frameIdentity
             }
-        );
-
-        this.elements = componentData.elements.list.map(
-            (e) => new RepairElement(e, this.componentIdentity)
         );
     }
 
@@ -80,7 +82,7 @@ export default class RepairComponent extends HTMLElement {
     }
 
     render() {
-        this.elements.forEach((el) => (this.frameEl ?? this).appendChild(el));
+        (this.frameEl ?? this).append(...this.elements);
     }
 
     connectedCallback() {

@@ -4,10 +4,12 @@ import { dataDir, pluginDir } from "../dirs";
 import type { ReportDiagnostic } from "../diagnostics";
 import { getManifest, MANIFEST, normalizeManifest } from "./pluginManifest";
 import { PluginManifest } from "./type";
+import { pathExists } from "../pathExists";
 
-export type PluginLinks = Record<string, { sourcePath: string }>;
+export type PluginLinks = Record<string, { sourcePath: string; linked: boolean }>;
 
-const LINKS_FILE_PATH = join(dataDir, "plugin-links.json");
+export const PLUGIN_LINK = "plugin-links.json";
+const LINKS_FILE_PATH = join(dataDir, PLUGIN_LINK);
 
 type PluginLinkServiceOptions = {
     reportDiagnostic?: ReportDiagnostic | null;
@@ -121,7 +123,7 @@ export function createPluginLinkService({
             return false;
         }
         if (!(await updateManifestFromSource(sourceDir, manifest))) return false;
-        const newLinks = { ...current, [manifest.name]: { sourcePath: sourceDir } };
+        const newLinks = { ...current, [manifest.name]: { sourcePath: sourceDir, linked: true } };
         return await updatePluginLinks(newLinks);
     }
 
@@ -134,12 +136,12 @@ export function createPluginLinkService({
     }
 
     async function getPluginLinks(): Promise<PluginLinks | null> {
-        if (!(await doesLinksFileExist())) return {};
+        if (!(await pathExists(LINKS_FILE_PATH))) return {};
 
         try {
             const content = await fs.readFile(LINKS_FILE_PATH, "utf8");
             const obj = JSON.parse(content);
-            const links = normalizeLinks(obj);
+            const links = await normalizeLinks(obj);
             if (!links) {
                 await reportPluginLinkIssue({
                     level: "warning",
@@ -171,7 +173,11 @@ export function createPluginLinkService({
 
     async function updatePluginLinks(newLinks: PluginLinks): Promise<boolean> {
         try {
-            await fs.writeFile(LINKS_FILE_PATH, JSON.stringify(newLinks, null, 4), "utf8");
+            await fs.writeFile(
+                LINKS_FILE_PATH,
+                JSON.stringify(serializePluginLinks(newLinks)),
+                "utf8"
+            );
             currentPluginLinks = newLinks;
             return true;
         } catch (err) {
@@ -204,21 +210,28 @@ export function createPluginLinkService({
 
 export type PluginLinkService = ReturnType<typeof createPluginLinkService>;
 
-function normalizeLinks(value: any): PluginLinks | null {
+function serializePluginLinks(links: PluginLinks) {
+    const result: Record<string, { sourcePath: string }> = {};
+    for (const [name, link] of Object.entries(links)) {
+        result[name] = { sourcePath: link.sourcePath };
+    }
+    return result;
+}
+
+async function normalizeLinks(
+    value: Record<string, { sourcePath: string }>
+): Promise<PluginLinks | null> {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
 
     const links: PluginLinks = {};
-    for (const [pluginName, link] of Object.entries(value)) {
-        if (!link || typeof link !== "object" || typeof (link as any).sourcePath !== "string")
-            return null;
-        links[pluginName] = { sourcePath: (link as any).sourcePath };
-    }
+    await Promise.all(
+        Object.entries(value).map(async ([pluginName, link]) => {
+            if (typeof link.sourcePath !== "string") return;
+            links[pluginName] = {
+                sourcePath: link.sourcePath,
+                linked: await pathExists(join(link.sourcePath, MANIFEST))
+            };
+        })
+    );
     return links;
-}
-
-function doesLinksFileExist() {
-    return fs
-        .access(LINKS_FILE_PATH)
-        .then(() => true)
-        .catch(() => false);
 }

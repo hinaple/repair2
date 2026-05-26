@@ -9,29 +9,32 @@ export function splitPath(path) {
 }
 
 export async function changeResourceFile(resource) {
-    let result = await ipcRenderer.sendSync("selectFile", {
+    const result = await ipcRenderer.invoke("selectFile", {
         title: "변경할 자원 파일 선택",
         defaultPath: AssetDir,
         properties: ["openFile"]
-    })?.[0];
-    if (!result) return;
+    });
+    let target = result.filePaths?.[0];
+    if (result.canceled || !target) return;
 
-    if (!result.includes(AssetDir)) {
+    if (!target.includes(AssetDir)) {
         if (
-            (await ipcRenderer.sendSync("dialogue", {
-                type: "question",
-                title: "다른 폴더의 파일입니다.",
-                message: `${result}\n\n위 파일을 자원 폴더에 복사하시겠습니까?`,
-                buttons: ["자원 폴더에 복사", "건너뛰기"],
-                cancelId: 1
-            })) !== 0
+            (
+                await ipcRenderer.invoke("dialogue", {
+                    type: "question",
+                    title: "다른 폴더의 파일입니다.",
+                    message: `${target}\n\n위 파일을 자원 폴더에 복사하시겠습니까?`,
+                    buttons: ["자원 폴더에 복사", "건너뛰기"],
+                    cancelId: 1
+                })
+            ).response !== 0
         )
             return;
 
-        result = await ipcRenderer.sendSync("copyInfoAsset", [result])[0];
+        target = (await ipcRenderer.invoke("copyInfoAsset", [target]))[0];
     }
 
-    const src = splitPath(result);
+    const src = splitPath(target);
 
     addHistory({
         doFn: ({ that, src }) => {
@@ -43,10 +46,10 @@ export async function changeResourceFile(resource) {
 }
 
 export async function selectMany() {
-    const result = await ipcRenderer.sendSync("selectFile", {
+    const result = await ipcRenderer.invoke("selectFile", {
         title: "추가할 자원 파일 선택(다중 선택 가능)",
         defaultPath: AssetDir,
         properties: ["openFile", "multiSelections"]
     });
-    return result ?? [];
+    return result.canceled ? [] : result.filePaths;
 }

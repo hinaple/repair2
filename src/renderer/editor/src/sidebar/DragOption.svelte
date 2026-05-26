@@ -77,8 +77,7 @@
     <InputField
         label="인식 좌표"
         type="position"
-        background
-        style="padding: 5px 10px 10px 10px; margin-bottom: 5px;"
+        style="padding: 5px 5px 10px 10px; border-radius: 5px; border: solid rgba(255, 255, 255, .2) 1px;"
         seriesOption={{
             array: dragOption.hotspots,
             label: (idx) => `좌표${idx}`,

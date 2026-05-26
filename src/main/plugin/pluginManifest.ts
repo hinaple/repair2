@@ -33,7 +33,7 @@ export function normalizeManifest(mani: RawManifest): PluginManifest {
                 ...mani.main
             };
         }
-    }
+    } else if ((type === "element" || type === "frame") && mani.svelte) result.svelte = true;
     return result;
 }
 export async function getManifest(...dirs: string[]): Promise<ManifestReadResult> {

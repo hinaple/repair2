@@ -12,7 +12,6 @@ import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "./screen
 import { checkVscodeInstalled } from "./vscodeUtils.js";
 import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
-import { createProjectRuntimeWatchers } from "./projectRuntimeWatchers.js";
 import { setupIpcHandlers } from "./ipcHandlers.js";
 import {
     getIsSuppressing,
@@ -26,8 +25,8 @@ import { PluginManager } from "./plugin/pluginManager.js";
 import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
 import electronPrompt from "electron-prompt";
-import { createPluginWithPrompt } from "./plugin/createEmptyPlugin.js";
 import { dataDir, assetDir, pluginDir, styleDir, templateDir } from "./dirs.js";
+import { createHmr } from "./hmrs.js";
 
 /**
  * @type {BrowserWindow | null}
@@ -60,8 +59,61 @@ const reportDiagnostic = createDiagnosticReporter({
     dialog
 });
 
+let cssCode = "";
+async function updateCss() {
+    try {
+        cssCode = String(await fs.readFile(join(styleDir, "global.css"))).replace(
+            /%FONTS%/g,
+            join(styleDir, "fonts").replace(/\\/g, "/")
+        );
+    } catch (err) {
+        reportDiagnostic({
+            level: "error",
+            title: "Failed to load global.css file",
+            error: err,
+            source: "style",
+            dialogue: false,
+            logType: "global-css"
+        });
+    }
+    return cssCode;
+}
+
+const hmr = createHmr({
+    onHmr({ type, data }) {
+        if (type === "css") {
+            updateCss().then((css) => sendToMain("global-css", css));
+            return;
+        }
+
+        if (!pluginManager) return;
+        if (data) pluginManager.updatePlugin(data, true);
+        else pluginManager.updateAllPluginInfo(false);
+    },
+    active: false,
+    styleDir,
+    pluginDir,
+    dataDir
+});
 function setPluginManager(isDev = false) {
-    pluginManager = new PluginManager({ isDev, reportDiagnostic });
+    if (pluginManager) pluginManager.closeWatchers();
+    pluginManager = new PluginManager({
+        isDev,
+        reportDiagnostic,
+        onupdate: ({ type, updateData }) => {
+            if (type === "single") {
+                sendToEditor("plugin:update", updateData);
+                sendToMain("plugin:update", updateData);
+                return;
+            }
+            const pluginList = pluginManager.simplePluginList;
+            sendToEditor("plugin:list", pluginList);
+            sendToMain("plugin:list", pluginList, updateData.buildChanges);
+        },
+        onhmr: (pluginInfo) => {
+            sendToMain("plugin-hmr", pluginInfo);
+        }
+    });
     return pluginManager.initialize();
 }
 
@@ -77,7 +129,8 @@ const projectFileManager = new ProjectFileManager(dataDir, {
             mainWindow.close();
             mainWindow = null;
         }
-        runtimeWatchers.closeAll();
+        hmr.stopWatching();
+        pluginManager?.closeAllWatchers();
     },
     importProgress: sendStartupInfo,
     afterImport: async () => {
@@ -124,18 +177,7 @@ setGlobalKeyListener((type, evt) => {
     if (mainWindow?.isFocused?.()) sendToMain("global-key-event", type, evt);
 });
 
-// const pluginListManager = createPluginListManager(pluginDir, PluginTypes);
-// const updatePluginList = () => pluginListManager.update();
 const pluginSdkPackageDir = join(app.getPath("userData"), "sdk", "repair2-plugin-sdk");
-const runtimeWatchers = createProjectRuntimeWatchers({
-    styleDir,
-    pluginDir,
-    // pluginTypes: PluginTypes,
-    sendToMain,
-    getIsEditorOn: () => isEditorOn,
-    getPluginManager: () => pluginManager
-    // updatePluginList
-});
 
 function saveData(tempData) {
     data = { ...tempData, updatedAt: new Date().getTime() };
@@ -177,8 +219,7 @@ async function loadData() {
     } catch (err) {
         await importDefaultProject();
     }
-    // await pluginListManager.ensureDirectories(["svelte-plugins"]);
-    // await Promise.all([updatePluginList(), runtimeWatchers.loadGlobalCss()]);
+
     const migrateResult = await migrateProject({
         currentVersion: __APP_VERSION__,
         data,
@@ -186,7 +227,7 @@ async function loadData() {
         pluginDir
     });
     sendStartupInfo("플러그인 처리 중...");
-    await Promise.all([setPluginManager(!!data.config?.devMode), runtimeWatchers.loadGlobalCss()]);
+    await Promise.all([setPluginManager(!!data.config?.devMode), updateCss()]);
     if (migrateResult) {
         dialog.showMessageBox({
             message: "구버전 프로젝트",
@@ -203,7 +244,9 @@ let isMultiScreen = null;
 function applyDataConfig(forceUpdate = false) {
     if (!data?.config) return;
 
-    runtimeWatchers.applyDevMode(!!data.config?.devMode);
+    const devMode = !!data.config?.devMode;
+    hmr.setActive(devMode);
+    if (pluginManager) pluginManager.isDev = !!data.config?.devMode;
 
     if (!mainWindow) return;
 
@@ -257,8 +300,6 @@ function createMainWindow() {
 
         applyDataConfig(true);
     });
-    // mainWindow.on("ready-to-show", () => {
-    // });
 
     if (is.dev) {
         mainWindow.loadURL("http://localhost:3100");
@@ -419,16 +460,10 @@ function createEditorWindow() {
             submenu: [
                 {
                     label: "새 플러그인 생성",
-                    click: () => {
-                        createPluginWithPrompt({
-                            parentWindow: editorWindow,
-                            pluginDir,
-                            templateDir
-                        });
-                    }
+                    click: () => sendToEditor("showPluginCreateModal")
                 },
                 {
-                    label: "플러그인 강제 다시 로드",
+                    label: "플러그인 전체 다시 빌드",
                     click: async () => {
                         if (!pluginManager) return;
                         await pluginManager.updateAllPluginInfo(true);
@@ -531,7 +566,6 @@ if (!app.requestSingleInstanceLock()) {
         if (!mainWindow) return;
 
         await appOpenedWithProject(argv, true);
-        // mainWindow?.show?.();
     });
 
     app.on("ready", async () => {
@@ -547,7 +581,7 @@ if (!app.requestSingleInstanceLock()) {
             dataDir,
             getData: () => data,
             getEditorWindow: () => editorWindow,
-            getGlobalCss: () => runtimeWatchers.getGlobalCss(),
+            getGlobalCss: () => cssCode,
             getMainWindow: () => mainWindow,
             getPluginManager: () => pluginManager,
             getStore: () => store,
@@ -568,7 +602,6 @@ if (!app.requestSingleInstanceLock()) {
             }, 1000);
         } else {
             createMainWindow();
-            // createEditorWindow();
         }
     });
 }

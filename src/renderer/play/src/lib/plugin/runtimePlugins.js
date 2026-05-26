@@ -2,11 +2,13 @@ import PluginPointer from "@classes/pluginPointer.svelte";
 import { createPluginContext } from "./pluginContext";
 import { reportPluginException, reportPluginIssue } from "./pluginReporter";
 import { ipcRenderer } from "electron";
-import { safeCallPlugin } from "./pluginManager";
+import subscribePluginHMR, { safeCallPlugin } from "./pluginManager";
+
+/** @typedef {Map<string, { payloads: Record<string, string>, generation: number }>} RuntimePluginConfigs */
 
 const activeRuntimePlugins = new Map();
-let activationGeneration = 0;
-let currentRuntimePluginConfigs = [];
+/** @type {RuntimePluginConfigs} */
+let currentRuntimePluginConfigs = new Map();
 
 function disposeRuntimePlugin({ ctx, disposes = [], pendingRendererCalls }) {
     if (Array.isArray(pendingRendererCalls)) pendingRendererCalls.length = 0;
@@ -52,146 +54,189 @@ function flushRendererCallQueue(pluginName, target) {
     });
 }
 
-export function deactivateRuntimePlugins() {
-    activeRuntimePlugins.forEach(({ ctx, disposes, pendingRendererCalls }) => {
+function deactivateRuntimePlugin(pluginName) {
+    const runtimeData = activeRuntimePlugins.get(pluginName);
+    if (!runtimeData) return;
+    runtimeData.hmrUnsub?.();
+    disposeRuntimePlugin(runtimeData);
+    activeRuntimePlugins.delete(pluginName);
+}
+
+export function deactivateAll() {
+    activeRuntimePlugins.forEach(({ ctx, disposes, pendingRendererCalls, hmrUnsub }) => {
         disposeRuntimePlugin({ ctx, disposes, pendingRendererCalls });
+        hmrUnsub?.();
     });
     activeRuntimePlugins.clear();
+    currentRuntimePluginConfigs.clear();
 }
 
-async function activateRuntimePlugin(
-    /** @type {PluginPointer} */
-    pointer,
-    generation
-) {
-    if (!pointer.name) return;
+function activateRuntimePlugin(pluginName, payloads, generation) {
+    if (!pluginName) return;
 
-    let ctx = null;
-    try {
-        ctx = createPluginContext({
-            pluginId: pointer.name,
-            pluginType: "runtime"
-        });
-        let plugin = await pointer.use();
-        if (typeof plugin === "function") plugin = await plugin(); //plugin can be a factory
-        if (generation !== activationGeneration || !plugin) {
-            ctx.lifecycle.dispose?.();
-            return;
-        }
+    let localGen = 0;
 
-        const call = (functionName, attributes, args) => {
-            const targetMethod = plugin?.[functionName];
-            if (typeof targetMethod !== "function") {
-                reportPluginIssue(
-                    ctx.plugin,
-                    `Runtime plugin step does not exist: ${functionName}`,
-                    `Plugin "${pointer.name}" does not define "${functionName}".`
-                );
-                return null;
-            }
+    const isDeadGeneration = (myLocalGen) =>
+        localGen !== myLocalGen ||
+        generation !== currentRuntimePluginConfigs.get(pluginName)?.generation;
 
-            return safeCallPlugin(ctx, "Plugin function execution failed.", () =>
-                targetMethod({
-                    attributes,
-                    ctx,
-                    ...args
-                })
-            );
-        };
+    const hmrUnsub = subscribePluginHMR(
+        "runtime",
+        pluginName,
+        { payloads },
+        (plugin, pluginInfo) => {
+            async function setup() {
+                const myLocalGen = ++localGen;
+                let ctx = null;
+                try {
+                    if (isDeadGeneration(myLocalGen)) return;
+                    ctx = createPluginContext({
+                        pluginId: pluginName,
+                        pluginType: "runtime"
+                    });
+                    if (typeof plugin === "function") plugin = await plugin(); //plugin can be a factory
+                    if (isDeadGeneration(myLocalGen) || !plugin) {
+                        ctx.lifecycle.dispose?.();
+                        return;
+                    }
 
-        const runtimeData = {
-            call,
-            plugin,
-            pointer,
-            ctx,
-            disposes: [],
-            rendererReady: false,
-            pendingRendererCalls: []
-        };
-        activeRuntimePlugins.set(pointer.name, runtimeData);
+                    const call = (functionName, attributes, args) => {
+                        const targetMethod = plugin?.[functionName];
+                        if (typeof targetMethod !== "function") {
+                            reportPluginIssue(
+                                ctx.plugin,
+                                `Runtime plugin step does not exist: ${functionName}`,
+                                `Plugin "${pluginName}" does not define "${functionName}".`
+                            );
+                            return null;
+                        }
 
-        let main = null;
-        if (pointer.getInfo()?.main) {
-            const mainMethods = await ipcRenderer.invoke("plugin:runtime:activate", pointer.name, {
-                rendererMethods: Object.keys(plugin?.renderer ?? {}),
-                attributes: pointer.payloads
-            });
-            console.log("MAIN METHODS: ", mainMethods);
-            if (mainMethods)
-                main = Object.fromEntries(
-                    mainMethods.map((methodName) => [
-                        methodName,
-                        (...args) =>
-                            ipcRenderer.invoke("plugin:runtime:to-main", {
-                                pluginName: pointer.name,
-                                methodName,
-                                args
+                        return safeCallPlugin(ctx, "Plugin function execution failed.", () =>
+                            targetMethod({
+                                attributes,
+                                ctx,
+                                ...args
                             })
-                    ])
-                );
-        }
+                        );
+                    };
 
-        if (
-            generation !== activationGeneration ||
-            activeRuntimePlugins.get(pointer.name) !== runtimeData
-        ) {
-            disposeRuntimePlugin(runtimeData);
-            if (activeRuntimePlugins.get(pointer.name) === runtimeData)
-                activeRuntimePlugins.delete(pointer.name);
-            return;
-        }
+                    const runtimeData = {
+                        call,
+                        plugin,
+                        ctx,
+                        disposes: [],
+                        rendererReady: false,
+                        pendingRendererCalls: [],
+                        hmrUnsub,
+                        setup
+                    };
+                    const previous = activeRuntimePlugins.get(pluginName);
+                    if (previous) {
+                        disposeRuntimePlugin(previous);
+                        if (hmrUnsub !== previous.hmrUnsub) previous.hmrUnsub?.();
+                    }
+                    activeRuntimePlugins.set(pluginName, runtimeData);
 
-        const activeResult = await call("activate", pointer.payloads, { main });
-        const tempDisposes = [typeof activeResult === "function" && activeResult, plugin?.dispose];
-        if (generation !== activationGeneration) {
-            disposeRuntimePlugin({
-                ctx,
-                disposes: tempDisposes,
-                pendingRendererCalls: runtimeData.pendingRendererCalls
-            });
-            if (activeRuntimePlugins.get(pointer.name) === runtimeData)
-                activeRuntimePlugins.delete(pointer.name);
-            return;
+                    let main = null;
+                    if (pluginInfo.main) {
+                        const mainMethods = await ipcRenderer.invoke(
+                            "plugin:runtime:activate",
+                            pluginName,
+                            {
+                                rendererMethods: Object.keys(plugin?.renderer ?? {}),
+                                attributes: payloads
+                            }
+                        );
+                        console.log("MAIN METHODS: ", mainMethods);
+                        if (mainMethods)
+                            main = Object.fromEntries(
+                                mainMethods.map((methodName) => [
+                                    methodName,
+                                    (...args) =>
+                                        ipcRenderer.invoke("plugin:runtime:to-main", {
+                                            pluginName,
+                                            methodName,
+                                            args
+                                        })
+                                ])
+                            );
+                    }
+
+                    if (
+                        isDeadGeneration(myLocalGen) ||
+                        activeRuntimePlugins.get(pluginName) !== runtimeData
+                    ) {
+                        disposeRuntimePlugin(runtimeData);
+                        if (activeRuntimePlugins.get(pluginName) === runtimeData)
+                            activeRuntimePlugins.delete(pluginName);
+                        return;
+                    }
+
+                    const activeResult = await call("activate", payloads, { main });
+                    const tempDisposes = [
+                        typeof activeResult === "function" && activeResult,
+                        plugin?.dispose
+                    ];
+                    if (isDeadGeneration(myLocalGen)) {
+                        disposeRuntimePlugin({
+                            ctx,
+                            disposes: tempDisposes,
+                            pendingRendererCalls: runtimeData.pendingRendererCalls
+                        });
+                        if (activeRuntimePlugins.get(pluginName) === runtimeData)
+                            activeRuntimePlugins.delete(pluginName);
+                        return;
+                    }
+                    runtimeData.disposes = tempDisposes;
+                    runtimeData.rendererReady = true;
+                    flushRendererCallQueue(pluginName, runtimeData);
+                } catch (err) {
+                    reportPluginException(
+                        ctx?.plugin ?? { id: pluginName, type: "runtime" },
+                        "Runtime plugin activation failed.",
+                        err
+                    );
+                    ctx?.lifecycle.dispose();
+                    const target = activeRuntimePlugins.get(pluginName);
+                    if (target?.ctx === ctx) {
+                        target.pendingRendererCalls.length = 0;
+                        activeRuntimePlugins.delete(pluginName);
+                    }
+                }
+            }
+            setup();
         }
-        runtimeData.disposes = tempDisposes;
-        runtimeData.rendererReady = true;
-        flushRendererCallQueue(pointer.name, runtimeData);
-    } catch (err) {
-        reportPluginException(
-            ctx?.plugin ?? { id: pointer.name, type: "runtime" },
-            "Runtime plugin activation failed.",
-            err
-        );
-        ctx?.lifecycle.dispose();
-        const target = activeRuntimePlugins.get(pointer.name);
-        if (target?.ctx === ctx) {
-            target.pendingRendererCalls.length = 0;
-            activeRuntimePlugins.delete(pointer.name);
-        }
-    }
+    );
 }
 
-function removeDuplicatedRuntimePlugins(pointers) {
-    const usedNames = [];
-    return pointers.filter((pointer) => {
-        if (usedNames.includes(pointer.name)) return false;
-        usedNames.push(pointer.name);
-        return true;
-    });
+function comparePayloads(p0, p1) {
+    const keys0 = Object.keys(p0);
+    return keys0.length === Object.keys(p1).length && keys0.every((k) => p0[k] === p1[k]);
 }
 
+/**
+ * @param {PluginPointer[]} pointers
+ * @return {RuntimePluginConfigs}
+ */
+function pointerToConfig(pointers) {
+    return new Map(pointers.map(({ name, payloads }) => [name, { payloads, generation: 0 }]));
+}
+
+/** @param {PluginPointer[]} pointers */
 export function activateRuntimePlugins(pointers = []) {
     console.log("RUNTIME RESET");
-    currentRuntimePluginConfigs = removeDuplicatedRuntimePlugins(
-        Array.isArray(pointers) ? pointers : []
-    );
-    activationGeneration++;
-    deactivateRuntimePlugins();
-    const generation = activationGeneration;
-
-    currentRuntimePluginConfigs.forEach((pointer) => {
-        activateRuntimePlugin(pointer, generation);
+    const tempConfig = pointerToConfig(Array.isArray(pointers) ? pointers : []);
+    const removeKeys = new Set(currentRuntimePluginConfigs.keys());
+    tempConfig.forEach((config, name) => {
+        if (removeKeys.delete(name)) {
+            const before = currentRuntimePluginConfigs.get(name);
+            config.generation = before.generation;
+            if (comparePayloads(config.payloads, before.payloads)) return;
+        }
+        activateRuntimePlugin(name, config.payloads, ++config.generation);
     });
+    removeKeys.forEach(deactivateRuntimePlugin);
+    currentRuntimePluginConfigs = tempConfig;
 }
 
 export function callRuntimePluginStep(pluginName, step, payloads) {
@@ -202,7 +247,9 @@ export function callRuntimePluginStep(pluginName, step, payloads) {
 }
 
 export function restartRuntimePlugins() {
-    activateRuntimePlugins(currentRuntimePluginConfigs);
+    activeRuntimePlugins.forEach((runtimeData) => {
+        runtimeData.setup();
+    });
 }
 
 ipcRenderer.on("plugin:runtime:to-renderer", (evt, { pluginName, methodName, args }) => {
