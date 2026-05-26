@@ -3,6 +3,7 @@ export type PluginType = (typeof PLUGIN_TYPES)[number];
 
 export type PluginManifest = {
     name: string;
+    description?: string;
     type: PluginType;
     entry: string;
     outDir: string;
@@ -16,6 +17,7 @@ export type PluginManifest = {
 };
 export type RawManifest = {
     name: string;
+    description?: string;
     type: PluginType;
     entry?: string;
     outDir?: string;

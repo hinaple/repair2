@@ -86,6 +86,10 @@
                 "name": {
                     "$ref": "#/$defs/pluginName"
                 },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable plugin description."
+                },
                 "type": {
                     "enum": ["runtime", "element", "frame", "function", "transition"]
                 },

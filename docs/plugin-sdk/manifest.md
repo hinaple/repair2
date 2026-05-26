@@ -23,6 +23,7 @@ The schema describes the public manifest shape. Current runtime loading does not
 ```json
 {
     "name": "my-plugin",
+    "description": "Adds a custom labeled element.",
     "type": "element",
     "entry": "src/index.js",
     "outDir": "dist",
@@ -31,6 +32,8 @@ The schema describes the public manifest shape. Current runtime loading does not
 ```
 
 `name` is the plugin id. Scaffolded plugin names are normalized to lowercase kebab-case. The schema documents the recommended public shape; current runtime loading only requires a non-empty name.
+
+`description` is an optional human-readable plugin description.
 
 `type` must be one of:
 

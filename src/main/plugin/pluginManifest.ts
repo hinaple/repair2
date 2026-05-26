@@ -20,7 +20,8 @@ export function normalizeManifest(mani: RawManifest): PluginManifest {
         entry = mani.main ? "src/renderer/index.js" : "src/index.js",
         outDir = mani.main ? "dist/renderer/" : "dist"
     } = mani;
-    const result: any = { name, type: type, entry, outDir };
+    const result: any = { name, type, entry, outDir };
+    if (typeof mani.description === "string") result.description = mani.description;
     result.attributes = mani.attributes ?? mani.attr ?? [];
     if (type === "runtime") {
         let steps = mani.steps ?? {};
