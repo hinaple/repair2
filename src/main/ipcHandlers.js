@@ -74,21 +74,24 @@ export function setupIpcHandlers({
     );
 
     ipcMain.handle("plugin:runtime:deactivate", (evt, { pluginName, activationId }) => {
-        return getPluginManager().mainRuntime.disposeInstance(pluginName, activationId);
+        return getPluginManager()?.mainRuntime?.disposeInstance(pluginName, activationId);
     });
 
     ipcMain.on("plugin:runtime:deactivate-all", () => {
-        getPluginManager().mainRuntime.disposeAll();
+        getPluginManager()?.mainRuntime?.disposeAll();
     });
 
-    ipcMain.handle("plugin:runtime:to-main", (evt, { pluginName, activationId, methodName, args }) => {
-        const instance = getPluginManager().mainRuntime.getActiveInstance(
-            pluginName,
-            activationId
-        );
-        if (!instance) return null;
-        return instance.callMainMethod(methodName, args);
-    });
+    ipcMain.handle(
+        "plugin:runtime:to-main",
+        (evt, { pluginName, activationId, methodName, args }) => {
+            const instance = getPluginManager().mainRuntime.getActiveInstance(
+                pluginName,
+                activationId
+            );
+            if (!instance) return null;
+            return instance.callMainMethod(methodName, args);
+        }
+    );
 
     ipcMain.handle("plugin:create", async (evt, { name, type, isExternal }) => {
         let path = null;

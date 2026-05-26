@@ -10,7 +10,7 @@ import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
 import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "./screenManager";
 import { checkVscodeInstalled } from "./vscodeUtils.js";
-import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
+import { afterSplashClose, closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { findService } from "./communication/bonjour.js";
 import { setupIpcHandlers } from "./ipcHandlers.js";
 import {
@@ -24,8 +24,7 @@ import { createDiagnosticReporter } from "./diagnostics.js";
 import { PluginManager } from "./plugin/pluginManager.js";
 import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
-import electronPrompt from "electron-prompt";
-import { dataDir, assetDir, pluginDir, styleDir, templateDir } from "./dirs.js";
+import { dataDir, assetDir, pluginDir, styleDir, templateDir, root } from "./dirs.js";
 import { createHmr } from "./hmrs.js";
 
 /**
@@ -95,8 +94,8 @@ const hmr = createHmr({
     pluginDir,
     dataDir
 });
-function setPluginManager(isDev = false) {
-    if (pluginManager) pluginManager.closeWatchers();
+async function setPluginManager(isDev = false) {
+    if (pluginManager) await destroyPluginManager();
     pluginManager = new PluginManager({
         isDev,
         reportDiagnostic,
@@ -116,6 +115,13 @@ function setPluginManager(isDev = false) {
     });
     return pluginManager.initialize();
 }
+async function destroyPluginManager() {
+    if (!pluginManager) return;
+
+    const tempPM = pluginManager;
+    pluginManager = null;
+    return await tempPM.destroy();
+}
 
 const projectFileManager = new ProjectFileManager(dataDir, {
     beforeImport: () => {
@@ -129,8 +135,7 @@ const projectFileManager = new ProjectFileManager(dataDir, {
             mainWindow.close();
             mainWindow = null;
         }
-        hmr.stopWatching();
-        pluginManager?.closeAllWatchers();
+        return Promise.all([hmr.stopWatching(), destroyPluginManager()]);
     },
     importProgress: sendStartupInfo,
     afterImport: async () => {
@@ -214,28 +219,32 @@ async function loadData() {
         await fs.access(dataDir);
         const tempData = (await fs.readFile(join(dataDir, "data.json"))).toString();
         data = JSON.parse(tempData);
-
-        applyDataConfig();
     } catch (err) {
-        await importDefaultProject();
+        return await importDefaultProject();
     }
 
-    const migrateResult = await migrateProject({
-        currentVersion: __APP_VERSION__,
-        data,
-        dataDir,
-        pluginDir
-    });
+    sendStartupInfo("프로젝트 버전 처리 중...");
+    if (
+        await migrateProject({
+            currentVersion: __APP_VERSION__,
+            data,
+            dataDir,
+            pluginDir
+        })
+    ) {
+        afterSplashClose(() =>
+            dialog.showMessageBox(editorWindow || mainWindow, {
+                message: "구버전 프로젝트",
+                detail: "호환되지 않는 기능이 포함된 버전의 프로젝트입니다. 일부 데이터에 손실이 있을 수 있습니다.",
+                type: "warning",
+                noLink: true
+            })
+        );
+    }
     sendStartupInfo("플러그인 처리 중...");
     await Promise.all([setPluginManager(!!data.config?.devMode), updateCss()]);
-    if (migrateResult) {
-        dialog.showMessageBox({
-            message: "구버전 프로젝트",
-            detail: "호환되지 않는 기능이 포함된 버전의 프로젝트입니다. 일부 데이터에 손실이 있을 수 있습니다.",
-            type: "warning",
-            noLink: true
-        });
-    }
+    applyDataConfig();
+
     sendStartupInfo("Repair2 실행 중...");
     return true;
 }
@@ -304,7 +313,7 @@ function createMainWindow() {
     if (is.dev) {
         mainWindow.loadURL("http://localhost:3100");
     } else {
-        mainWindow.loadFile(join(__dirname, "../play/index.html"));
+        mainWindow.loadFile(join(root, "play/index.html"));
     }
 
     mainWindow.on("closed", () => {
@@ -524,7 +533,7 @@ function createEditorWindow() {
     if (is.dev) {
         editorWindow.loadURL("http://localhost:3101");
     } else {
-        editorWindow.loadFile(join(__dirname, "../editor/index.html"));
+        editorWindow.loadFile(join(root, "editor/index.html"));
     }
 
     editorWindow.on("close", () => {

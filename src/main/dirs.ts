@@ -11,6 +11,6 @@ export const assetDir = join(dataDir, "assets");
 export const pluginDir = join(dataDir, "plugins");
 export const styleDir = join(dataDir, "styles");
 
-const root = is.dev ? join(__dirname, "../..") : join(app.getPath("exe"), "..");
+export const root = is.dev ? join(__dirname, "../..") : join(app.getPath("exe"), "..");
 export const templateDir = join(root, "templates");
 export const sdkDir = join(root, "packages/plugin-sdk");

@@ -17,25 +17,24 @@ type PluginData = {
     error?: any;
 };
 
-type UpdateHandler = (
-    updateInfo:
-        | {
-              type: "single";
-              updateData: {
-                  info: InfoForRenderer;
-                  previous: { name: string; type: PluginType } | null;
-                  buildChanged: boolean;
-              };
-          }
-        | {
-              type: "all";
-              updateData: { buildChanges: string[] };
-          }
-) => void;
+type UpdateHandlerParams =
+    | {
+          type: "single";
+          updateData: {
+              info: InfoForRenderer;
+              previous: { name: string; type: PluginType } | null;
+              buildChanged: boolean;
+          };
+      }
+    | {
+          type: "all";
+          updateData: { buildChanges: string[] };
+      };
+type UpdateHandler = (updateInfo: UpdateHandlerParams) => void;
 type HmrHanlder = (pluginInfo: PluginInfo, error?: any) => void;
 
 function closeWatchers(watchers: RollupWatcher[] | undefined) {
-    if (watchers?.length) watchers.splice(0).forEach((w) => w.close());
+    if (watchers?.length) return Promise.all(watchers.splice(0).map((w) => w.close()));
 }
 
 type InfoForRenderer = PluginInfo & { ready: boolean; error?: any };
@@ -56,6 +55,8 @@ export class PluginManager {
     private reportDiagnostic?: ReportDiagnostic;
     private _onupdate?: UpdateHandler;
     private _onhmr?: HmrHanlder;
+
+    private destroyed: boolean = false;
 
     pluginLinkService: PluginLinkService;
     mainRuntime: MainRuntimePluginEngine;
@@ -86,13 +87,21 @@ export class PluginManager {
 
         await this.ensureDirectories();
         await this.updateAllPluginInfo(this._isDev);
-        console.log("PLUGINS: ", [...this.plugins.keys()].join(", "));
+        if (this.plugins.size > 0) console.log("PLUGINS: ", [...this.plugins.keys()].join(", "));
     }
     onupdate(updateHandler: UpdateHandler) {
         this._onupdate = updateHandler;
     }
     onhmr(hmrHandler: HmrHanlder) {
         this._onhmr = hmrHandler;
+    }
+    private callOnUpdate(onupdateParam: UpdateHandlerParams) {
+        if (this.destroyed || !this._onupdate) return;
+        return this._onupdate(onupdateParam);
+    }
+    private callOnHmr(pluginInfo: PluginInfo, error?: any) {
+        if (this.destroyed || !this._onhmr) return;
+        return this._onhmr(pluginInfo, error);
     }
     set isDev(isDev: boolean) {
         if (isDev === this._isDev) return;
@@ -105,18 +114,20 @@ export class PluginManager {
         } else this.closeAllWatchers();
     }
     closeAllWatchers() {
-        this.plugins.forEach(({ data: { watchers } }) => closeWatchers(watchers));
+        return Promise.all(
+            Array.from(this.plugins.values(), ({ data: { watchers } }) => closeWatchers(watchers))
+        );
     }
     async updateAllPluginInfo(forceBuild = false) {
         this.updated = false;
-        this.closeAllWatchers();
+        await this.closeAllWatchers();
         this.plugins.clear();
         await this.pluginLinkService.getPluginLinks();
         const updatesResult = await Promise.all(
             (await this.getPluginDirList()).map((dir) => this.updatePlugin(dir, forceBuild, true))
         );
         this.updated = true;
-        this._onupdate?.({
+        this.callOnUpdate({
             type: "all",
             updateData: {
                 buildChanges: updatesResult
@@ -139,6 +150,8 @@ export class PluginManager {
             p = updateInfoResult?.plugin;
             readyResult = await this.ready(p.info.name, forceBuild, this._isDev);
 
+            if (this.destroyed) return null;
+
             if (updateInfoResult.previous?.type === "runtime")
                 this.mainRuntime.disposeInstance(updateInfoResult.previous.name);
 
@@ -147,7 +160,7 @@ export class PluginManager {
             else if (p.info.type === "runtime") this.mainRuntime.disposeInstance(p.info.name);
 
             if (!allBuilding)
-                this._onupdate?.({
+                this.callOnUpdate({
                     type: "single",
                     updateData: {
                         info: makeInfoForRenderer(p),
@@ -160,7 +173,7 @@ export class PluginManager {
         } catch (err) {
             if (p) {
                 p.data.error = err;
-                this._onupdate?.({
+                this.callOnUpdate({
                     type: "single",
                     updateData: {
                         info: makeInfoForRenderer(p),
@@ -324,7 +337,7 @@ export class PluginManager {
         const plugin = this.plugins.get(pluginName);
         if (!plugin) return;
         const { info, data } = plugin;
-        closeWatchers(data.watchers);
+        await closeWatchers(data.watchers);
         if (!data.building) {
             console.log("PLUGIN BUILDING: ", pluginName);
             data.building = buildPlugin(info, {
@@ -332,6 +345,11 @@ export class PluginManager {
                 watch
             })
                 .then(async (result) => {
+                    if (this.destroyed) {
+                        if (watch) (result as RollupWatcher[]).forEach((w) => w.close());
+                        return;
+                    }
+
                     if (watch) {
                         data.watchers = result as RollupWatcher[];
                         await this.registerWatchers(info, data);
@@ -394,7 +412,7 @@ export class PluginManager {
                             data.error = null;
                             console.log(`HMR: ${pluginInfo.name}`);
                             if (i === 1) await this.mainRuntime.updatePlugin(pluginInfo, true);
-                            this._onhmr?.(pluginInfo);
+                            this.callOnHmr(pluginInfo);
                         });
                         w.on("close", () => {
                             tryResolve();
@@ -410,5 +428,11 @@ export class PluginManager {
             result[pluginName] = makeInfoForRenderer(p);
         });
         return result;
+    }
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        this.mainRuntime.disposeAll();
+        return this.closeAllWatchers();
     }
 }

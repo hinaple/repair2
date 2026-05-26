@@ -37,8 +37,7 @@ export function createHmr({
     function setActive(a: boolean) {
         if (active === a) return;
 
-        active = a;
-        if (active) startWatching();
+        if (a) startWatching();
         else stopWatching();
     }
     function sendHmrEvent(type: HmrType, data?: string) {
@@ -55,7 +54,8 @@ export function createHmr({
         );
     }
     function startWatching() {
-        stopWatching();
+        if (active) stopWatching();
+        active = true;
         watchers = [
             chokidar.watch(cssPath).on("change", () => {
                 sendHmrEvent("css");
@@ -86,11 +86,14 @@ export function createHmr({
         ];
     }
     function stopWatching() {
-        if (!watchers) return;
-        watchers.forEach((w) => w.close());
-        watchers = null;
+        if (!active) return;
+        active = false;
         pendingTimeouts.forEach((timeout) => clearTimeout(timeout));
         pendingTimeouts.clear();
+        if (!watchers) return;
+        const tempWatchers = watchers;
+        watchers = null;
+        return Promise.all(tempWatchers.map((w) => w.close()));
     }
 
     hmr = { setActive, sendHmrEvent, stopWatching };
@@ -100,5 +103,5 @@ export function createHmr({
 export type Hmr = {
     setActive: (a: boolean) => void;
     sendHmrEvent: (type: HmrType, data?: string) => void;
-    stopWatching: () => void;
+    stopWatching: () => Promise<void[]> | void;
 };

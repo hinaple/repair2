@@ -1,8 +1,12 @@
 import { BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
+import { root } from "./dirs";
 
+/** @type {BrowserWindow | null} */
 let splashWindow = null;
 let version = null;
+
+let onSplashClose = null;
 
 export function showSplash(isDev = false) {
     if (splashWindow) return;
@@ -19,7 +23,6 @@ export function showSplash(isDev = false) {
         transparent: true,
         show: false,
         closable: false,
-        alwaysOnTop: true,
         webPreferences: {
             sandbox: false,
             nodeIntegration: true,
@@ -32,12 +35,12 @@ export function showSplash(isDev = false) {
 
     splashWindow.on("ready-to-show", () => {
         splashWindow.show();
-        splashWindow.setAlwaysOnTop(true, "pop-up-menu");
-        // if (isDev) splashWindow.webContents.openDevTools();
+        splashWindow.focus();
+        // splashWindow.setAlwaysOnTop(true, "pop-up-menu");
     });
 
     splashWindow.loadFile(
-        join(__dirname, isDev ? "../../src/renderer/splash/index.html" : "../splash/index.html")
+        join(root, isDev ? "src/renderer/splash/index.html" : "splash/index.html")
     );
 
     splashWindow.on("close", (evt) => {
@@ -57,6 +60,16 @@ export function closeSplash() {
     if (!splashWindow) return;
     splashWindow.destroy();
     splashWindow = null;
+    onSplashClose?.();
+    onSplashClose = null;
+}
+
+export function afterSplashClose(callback) {
+    if (!splashWindow) {
+        callback();
+        return;
+    }
+    onSplashClose = callback;
 }
 
 ipcMain.handle("request-version", () => {

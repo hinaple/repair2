@@ -80,7 +80,7 @@ export default class ProjectFileManager {
         return new Promise(async (res, rej) => {
             try {
                 this.importing = true;
-                this.beforeImport?.();
+                await this.beforeImport?.();
 
                 await emptyDir(this.dataDir);
 
@@ -107,8 +107,8 @@ export default class ProjectFileManager {
                 await zip.extract(null, this.dataDir);
                 await zip.close();
 
+                await this.afterImport?.();
                 this.importing = false;
-                this.afterImport?.();
                 res();
             } catch (error) {
                 rej(error);
