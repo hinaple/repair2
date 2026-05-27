@@ -162,31 +162,6 @@ button {
 }
 
 @font-face {
-    font-family: "HelveticaExt";
-    src: url(./assets/fonts/helveticaExt.woff);
-    font-weight: 400;
-}
-@font-face {
-    font-family: "HelveticaExt";
-    src: url(./assets/fonts/helveticaExtLight.woff);
-    font-weight: 300;
-}
-@font-face {
-    font-family: "Noto Serif";
-    src: url(./assets/fonts/NotoSerifKR-Regular.ttf);
-    font-weight: 400;
-}
-@font-face {
-    font-family: "Noto Serif";
-    src: url(./assets/fonts/NotoSerifKR-Light.ttf);
-    font-weight: 300;
-}
-@font-face {
-    font-family: "Noto Serif";
-    src: url(./assets/fonts/NotoSerifKR-Medium.ttf);
-    font-weight: 500;
-}
-@font-face {
     font-family: "Pretend";
     src: url(./assets/fonts/PretendardVariable.woff2) format("woff2-variations");
 }
