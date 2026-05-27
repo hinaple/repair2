@@ -7,7 +7,6 @@ import amplifyVideo from "../lib/amplifyVideo";
 import RepairInput from "./repairInput";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
-import { pluginAppended } from "../lib/plugin/pluginStyles";
 import { subscribePluginMount } from "../lib/plugin/pluginMount";
 
 const regexMap = {
@@ -317,7 +316,6 @@ export default class RepairElement extends HTMLElement {
         if (typeof this.plugin?.mount !== "function") return;
 
         this.replaceChildren();
-        pluginAppended("element", this.plugin.info.name);
         this.plugin.mount(this.pluginSecondParams);
     }
     registerUnsubscriber(key, unsubscriber) {

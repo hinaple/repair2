@@ -26,6 +26,7 @@ export default class RepairComponent extends HTMLElement {
 
         this.componentData = componentData;
 
+        this.visible = componentData.visible;
         this.renderStyle(componentData.style ?? "");
 
         this.componentId = componentData.aliasOrId;
@@ -33,7 +34,6 @@ export default class RepairComponent extends HTMLElement {
 
         this.id = this.componentId;
 
-        this.visible = componentData.visible;
         this.unbreakable = componentData.unbreakable;
 
         this.showIntro = showIntro;

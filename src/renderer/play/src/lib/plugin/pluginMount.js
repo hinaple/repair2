@@ -1,5 +1,6 @@
 import { createPluginContext, disposePluginContext } from "./pluginContext";
 import { safeCallPlugin, subscribePluginHMR } from "./pluginManager";
+import { pluginAppended } from "./pluginStyles";
 
 export function subscribePluginMount({
     type,
@@ -24,17 +25,18 @@ export function subscribePluginMount({
                 ctx,
                 "Plugin mounting failed.",
                 async () => {
+                    pluginAppended(type, name);
                     const unmountCb = await api({ ctx, attributes: payloads }, { ...secondParams });
-                    if (typeof unmountCb === "function")
-                        plugin.unmount = () => {
+                    plugin.unmount = () => {
+                        if (typeof unmountCb === "function")
                             safeCallPlugin(
                                 ctx,
                                 "Plugin unmounting failed.",
                                 unmountCb,
                                 onUnmountError
                             );
-                            plugin.unmount = null;
-                        };
+                        plugin.unmount = null;
+                    };
                     afterMount?.(plugin);
                 },
                 (err) => {

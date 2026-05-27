@@ -40,10 +40,12 @@ globalThis.__repairPluginRuntime.setStyle = setStyle;
 
 export function pluginAppended(type, pluginName) {
     const key = `${type}:${pluginName}`;
+    console.log("APPENDED: ", key);
     adjustPluginLiveCount(key, 1);
 }
 
 export function pluginDisposed(type, pluginName) {
     const key = `${type}:${pluginName}`;
+    console.log("DISPOSED: ", key);
     adjustPluginLiveCount(key, -1);
 }

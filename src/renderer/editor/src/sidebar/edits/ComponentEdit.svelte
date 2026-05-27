@@ -31,13 +31,6 @@
     style="margin-block: -8px;"
 />
 <hr />
-<!-- //     <InputField
-//     label="보호됨"
-//     value={data.unbreakable}
-//     setter={(d) => (data.unbreakable = d)}
-//     type="checkbox"
-// />
-// <InputField label="표시" value={data.visible} setter={(d) => (data.visible = d)} type="checkbox" /> -->
 <InputField label="위치" value={data.pos} type="position" previewer oninput={reloadPreview} />
 <InputField
     label="Z축 위치"

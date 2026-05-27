@@ -93,7 +93,6 @@ export async function buildPlugin(
                 }
             },
             outDir: join(pluginInfo.linked ? pluginInfo.path : "", pluginInfo.outDir),
-            cssCodeSplit: false,
             emptyOutDir: !watch,
             assetsInlineLimit: Infinity
         }
