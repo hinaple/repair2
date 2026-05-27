@@ -1,5 +1,5 @@
 <script>
-    let { root, dispatchEvent, ctx, slot } = $props();
+    let { root, ctx, slot } = $props();
 
     const pluginLabel = ctx ? `${ctx.plugin.id} (${ctx.plugin.type})` : "No context";
 </script>

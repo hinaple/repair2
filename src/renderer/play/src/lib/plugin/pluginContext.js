@@ -45,7 +45,7 @@ const typeMap = {
 const registeredContextApis = {
     appDataGetter: () => null,
     store: {
-        get: () => null,
+        get: () => Promise.resolve(null),
         set: () => {}
     }
 };
@@ -62,7 +62,7 @@ const contextApiNormalizers = {
     },
     store(api = {}) {
         return {
-            get: typeof api.get === "function" ? api.get : () => null,
+            get: typeof api.get === "function" ? api.get : () => Promise.resolve(null),
             set: typeof api.set === "function" ? api.set : () => {}
         };
     }
@@ -336,11 +336,11 @@ function createResources(plugin) {
             id: resource.id,
             title: getResourceTitle(resource),
             alias: resource.alias ?? null,
-            type: resource.fileType,
-            src: resource.src,
+            type: resource.fileType ?? null,
+            src: resource.src ?? null,
             path: getResourcePath(resource),
             meta: {
-                extension: resource.extension,
+                extension: resource.extension ?? null,
                 preloaded: isPreloaded(resource.id)
             }
         };
@@ -419,7 +419,7 @@ function createAppApi() {
 function createStoreApi() {
     return {
         get(key) {
-            return registeredContextApis.store.get(key);
+            return Promise.resolve(registeredContextApis.store.get(key));
         },
         set(key, value) {
             registeredContextApis.store.set(key, value);

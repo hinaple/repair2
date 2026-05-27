@@ -2,6 +2,7 @@ import RepairElement from "./repairElement";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
 import { pluginAppended } from "../lib/plugin/pluginStyles";
+import { subscribePluginMount } from "../lib/plugin/pluginMount";
 
 function getComponentIdentity(componentData) {
     return {
@@ -44,30 +45,52 @@ export default class RepairComponent extends HTMLElement {
             (e) => new RepairElement(e, this.componentIdentity)
         );
 
-        this.frameEl = null;
-        this.frameIdentity = getFrameIdentity(componentData.frame);
-        this.unsubscriber = componentData.frame.hmrSubscribe(
-            (tempFrame) => {
-                if (!tempFrame) return;
-                const prvFrame = this.frameEl;
-                this.frameEl = tempFrame;
-                pluginAppended("frame", componentData.frame.name);
+        this.setupFrame();
+    }
+    setupFrame() {
+        const frameData = this.componentData.frame;
+        if (!frameData.name) return;
 
-                this.render();
-                this.appendChild(this.frameEl);
-
-                if (prvFrame) {
-                    disposePluginContext(prvFrame.__repairPluginContext);
-                    this.removeChild(prvFrame);
-                }
-            },
-            {
+        this.frame = {};
+        this.frameIdentity = getFrameIdentity(frameData);
+        this.unsubscriber = subscribePluginMount({
+            type: "frame",
+            name: frameData.name,
+            contextOption: {
                 component: this.componentIdentity,
                 frame: this.frameIdentity
+            },
+            payloads: frameData.payloads,
+            beforeMount: () => {
+                if (this.destroyed) return false;
+                if (typeof this.frame.unmount === "function") this.frame.unmount();
+                if (this.frame.ctx) disposePluginContext(this.frame.ctx);
+                return true;
+            },
+            onMountReady: (frame) => {
+                this.frame = frame;
+                this.rendered = false;
+                this.render();
+            },
+            afterMount: (frame) => {
+                if (frame !== this.frame || this.destroyed) frame.unmount?.();
+            },
+            onMountError: () => {
+                this.rendered = false;
+                this.render(true);
             }
-        );
+        });
+    }
+    makeChildrenFrag() {
+        const frag = document.createDocumentFragment();
+        frag.append(...this.elements);
+        return frag;
     }
 
+    setVisible(visible) {
+        this.visible = visible;
+        this.renderStyle();
+    }
     setZIndex(zIndex) {
         this.zIndex = zIndex;
         this.renderStyle();
@@ -77,15 +100,25 @@ export default class RepairComponent extends HTMLElement {
         this.setAttribute(
             "style",
             `position: absolute; ${this.componentData.styleString} ${this.styleString}` +
-                (this.zIndex ? `z-index: ${this.zIndex};` : "")
+                (this.zIndex ? `z-index: ${this.zIndex};` : "") +
+                (!this.visible ? "display: none;" : "")
         );
     }
 
-    render() {
-        (this.frameEl ?? this).append(...this.elements);
+    render(ignoreFrame = false) {
+        if (this.rendered || !this.isConnected) return;
+        this.rendered = true;
+        if (!ignoreFrame && typeof this.frame?.mount === "function") {
+            pluginAppended("frame", this.componentData.frame.name);
+            const children = this.makeChildrenFrag();
+            this.replaceChildren();
+            this.frame.mount({ target: this, children, showIntro: !!this.showIntro });
+        } else this.append(...this.elements);
     }
 
     connectedCallback() {
+        if (this.destroyed) return;
+
         if (this.showIntro) this.startTransition(this.introTransition);
         this.render();
         this.showIntro = true;
@@ -124,10 +157,15 @@ export default class RepairComponent extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.elements.forEach((el) => el.destroy());
-        disposePluginContext(this.frameEl?.__repairPluginContext);
+        if (this.destroyed) return;
+        this.destroyed = true;
+
         this.unsubscriber?.();
+        this.frame?.unmount?.();
+        if (this.frame?.ctx) disposePluginContext(this.frame.ctx);
+
+        this.elements.forEach((el) => el.destroy());
     }
 }
 
-window.customElements.define("repair-component", RepairComponent);
+customElements.define("repair-component", RepairComponent);

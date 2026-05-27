@@ -23,7 +23,7 @@ export function addComponent(component) {
     const idx = getDuplicatedComponentIdx(component);
     removeComponentByIdx(idx, true);
     const newComponent = new RepairComponent(component, idx === -1);
-    if (newComponent.visible) gamezone.appendChild(newComponent);
+    gamezone.appendChild(newComponent);
 
     if (idx === -1) components.push(newComponent);
     else components[idx] = newComponent;
@@ -31,8 +31,6 @@ export function addComponent(component) {
     sendChanges("component", "created", component.id);
 }
 async function removeComponentFromDOM(component, playOutro = true) {
-    if (!component.visible) return;
-
     if (playOutro) await component.startTransition(component.outroTransition, true);
     gamezone.removeChild(component);
 }
@@ -54,7 +52,7 @@ export function removeComponentByAlias(alias, ignoreUnbreakable = false) {
 }
 export function clearComponents(ignoreUnbreakable = false) {
     components
-        .filter((c) => ignoreUnbreakable || (!c?.unbreakable && c.visible))
+        .filter((c) => ignoreUnbreakable || !c?.unbreakable)
         .forEach((c) => removeComponentFromDOM(c));
 
     if (ignoreUnbreakable) components = [];
@@ -72,10 +70,7 @@ export function modifyComponentByAlias(alias, modifyKey, modifyValue) {
 
     const currentComp = components[idx];
     if (modifyKey === "visible" && currentComp.visible !== modifyValue) {
-        if (modifyValue) gamezone.appendChild(currentComp);
-        else removeComponentFromDOM(currentComp);
-
-        currentComp.visible = !!modifyValue;
+        currentComp.setVisible(modifyValue);
         notifyComponentSubscribers();
         return;
     }

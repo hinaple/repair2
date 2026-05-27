@@ -11,7 +11,6 @@ export function splitPath(path) {
 export async function changeResourceFile(resource) {
     const result = await ipcRenderer.invoke("selectFile", {
         title: "변경할 자원 파일 선택",
-        defaultPath: AssetDir,
         properties: ["openFile"]
     });
     let target = result.filePaths?.[0];
@@ -48,7 +47,6 @@ export async function changeResourceFile(resource) {
 export async function selectMany() {
     const result = await ipcRenderer.invoke("selectFile", {
         title: "추가할 자원 파일 선택(다중 선택 가능)",
-        defaultPath: AssetDir,
         properties: ["openFile", "multiSelections"]
     });
     return result.canceled ? [] : result.filePaths;

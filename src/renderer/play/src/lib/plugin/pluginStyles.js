@@ -25,7 +25,7 @@ function adjustPluginLiveCount(pluginKey, amount = 0) {
     record.style.remove();
 }
 
-function setStyle(pluginKey, styleCode) {
+function setStyle(pluginKey, styleCode, rootId) {
     const record = getRecord(pluginKey);
     if (record.style?.isConnected) record.style.remove();
 

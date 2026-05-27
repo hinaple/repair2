@@ -27,7 +27,6 @@ Your plugin package should usually be an ES module package. The version range sh
 The package is type-first. Importing types is the normal way to use it:
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default {
     function({ ctx }) {
@@ -114,7 +113,7 @@ For a runtime plugin with a main-process entry, add `main`:
 }
 ```
 
-Element and frame plugins can set `svelte: true`. This lets REPAIR2 add the Svelte Vite plugin while building the plugin source. It does not create a separate plugin type or change the runtime export contract.
+Element and frame plugins can set `svelte: true`. This lets REPAIR2 add the Svelte Vite plugin while building the plugin source. It does not create a separate plugin type.
 
 See [Manifest](./manifest.md) for the full manifest guide.
 
@@ -136,14 +135,13 @@ Use the type name as the reference. The docs explain when to use each shape, but
 
 ## Source formats
 
-Plain JavaScript is enough for plugins. Use `// @ts-check` and JSDoc type imports when you want type checking without a separate TypeScript build step.
+Plain JavaScript is enough for plugins. JSDoc type imports can document the expected plugin shape without adding a separate TypeScript build step.
 
 TypeScript is also fine when Vite can handle your source entry. JavaScript is the output format; plugin authors do not need a separate build step unless their source setup requires work outside Vite's normal handling.
 
 ## A minimal function plugin
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default {
     function({ attributes, ctx }) {
@@ -158,23 +156,26 @@ Function plugins are short-lived. If you subscribe to anything, clean it up befo
 ## A minimal element plugin
 
 ```js
-// @ts-check
-/** @typedef {import("@fainthit/repair2-plugin-sdk").ElementOptions} ElementOptions */
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
+export default function mount({ attributes, ctx }, { target, dispatchEvent }) {
+    target.textContent = attributes.label ?? ctx.plugin.id;
 
-export default class ExampleElement extends HTMLElement {
-    /** @param {ElementOptions} [options] */
-    constructor({ attributes, ctx } = {}) {
-        super();
-        this.textContent = attributes?.label ?? ctx?.plugin.id ?? "element";
-    }
+    const onClick = () => dispatchEvent("click");
+    target.addEventListener("click", onClick);
+
+    return () => {
+        target.removeEventListener("click", onClick);
+    };
 }
 ```
 
-Element and frame plugins are constructors. REPAIR2 creates them with `new Plugin({ attributes, ctx })`.
+Element plugins are mount functions. REPAIR2 calls them with `{ attributes, ctx }` and `{ target, dispatchEvent }`. The returned function, when present, is called during plugin cleanup.
 
-## Type checking
+Frame plugins use the same mount shape, but receive `{ target, children, showIntro }` as the second argument. Append `children` to the location where the component elements should render.
 
-Plain JavaScript plugins can use `// @ts-check` and JSDoc type imports. TypeScript plugins can import SDK types directly.
+## Type references
+
+Plain JavaScript plugins can use JSDoc type imports as references. TypeScript plugins can import SDK types directly.
 
 If your editor does not pick up DOM types such as `HTMLElement`, make sure your TypeScript configuration includes the `DOM` library.
 

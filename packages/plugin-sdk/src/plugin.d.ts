@@ -1,28 +1,42 @@
 import type { ElementContext, FrameContext, FunctionContext, TransitionContext } from "./context";
 import type { Attributes, MaybePromise } from "./shared";
 
-export interface ElementOptions<TAttributes = Attributes> {
-    attributes?: TAttributes;
-    ctx?: ElementContext | null;
+export type PluginUnmount = () => MaybePromise<void>;
+
+export interface ElementMountArgs<TAttributes = Attributes> {
+    attributes: TAttributes;
+    ctx: ElementContext;
 }
 
-export interface FrameOptions<TAttributes = Attributes> {
-    attributes?: TAttributes;
-    ctx?: FrameContext | null;
+export interface ElementMountOptions {
+    target: HTMLElement;
+    dispatchEvent(type: string, event?: unknown): void;
 }
 
-/** HTMLElement constructor contract for element plugins. */
-export interface ElementPlugin<TAttributes = Attributes> {
-    new (options?: ElementOptions<TAttributes>): HTMLElement;
+export interface FrameMountArgs<TAttributes = Attributes> {
+    attributes: TAttributes;
+    ctx: FrameContext;
 }
 
-/** HTMLElement constructor contract for frame plugins. */
-export interface FramePlugin<TAttributes = Attributes> {
-    new (options?: FrameOptions<TAttributes>): HTMLElement;
+export interface FrameMountOptions {
+    target: HTMLElement;
+    children: DocumentFragment;
+    showIntro: boolean;
 }
+
+/** Mount function contract for element plugins. */
+export type ElementPlugin<TAttributes = Attributes> = (
+    args: ElementMountArgs<TAttributes>,
+    options: ElementMountOptions
+) => MaybePromise<void | PluginUnmount>;
+
+/** Mount function contract for frame plugins. */
+export type FramePlugin<TAttributes = Attributes> = (
+    args: FrameMountArgs<TAttributes>,
+    options: FrameMountOptions
+) => MaybePromise<void | PluginUnmount>;
 
 export type ElementExport<TAttributes = Attributes> = ElementPlugin<TAttributes>;
-
 export type FrameExport<TAttributes = Attributes> = FramePlugin<TAttributes>;
 
 export interface FunctionArgs<TAttributes = Attributes> {
@@ -33,8 +47,8 @@ export interface FunctionArgs<TAttributes = Attributes> {
     signal?: AbortSignal;
     /** Listener channel when called as an element listener plugin. */
     channel?: string;
-    /** DOM event when called as an element listener plugin. */
-    event?: Event;
+    /** Event-like payload when called as an element listener plugin. */
+    event?: unknown;
     [key: string]: unknown;
 }
 
@@ -67,7 +81,7 @@ export interface TransitionArgs<TAttributes = Attributes> {
 
 export type TransitionHandler<TAttributes = Attributes> = (
     args: TransitionArgs<TAttributes>
-) => MaybePromise<Keyframe[]>;
+) => MaybePromise<Keyframe[] | (() => Keyframe[])>;
 
 /**
  * Transition plugin export contract.
@@ -75,7 +89,7 @@ export type TransitionHandler<TAttributes = Attributes> = (
  * Direct keyframe array exports are not part of this contract.
  */
 export interface TransitionPlugin<TAttributes = Attributes> {
-    keyframes?: Keyframe[];
+    keyframes?: Keyframe[] | (() => Keyframe[]);
     function?: TransitionHandler<TAttributes>;
     [key: string]: unknown;
 }

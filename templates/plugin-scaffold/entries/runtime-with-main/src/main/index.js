@@ -1,5 +1,3 @@
-// @ts-check
-
 /** @typedef {Record<string, (...args: unknown[]) => unknown>} MainMethods */
 /** @typedef {Record<string, (...args: unknown[]) => void>} RendererMethods */
 

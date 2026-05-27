@@ -1,16 +1,17 @@
-// @ts-check
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport} */
+export default function mount({ attributes, ctx }, { target, dispatchEvent }) {
+    const div = document.createElement("div");
+    div.setAttribute(
+        "style",
+        "width: 100%; height: 100%; background-color: #222; font-size: 50px; color: #fff;"
+    );
+    div.textContent = "Hello, world!";
+    target.append(div);
 
-/** @typedef {import("@fainthit/repair2-plugin-sdk").ElementOptions} ElementOptions */
+    const clickHandler = () => dispatchEvent("click");
+    div.addEventListener("click", clickHandler);
 
-export default class ExampleElement extends HTMLElement {
-    /** @param {ElementOptions} [options] */
-    constructor({ attributes, ctx } = {}) {
-        super();
-        this.ctx = ctx;
-        this.attributesData = attributes;
-    }
-
-    connectedCallback() {
-        this.textContent = "Example element";
-    }
+    return () => {
+        div.removeEventListener("click", clickHandler);
+    };
 }

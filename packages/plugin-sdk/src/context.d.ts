@@ -212,14 +212,14 @@ export interface RuntimeContext extends PluginContextBase {
     frame: null;
 }
 
-/** Context passed to element plugin constructors. */
+/** Context passed to element plugin mount functions. */
 export interface ElementContext extends PluginContextBase {
     component: ComponentIdentity;
     element: ElementIdentity;
     frame: null;
 }
 
-/** Context passed to frame plugin constructors. */
+/** Context passed to frame plugin mount functions. */
 export interface FrameContext extends PluginContextBase {
     component: ComponentIdentity;
     element: null;

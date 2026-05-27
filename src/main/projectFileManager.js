@@ -33,7 +33,7 @@ export default class ProjectFileManager {
         return new Promise(async (res, rej) => {
             const result = await dialog.showSaveDialog({
                 title: "프로젝트 내보내기",
-                defaultPath: join(app.getPath("documents"), `${projectName}.repair`),
+                defaultPath: `${projectName}.repair`,
                 filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
             });
             if (!result || result.canceled) {

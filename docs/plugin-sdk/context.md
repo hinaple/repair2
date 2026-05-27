@@ -172,6 +172,14 @@ Use `path` or `getPath()` when you need a resolved runtime asset path. `src` is 
 
 Preload stores a prepared media element for later use. `createElement()` may consume an existing preload for that resource.
 
+The play runtime also defines `<repair-asset>`, a small custom element for rendering project resources from plugin-created DOM:
+
+```html
+<repair-asset title="logo" clone volume="80" loop></repair-asset>
+```
+
+`title` selects the resource by runtime resource title. `clone` asks the runtime to keep using the preload path after consuming a preloaded element. `notpreload` forces creation of a new media element instead of consuming preload. For video resources, `volume` is a percentage and `loop` toggles looping. Attribute values are string-based; boolean-style attributes are treated as true unless the value is `"false"`.
+
 ## App, communication, and store
 
 `ctx.app` gives read-oriented app information:

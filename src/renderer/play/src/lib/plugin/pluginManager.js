@@ -82,26 +82,18 @@ export function afterPluginImported() {
     return pluginImporting;
 }
 
-function definePlugin(pluginClass, name) {
-    if (customElements.getName(pluginClass)) return;
-
-    let basename = `plugin-${name.split(".")[0].toLowerCase()}`;
-    if (customElements.get(basename)) basename = `${basename}-${genId(3)}`;
-    customElements.define(basename, pluginClass);
-}
-
-export function safeCallPlugin(ctx, title, callback, fallback = null) {
+export function safeCallPlugin(ctx, title, callback, onerror = null) {
     try {
         const result = callback();
         if (result?.then)
             return result.catch((err) => {
                 reportPluginException(ctx.plugin, title, err);
-                return fallback;
+                return onerror?.(err);
             });
         return result;
     } catch (err) {
         reportPluginException(ctx.plugin, title, err);
-        return fallback;
+        return onerror?.(err);
     }
 }
 
@@ -124,7 +116,7 @@ export async function usePlugin({
     if (type === "runtime") return plugin;
 
     if (type === "frame" || type === "element") {
-        const ce = plugin;
+        const mount = plugin;
         const ctx =
             forceCtx ??
             createPluginContext({
@@ -132,20 +124,14 @@ export async function usePlugin({
                 pluginType: type,
                 ...contextOptions
             });
-        const temp = safeCallPlugin(ctx, "Plugin element creation failed.", () => {
-            definePlugin(ce, name);
-            return new ce({
-                attributes: payloads,
-                ctx
-            });
-        });
-        if (!temp) {
+        if (typeof mount !== "function") {
             ctx.lifecycle.dispose();
             return null;
         }
-        temp.__repairPluginContext = ctx;
-        temp.id = name;
-        return temp;
+        return (args) =>
+            safeCallPlugin(ctx, "Plugin element creation failed.", () => {
+                return mount({ ctx, attributes: payloads }, args);
+            });
     }
 
     if (typeof plugin === "function") plugin = await plugin(); //plugin can be a factory
@@ -191,15 +177,15 @@ PluginPointer.prototype.use = async function (
     });
 };
 
-PluginPointer.prototype.hmrSubscribe = function (callback, contextOptions = {}) {
+PluginPointer.prototype.hmrSubscribe = function (callback) {
     if (!this.name) return null;
 
-    return subscribePluginHMR(this.type, this.name, { contextOptions }, callback);
+    return subscribePluginHMR(this.type, this.name, callback);
 };
 
 /** @type {Record<string, Record<string, Set<(any) => any>>>} */
 const hmrSubscribers = {};
-export default function subscribePluginHMR(type, pluginName, useParams = {}, callback) {
+export function subscribePluginHMR(type, pluginName, callback) {
     const source = { id: pluginName, type: type };
 
     if (!hmrSubscribers[type]) hmrSubscribers[type] = {};
@@ -208,9 +194,9 @@ export default function subscribePluginHMR(type, pluginName, useParams = {}, cal
         targetSet = new Set();
         hmrSubscribers[type][pluginName] = targetSet;
     }
-    const fn = async (plugin, pluginInfo) => {
+    const fn = async (api, info) => {
         try {
-            callback(await usePlugin({ plugin, type, name: pluginName, ...useParams }), pluginInfo);
+            callback({ api, info });
         } catch (err) {
             reportPluginException(source, "Plugin HMR callback failed.", err);
         }
@@ -218,8 +204,9 @@ export default function subscribePluginHMR(type, pluginName, useParams = {}, cal
 
     let unsubscribed = false;
     getPlugin(type, pluginName)
-        .then((plugin) => usePlugin({ type, name: pluginName, plugin, ...useParams }))
-        .then((using) => callback(using, plugins[type][pluginName].info))
+        .then((pluginApi) => {
+            if (!unsubscribed) callback({ api: pluginApi, info: plugins[type][pluginName].info });
+        })
         .catch((err) => reportPluginException(source, "Plugin HMR initial callback failed.", err))
         .finally(() => {
             if (!unsubscribed) targetSet.add(fn);

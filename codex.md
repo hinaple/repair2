@@ -41,6 +41,16 @@ Revisit these plugin edge cases later:
 - Full plugin rescans still run plugin directory updates in parallel; duplicate plugin names are detected, but the selected winner can depend on completion order.
 - Plugin CSS records are retained in the play renderer `pluginStyles` map after plugin rename/delete. Style elements are removed, but long development sessions can leave stale records.
 
+## Element plugin mount API note
+
+When documenting the function-based element plugin contract, clarify that the mount handle named `dispatchEvent` is REPAIR's listener-channel dispatcher, not `HTMLElement.dispatchEvent(Event)`.
+
+- Element plugins receive `({ ctx, attributes }, { target, dispatchEvent })`.
+- `target` is still a normal DOM element and has its native `target.dispatchEvent(...)`.
+- The injected `dispatchEvent(type, eventLike)` should be used only to trigger REPAIR element listeners registered for that channel.
+- Consider a less DOM-native name later if this continues to confuse plugin authors.
+- REPAIR may clear DOM children from the mount `target`, but plugins still own cleanup for listeners, observers, timers, external resources, and any references they create.
+
 ## Frame plugin HMR documentation note
 
 When documenting frame plugin HMR, mention the current `repairComponent` replacement order:
@@ -48,3 +58,13 @@ When documenting frame plugin HMR, mention the current `repairComponent` replace
 - During frame HMR, existing child elements are moved into the new frame before the old frame context is disposed.
 - Old frame plugins should not rely on querying current children during dispose cleanup, because those children may already have moved.
 - Plugin authors should keep direct references to listeners/resources they need to clean up.
+
+## Frame plugin mount API note
+
+When documenting the function-based frame plugin contract, include `showIntro` in the second mount argument.
+
+- Frame plugins receive `({ ctx, attributes }, { target, children, showIntro })`.
+- `children` is a fresh `DocumentFragment` for the current mount call.
+- `showIntro` tells the frame whether the component is being rendered with its intro transition state.
+- Strongly recommend that frame plugins use `children` only to append the runtime-owned child nodes into the correct initial location.
+- Frame plugins should not mutate, destroy, store-and-later-manipulate, or otherwise cause side effects on child nodes; they should clean up only resources/listeners/DOM they created.

@@ -13,7 +13,7 @@ function createComponentHandle(component) {
         element: component,
         meta: {
             unbreakable: !!component.unbreakable,
-            hasFrame: !!component.frameEl,
+            hasFrame: !!component.frame,
             elementCount: component.elements?.length ?? 0
         }
     };

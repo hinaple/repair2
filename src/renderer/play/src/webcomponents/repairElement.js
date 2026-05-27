@@ -8,6 +8,7 @@ import RepairInput from "./repairInput";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
 import { pluginAppended } from "../lib/plugin/pluginStyles";
+import { subscribePluginMount } from "../lib/plugin/pluginMount";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -54,7 +55,7 @@ export default class RepairElement extends HTMLElement {
             this.realEl.spellcheck = false;
             if (element.payload.placeholder) this.realEl.placeholder = element.payload.placeholder;
             if (element.payload.maxLength !== null)
-                this.realEl.maxlength = element.payload.maxLength;
+                this.realEl.maxLength = element.payload.maxLength;
 
             const valueFunc =
                 element.payload.valueFunction &&
@@ -65,7 +66,6 @@ export default class RepairElement extends HTMLElement {
             else if (element.payload.allowedType === "regex")
                 this.allowedRegex = new RegExp(element.payload.allowedRegex, "g");
             else this.allowedRegex = regexMap[element.payload.allowedType] ?? null;
-            if (element.payload.maxLength) this.realEl.maxLength = element.payload.maxLength;
 
             this.variableId = element.payload.variableId;
             if (this.variableId)
@@ -73,10 +73,10 @@ export default class RepairElement extends HTMLElement {
                     "variable",
                     subscribe(this.variableId, (value) => (this.realEl.value = value))
                 );
-            this.realEl.addEventListener("input", (evt) => {
-                let tempValue = evt.target.value;
+            this.realEl.addEventListener("input", () => {
+                let tempValue = this.realEl.value ?? "";
 
-                if (valueFunc) tempValue = valueFunc(tempValue.toString());
+                if (valueFunc) tempValue = String(valueFunc(tempValue) ?? "");
 
                 if (this.allowedRegex)
                     tempValue = (tempValue.match(this.allowedRegex) ?? []).join("");
@@ -90,26 +90,6 @@ export default class RepairElement extends HTMLElement {
             });
 
             this.willFocus = !!element.payload.autofocus;
-        } else if (this.type === "plugin") {
-            this.registerUnsubscriber(
-                "hmr",
-                element.payload.hmrSubscribe(
-                    (tempPlugin) => {
-                        if (!tempPlugin) return;
-                        if (this.realEl) {
-                            disposePluginContext(this.realEl.__repairPluginContext);
-                            this.realEl.remove();
-                        }
-                        this.realEl = tempPlugin;
-                        this.rendered = false;
-                        this.render();
-                    },
-                    {
-                        component: this.componentIdentity,
-                        element: this.elementIdentity
-                    }
-                )
-            );
         } else if (this.type === "image" || this.type === "video") {
             const resource = getAppData().findResourceById(element.payload.resourceId);
             this.realEl = genElement(resource, !element.payload.removePreload);
@@ -125,25 +105,62 @@ export default class RepairElement extends HTMLElement {
             this.realEl.loop = !!element.payload.loop;
             this.realEl.muted = false;
         }
-    }
-    render() {
-        if (this.rendered || !this.isConnected || !this.realEl) return;
-        this.rendered = true;
 
-        this.realEl.setAttribute("style", this.childStyle ?? "");
+        const localEvents = this.setListeners();
+        if (this.realEl) {
+            localEvents.forEach((opt) => this.realEl.addEventListener(...opt));
+        } else if (this.type === "plugin") {
+            const listenerMap = new Map();
+            localEvents.forEach(([type, callback]) => {
+                let set = listenerMap.get(type);
+                if (!set) {
+                    set = new Set();
+                    listenerMap.set(type, set);
+                }
+                set.add(callback);
+            });
 
-        if (this.fullscreen) {
-            this.realEl.style.width = "var(--gamezone-width)";
-            this.realEl.style.height = "var(--gamezone-height)";
-        } else {
-            this.realEl.style.width = this.width ? `${this.width}px` : "auto";
-            this.realEl.style.height = this.height ? `${this.height}px` : "auto";
+            const dispatchEvent = (type, evt = {}) => {
+                const callbackSet = listenerMap.get(type);
+                if (!callbackSet) return;
+                callbackSet.forEach((c) => c(evt));
+            };
+
+            this.pluginSecondParams = { target: this, dispatchEvent };
+            this.plugin = {};
+            this.registerUnsubscriber(
+                "hmr",
+                subscribePluginMount({
+                    type: "element",
+                    name: element.payload.name,
+                    contextOption: {
+                        component: this.componentIdentity,
+                        element: this.elementIdentity
+                    },
+                    payloads: element.payload.payloads,
+                    beforeMount: () => {
+                        if (this.destroyed) return false;
+                        if (typeof this.plugin.unmount === "function") this.plugin.unmount();
+                        if (this.plugin.ctx) disposePluginContext(this.plugin.ctx);
+                        return true;
+                    },
+                    onMountReady: (plugin) => {
+                        this.plugin = plugin;
+                        this.rendered = false;
+                        this.render();
+                    },
+                    afterMount: (plugin) => {
+                        if (plugin !== this.plugin || this.destroyed) plugin.unmount?.();
+                    }
+                })
+            );
         }
-
+    }
+    setListeners() {
         const deadListeners = [];
         function gotoListener(listener) {
             if (listener.once) deadListeners.push(listener);
-            listener.output.goto();
+            listener.output?.goto();
         }
 
         this.repeating = new Map();
@@ -181,7 +198,9 @@ export default class RepairElement extends HTMLElement {
         };
 
         this.globalEvents = [];
+        let localEvents = [];
         this.listeners.forEach((l) => {
+            if (!l?.types?.[0]) return;
             const eventOpt = [
                 l.realEventChannel,
                 async (evt) => {
@@ -189,8 +208,10 @@ export default class RepairElement extends HTMLElement {
 
                     if (
                         l.types[0] === "keyPress" &&
-                        l.payload.key?.length &&
-                        !l.payload.key.split(/\s*,\s*/).includes(evt.key)
+                        l.payload &&
+                        typeof l.payload.key === "string" &&
+                        l.payload.key.length &&
+                        !l.payload.key.split(/\s*,\s*/).includes(evt?.key)
                     )
                         return;
                     else if (l.types[0] === "jsFunction") {
@@ -202,16 +223,17 @@ export default class RepairElement extends HTMLElement {
                         }
                     } else if (
                         l.shortType === "Drag.released" &&
-                        l.payload.hotspotIndexes &&
+                        l.payload &&
+                        typeof l.payload.hotspotIndexes === "string" &&
                         l.payload.hotspotIndexes.trim().length &&
-                        (evt.detail.hotspotIndex === undefined ||
+                        (evt?.detail?.hotspotIndex === undefined ||
                             !l.payload.hotspotIndexes
                                 .split(",")
                                 .map((n) => +n)
-                                .includes(evt.detail.hotspotIndex))
+                                .includes(evt?.detail?.hotspotIndex))
                     )
                         return;
-                    else if (l.types[0] === "plugin") {
+                    else if (l.types[0] === "plugin" && l.payload) {
                         try {
                             if (
                                 await l.payload
@@ -244,23 +266,59 @@ export default class RepairElement extends HTMLElement {
                 window.addEventListener(...eventOpt);
                 return;
             }
-            (l.types[0] === "Drag" ? this : this.realEl).addEventListener(...eventOpt);
+            if (l.types[0] === "Drag") {
+                this.addEventListener(...eventOpt);
+                return;
+            }
+            localEvents.push(eventOpt);
         });
+        return localEvents;
+    }
+    render() {
+        if (this.rendered || !this.isConnected || (!this.plugin && !this.realEl)) return;
+        this.rendered = true;
+
+        this.realEl?.setAttribute("style", this.childStyle ?? "");
+
+        if (this.fullscreen) {
+            this.style.width = "var(--gamezone-width)";
+            this.style.height = "var(--gamezone-height)";
+        } else {
+            this.style.width = this.width ? `${this.width}px` : "fit-content";
+            this.style.height = this.height ? `${this.height}px` : "auto";
+        }
+
+        if (!this.dragger && this.dragOption && !this.fullscreen) {
+            this.dragger = new Dragger(this.dragOption, this, {
+                setPos: (pos) => {
+                    this.setAttribute("style", this.element.getStyleString(true, pos));
+                },
+                setPosAsDefault: () => {
+                    this.setAttribute("style", this.element.styleString);
+                }
+            });
+        }
+
+        if (this.type === "plugin") {
+            this.renderPlugin();
+            return;
+        }
+
+        this.realEl.style.width =
+            this.width || this.fullscreen || this.type === "empty" ? "100%" : "auto";
+        this.realEl.style.height =
+            this.height || this.fullscreen || this.type === "empty" ? "100%" : "auto";
 
         this.appendChild(this.realEl);
-        if (this.type === "plugin") pluginAppended("element", this.element.payload.name);
         if (this.willFocus) this.realEl.focus();
         if (this.type === "video") this.realEl.play();
+    }
+    renderPlugin() {
+        if (typeof this.plugin?.mount !== "function") return;
 
-        if (!this.dragOption || this.fullscreen) return;
-        this.dragger = new Dragger(this.dragOption, this, {
-            setPos: (pos) => {
-                this.setAttribute("style", this.element.getStyleString(true, pos));
-            },
-            setPosAsDefault: () => {
-                this.setAttribute("style", this.element.styleString);
-            }
-        });
+        this.replaceChildren();
+        pluginAppended("element", this.plugin.info.name);
+        this.plugin.mount(this.pluginSecondParams);
     }
     registerUnsubscriber(key, unsubscriber) {
         if (!this.unsubscribers) this.unsubscribers = {};
@@ -271,7 +329,11 @@ export default class RepairElement extends HTMLElement {
         this.render();
     }
     destroy() {
-        disposePluginContext(this.realEl?.__repairPluginContext);
+        if (this.destroyed) return;
+        this.destroyed = true;
+
+        if (typeof this.plugin?.unmount === "function") this.plugin.unmount();
+        if (this.plugin?.ctx) disposePluginContext(this.plugin.ctx);
         if (this.unsubscribers)
             Object.values(this.unsubscribers).forEach((unsubscriber) => unsubscriber?.());
         if (this.globalEvents)

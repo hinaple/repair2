@@ -32,7 +32,7 @@ The manifest type is still `runtime`; the `main` property adds a main-process en
 
 If a runtime plugin does not have `main` in its manifest, renderer `activate()` receives `main: null`.
 
-## Object exports and factory exports
+## Object exports, factory exports, and mount functions
 
 Runtime, function, transition, and runtime main entries can be object exports or factory exports.
 
@@ -48,9 +48,15 @@ export default () => ({
 });
 ```
 
-Element and frame plugins are constructor exports only. REPAIR2 calls `new Plugin({ attributes, ctx })`.
+Element and frame plugins are mount function exports only. REPAIR2 calls the default export when the plugin should render into a runtime-owned host element.
 
-Write element and frame constructors so the options object can be omitted. This keeps older or test code from breaking unnecessarily.
+```js
+export default function mount({ attributes, ctx }, options) {
+    // ...
+}
+```
+
+Element mount functions receive `{ target, dispatchEvent }` as their second argument. Frame mount functions receive `{ target, children, showIntro }`.
 
 Renderer runtime, function, and transition factories may be async where the SDK type allows it. Runtime main factories should return the object synchronously.
 
@@ -85,6 +91,8 @@ export default {
 ```
 
 Direct keyframe array exports are not part of the current contract.
+
+The current runtime also accepts `keyframes` or a transition `function` result as a function returning the keyframe array. Prefer returning the array directly unless delayed keyframe creation is useful.
 
 ## Runtime step names must match the manifest
 
@@ -153,7 +161,9 @@ ctx.lifecycle.onDispose(() => clearInterval(interval));
 
 Function and transition plugins are usually short-lived. Avoid long-lived subscriptions there unless you clean them up explicitly.
 
-Element and frame plugins are replaced during HMR. Their previous context is disposed when the replacement is mounted.
+Element and frame plugins are replaced during HMR. Their previous context is disposed when the replacement is mounted. Mount functions may also return a cleanup function. REPAIR2 calls it during plugin unmount.
+
+For frame plugins, `children` contains runtime-owned component element nodes. Append it to the correct initial location, but avoid side effects on those child nodes. Do not destroy them, store them for later mutation, or treat them as plugin-owned DOM.
 
 Renderer runtime plugins may also return a disposer from `activate()` or provide a `dispose` property. Runtime main entries should use `ctx.lifecycle.onDispose` or return a disposer from `activate()`.
 

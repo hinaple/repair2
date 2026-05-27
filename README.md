@@ -18,8 +18,8 @@ Room Escape Pc App InteRface
 - [ ] Add comment node
 - [ ] Online viewer
 - [ ] Patch code feature
-- [ ] Typing `RepairUtils`
 - [ ] Resources searching
+- [ ] Styling element plugin host
 
 ## Done
 

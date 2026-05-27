@@ -17,7 +17,6 @@ npm install --save-dev @fainthit/repair2-plugin-sdk
 Use JSDoc type imports from JavaScript plugin code:
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default {
     function({ ctx }) {
