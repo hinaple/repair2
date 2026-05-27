@@ -6,27 +6,6 @@ import { basename, extname, join } from "path";
 import { createEmptyPlugin } from "./plugin/createEmptyPlugin";
 import { pathExists } from "./pathExists";
 
-/**
- *
- * @param {{
- *     assetDir: string,
- *     dataDir: string,
- *     getData: any,
- *     getEditorWindow: any,
- *     getGlobalCss: any,
- *     getMainWindow: any,
- *     getPluginManager: () => PluginManager,
- *     getStore: any,
- *     createEditorWindow: any,
- *     findService: any,
- *     reportDiagnostic: any,
- *     saveData: any,
- *     sendToEditor: any,
- *     sendToMain: any,
- *     serial: any,
- *     socket: any,
- * }} options
- */
 export function setupIpcHandlers({
     assetDir,
     dataDir,
@@ -37,7 +16,6 @@ export function setupIpcHandlers({
     getPluginManager,
     getStore,
     createEditorWindow,
-    findService,
     reportDiagnostic,
     saveData,
     sendToEditor,
@@ -214,7 +192,8 @@ export function setupIpcHandlers({
     });
     ipcMain.on("socket-connect-service", (event, type, name) => {
         if (socket.connected) return;
-        findService(type, name)
+        import("./communication/bonjour.js")
+            .then(({ findService }) => findService(type, name))
             .then((urls) => {
                 socket.connect(urls).then((connected) => {
                     if (!connected) sendToEditor("socket-failed");
@@ -266,10 +245,10 @@ export function setupIpcHandlers({
     });
     //#endregion
 
-    ipcMain.on("get-store", (evt, key) => {
-        evt.returnValue = getStore().get(key);
+    ipcMain.handle("get-store", async (evt, key) => {
+        return (await getStore()).get(key);
     });
-    ipcMain.on("set-store", (evt, key, value) => {
-        getStore().set(key, value);
+    ipcMain.on("set-store", async (evt, key, value) => {
+        (await getStore()).set(key, value);
     });
 }

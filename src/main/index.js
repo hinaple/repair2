@@ -2,7 +2,6 @@ import { app, shell, BrowserWindow, Menu, dialog, ipcMain } from "electron";
 import { join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
 import fs, { readdir } from "fs/promises";
-import Store from "electron-store";
 
 import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
@@ -10,7 +9,6 @@ import ProjectFileManager from "./projectFileManager";
 import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "./screenManager";
 import { checkVscodeInstalled } from "./vscodeUtils.js";
 import { afterSplashClose, closeSplash, sendStartupInfo, showSplash } from "./splash.js";
-import { findService } from "./communication/bonjour.js";
 import { setupIpcHandlers } from "./ipcHandlers.js";
 import {
     getIsSuppressing,
@@ -24,7 +22,7 @@ import { PluginManager } from "./plugin/pluginManager.js";
 import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
 import { dataDir, assetDir, pluginDir, styleDir, templateDir } from "./dirs.js";
-import { createHmr } from "./hmrs.js";
+import { clearStore, getStore } from "./electronStore.js";
 
 /**
  * @type {BrowserWindow | null}
@@ -77,22 +75,50 @@ async function updateCss() {
     return cssCode;
 }
 
-const hmr = createHmr({
-    onHmr({ type, data }) {
-        if (type === "css") {
-            updateCss().then((css) => sendToMain("global-css", css));
-            return;
-        }
+/** @type {import("./hmrs.js").SetHmrActive | null} */
+let hmrSetter = null;
+/** @type {Promise<unknown> | null} */
+let hmrImporting = null;
 
-        if (!pluginManager) return;
-        if (data) pluginManager.updatePlugin(data, true);
-        else pluginManager.updateAllPluginInfo(false);
-    },
-    active: false,
-    styleDir,
-    pluginDir,
-    dataDir
-});
+let isHmrActive = false;
+async function setHmrActive(active) {
+    if (isHmrActive === active) return;
+    isHmrActive = active;
+
+    if (hmrImporting) await hmrImporting;
+
+    if (!hmrSetter) {
+        hmrImporting = (async () => {
+            hmrSetter = (await import("./hmrs.js")).createHmr({
+                onHmr({ type, data }) {
+                    if (type === "css") {
+                        updateCss().then((css) => sendToMain("global-css", css));
+                        return;
+                    }
+
+                    if (!pluginManager) return;
+                    if (data) pluginManager.updatePlugin(data, true);
+                    else pluginManager.updateAllPluginInfo(false);
+                },
+                styleDir,
+                pluginDir,
+                dataDir
+            });
+            return hmrSetter(isHmrActive);
+        })();
+        try {
+            return await hmrImporting;
+        } catch (err) {
+            hmrSetter = null;
+            throw err;
+        } finally {
+            hmrImporting = null;
+        }
+    }
+
+    return hmrSetter(active);
+}
+
 async function setPluginManager(isDev = false) {
     if (pluginManager) await destroyPluginManager();
     pluginManager = new PluginManager({
@@ -134,7 +160,7 @@ const projectFileManager = new ProjectFileManager(dataDir, {
             mainWindow.close();
             mainWindow = null;
         }
-        return Promise.all([hmr.stopWatching(), destroyPluginManager()]);
+        return Promise.all([setHmrActive(false), destroyPluginManager()]);
     },
     importProgress: sendStartupInfo,
     afterImport: async () => {
@@ -143,7 +169,7 @@ const projectFileManager = new ProjectFileManager(dataDir, {
         if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
         else createMainWindow();
 
-        store.clear();
+        await clearStore();
     },
     exportProgress: (progress) => {
         sendToEditor("exporting", progress);
@@ -253,7 +279,7 @@ function applyDataConfig(forceUpdate = false) {
     if (!data?.config) return;
 
     const devMode = !!data.config?.devMode;
-    hmr.setActive(devMode);
+    setHmrActive(devMode);
     if (pluginManager) pluginManager.isDev = !!data.config?.devMode;
 
     if (!mainWindow) return;
@@ -592,9 +618,8 @@ if (!app.requestSingleInstanceLock()) {
             getGlobalCss: () => cssCode,
             getMainWindow: () => mainWindow,
             getPluginManager: () => pluginManager,
-            getStore: () => store,
+            getStore,
             createEditorWindow,
-            findService,
             reportDiagnostic,
             saveData,
             sendToEditor,
@@ -604,10 +629,8 @@ if (!app.requestSingleInstanceLock()) {
         });
 
         if (is.dev) {
-            setTimeout(() => {
-                createMainWindow();
-                createEditorWindow();
-            }, 1000);
+            createMainWindow();
+            createEditorWindow();
         } else {
             createMainWindow();
         }
@@ -617,5 +640,3 @@ if (!app.requestSingleInstanceLock()) {
 app.on("window-all-closed", () => {
     app.quit();
 });
-
-const store = new Store();

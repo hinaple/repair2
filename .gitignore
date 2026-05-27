@@ -5,3 +5,4 @@ out
 .eslintcache
 *.log*
 .npm-cache/
+reporter.html

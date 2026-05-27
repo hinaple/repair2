@@ -1,14 +1,18 @@
-import { io } from "socket.io-client";
+let io = null;
+async function getIo() {
+    if (!io) io = (await import("socket.io-client")).io;
+    return io;
+}
 
-function tryToConnect(url) {
+async function tryToConnect(url) {
+    const socket = (await getIo())(url);
+
     return new Promise((res) => {
-        const socket = io(url);
-
         socket.on("connect", () => {
             res({ succeed: true, socket });
             socket.removeAllListeners();
         });
-        socket.on("connect-error", () => {
+        socket.on("connect_error", () => {
             res({ succeed: false });
             socket.removeAllListeners();
             socket.disconnect();

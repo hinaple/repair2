@@ -196,12 +196,12 @@ Communication send APIs are fire-and-forget. They do not report delivery success
 
 ```js
 ctx.store.set("my-plugin.enabled", true);
-const enabled = ctx.store.get("my-plugin.enabled");
+const enabled = await ctx.store.get("my-plugin.enabled");
 ```
 
 Use namespaced store keys to avoid collisions.
 
-`ctx.store` is backed by the app-level Electron Store. It is not project-local. Generic type parameters on `store.get<T>()` are authoring-time hints only; validate untrusted or versioned values yourself.
+`ctx.store` is backed by the app-level Electron Store. It is not project-local. `store.get<T>()` returns `Promise<T>`. Generic type parameters are authoring-time hints only; validate untrusted or versioned values yourself.
 
 ## Internal app data
 

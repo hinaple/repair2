@@ -55,6 +55,7 @@ async function getBuild() {
     if (!_build)
         _build = (
             await import(
+                /* @vite-ignore */
                 is.dev
                     ? "vite"
                     : `file://${join(root, "resources/app.asar.unpacked/node_modules/vite/dist/node/index.js")}`

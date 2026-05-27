@@ -2,8 +2,6 @@ import { app, dialog, shell } from "electron";
 import { emptyDir } from "fs-extra";
 import { join } from "path";
 import { createWriteStream } from "fs";
-import archiver from "archiver";
-import StreamZip from "node-stream-zip";
 import { readdir } from "fs/promises";
 import { closeSplash } from "./splash";
 
@@ -45,7 +43,7 @@ export default class ProjectFileManager {
             this.importing = true;
 
             const output = createWriteStream(result.filePath);
-            const archive = archiver("zip", { zlip: { level: 0 } });
+            const archive = (await import("archiver")).default("zip", { zlip: { level: 0 } });
             output.on("close", () => {
                 res(true);
                 shell.showItemInFolder(result.filePath);
@@ -84,7 +82,10 @@ export default class ProjectFileManager {
 
                 await emptyDir(this.dataDir);
 
-                const zip = new StreamZip.async({ file: filePath, storeEntries: true });
+                const zip = new (await import("node-stream-zip")).async({
+                    file: filePath,
+                    storeEntries: true
+                });
 
                 const totalEntrySize = Object.values(await zip.entries()).reduce(
                     (p, e) => p + e.size,

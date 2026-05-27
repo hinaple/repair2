@@ -1,31 +1,29 @@
-import chokidar, { FSWatcher } from "chokidar";
+import { type FSWatcher } from "chokidar";
 import path, { join } from "path";
 import { MANIFEST } from "./plugin/pluginManifest";
 import { PLUGIN_LINK } from "./plugin/pluginLinks";
+import chokidar from "chokidar";
 
 type HmrType = "css" | "plugin";
 
 const HMR_PENDING_MS = 100;
 
-let hmr: Hmr | null = null;
-export function getHmr() {
-    return hmr;
-}
+export type SetHmrActive = (active: boolean) => Promise<void[]> | void;
+
+let hmr: SetHmrActive | null = null;
 export function createHmr({
     onHmr,
-    active = false,
     styleDir,
     pluginDir,
     dataDir
 }: {
     onHmr: (data: { type: HmrType; data?: string }) => void;
-    active: boolean;
     styleDir: string;
     pluginDir: string;
     dataDir: string;
-}): Hmr {
+}): SetHmrActive {
     if (hmr) {
-        hmr.stopWatching();
+        hmr(false);
         hmr = null;
     }
 
@@ -34,11 +32,14 @@ export function createHmr({
 
     let pendingTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
+    let active = false;
+    let isOnlyCreated = true;
     function setActive(a: boolean) {
-        if (active === a) return;
+        if (!isOnlyCreated && active === a) return;
+        isOnlyCreated = false;
 
-        if (a) startWatching();
-        else stopWatching();
+        if (a) return startWatching();
+        else return stopWatching();
     }
     function sendHmrEvent(type: HmrType, data?: string) {
         const key = !data ? type : `${type}:${data}`;
@@ -56,6 +57,7 @@ export function createHmr({
     function startWatching() {
         if (active) stopWatching();
         active = true;
+
         watchers = [
             chokidar.watch(cssPath).on("change", () => {
                 sendHmrEvent("css");
@@ -86,7 +88,6 @@ export function createHmr({
         ];
     }
     function stopWatching() {
-        if (!active) return;
         active = false;
         pendingTimeouts.forEach((timeout) => clearTimeout(timeout));
         pendingTimeouts.clear();
@@ -96,12 +97,6 @@ export function createHmr({
         return Promise.all(tempWatchers.map((w) => w.close()));
     }
 
-    hmr = { setActive, sendHmrEvent, stopWatching };
-    return hmr;
+    hmr = setActive;
+    return setActive;
 }
-
-export type Hmr = {
-    setActive: (a: boolean) => void;
-    sendHmrEvent: (type: HmrType, data?: string) => void;
-    stopWatching: () => Promise<void[]> | void;
-};

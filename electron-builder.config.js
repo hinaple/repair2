@@ -4,7 +4,7 @@ import { join, resolve } from "path";
 /**
  * @return {Promise<import("electron-builder").Configuration>}
  */
-export default async function () {
+export default async function (...attr) {
     const viteDependencies = Object.keys(
         JSON.parse(await fs.readFile(resolve("node_modules/vite/package.json"), "utf8"))
             .dependencies

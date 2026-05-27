@@ -184,7 +184,7 @@ export interface CommunicationApi {
 
 export interface StoreApi {
     /** Type parameter is an authoring-time hint only; runtime values are not validated. */
-    get<T = unknown>(key: string): T;
+    get<T = unknown>(key: string): Promise<T>;
     set(key: string, value: unknown): void;
 }
 
