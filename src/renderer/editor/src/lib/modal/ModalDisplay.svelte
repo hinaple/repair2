@@ -46,7 +46,7 @@
                     {@const af = f.autofocus && autofocus}
                     <div
                         class={["field", f.type ?? "input"]}
-                        onclick={f.type === "checkbox" && (() => (values[i] = !values[i]))}
+                        onclick={() => f.type === "checkbox" && (values[i] = !values[i])}
                     >
                         <span class="label">{f.label}</span>
                         {#if f.type === "checkbox"}

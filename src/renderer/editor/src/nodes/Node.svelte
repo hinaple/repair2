@@ -258,6 +258,7 @@
         border-radius: 10px;
         left: 0;
         top: 0;
+        background-color: var(--w-o8);
     }
     .head {
         color: #fff;
