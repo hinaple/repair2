@@ -3,7 +3,17 @@ import { PluginInfo } from "./type";
 import { join } from "path";
 import { builtinModules } from "module";
 import { is } from "@electron-toolkit/utils";
-import { root } from "../dirs";
+import childProcess from "node:child_process";
+
+if (!is.dev) {
+    const originalSpawn = childProcess.spawn;
+    childProcess.spawn = function patchedSpawn(command: string, ...params: any): any {
+        if (typeof command === "string" && command.toLowerCase().endsWith("esbuild.exe"))
+            command = command.replace("app.asar", "app.asar.unpacked");
+        //@ts-ignore
+        return originalSpawn(command, ...params);
+    };
+}
 
 function styleInjectPlugin(pluginInfo: PluginInfo): Plugin {
     const styleKey = `${pluginInfo.type}:${pluginInfo.name}`;
@@ -52,15 +62,7 @@ async function getSveltePlugin() {
 type Build = typeof import("vite").build;
 let _build: Build | null = null;
 async function getBuild() {
-    if (!_build)
-        _build = (
-            await import(
-                /* @vite-ignore */
-                is.dev
-                    ? "vite"
-                    : `file://${join(root, "resources/app.asar.unpacked/node_modules/vite/dist/node/index.js")}`
-            )
-        ).build as Build;
+    if (!_build) _build = (await import("vite")).build as Build;
     return _build;
 }
 export async function buildPlugin(

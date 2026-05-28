@@ -203,9 +203,11 @@ export function subscribePluginHMR(type, pluginName, callback) {
     };
 
     let unsubscribed = false;
+    console.log(type, pluginName);
     getPlugin(type, pluginName)
         .then((pluginApi) => {
-            if (!unsubscribed) callback({ api: pluginApi, info: plugins[type][pluginName].info });
+            if (!unsubscribed && pluginApi)
+                callback({ api: pluginApi, info: plugins[type][pluginName].info });
         })
         .catch((err) => reportPluginException(source, "Plugin HMR initial callback failed.", err))
         .finally(() => {

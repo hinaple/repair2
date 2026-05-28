@@ -1,24 +1,27 @@
 import fs from "fs/promises";
 import { join, resolve } from "path";
 
+// async function getViteDependenciesDeps(modules = new Set(), currentModule = "vite") {
+//     try {
+//         if (modules.has(currentModule)) return;
+//         modules.add(currentModule);
+
+//         const currentDependencies = Object.keys(
+//             JSON.parse(
+//                 await fs.readFile(join("node_modules", currentModule, "package.json"), "utf8")
+//             ).dependencies
+//         );
+//         await Promise.all(
+//             currentDependencies.map((module) => getViteDependenciesDeps(modules, module))
+//         );
+//         return modules;
+//     } catch {}
+// }
+
 /**
  * @return {Promise<import("electron-builder").Configuration>}
  */
 export default async function (...attr) {
-    const viteDependencies = Object.keys(
-        JSON.parse(await fs.readFile(resolve("node_modules/vite/package.json"), "utf8"))
-            .dependencies
-    );
-    const asarUnpackModules = [];
-    await Promise.all(
-        viteDependencies.map((d) =>
-            fs
-                .access(join("node_modules", d))
-                .then(() => asarUnpackModules.push(d))
-                .catch(() => {})
-        )
-    );
-
     return {
         appId: "com.repair2.app",
         productName: "repair2",
@@ -38,11 +41,7 @@ export default async function (...attr) {
             "!templates/*",
             "!vitePlugins/*"
         ],
-        asarUnpack: [
-            "resources/**",
-            "node_modules/vite/**",
-            ...asarUnpackModules.map((m) => `node_modules/${m}/**`)
-        ],
+        asarUnpack: ["resources/**"],
         win: {
             executableName: "repair2",
             icon: "resources/logo.png"

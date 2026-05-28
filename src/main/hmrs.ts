@@ -48,7 +48,7 @@ export function createHmr({
         pendingTimeouts.set(
             key,
             setTimeout(() => {
-                console.log(`===HMR: ${key}===`);
+                console.log(`===CHOKIDAR HMR: ${key}===`);
                 onHmr({ type, data });
                 pendingTimeouts.delete(key);
             }, HMR_PENDING_MS)

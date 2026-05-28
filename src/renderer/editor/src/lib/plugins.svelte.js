@@ -7,14 +7,17 @@ export const plugins = $state(Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}]
 
 export async function requestUpdatePluginList() {
     updatePlugins(await ipcRenderer.invoke("plugin:get-list"));
+    console.log(plugins);
 }
 requestUpdatePluginList();
 
 ipcRenderer.on("plugin:list", (_, p) => {
+    console.log(p);
     updatePlugins(p);
 });
 ipcRenderer.on("plugin:update", (_, { info, previous }) => {
     if (previous) delete plugins[previous.type][previous.name];
+    console.log(info);
 
     plugins[info.type][info.name] = { ...info };
     if (!info.ready)

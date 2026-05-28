@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { join } from "node:path";
+import { join } from "path";
 import { PLUGIN_TYPES, PluginManifest, RawManifest } from "./type";
 
 export const MANIFEST = "manifest.json";

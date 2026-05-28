@@ -98,7 +98,7 @@ async function setHmrActive(active) {
 
                     if (!pluginManager) return;
                     if (data) pluginManager.updatePlugin(data, true);
-                    else pluginManager.updateAllPluginInfo(false);
+                    else pluginManager.updateAllPluginInfo(true);
                 },
                 styleDir,
                 pluginDir,

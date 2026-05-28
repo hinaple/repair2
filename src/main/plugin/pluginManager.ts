@@ -407,7 +407,7 @@ export class PluginManager {
                             if (evt.code !== "END" || tryResolve()) return;
 
                             data.error = null;
-                            console.log(`HMR: ${pluginInfo.name}`);
+                            console.log(`VITE HMR: ${pluginInfo.name}`);
                             if (i === 1) await this.mainRuntime.updatePlugin(pluginInfo, true);
                             this.callOnHmr(pluginInfo);
                         });
