@@ -95,6 +95,35 @@ repair-element {
     display: block;
 }
 
+repair-asset {
+    display: block;
+    overflow: hidden;
+
+    object-fit: contain;
+    object-position: center;
+}
+
+repair-asset > :is(img, video) {
+    display: block;
+    object-fit: inherit;
+    object-position: inherit;
+
+    width: 100%;
+    height: 100%;
+}
+repair-asset[anchor="width"] > :is(img, video) {
+    width: 100%;
+    height: auto;
+}
+repair-asset[anchor="height"] > :is(img, video) {
+    width: auto;
+    height: 100%;
+}
+repair-asset[anchor="none"] > :is(img, video) {
+    width: auto;
+    height: auto;
+}
+
 repair-input {
     display: flex;
     flex-direction: row;

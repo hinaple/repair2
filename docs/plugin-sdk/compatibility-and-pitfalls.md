@@ -26,6 +26,12 @@ The schema describes the public manifest shape for editor support. Current runti
 
 See [Manifest](./manifest.md) for manifest fields and defaults.
 
+## Plugin names are global
+
+REPAIR2 identifies plugins by the manifest `name`, not by the directory name. Names should be unique across all plugin types.
+
+If multiple plugin manifests use the same name, REPAIR2 reports a warning and does not guarantee which one will be used. Treat duplicate plugin names as a project error, even when the duplicate plugins have different types.
+
 ## `runtime` with `main` is still `runtime`
 
 The manifest type is still `runtime`; the `main` property adds a main-process entry.
@@ -67,6 +73,10 @@ Renderer `activate()` is a runtime lifecycle event. It is not a guarantee that R
 The renderer runtime does not promise a specific instance creation moment. Avoid module-level mutable variables for plugin lifetime state. Prefer activation-local state, state stored on the exported object instance, or runtime-owned storage such as `ctx.store`.
 
 Runtime plugins can be deactivated and activated again when runtime plugin config changes, project data resets runtime plugins, or HMR reloads the plugin. Runtime plugin payload comparison is shallow, so update payload objects immutably when you expect a runtime plugin to restart.
+
+REPAIR2 tries to keep already-running plugins available when a rebuild, import, or HMR update fails. A failed update can leave the previous imported plugin instance in use so the play renderer can continue running. Plugin code should still report expected failures through `ctx.logger`, because production-style play can avoid interrupting the user with dialogs for plugin runtime errors.
+
+For project-level loading, linked plugin, and HMR details, see [Loading and HMR](./loading-and-hmr.md).
 
 ## Function plugins are objects
 
@@ -161,19 +171,29 @@ ctx.lifecycle.onDispose(() => clearInterval(interval));
 
 Function and transition plugins are usually short-lived. Avoid long-lived subscriptions there unless you clean them up explicitly.
 
-Element and frame plugins are replaced during HMR. Their previous context is disposed when the replacement is mounted. Mount functions may also return a cleanup function. REPAIR2 calls it during plugin unmount.
+If a plugin needs persistent state or long-lived coordination, prefer a runtime, element, or frame plugin. Function and transition plugins should usually finish their work and release resources quickly.
+
+Element and frame plugins are replaced during HMR. Their previous mount cleanup and context disposal run before the replacement mount. Mount functions may also return a cleanup function. REPAIR2 calls it during plugin unmount.
+
+For element plugins, REPAIR2 clears the host `target` before mounting the plugin. Do not rely on DOM children from a previous mount still being present.
 
 For frame plugins, `children` contains runtime-owned component element nodes. Append it to the correct initial location, but avoid side effects on those child nodes. Do not destroy them, store them for later mutation, or treat them as plugin-owned DOM.
 
+During frame replacement, the previous frame cleanup runs before the new frame mount places the current `children` fragment. Frame cleanup should use direct references to the listeners, resources, and DOM created by that frame plugin, not queries against current child element placement.
+
 Renderer runtime plugins may also return a disposer from `activate()` or provide a `dispose` property. Runtime main entries should use `ctx.lifecycle.onDispose` or return a disposer from `activate()`.
 
-## Component handles are snapshots
+## Component handles are live handles
 
-Component and resource handles describe current runtime state. They are useful for decisions and rendering, but they are not permanent project data ownership.
+Component handles are stable frozen objects with getters that read current runtime state. Keep a handle when you want to operate on the same runtime component later.
 
-For ongoing UI, subscribe to changes. For one-time operations, read the handle close to the operation.
+Getter return values that are objects are snapshots. For example, mutating `handle.position.x.distance` does not move the component. Use handle methods such as `setPosition()` or `setPositionBy()` for runtime changes.
 
-The same rule applies to resource handles. They describe current runtime state, not a stable ownership model.
+`ctx.components.subscribe()` observes component creation, removal, and replacement. It does not run when a live handle changes visibility, style, z-index, or position.
+
+`handle.node` exposes the live component DOM node. Use it only when the handle methods cannot express the behavior; direct DOM mutation can be overwritten by runtime updates.
+
+Resource handles still describe current runtime state. Read them close to the operation that needs them.
 
 ## Event scope matters
 

@@ -85,45 +85,62 @@ export interface ServiceApi {
 
 export interface ComponentApi {
     list(): ComponentHandle[];
-    get(id: string): ComponentHandle | null;
+    get(aliasOrId?: string): ComponentHandle | undefined;
     subscribe(listener: (components: ComponentHandle[]) => void): Disposer;
-    remove(id: string, options?: ComponentRemoveOptions): void;
-    clear(options?: ComponentClearOptions): void;
-    /** Advanced mutation API. Prefer explicit setters when possible. */
-    modify(id: string, key: string, value: unknown): void;
-    setVisible(id: string, visible: boolean): void;
-    setZIndex(id: string, zIndex: number): void;
-    /** Sets the runtime override as a CSS declaration string. */
-    setStyle(id: string, style: string): void;
+    clear(ignoreUnbreakable?: boolean): void;
 }
 
-export interface ComponentRemoveOptions {
-    ignoreUnbreakable?: boolean;
+export type ComponentPositionAxis = "x" | "y";
+
+export type ComponentPositionOrigin = "start" | "center" | "end";
+
+export interface ComponentPositionAxisState {
+    distance: number | null;
+    origin: ComponentPositionOrigin;
+    relative: boolean;
 }
 
-export interface ComponentClearOptions {
-    ignoreUnbreakable?: boolean;
+export interface ComponentPositionState {
+    x: ComponentPositionAxisState;
+    y: ComponentPositionAxisState;
 }
+
+export interface ComponentPositionAxisOptions {
+    distance?: number | null;
+    origin?: ComponentPositionOrigin;
+    relative?: boolean;
+}
+
+export type ComponentSetPositionOptions = Partial<
+    Record<ComponentPositionAxis, number | string | ComponentPositionAxisOptions>
+>;
+
+export type ComponentSetPositionByOptions = Partial<Record<ComponentPositionAxis, number>>;
 
 /**
- * Snapshot handle for a live runtime component.
- * Do not treat this as permanent project data ownership.
+ * Stable handle for a live runtime component.
+ * The handle object is frozen, while getters read the current runtime state.
  */
 export interface ComponentHandle {
-    id: string;
-    realId: string;
-    alias: string | null;
-    visible: boolean;
-    zIndex: number | null;
-    /** Live component DOM element. Prefer context APIs for stateful changes. */
-    element: HTMLElement;
-    meta: ComponentMeta;
-}
-
-export interface ComponentMeta extends Record<string, unknown> {
-    unbreakable: boolean;
-    hasFrame: boolean;
-    elementCount: number;
+    readonly id: string;
+    readonly realId: string;
+    readonly alias: string | null;
+    readonly visible: boolean;
+    readonly zIndex: number | null;
+    readonly position: ComponentPositionState;
+    readonly destroyed: boolean;
+    readonly unbreakable: boolean;
+    readonly hasFrame: boolean;
+    readonly elementCount: number;
+    /** Live component DOM node. Prefer handle methods for stateful changes. */
+    readonly node: HTMLElement;
+    remove(ignoreUnbreakable?: boolean): void;
+    setPosition(position: ComponentSetPositionOptions): void;
+    setPositionBy(position: ComponentSetPositionByOptions): void;
+    setVisible(visible: boolean): void;
+    setZIndex(zIndex: number): void;
+    /** Sets the runtime override as a CSS declaration string. */
+    setStyle(style?: string): void;
 }
 
 export interface VariableApi {

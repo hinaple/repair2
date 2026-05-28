@@ -11,3 +11,4 @@ This guide covers the public authoring surface for REPAIR2 plugins. Keep the SDK
 - [Context](./context.md)
 - [Runtime main](./runtime-main.md)
 - [Compatibility and pitfalls](./compatibility-and-pitfalls.md)
+- [Loading and HMR](./loading-and-hmr.md)

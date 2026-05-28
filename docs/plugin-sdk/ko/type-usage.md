@@ -1,10 +1,10 @@
-# Type usage
+# 타입 사용법
 
-The SDK is designed so that the types are the reference. The docs show the common shapes and the important rules. Your editor should show the exact fields available on `ctx`, `attributes`, `main`, and `renderer`.
+SDK는 타입이 기준이 되도록 설계되어 있습니다. 문서는 일반적인 형태와 중요한 규칙을 보여줍니다. 에디터는 `ctx`, `attributes`, `main`, `renderer`에서 사용할 수 있는 정확한 필드를 보여줘야 합니다.
 
-## JavaScript with JSDoc
+## JSDoc을 사용하는 JavaScript
 
-Use a JSDoc type import to keep the plugin shape visible next to the code:
+JSDoc type import를 사용하면 코드 옆에서 플러그인 형태를 확인할 수 있습니다.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ message: string }>} */
@@ -15,9 +15,9 @@ export default {
 };
 ```
 
-This keeps the runtime file plain JavaScript while documenting the expected export shape.
+이 방식은 런타임 파일을 plain JavaScript로 유지하면서 기대되는 export shape를 문서화합니다.
 
-For longer generic types, define local typedefs first:
+긴 generic type은 먼저 local typedef를 정의하세요.
 
 ```js
 /** @typedef {{ message: string }} Attr */
@@ -33,7 +33,7 @@ export default {
 
 ## TypeScript
 
-In TypeScript, import types directly:
+TypeScript에서는 타입을 직접 import하세요.
 
 ```ts
 import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
@@ -53,7 +53,7 @@ export default plugin;
 
 ## Attribute payloads
 
-`Attributes` means the payload object passed to the plugin at runtime. It is not the manifest's `attributes` declaration list.
+`Attributes`는 런타임에서 플러그인에 전달되는 payload 객체를 의미합니다. 매니페스트의 `attributes` declaration list가 아닙니다.
 
 ```ts
 type Attr = {
@@ -62,13 +62,13 @@ type Attr = {
 };
 ```
 
-Use a small local `Attr` type for each plugin or each call shape.
+각 플러그인 또는 각 call shape마다 작은 local `Attr` 타입을 사용하세요.
 
 ## Runtime steps
 
-Runtime step methods are normal methods on the runtime plugin object. The method name must match a step declared in the plugin manifest.
+Runtime step method는 runtime plugin 객체의 일반 method입니다. Method name은 플러그인 매니페스트에 선언된 step과 일치해야 합니다.
 
-Use `RuntimeStep` when you want type checking for step methods:
+Step method type checking이 필요하면 `RuntimeStep`을 사용하세요.
 
 ```ts
 import type { RuntimeExport, RuntimeStep } from "@fainthit/repair2-plugin-sdk";
@@ -92,11 +92,11 @@ const plugin: RuntimeExport<Attr, {}, {}, Steps> = {
 export default plugin;
 ```
 
-In other words, the manifest declares what the app can call, and the type tells your editor what the method receives.
+다시 말해, 매니페스트는 앱이 호출할 수 있는 것을 선언하고, 타입은 그 method가 무엇을 받는지 에디터에 알려줍니다.
 
 ## Runtime main bridge
 
-For runtime plugins with a main entry, define shared method map types and use them on both sides.
+Main entry가 있는 runtime plugin은 공유 method map type을 정의하고 양쪽에서 사용하세요.
 
 ```ts
 // src/plugin-types.ts
@@ -153,27 +153,27 @@ const main: RuntimeMainExport<Attr, Main, Renderer> = {
 export default main;
 ```
 
-The two files are not linked automatically by TypeScript. The shared method map is what gives both sides completion.
+두 파일은 TypeScript에 의해 자동으로 연결되지 않습니다. 공유 method map이 양쪽에 completion을 제공합니다.
 
-Renderer calls to `main` are typed as promises:
+Renderer가 `main`을 호출하면 promise로 타입이 잡힙니다.
 
 ```ts
 const value = await main?.foo("hello");
 ```
 
-Main calls to `renderer` are typed as `void`:
+Main이 `renderer`를 호출하면 `void`로 타입이 잡힙니다.
 
 ```ts
 renderer.bar(123);
 ```
 
-That matches the current runtime bridge behavior.
+이는 현재 runtime bridge 동작과 일치합니다.
 
-See [Runtime main](./runtime-main.md) for the full bridge behavior.
+전체 bridge 동작은 [Runtime main](./runtime-main.md)을 참고하세요.
 
 ## Factory exports
 
-Runtime, function, transition, and runtime main entries may export either an object or a factory that returns the object.
+Runtime, function, transition, runtime main entry는 객체 또는 객체를 반환하는 factory를 export할 수 있습니다.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").RuntimeExport} */
@@ -184,7 +184,7 @@ export default () => ({
 });
 ```
 
-Function and transition factories follow the same rule:
+Function 및 transition factory도 같은 규칙을 따릅니다.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
@@ -195,7 +195,7 @@ export default () => ({
 });
 ```
 
-For function plugins, the object must have a `function` property. A bare function as the default export is not part of the contract.
+Function plugin에서 객체는 반드시 `function` property를 가져야 합니다. Bare function default export는 contract에 포함되지 않습니다.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
@@ -204,7 +204,7 @@ export default () => ({
 });
 ```
 
-Runtime main entries can also be factories:
+Runtime main entry도 factory일 수 있습니다.
 
 ```ts
 import type { RuntimeMainExport } from "@fainthit/repair2-plugin-sdk";
@@ -218,11 +218,11 @@ const main: RuntimeMainExport = () => ({
 export default main;
 ```
 
-Element and frame plugins are different. They export mount functions, because REPAIR2 owns the host elements and calls the plugin when the host should be populated.
+Element 및 frame plugin은 다릅니다. REPAIR2가 host element를 소유하고 host가 채워져야 할 때 플러그인을 호출하므로 mount function을 export합니다.
 
-Renderer runtime, function, and transition factories may be async when the SDK type allows it. Runtime main factories should return the main export object synchronously.
+Renderer runtime, function, transition factory는 SDK 타입이 허용하는 곳에서는 async일 수 있습니다. Runtime main factory는 main export object를 동기적으로 반환해야 합니다.
 
-## Element and frame types
+## Element 및 frame types
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FrameExport<{ title?: string }>} */
@@ -245,13 +245,13 @@ export default function mount({ attributes, ctx }, { target, children, showIntro
 }
 ```
 
-Use `ElementExport` for element plugins and `FrameExport` for frame plugins. Element mount functions receive `{ target, dispatchEvent }`; frame mount functions receive `{ target, children, showIntro }`.
+Element plugin에는 `ElementExport`, frame plugin에는 `FrameExport`를 사용하세요. Element mount function은 `{ target, dispatchEvent }`를 받고, frame mount function은 `{ target, children, showIntro }`를 받습니다.
 
-Frame `children` is a runtime-owned `DocumentFragment`. Append it during initial mount, but do not destroy the child nodes, keep them for later mutation, or treat them as plugin-owned DOM. Cleanup should only release resources created by the frame plugin.
+Frame `children`은 runtime-owned `DocumentFragment`입니다. Initial mount 중 append하되 child node를 destroy하거나, 나중에 mutate하기 위해 보관하거나, plugin-owned DOM으로 취급하지 마세요. Cleanup은 frame plugin이 만든 resource만 release해야 합니다.
 
 ## Context
 
-The context object is injected by REPAIR2. You should not construct it yourself.
+Context 객체는 REPAIR2가 주입합니다. 직접 만들면 안 됩니다.
 
 ```ts
 import type { PluginContext } from "@fainthit/repair2-plugin-sdk";
@@ -261,8 +261,8 @@ function logPlugin(ctx: PluginContext) {
 }
 ```
 
-Prefer stable context APIs. `ctx.app.internal.getAppData()` is available as an escape hatch, but it exposes internal mutable app data and is not a stable public contract.
+Stable context API를 선호하세요. `ctx.app.internal.getAppData()`는 escape hatch로 사용할 수 있지만, internal mutable app data를 노출하며 안정적인 public contract가 아닙니다.
 
-Use `PluginContext` for helpers that can receive any plugin context. Use `RuntimeContext`, `ElementContext`, `FrameContext`, `FunctionContext`, or `TransitionContext` when the helper is tied to a specific plugin type.
+어떤 plugin context든 받을 수 있는 helper에는 `PluginContext`를 사용하세요. Helper가 특정 플러그인 타입에 묶여 있다면 `RuntimeContext`, `ElementContext`, `FrameContext`, `FunctionContext`, `TransitionContext`를 사용하세요.
 
-See [Context](./context.md) for the context API guide.
+Context API 가이드는 [Context](./context.md)를 참고하세요.

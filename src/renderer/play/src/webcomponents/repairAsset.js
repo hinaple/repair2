@@ -6,11 +6,11 @@ export default class RepairAsset extends HTMLElement {
 
     constructor() {
         super();
-        RepairAsset.observedAttributes.forEach((attr) => (this[attr] = this.getAttribute(attr)));
+        RepairAsset.observedAttributes.forEach((attr) => this.attr(attr, this.getAttribute(attr)));
     }
     setResourceElement() {
         const prevResourceElement = this.resourceElement;
-        this.resource = getResourceByTitle(this.title);
+        this.resource = getResourceByTitle(this.attr("title"));
         if (!this.resource) {
             this.resourceElement = null;
             delete this.amplifier;
@@ -18,13 +18,13 @@ export default class RepairAsset extends HTMLElement {
         }
         this.resourceElement = genElement(
             this.resource,
-            this.isTrueAttr(this.clone),
-            this.isTrueAttr(this.notpreload)
+            this.isTrueAttr(this.attr("clone")),
+            this.isTrueAttr(this.attr("notpreload"))
         );
         if (prevResourceElement !== this.resourceElement) delete this.amplifier;
     }
     attributeChangedCallback(attr, oldVal, newVal) {
-        this[attr] = newVal;
+        this.attr(attr, newVal);
         if (!this.isConnected) return;
         if (attr === "title" && oldVal?.trim?.() !== newVal?.trim?.()) {
             this.setResourceElement();
@@ -47,14 +47,19 @@ export default class RepairAsset extends HTMLElement {
     applyVideo() {
         if (!this.resourceElement || this.resource.fileType !== "video") return;
 
-        const vol = +(this.volume ?? 100) / 100;
+        const vol = +(this.attr("volume") ?? 1);
         if (this.amplifier) this.amplifier.amplify(vol);
         else if (vol > 1) this.amplifier = amplifyVideo(this.resourceElement, vol);
         else this.resourceElement.volume = vol;
-        this.resourceElement.loop = this.isTrueAttr(this.loop);
+        this.resourceElement.loop = this.isTrueAttr(this.attr("loop"));
     }
     isTrueAttr(value) {
         return typeof value === "string" && value !== "false";
+    }
+    attr(...params) {
+        if (!this._attr) this._attr = {};
+        if (params.length === 1) return this._attr[params[0]];
+        if (params.length === 2) this._attr[params[0]] = params[1];
     }
     connectedCallback() {
         this.setResourceElement();

@@ -1,6 +1,6 @@
 {
     "name": "@fainthit/repair2-plugin-sdk",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "Type-first authoring contracts for REPAIR2 plugins.",
     "type": "module",
     "main": "./src/index.js",

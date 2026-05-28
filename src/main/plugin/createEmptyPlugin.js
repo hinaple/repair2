@@ -80,6 +80,7 @@ export async function createEmptyPlugin(
     };
     const pkg = {
         name,
+        type: "module",
         devDependencies: {
             [SDK_NAME]: PLUGIN_SDK_VERSION,
             ...(manifest.svelte ? { svelte: __SVELTE_VERSION__ } : null)

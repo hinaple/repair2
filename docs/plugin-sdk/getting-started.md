@@ -19,7 +19,7 @@ Your plugin package should usually be an ES module package. The version range sh
     "name": "my-plugin",
     "type": "module",
     "devDependencies": {
-        "@fainthit/repair2-plugin-sdk": "^0.2.0"
+        "@fainthit/repair2-plugin-sdk": "^0.2.2"
     }
 }
 ```
@@ -34,6 +34,8 @@ export default {
     }
 };
 ```
+
+Plugins created by the REPAIR2 editor include this dependency for you. The editor may also place its bundled SDK copy under the new plugin's `node_modules` directory so editor-created plugins work without a separate install step.
 
 ## Plugin directory
 
@@ -122,6 +124,8 @@ See [Manifest](./manifest.md) for the full manifest guide.
 REPAIR2 owns the plugin build and load path. It reads the manifest, builds the declared entry with Vite, then imports the built JavaScript output. In development mode, plugin changes can trigger hot replacement.
 
 For normal plugins, the default source entry is `src/index.js` and the default output directory is `dist`. For runtime plugins with `main`, the default renderer entry is `src/renderer/index.js`, the default renderer output is `dist/renderer`, the default main entry is `src/main/index.js`, and the default main output is `dist/main`.
+
+The source directory is needed while authoring or rebuilding a plugin. A project can still run from built plugin output when the original source directory is not present. See [Loading and HMR](./loading-and-hmr.md) for the deeper project loading, linked plugin, and hot-reload behavior.
 
 Your plugin should export the shape that matches its manifest type:
 

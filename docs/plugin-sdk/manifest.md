@@ -2,7 +2,7 @@
 
 Every plugin directory has a `manifest.json` file. REPAIR2 reads this file to decide what to build and how to load the plugin.
 
-Manifest files are JSON. JavaScript and TypeScript manifest files are not part of the runtime contract.
+Manifest files are JSON. JavaScript and TypeScript manifest files are not supported yet, but support is planned for a future release.
 
 ## Schema
 
@@ -31,7 +31,9 @@ The schema describes the public manifest shape. Current runtime loading does not
 }
 ```
 
-`name` is the plugin id. Scaffolded plugin names are normalized to lowercase kebab-case. The schema documents the recommended public shape; current runtime loading only requires a non-empty name.
+`name` is the plugin id. REPAIR2 identifies plugins by the manifest name, not by the directory name. Plugin names should be globally unique across all plugin types. If two manifests use the same name, REPAIR2 reports a duplicate-name warning and does not guarantee which plugin will be selected.
+
+Scaffolded plugin names are normalized to lowercase kebab-case. The schema documents the recommended public shape; current runtime loading requires a non-empty `name` and a known plugin `type`.
 
 `description` is an optional human-readable plugin description.
 

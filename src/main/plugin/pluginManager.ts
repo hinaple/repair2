@@ -107,11 +107,8 @@ export class PluginManager {
         if (isDev === this._isDev) return;
 
         this._isDev = isDev;
-        if (this._isDev) {
-            this.plugins.forEach(({ info }) => {
-                if (!info.linked || info.linked.linked) this.buildPlugin(info.name, true);
-            });
-        } else this.closeAllWatchers();
+        if (this._isDev) this.updateAllPluginInfo(true);
+        else this.closeAllWatchers();
     }
     closeAllWatchers() {
         return Promise.all(

@@ -80,6 +80,10 @@ export function createHmr({
                 .on("unlinkDir", (p) => {
                     console.log("UNLINKED DIR: ", p);
                     sendHmrEvent("plugin");
+                })
+                .on("addDir", (p) => {
+                    console.log("ADDED DIR: ", p);
+                    sendHmrEvent("plugin");
                 }),
             chokidar.watch(join(dataDir, PLUGIN_LINK)).on("change", (p) => {
                 sendHmrEvent("plugin");

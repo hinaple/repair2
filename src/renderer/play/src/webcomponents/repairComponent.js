@@ -1,8 +1,11 @@
 import RepairElement from "./repairElement";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
-import { reportPluginException } from "../lib/plugin/pluginReporter";
 import { pluginAppended } from "../lib/plugin/pluginStyles";
 import { subscribePluginMount } from "../lib/plugin/pluginMount";
+import { removeComponent } from "../lib/components";
+import { reportPluginException } from "../lib/plugin/pluginReporter";
+
+import Coord from "@classes/coord";
 
 function getComponentIdentity(componentData) {
     return {
@@ -21,16 +24,24 @@ function getFrameIdentity(framePlugin) {
 }
 
 export default class RepairComponent extends HTMLElement {
+    /**
+     * @param {import("@classes/component.svelte").default} componentData
+     * @param {boolean} showIntro
+     */
     constructor(componentData, showIntro = true) {
         super();
 
         this.componentData = componentData;
 
+        this.position = new Coord(componentData.pos.storeData);
+
         this.visible = componentData.visible;
+        this.zIndex = componentData.zIndex ?? 0;
         this.renderStyle(componentData.style ?? "");
 
         this.componentId = componentData.aliasOrId;
         this.realId = componentData.id;
+        this.alias = componentData.alias;
 
         this.id = this.componentId;
 
@@ -87,6 +98,24 @@ export default class RepairComponent extends HTMLElement {
         return frag;
     }
 
+    setPositionBy({ x = 0, y = 0 }) {
+        if (x) this.position.x.distance = (this.position.x.distance ?? 0) + x;
+        if (y) this.position.y.distance = (this.position.y.distance ?? 0) + y;
+        this.renderStyle();
+    }
+    setPosition(coord) {
+        ["x", "y"].forEach((axis) => {
+            if (!(axis in coord)) return;
+            if (typeof coord[axis] === "number" || typeof coord[axis] === "string") {
+                this.position[axis].distance = +coord[axis];
+                return;
+            }
+            for (const key in coord[axis]) {
+                this.position[axis][key] = coord[axis][key];
+            }
+        });
+        this.renderStyle();
+    }
     setVisible(visible) {
         this.visible = visible;
         this.renderStyle();
@@ -95,13 +124,13 @@ export default class RepairComponent extends HTMLElement {
         this.zIndex = zIndex;
         this.renderStyle();
     }
-    renderStyle(styleString = this.componentData.styleString) {
-        this.styleString = styleString;
+    renderStyle(styleString = null) {
+        if (typeof styleString === "string") this.styleString = styleString;
         this.setAttribute(
             "style",
-            `position: absolute; ${this.componentData.styleString} ${this.styleString}` +
-                (this.zIndex ? `z-index: ${this.zIndex};` : "") +
-                (!this.visible ? "display: none;" : "")
+            `position: absolute; ${this.position.styleString} z-index: ${this.zIndex ?? 0}; ` +
+                (!this.visible ? "display: none;" : "") +
+                (this.styleString ?? "")
         );
     }
 
@@ -165,6 +194,60 @@ export default class RepairComponent extends HTMLElement {
         if (this.frame?.ctx) disposePluginContext(this.frame.ctx);
 
         this.elements.forEach((el) => el.destroy());
+    }
+
+    createHandle() {
+        if (this._handle) return;
+
+        const that = this;
+        this._handle = Object.freeze({
+            get id() {
+                return that.componentId;
+            },
+            get realId() {
+                return that.realId;
+            },
+            get alias() {
+                return that.componentData?.alias ?? null;
+            },
+            get visible() {
+                return !!that.visible;
+            },
+            get zIndex() {
+                return that.zIndex ?? that.componentData.zIndex ?? null;
+            },
+            get position() {
+                return that.position.storeData;
+            },
+            get destroyed() {
+                return that.destroyed;
+            },
+            get unbreakable() {
+                return !!that.unbreakable;
+            },
+            get hasFrame() {
+                return !!that.frame;
+            },
+            get elementCount() {
+                return that.elements?.length ?? 0;
+            },
+            get node() {
+                return that;
+            },
+            remove(ignoreUnbreakable = false) {
+                if (!ignoreUnbreakable && that.unbreakable) return;
+                removeComponent(that, false);
+            },
+            setPosition: (coord) => that.setPosition(coord),
+            setPositionBy: (coord) => that.setPositionBy(coord),
+            setVisible: (visible) => that.setVisible(visible),
+            setZIndex: (zIndex) => that.setZIndex(zIndex),
+            setStyle: (newStyle = "") => that.renderStyle(newStyle)
+        });
+    }
+    get handle() {
+        if (!this._handle) this.createHandle();
+        return this._handle;
     }
 }
 
