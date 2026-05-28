@@ -6,6 +6,7 @@ const SuppressingKeys = [
     { metaKey: true },
     { keycode: UiohookKey.F4, altKey: true },
     { keycode: UiohookKey.Tab, altKey: true },
+    { keycode: UiohookKey.Space, altKey: true },
     { keycode: UiohookKey.Escape, ctrlKey: true, shiftKey: true }
 ];
 
