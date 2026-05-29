@@ -71,11 +71,11 @@ Use frame plugins for component-level layout and chrome. As with element plugins
 The play runtime defines `<repair-asset>`, a custom element that lets plugins quickly render REPAIR2 image and video resources inside plugin-created DOM.
 
 ```html
-<repair-asset title="logo"></repair-asset>
-<repair-asset title="intro-video" volume="0.5" loop></repair-asset>
+<repair-asset src="logo"></repair-asset>
+<repair-asset src="intro-video" volume="0.5" loop></repair-asset>
 ```
 
-`title` selects the resource by runtime resource title. `<repair-asset>` renders the matching resource as an internal `<img>` or `<video>` element.
+`src` selects the resource by runtime resource title. `<repair-asset>` renders the matching resource as an internal `<img>` or `<video>` element.
 
 By default, REPAIR2 uses a preloaded asset when one exists. After the asset element is created, the consumed preload is removed, matching the normal "remove preload after creation" behavior for REPAIR2 assets.
 
@@ -86,9 +86,9 @@ Use `notpreload` to skip preload consumption. When `notpreload` is truthy, `<rep
 Boolean-style attributes are string-based. An attribute is treated as true when it exists and its value is not `"false"`.
 
 ```html
-<repair-asset title="logo" clone></repair-asset>
-<repair-asset title="logo" clone="false"></repair-asset>
-<repair-asset title="logo" notpreload></repair-asset>
+<repair-asset src="logo" clone></repair-asset>
+<repair-asset src="logo" clone="false"></repair-asset>
+<repair-asset src="logo" notpreload></repair-asset>
 ```
 
 For video resources, `volume` controls playback volume. The default is `1`. `0` is silent, `1` is the normal media volume, and values greater than `1` are allowed. When `volume` is greater than `1`, REPAIR2 creates an `AudioContext` and applies the value through a `GainNode`.
@@ -96,9 +96,9 @@ For video resources, `volume` controls playback volume. The default is `1`. `0` 
 `loop` toggles looping for video resources.
 
 ```html
-<repair-asset title="intro-video" volume="0"></repair-asset>
-<repair-asset title="intro-video" volume="1"></repair-asset>
-<repair-asset title="intro-video" volume="2" loop></repair-asset>
+<repair-asset src="intro-video" volume="0"></repair-asset>
+<repair-asset src="intro-video" volume="1"></repair-asset>
+<repair-asset src="intro-video" volume="2" loop></repair-asset>
 ```
 
 By default, the internal asset is stretched to the size of `<repair-asset>` using `width: 100%` and `height: 100%`.
@@ -113,10 +113,10 @@ Use `anchor` when the asset should keep its original ratio while sizing against 
 | `none`   | Uses the original asset size. |
 
 ```html
-<repair-asset title="logo" style="width: 300px; height: 200px;"></repair-asset>
-<repair-asset title="logo" anchor="width" style="width: 300px;"></repair-asset>
-<repair-asset title="logo" anchor="height" style="height: 200px;"></repair-asset>
-<repair-asset title="logo" anchor="none"></repair-asset>
+<repair-asset src="logo" style="width: 300px; height: 200px;"></repair-asset>
+<repair-asset src="logo" anchor="width" style="width: 300px;"></repair-asset>
+<repair-asset src="logo" anchor="height" style="height: 200px;"></repair-asset>
+<repair-asset src="logo" anchor="none"></repair-asset>
 ```
 
 `<repair-asset>` defaults to `object-fit: contain` and `object-position: center`. The internal `<img>` or `<video>` inherits those values, so normal CSS can adjust fit and positioning.

@@ -33,11 +33,10 @@ export async function removeComponent(component, playOutro = false, noNotify = f
 
     components.delete(component);
     sendChanges("component", "removed", component.realId);
+    if (!noNotify) notifyComponentSubscribers();
 
     if (!playOutro) await component.startTransition(component.outroTransition, true);
     gamezone.removeChild(component);
-
-    if (!noNotify) notifyComponentSubscribers();
 }
 
 export function removeComponentByAlias(alias, ignoreUnbreakable = false) {

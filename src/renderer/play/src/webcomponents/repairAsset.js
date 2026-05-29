@@ -2,7 +2,7 @@ import amplifyVideo from "../lib/amplifyVideo";
 import { genElement, getResourceByTitle } from "../lib/resources";
 
 export default class RepairAsset extends HTMLElement {
-    static observedAttributes = ["title", "clone", "notpreload", "volume", "loop"];
+    static observedAttributes = ["src", "clone", "notpreload", "volume", "loop"];
 
     constructor() {
         super();
@@ -10,7 +10,7 @@ export default class RepairAsset extends HTMLElement {
     }
     setResourceElement() {
         const prevResourceElement = this.resourceElement;
-        this.resource = getResourceByTitle(this.attr("title"));
+        this.resource = getResourceByTitle(this.attr("src"));
         if (!this.resource) {
             this.resourceElement = null;
             delete this.amplifier;
@@ -26,7 +26,7 @@ export default class RepairAsset extends HTMLElement {
     attributeChangedCallback(attr, oldVal, newVal) {
         this.attr(attr, newVal);
         if (!this.isConnected) return;
-        if (attr === "title" && oldVal?.trim?.() !== newVal?.trim?.()) {
+        if (attr === "src" && oldVal?.trim?.() !== newVal?.trim?.()) {
             this.setResourceElement();
             this.render();
         }
