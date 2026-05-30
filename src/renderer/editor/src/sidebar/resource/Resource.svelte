@@ -54,7 +54,7 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        border: solid rgba(255, 255, 255, 0.2) 1px;
+        border: solid var(--w-o2) 1px;
         box-sizing: border-box;
         border-radius: 10px;
         overflow: hidden;
@@ -65,7 +65,7 @@
         border-color: #fff;
     }
     .resource.preloaded .top {
-        background-color: #e15300;
+        background-color: var(--orange);
     }
     .top {
         display: flex;
@@ -110,7 +110,7 @@
     .select-file {
         margin-left: auto;
         padding: 5px 8px;
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: var(--w-o8);
         border-radius: 5px;
         color: #000;
         opacity: 0.8;

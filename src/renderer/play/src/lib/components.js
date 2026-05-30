@@ -1,98 +1,102 @@
 import RepairComponent from "../webcomponents/repairComponent";
-import { notifyComponentSubscribers, setComponentReader } from "./componentRegistry";
+import { reportPluginException } from "./plugin/pluginReporter";
 import { sendChanges } from "./runtimeMonitor";
 
 const gamezone = document.getElementById("gamezone");
 
-let components = [];
-setComponentReader(() => components);
+/** @type {Set<RepairComponent>} */
+let components = new Set();
 
-function getDuplicatedComponentIdx(component) {
-    return components.findIndex(
-        (c) => c.realId === component.id || c.componentId === component.aliasOrId
-    );
+const subscribers = new Set();
+
+function getDuplicatedComponent(component) {
+    return components
+        .values()
+        .find((c) => c.realId === component.id || c.componentId === component.aliasOrId);
 }
-function getComponentIdx(aliasOrId) {
-    return components.findIndex((c) => c.componentId === aliasOrId);
+export function getComponent(aliasOrId) {
+    return components.values().find((c) => c.componentId === aliasOrId);
 }
-// function findComponent(aliasOrId) {
-//     return components.find((c) => c.id === aliasOrId);
-// }
 
 export function addComponent(component) {
-    const idx = getDuplicatedComponentIdx(component);
-    removeComponentByIdx(idx, true);
-    const newComponent = new RepairComponent(component, idx === -1);
-    if (newComponent.visible) gamezone.appendChild(newComponent);
+    const duplicatedComp = getDuplicatedComponent(component);
+    removeComponent(duplicatedComp, true);
+    const newComponent = new RepairComponent(component, !duplicatedComp);
+    gamezone.appendChild(newComponent);
 
-    if (idx === -1) components.push(newComponent);
-    else components[idx] = newComponent;
+    components.add(newComponent);
     notifyComponentSubscribers();
     sendChanges("component", "created", component.id);
 }
-async function removeComponentFromDOM(component, playOutro = true) {
-    if (!component.visible) return;
+export async function removeComponent(component, playOutro = false, noNotify = false) {
+    if (!component) return;
 
-    if (playOutro) await component.startTransition(component.outroTransition, true);
+    components.delete(component);
+    sendChanges("component", "removed", component.realId);
+    if (!noNotify) notifyComponentSubscribers();
+
+    if (!playOutro) await component.startTransition(component.outroTransition, true);
     gamezone.removeChild(component);
-}
-async function removeComponentByIdx(idx, willBeReplaced = false) {
-    if (idx === -1) return;
-
-    const tempComp = components[idx];
-    if (!willBeReplaced) components.splice(idx, 1);
-    sendChanges("component", "removed", tempComp.realId);
-
-    removeComponentFromDOM(tempComp, !willBeReplaced);
-    if (!willBeReplaced) notifyComponentSubscribers();
 }
 
 export function removeComponentByAlias(alias, ignoreUnbreakable = false) {
-    const idx = getComponentIdx(alias);
-    if (!ignoreUnbreakable && components[idx]?.unbreakable) return;
-    removeComponentByIdx(idx);
+    const component = getComponent(alias);
+    if (!component || (!ignoreUnbreakable && component?.unbreakable)) return;
+    removeComponent(component);
 }
 export function clearComponents(ignoreUnbreakable = false) {
-    components
-        .filter((c) => ignoreUnbreakable || (!c?.unbreakable && c.visible))
-        .forEach((c) => removeComponentFromDOM(c));
-
-    if (ignoreUnbreakable) components = [];
-    else components = components.filter((c) => c?.unbreakable);
+    components.forEach((c) => {
+        if (!ignoreUnbreakable && c?.unbreakable) return;
+        removeComponent(c, false, true);
+        components.delete(c);
+    });
     notifyComponentSubscribers();
-    sendChanges(
-        "component",
-        "set",
-        components.map((c) => c.realId)
-    );
+    sendChanges("component", "set", [...components.values().map((c) => c.realId)]);
 }
 export function modifyComponentByAlias(alias, modifyKey, modifyValue) {
-    const idx = getComponentIdx(alias);
-    if (idx === -1) return;
+    const component = getComponent(alias);
+    if (!component) return;
 
-    const currentComp = components[idx];
-    if (modifyKey === "visible" && currentComp.visible !== modifyValue) {
-        if (modifyValue) gamezone.appendChild(currentComp);
-        else removeComponentFromDOM(currentComp);
-
-        currentComp.visible = !!modifyValue;
-        notifyComponentSubscribers();
-        return;
-    }
-    if (modifyKey === "style") {
-        currentComp.renderStyle(modifyValue || "");
-        notifyComponentSubscribers();
-        return;
-    }
-    if (modifyKey === "zIndex") {
-        currentComp.setZIndex(modifyValue);
-        notifyComponentSubscribers();
-        return;
-    }
-    currentComp[modifyKey] = modifyValue;
-    notifyComponentSubscribers();
+    if (modifyKey === "visible") component.setVisible(modifyValue);
+    else if (modifyKey === "style") component.renderStyle(modifyValue || "");
+    else if (modifyKey === "zIndex") component.setZIndex(modifyValue);
+    else if (modifyKey === "position") component.setPosition(modifyValue);
+    else if (modifyKey === "positionBy") component.setPositionBy(modifyValue);
+    else component[modifyKey] = modifyValue;
 }
 
-export function getComponents() {
-    return components;
+export function getAllComponents() {
+    return [...components];
+}
+
+export function getAllComponentHandles() {
+    return [...components.values().map((c) => c.handle)];
+}
+
+function notifyComponentSubscribers() {
+    const componentHandles = getAllComponentHandles();
+
+    subscribers.forEach(({ listener, source }) => {
+        try {
+            listener(componentHandles);
+        } catch (err) {
+            reportPluginException(source, "Component subscriber failed.", err);
+        }
+    });
+}
+
+export function subscribeComponentHandles(listener, source = null) {
+    if (typeof listener !== "function") return () => {};
+
+    const entry = { listener, source };
+    subscribers.add(entry);
+    try {
+        listener(getAllComponentHandles());
+    } catch (err) {
+        reportPluginException(source, "Component subscriber failed.", err);
+    }
+
+    return () => {
+        subscribers.delete(entry);
+    };
 }

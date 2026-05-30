@@ -27,6 +27,6 @@
         gap: 8px;
         padding: 10px 10px 12px 10px;
         border-radius: 5px;
-        border: solid rgba(255, 255, 255, 0.2) 1px;
+        border: solid var(--w-o2) 1px;
     }
 </style>

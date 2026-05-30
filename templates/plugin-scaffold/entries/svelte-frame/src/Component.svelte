@@ -1,5 +1,14 @@
 <script>
-    let { root, dispatchEvent, ctx, slot } = $props();
+    /** @typedef {import("@fainthit/repair2-plugin-sdk").FrameContext} FrameContext */
+    /** @typedef {{
+     *   attributes?: Record<string, unknown>,
+     *   ctx: FrameContext,
+     *   root: HTMLElement,
+     *   slot: (node: HTMLElement) => void
+     * }} Props */
+
+    /** @type {Props} */
+    let { root, ctx, slot } = $props();
 
     const pluginLabel = ctx ? `${ctx.plugin.id} (${ctx.plugin.type})` : "No context";
 </script>

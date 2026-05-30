@@ -23,7 +23,7 @@
     .checkbox {
         width: 18px;
         height: 18px;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
         position: relative;
         cursor: pointer;
         /* border: solid #000 1px; */

@@ -1,7 +1,70 @@
-import { build, type Plugin } from "vite";
+import type { Plugin } from "vite";
 import { PluginInfo } from "./type";
-import { join } from "path";
-import { builtinModules } from "module";
+import { is } from "@electron-toolkit/utils";
+import { dirname, posix, join } from "node:path";
+import { builtinModules } from "node:module";
+import childProcess from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { readFile } from "node:fs/promises";
+
+if (!is.dev) {
+    // patch spawn() to fix esbuild EPIPE error
+    const originalSpawn = childProcess.spawn;
+    childProcess.spawn = function patchedSpawn(command: string, ...params: any): any {
+        if (typeof command === "string" && command.toLowerCase().endsWith("esbuild.exe"))
+            command = command.replace("app.asar", "app.asar.unpacked");
+        //@ts-ignore
+        return originalSpawn(command, ...params);
+    };
+}
+
+let svResolver: null | false | Plugin = null;
+let creatingSvResolver: null | undefined | Promise<Plugin | null>;
+function getSvelteResolvePlugin(): null | Plugin | Promise<Plugin | null> {
+    if (svResolver === false) return null;
+    if (svResolver) return svResolver;
+    if (creatingSvResolver) return creatingSvResolver;
+
+    creatingSvResolver = (async () => {
+        try {
+            const sveltePkgPath = fileURLToPath(await import.meta.resolve("svelte/package.json"));
+            const svelteDir = dirname(sveltePkgPath);
+            const exports = JSON.parse(await readFile(sveltePkgPath, "utf8")).exports;
+            const svMap = new Map(
+                Object.entries(exports).map(([from, to]: [string, any]) => [
+                    posix.join("svelte", from),
+                    join(
+                        svelteDir,
+                        typeof to === "string" ? to : (to.browser ?? to.default ?? from)
+                    )
+                ])
+            );
+            if (!svMap) {
+                svResolver = false;
+                return null;
+            }
+
+            svResolver = {
+                name: "repair-svelte-resolve",
+                enforce: "pre",
+                async resolveId(source) {
+                    if (source !== "svelte" && !source.startsWith("svelte/")) return null;
+                    // console.log(`${source} -> ${svMap.get(source)}`);
+                    return svMap.get(source) ?? null;
+                }
+            };
+            return svResolver;
+        } catch (err) {
+            console.error("An error occurred while creating svelte exports map");
+            console.error(err);
+            svResolver = false;
+            return null;
+        } finally {
+            creatingSvResolver = null;
+        }
+    })();
+    return creatingSvResolver;
+}
 
 function styleInjectPlugin(pluginInfo: PluginInfo): Plugin {
     const styleKey = `${pluginInfo.type}:${pluginInfo.name}`;
@@ -47,6 +110,12 @@ async function getSveltePlugin() {
     return cachedSveltePlugin;
 }
 
+type Build = typeof import("vite").build;
+let _build: Build | null = null;
+async function getBuild() {
+    if (!_build) _build = (await import("vite")).build as Build;
+    return _build;
+}
 export async function buildPlugin(
     pluginInfo: PluginInfo,
     { pluginPath, watch = false }: { pluginPath: string; watch: boolean }
@@ -54,8 +123,14 @@ export async function buildPlugin(
     const rendererPlugins: Array<Plugin[] | Plugin> = [];
 
     const isFrameOrElement = pluginInfo.type === "element" || pluginInfo.type === "frame";
-    if (isFrameOrElement && pluginInfo.svelte) rendererPlugins.push((await getSveltePlugin())());
+    if (isFrameOrElement && pluginInfo.svelte) {
+        const svResolver = await getSvelteResolvePlugin();
+        if (svResolver) rendererPlugins.push(svResolver);
+        rendererPlugins.push((await getSveltePlugin())());
+    }
     if (isFrameOrElement) rendererPlugins.push(styleInjectPlugin(pluginInfo));
+
+    const build = await getBuild();
 
     const rendererBuild = build({
         configFile: false,
@@ -75,7 +150,6 @@ export async function buildPlugin(
                 }
             },
             outDir: join(pluginInfo.linked ? pluginInfo.path : "", pluginInfo.outDir),
-            cssCodeSplit: false,
             emptyOutDir: !watch,
             assetsInlineLimit: Infinity
         }

@@ -138,7 +138,7 @@
         transform: translateY(0);
     }
     .tab.active {
-        background: rgba(0, 0, 0, 0.8);
+        background: var(--b-o8);
         opacity: 1;
     }
     .side-bar-body {
@@ -147,7 +147,7 @@
         pointer-events: all;
         display: flex;
         flex-direction: column;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: var(--b-o8);
         flex: 1 1 auto;
         backdrop-filter: blur(4px);
     }

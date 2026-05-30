@@ -41,13 +41,34 @@ class RuntimePluginInstance {
     pluginInfo: PluginInfo;
     methods: PluginMethods;
     ctx?: Record<string, any>;
+    private reportDiagnostic?: ReportDiagnostic;
     disposers: Set<() => any> = new Set();
     active: boolean = false;
     disposed: boolean = false;
-    constructor(pluginInfo: PluginInfo, imported: ImportedPlugin, activationId: string) {
+    constructor(
+        pluginInfo: PluginInfo,
+        imported: ImportedPlugin,
+        activationId: string,
+        reportDiagnostic?: ReportDiagnostic
+    ) {
         this.activationId = activationId;
         this.pluginInfo = pluginInfo;
-        this.methods = typeof imported === "function" ? imported() : imported;
+        this.reportDiagnostic = reportDiagnostic;
+        try {
+            this.methods = typeof imported === "function" ? imported() : imported;
+        } catch (err) {
+            this.reportDiagnostic?.({
+                level: "error",
+                title: "Runtime main plugin factory failed.",
+                detail: `Plugin: ${this.pluginInfo.name}`,
+                error: err,
+                source: "plugin",
+                subject: { id: this.pluginInfo.name, type: this.pluginInfo.type },
+                dialogue: false,
+                logType: "plugin-runtime-main-factory-error"
+            });
+            throw err;
+        }
     }
     get mainMethods() {
         return Object.keys(this.methods?.main ?? {});
@@ -84,32 +105,70 @@ class RuntimePluginInstance {
                 attributes,
                 renderer
             });
-            if (typeof activeResult === "function") this.disposers.add(activeResult);
+            if (typeof activeResult === "function") this.onDispose(activeResult);
         } catch (err) {
+            this.active = false;
             this.dispose();
             throw err;
         }
     }
     callMainMethod(methodName: string, args: any[]) {
         if (this.disposed) return null;
-        return this.methods?.main?.[methodName]?.(...args);
+        try {
+            return this.methods?.main?.[methodName]?.(...args);
+        } catch (err) {
+            this.reportDiagnostic?.({
+                level: "error",
+                title: "Runtime main plugin method failed.",
+                detail: `Plugin: ${this.pluginInfo.name}\nMethod: ${methodName}`,
+                error: err,
+                source: "plugin",
+                subject: { id: this.pluginInfo.name, type: this.pluginInfo.type },
+                dialogue: false,
+                logType: "plugin-runtime-main-method-error"
+            });
+            throw err;
+        }
     }
     onDispose(disposer: () => any) {
         if (typeof disposer !== "function") return () => {};
         if (this.disposed) {
-            disposer();
+            this.safeDispose(disposer);
             return () => {};
         }
 
         this.disposers.add(disposer);
         return () => this.disposers.delete(disposer);
     }
+    private reportDisposeError(err: any) {
+        this.reportDiagnostic?.({
+            level: "error",
+            title: "Runtime main plugin disposer failed.",
+            detail: `Plugin: ${this.pluginInfo.name}`,
+            error: err,
+            source: "plugin",
+            subject: { id: this.pluginInfo.name, type: this.pluginInfo.type },
+            dialogue: false,
+            logType: "plugin-runtime-main-disposer-error"
+        });
+    }
+    private safeDispose(disposer: () => any) {
+        try {
+            const result = disposer?.();
+            if (result && typeof result.catch === "function") {
+                result.catch((err: any) => this.reportDisposeError(err));
+            }
+        } catch (err) {
+            this.reportDisposeError(err);
+        }
+    }
     dispose() {
         if (this.disposed) return;
 
         this.disposed = true;
-        this.disposers.forEach((d) => d?.());
+        const disposers = [...this.disposers];
         this.disposers.clear();
+        disposers.forEach((d) => this.safeDispose(d));
     }
 }
 
@@ -197,14 +256,37 @@ export default class MainRuntimePluginEngine {
     }
     async createInstance(pluginName: string, activationId: string) {
         let plugin = await this.getPlugin(pluginName);
-        const target = this.plugins.get(pluginName) as RuntimePluginData;
+        const target = this.plugins.get(pluginName);
+        if (!target) return null;
         if (!plugin) {
             this.disposeInstance(pluginName);
             return null;
         }
-        if (target.instance) target.instance.dispose();
-        target.instance = new RuntimePluginInstance(target.info, plugin, activationId);
+        const previous = target.instance;
+        if (previous) {
+            previous.dispose();
+            if (target.instance === previous) delete target.instance;
+        }
+        const instance = new RuntimePluginInstance(
+            target.info,
+            plugin,
+            activationId,
+            this.reportDiagnostic
+        );
+        target.instance = instance;
         return target.instance;
+    }
+    removePlugin(pluginName: string) {
+        const target = this.plugins.get(pluginName);
+        if (!target) return;
+        target.instance?.dispose();
+        this.plugins.delete(pluginName);
+    }
+    removeAllPluginExcept(exceptNames: string[]) {
+        this.plugins.keys().forEach((name) => {
+            if (exceptNames.includes(name)) return;
+            this.removePlugin(name);
+        });
     }
     disposeInstance(pluginName: string, activationId?: string) {
         const target = this.plugins.get(pluginName);
@@ -212,14 +294,42 @@ export default class MainRuntimePluginEngine {
         if (!target || !instance) return false;
         if (activationId && instance.activationId !== activationId) return false;
 
-        instance.dispose();
-        if (target.instance === instance) delete target.instance;
+        try {
+            instance.dispose();
+        } catch (err) {
+            this.reportDiagnostic?.({
+                level: "error",
+                title: "Runtime main plugin dispose failed.",
+                detail: `Plugin: ${pluginName}`,
+                error: err,
+                source: "plugin",
+                subject: { id: pluginName, type: target.info.type },
+                dialogue: false,
+                logType: "plugin-runtime-main-dispose-error"
+            });
+        } finally {
+            if (target.instance === instance) delete target.instance;
+        }
         return true;
     }
     disposeAll() {
-        this.plugins.forEach((p) => {
-            if (p.instance) p.instance.dispose();
-            delete p.instance;
+        this.plugins.forEach((p, pluginName) => {
+            try {
+                if (p.instance) p.instance.dispose();
+            } catch (err) {
+                this.reportDiagnostic?.({
+                    level: "error",
+                    title: "Runtime main plugin dispose failed.",
+                    detail: `Plugin: ${pluginName}`,
+                    error: err,
+                    source: "plugin",
+                    subject: { id: pluginName, type: p.info.type },
+                    dialogue: false,
+                    logType: "plugin-runtime-main-dispose-error"
+                });
+            } finally {
+                delete p.instance;
+            }
         });
     }
 }

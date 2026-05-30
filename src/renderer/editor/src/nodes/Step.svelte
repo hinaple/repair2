@@ -116,7 +116,7 @@
         box-sizing: border-box;
     }
     .step.activated {
-        background-color: #e15300;
+        background-color: var(--orange);
         color: #fff;
     }
     .handle {

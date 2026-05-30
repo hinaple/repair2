@@ -7,17 +7,31 @@ export const plugins = $state(Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}]
 
 export async function requestUpdatePluginList() {
     updatePlugins(await ipcRenderer.invoke("plugin:get-list"));
+    console.log(plugins);
 }
 requestUpdatePluginList();
 
 ipcRenderer.on("plugin:list", (_, p) => {
+    console.log(p);
     updatePlugins(p);
 });
 ipcRenderer.on("plugin:update", (_, { info, previous }) => {
     if (previous) delete plugins[previous.type][previous.name];
+    console.log(info);
 
     plugins[info.type][info.name] = { ...info };
     if (!info.ready)
+        showToast({
+            title: "사용 불가능한 플러그인이 있습니다.",
+            content: info.name,
+            duration: 5000
+        });
+});
+ipcRenderer.on("plugin:hmr", (_, info) => {
+    if (info.error) {
+        showToast({ title: `${info.name} 플러그인 오류`, content: info.error, duration: 5000 });
+        return;
+    } else if (!info.ready)
         showToast({
             title: "사용 불가능한 플러그인이 있습니다.",
             content: info.name,

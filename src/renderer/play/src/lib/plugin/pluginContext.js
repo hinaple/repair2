@@ -8,12 +8,12 @@ import {
     hasPluginService
 } from "./pluginServices";
 import {
-    getComponentHandle,
-    listComponentHandles,
-    resolveComponentHandleId,
+    clearComponents,
+    getAllComponentHandles,
+    getAllComponents,
+    getComponent,
     subscribeComponentHandles
-} from "../componentRegistry";
-import { clearComponents, modifyComponentByAlias, removeComponentByAlias } from "../components";
+} from "../components";
 import { getVariableIdByName, getVarByName, setVarByName, subscribeVarByName } from "../variables";
 import {
     addPreloadByTitle,
@@ -45,7 +45,7 @@ const typeMap = {
 const registeredContextApis = {
     appDataGetter: () => null,
     store: {
-        get: () => null,
+        get: () => Promise.resolve(null),
         set: () => {}
     }
 };
@@ -62,7 +62,7 @@ const contextApiNormalizers = {
     },
     store(api = {}) {
         return {
-            get: typeof api.get === "function" ? api.get : () => null,
+            get: typeof api.get === "function" ? api.get : () => Promise.resolve(null),
             set: typeof api.set === "function" ? api.set : () => {}
         };
     }
@@ -230,54 +230,23 @@ function createServices(plugin, lifecycle) {
     };
 }
 
-function createComponents(plugin, lifecycle) {
-    function resolveComponentId(id) {
-        const componentId = resolveComponentHandleId(id);
-        if (componentId) return componentId;
-
-        reportPluginIssue(plugin, `Component does not exist: ${id}`);
-        return null;
-    }
-
+function createComponents(plugin, lifecycle, myComponentId = null) {
     return {
         list() {
-            return listComponentHandles();
+            return getAllComponentHandles();
         },
-        get(id) {
-            return getComponentHandle(id);
+        get(aliasOrId = myComponentId) {
+            return getAllComponents().find(
+                (c) => c.componentData.id === aliasOrId || c.componentData.alias === aliasOrId
+            )?.handle;
         },
         subscribe(listener) {
             const unsubscribe = subscribeComponentHandles(listener, plugin);
             lifecycle.onDispose(unsubscribe);
             return unsubscribe;
         },
-        remove(id, options = {}) {
-            const componentId = resolveComponentId(id);
-            if (!componentId) return;
-            removeComponentByAlias(componentId, !!options.ignoreUnbreakable);
-        },
-        clear(options = {}) {
-            clearComponents(!!options.ignoreUnbreakable);
-        },
-        modify(id, key, value) {
-            const componentId = resolveComponentId(id);
-            if (!componentId) return;
-            modifyComponentByAlias(componentId, key, value);
-        },
-        setVisible(id, visible) {
-            const componentId = resolveComponentId(id);
-            if (!componentId) return;
-            modifyComponentByAlias(componentId, "visible", visible);
-        },
-        setZIndex(id, zIndex) {
-            const componentId = resolveComponentId(id);
-            if (!componentId) return;
-            modifyComponentByAlias(componentId, "zIndex", zIndex);
-        },
-        setStyle(id, style) {
-            const componentId = resolveComponentId(id);
-            if (!componentId) return;
-            modifyComponentByAlias(componentId, "style", style);
+        clear(ignoreUnbreakable = false) {
+            clearComponents(!!ignoreUnbreakable);
         }
     };
 }
@@ -336,11 +305,11 @@ function createResources(plugin) {
             id: resource.id,
             title: getResourceTitle(resource),
             alias: resource.alias ?? null,
-            type: resource.fileType,
-            src: resource.src,
+            type: resource.fileType ?? null,
+            src: resource.src ?? null,
             path: getResourcePath(resource),
             meta: {
-                extension: resource.extension,
+                extension: resource.extension ?? null,
                 preloaded: isPreloaded(resource.id)
             }
         };
@@ -419,7 +388,7 @@ function createAppApi() {
 function createStoreApi() {
     return {
         get(key) {
-            return registeredContextApis.store.get(key);
+            return Promise.resolve(registeredContextApis.store.get(key));
         },
         set(key, value) {
             registeredContextApis.store.set(key, value);
@@ -449,7 +418,7 @@ export function createPluginContext({
         frame,
         logger: createLogger(plugin),
         events: createEvents(plugin, lifecycle),
-        components: createComponents(plugin, lifecycle),
+        components: createComponents(plugin, lifecycle, component?.id ?? null),
         variables: createVariables(plugin, lifecycle),
         resources: createResources(plugin),
         app: createAppApi(),

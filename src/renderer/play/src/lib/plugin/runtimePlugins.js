@@ -2,7 +2,7 @@ import PluginPointer from "@classes/pluginPointer.svelte";
 import { createPluginContext } from "./pluginContext";
 import { reportPluginException, reportPluginIssue } from "./pluginReporter";
 import { ipcRenderer } from "electron";
-import subscribePluginHMR, { safeCallPlugin } from "./pluginManager";
+import { subscribePluginHMR, safeCallPlugin } from "./pluginManager";
 
 /** @typedef {Map<string, { payloads: Record<string, string>, generation: number }>} RuntimePluginConfigs */
 
@@ -108,145 +108,140 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
         localGen !== myLocalGen ||
         generation !== currentRuntimePluginConfigs.get(pluginName)?.generation;
 
-    const hmrUnsub = subscribePluginHMR(
-        "runtime",
-        pluginName,
-        { payloads },
-        (plugin, pluginInfo) => {
-            async function setup() {
-                const myLocalGen = ++localGen;
-                const activationId = createActivationId(pluginName, generation, myLocalGen);
-                let ctx = null;
-                let runtimeData = null;
-                try {
-                    if (isDeadGeneration(myLocalGen)) return;
-                    ctx = createPluginContext({
-                        pluginId: pluginName,
-                        pluginType: "runtime"
-                    });
-                    if (typeof plugin === "function") plugin = await plugin(); //plugin can be a factory
-                    if (isDeadGeneration(myLocalGen) || !plugin) {
-                        ctx.lifecycle.dispose?.();
-                        return;
-                    }
+    const hmrUnsub = subscribePluginHMR("runtime", pluginName, "default", ({ api, info }) => {
+        async function setup() {
+            const myLocalGen = ++localGen;
+            const activationId = createActivationId(pluginName, generation, myLocalGen);
+            let ctx = null;
+            let runtimeData = null;
+            try {
+                if (isDeadGeneration(myLocalGen)) return;
+                ctx = createPluginContext({
+                    pluginId: pluginName,
+                    pluginType: "runtime"
+                });
+                if (typeof api === "function") api = await api(); //plugin can be a factory
+                if (isDeadGeneration(myLocalGen) || !api) {
+                    ctx.lifecycle.dispose?.();
+                    return;
+                }
 
-                    const call = (functionName, attributes, args) => {
-                        const targetMethod = plugin?.[functionName];
-                        if (typeof targetMethod !== "function") {
-                            reportPluginIssue(
-                                ctx.plugin,
-                                `Runtime plugin step does not exist: ${functionName}`,
-                                `Plugin "${pluginName}" does not define "${functionName}".`
-                            );
-                            return null;
-                        }
-
-                        return safeCallPlugin(ctx, "Plugin function execution failed.", () =>
-                            targetMethod({
-                                attributes,
-                                ctx,
-                                ...args
-                            })
+                const call = (functionName, attributes, args) => {
+                    const targetMethod = api?.[functionName];
+                    if (typeof targetMethod !== "function") {
+                        reportPluginIssue(
+                            ctx.plugin,
+                            `Runtime plugin step does not exist: ${functionName}`,
+                            `Plugin "${pluginName}" does not define "${functionName}".`
                         );
-                    };
-
-                    runtimeData = {
-                        call,
-                        plugin,
-                        ctx,
-                        activationId,
-                        disposes: [],
-                        mainActivated: false,
-                        rendererReady: false,
-                        pendingRendererCalls: [],
-                        hmrUnsub,
-                        setup
-                    };
-                    const previous = activeRuntimePlugins.get(pluginName);
-                    if (previous) {
-                        disposeMainRuntimePlugin(previous, pluginName);
-                        disposeRuntimePlugin(previous);
-                        if (hmrUnsub !== previous.hmrUnsub) previous.hmrUnsub?.();
-                    }
-                    activeRuntimePlugins.set(pluginName, runtimeData);
-
-                    let main = null;
-                    if (pluginInfo.main) {
-                        const mainMethods = await ipcRenderer.invoke(
-                            "plugin:runtime:activate",
-                            pluginName,
-                            {
-                                activationId,
-                                rendererMethods: Object.keys(plugin?.renderer ?? {}),
-                                attributes: payloads
-                            }
-                        );
-                        console.log("MAIN METHODS: ", mainMethods);
-                        if (Array.isArray(mainMethods)) runtimeData.mainActivated = true;
-                        if (mainMethods)
-                            main = Object.fromEntries(
-                                mainMethods.map((methodName) => [
-                                    methodName,
-                                    (...args) =>
-                                        ipcRenderer.invoke("plugin:runtime:to-main", {
-                                            pluginName,
-                                            activationId,
-                                            methodName,
-                                            args
-                                        })
-                                ])
-                            );
+                        return null;
                     }
 
-                    if (
-                        isDeadGeneration(myLocalGen) ||
-                        activeRuntimePlugins.get(pluginName) !== runtimeData
-                    ) {
-                        disposeMainRuntimePlugin(runtimeData, pluginName);
-                        disposeRuntimePlugin(runtimeData);
-                        if (activeRuntimePlugins.get(pluginName) === runtimeData)
-                            activeRuntimePlugins.delete(pluginName);
-                        return;
-                    }
-
-                    const activeResult = await call("activate", payloads, { main });
-                    const tempDisposes = [
-                        typeof activeResult === "function" && activeResult,
-                        plugin?.dispose
-                    ];
-                    if (isDeadGeneration(myLocalGen)) {
-                        disposeMainRuntimePlugin(runtimeData, pluginName);
-                        disposeRuntimePlugin({
+                    return safeCallPlugin(ctx, "Plugin function execution failed.", () =>
+                        targetMethod({
+                            attributes,
                             ctx,
-                            disposes: tempDisposes,
-                            pendingRendererCalls: runtimeData.pendingRendererCalls
-                        });
-                        if (activeRuntimePlugins.get(pluginName) === runtimeData)
-                            activeRuntimePlugins.delete(pluginName);
-                        return;
-                    }
-                    runtimeData.disposes = tempDisposes;
-                    runtimeData.rendererReady = true;
-                    flushRendererCallQueue(pluginName, runtimeData);
-                } catch (err) {
-                    reportPluginException(
-                        ctx?.plugin ?? { id: pluginName, type: "runtime" },
-                        "Runtime plugin activation failed.",
-                        err
+                            ...args
+                        })
                     );
+                };
+
+                runtimeData = {
+                    call,
+                    plugin: api,
+                    ctx,
+                    activationId,
+                    disposes: [],
+                    mainActivated: false,
+                    rendererReady: false,
+                    pendingRendererCalls: [],
+                    hmrUnsub,
+                    setup
+                };
+                const previous = activeRuntimePlugins.get(pluginName);
+                if (previous) {
+                    disposeMainRuntimePlugin(previous, pluginName);
+                    disposeRuntimePlugin(previous);
+                    if (hmrUnsub !== previous.hmrUnsub) previous.hmrUnsub?.();
+                }
+                activeRuntimePlugins.set(pluginName, runtimeData);
+
+                let main = null;
+                if (info.main) {
+                    const mainMethods = await ipcRenderer.invoke(
+                        "plugin:runtime:activate",
+                        pluginName,
+                        {
+                            activationId,
+                            rendererMethods: Object.keys(api?.renderer ?? {}),
+                            attributes: payloads
+                        }
+                    );
+                    console.log("MAIN METHODS: ", mainMethods);
+                    if (Array.isArray(mainMethods)) runtimeData.mainActivated = true;
+                    if (mainMethods)
+                        main = Object.fromEntries(
+                            mainMethods.map((methodName) => [
+                                methodName,
+                                (...args) =>
+                                    ipcRenderer.invoke("plugin:runtime:to-main", {
+                                        pluginName,
+                                        activationId,
+                                        methodName,
+                                        args
+                                    })
+                            ])
+                        );
+                }
+
+                if (
+                    isDeadGeneration(myLocalGen) ||
+                    activeRuntimePlugins.get(pluginName) !== runtimeData
+                ) {
                     disposeMainRuntimePlugin(runtimeData, pluginName);
-                    if (runtimeData) disposeRuntimePlugin(runtimeData);
-                    else ctx?.lifecycle.dispose();
-                    const target = activeRuntimePlugins.get(pluginName);
-                    if (target?.ctx === ctx) {
-                        target.pendingRendererCalls.length = 0;
+                    disposeRuntimePlugin(runtimeData);
+                    if (activeRuntimePlugins.get(pluginName) === runtimeData)
                         activeRuntimePlugins.delete(pluginName);
-                    }
+                    return;
+                }
+
+                const activeResult = await call("activate", payloads, { main });
+                const tempDisposes = [
+                    typeof activeResult === "function" && activeResult,
+                    api?.dispose
+                ];
+                if (isDeadGeneration(myLocalGen)) {
+                    disposeMainRuntimePlugin(runtimeData, pluginName);
+                    disposeRuntimePlugin({
+                        ctx,
+                        disposes: tempDisposes,
+                        pendingRendererCalls: runtimeData.pendingRendererCalls
+                    });
+                    if (activeRuntimePlugins.get(pluginName) === runtimeData)
+                        activeRuntimePlugins.delete(pluginName);
+                    return;
+                }
+                runtimeData.disposes = tempDisposes;
+                runtimeData.rendererReady = true;
+                flushRendererCallQueue(pluginName, runtimeData);
+            } catch (err) {
+                reportPluginException(
+                    ctx?.plugin ?? { id: pluginName, type: "runtime" },
+                    "Runtime plugin activation failed.",
+                    err
+                );
+                disposeMainRuntimePlugin(runtimeData, pluginName);
+                if (runtimeData) disposeRuntimePlugin(runtimeData);
+                else ctx?.lifecycle.dispose();
+                const target = activeRuntimePlugins.get(pluginName);
+                if (target?.ctx === ctx) {
+                    target.pendingRendererCalls.length = 0;
+                    activeRuntimePlugins.delete(pluginName);
                 }
             }
-            setup();
         }
-    );
+        setup();
+    });
 }
 
 function comparePayloads(p0, p1) {

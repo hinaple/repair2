@@ -1,16 +1,36 @@
-import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+import { defineConfig } from "electron-vite";
 import { readFileSync } from "fs";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const pkg = JSON.parse(readFileSync("./package.json", "utf8"));
 const svelteVersion = pkg.dependencies?.svelte ?? pkg.devDependencies?.svelte ?? null;
 
+const sdkPkg = JSON.parse(readFileSync("./packages/plugin-sdk/package.json", "utf8"));
+const sdkVersion = `^${sdkPkg.version}`;
+
 export default defineConfig({
     main: {
-        plugins: [externalizeDepsPlugin()],
-
+        build: {
+            rollupOptions: {
+                plugins: [
+                    visualizer({
+                        filename: "reporter.html",
+                        template: "treemap",
+                        gzipSize: true,
+                        brotliSize: true
+                    })
+                ],
+                output: {
+                    manualChunks: {
+                        chokidar: ["chokidar"]
+                    }
+                }
+            }
+        },
         define: {
-            __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
-            __SVELTE_VERSION__: JSON.stringify(svelteVersion)
+            __APP_VERSION__: JSON.stringify(pkg.version),
+            __SVELTE_VERSION__: JSON.stringify(svelteVersion),
+            __SDK_VERSION__: JSON.stringify(sdkVersion)
         }
     }
 });

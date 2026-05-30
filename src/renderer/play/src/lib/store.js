@@ -3,7 +3,7 @@ import { registerUtils } from "./repairUtils";
 import { registerPluginContextApi } from "./plugin/pluginContext";
 
 export function getStore(key) {
-    return ipcRenderer.sendSync("get-store", key);
+    return ipcRenderer.invoke("get-store", key);
 }
 export function setStore(key, value) {
     return ipcRenderer.send("set-store", key, value);

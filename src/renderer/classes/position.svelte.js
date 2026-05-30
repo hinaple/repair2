@@ -23,9 +23,7 @@ export default class Position {
         );
     }
     //#endonly
-    //#only editor
     get storeData() {
         return { distance: this.distance, origin: this.origin, relative: this.relative };
     }
-    //#endonly
 }

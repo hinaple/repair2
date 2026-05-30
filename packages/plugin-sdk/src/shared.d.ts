@@ -20,3 +20,10 @@ export type MethodShape<TMethods extends object> = {
 };
 
 export type PluginType = "runtime" | "element" | "frame" | "function" | "transition";
+export type PluginExportName = string;
+
+export interface PluginPointer<TAttributes = Attributes> {
+    name: string | null;
+    exportName?: PluginExportName | null;
+    payloads?: TAttributes;
+}

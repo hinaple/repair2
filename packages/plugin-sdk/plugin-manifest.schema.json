@@ -32,6 +32,32 @@
             "uniqueItems": true,
             "default": []
         },
+        "exportDeclarations": {
+            "description": "Export declarations. Array form declares export names only. Object form maps export names to optional attribute names.",
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "uniqueItems": true
+                },
+                {
+                    "type": "object",
+                    "propertyNames": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "additionalProperties": {
+                        "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/attributeList" }]
+                    }
+                }
+            ],
+            "default": {
+                "default": null
+            }
+        },
         "runtimeSteps": {
             "description": "Runtime step declarations. Array form declares step names only. Object form maps step names to optional attribute names.",
             "oneOf": [
@@ -80,10 +106,15 @@
             "required": ["name", "type"],
             "properties": {
                 "$schema": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "JSON Schema URL for editor validation."
                 },
                 "name": {
                     "$ref": "#/$defs/pluginName"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable plugin description."
                 },
                 "type": {
                     "enum": ["runtime", "element", "frame", "function", "transition"]
@@ -98,12 +129,16 @@
                 },
                 "attributes": {
                     "$ref": "#/$defs/attributeList",
-                    "description": "Public plugin attributes shown/configured by REPAIR2."
+                    "description": "Legacy default export attributes shown/configured by REPAIR2. Prefer exports."
                 },
                 "attr": {
                     "$ref": "#/$defs/attributeList",
                     "deprecated": true,
                     "description": "Legacy alias for attributes. Prefer attributes."
+                },
+                "exports": {
+                    "$ref": "#/$defs/exportDeclarations",
+                    "description": "Public renderer exports shown/configured by REPAIR2. The default export key is \"default\"."
                 }
             }
         },
@@ -112,6 +147,9 @@
                 { "$ref": "#/$defs/baseManifest" },
                 {
                     "type": "object",
+                    "not": {
+                        "required": ["exports"]
+                    },
                     "properties": {
                         "type": { "const": "runtime" },
                         "entry": {
@@ -128,10 +166,10 @@
                         "main": {
                             "$ref": "#/$defs/runtimeMainOptions"
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "elementPluginManifest": {
             "allOf": [
@@ -152,10 +190,10 @@
                             "type": "boolean",
                             "default": false
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "framePluginManifest": {
             "allOf": [
@@ -176,10 +214,10 @@
                             "type": "boolean",
                             "default": false
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "functionPluginManifest": {
             "allOf": [
@@ -196,10 +234,10 @@
                             "$ref": "#/$defs/relativePath",
                             "default": "dist"
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "transitionPluginManifest": {
             "allOf": [
@@ -216,10 +254,10 @@
                             "$ref": "#/$defs/relativePath",
                             "default": "dist"
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 }
-            ]
+            ],
+            "unevaluatedProperties": false
         }
     }
 }

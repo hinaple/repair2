@@ -2,7 +2,7 @@
 
 Every plugin directory has a `manifest.json` file. REPAIR2 reads this file to decide what to build and how to load the plugin.
 
-Manifest files are JSON. JavaScript and TypeScript manifest files are not part of the runtime contract.
+Manifest files are JSON. JavaScript and TypeScript manifest files are not supported yet, but support is planned for a future release.
 
 ## Schema
 
@@ -23,6 +23,7 @@ The schema describes the public manifest shape. Current runtime loading does not
 ```json
 {
     "name": "my-plugin",
+    "description": "Adds a custom labeled element.",
     "type": "element",
     "entry": "src/index.js",
     "outDir": "dist",
@@ -30,7 +31,11 @@ The schema describes the public manifest shape. Current runtime loading does not
 }
 ```
 
-`name` is the plugin id. Scaffolded plugin names are normalized to lowercase kebab-case. The schema documents the recommended public shape; current runtime loading only requires a non-empty name.
+`name` is the plugin id. REPAIR2 identifies plugins by the manifest name, not by the directory name. Plugin names should be globally unique across all plugin types. If two manifests use the same name, REPAIR2 reports a duplicate-name warning and does not guarantee which plugin will be selected.
+
+Scaffolded plugin names are normalized to lowercase kebab-case. The schema documents the recommended public shape; current runtime loading requires a non-empty `name` and a known plugin `type`.
+
+`description` is an optional human-readable plugin description.
 
 `type` must be one of:
 
@@ -44,9 +49,55 @@ The schema describes the public manifest shape. Current runtime loading does not
 
 `outDir` is the renderer/plugin output directory relative to the plugin root.
 
-`attributes` declares public attribute names shown or configured by the REPAIR2 editor. At runtime, the stored payload object is passed to plugin code as `attributes`. The manifest declaration does not type-check, validate, or filter that runtime payload.
+`attributes` declares public attribute names shown or configured by the REPAIR2 editor for the plugin's default export. At runtime, the stored payload object is passed to plugin code as `attributes`. The manifest declaration does not type-check, validate, or filter that runtime payload.
 
 `attr` is a legacy alias for `attributes`. Prefer `attributes`. If both fields are present, `attributes` wins and `attr` is ignored.
+
+## Renderer exports
+
+Element, frame, function, and transition plugins can expose more than one renderer execution point from the same plugin entry. Declare them with `exports` when the plugin has named exports in addition to, or instead of, `default`:
+
+```json
+{
+    "name": "button-pack",
+    "type": "element",
+    "exports": ["primary", "secondary"]
+}
+```
+
+The plugin entry must export every declared name:
+
+```js
+export function primary({ attributes, ctx }, options) {}
+export function secondary({ attributes, ctx }, options) {}
+```
+
+Use the object form when each export needs its own editor attribute inputs:
+
+```json
+{
+    "name": "button-pack",
+    "type": "element",
+    "exports": {
+        "primary": ["label", "color"],
+        "secondary": ["label"]
+    }
+}
+```
+
+If `exports` is not present, REPAIR2 treats the plugin as if it declared:
+
+```json
+{
+    "exports": {
+        "default": ["label"]
+    }
+}
+```
+
+In that default-only case, using `attributes` is the simpler form. Use `exports` when the plugin has multiple public execution points or when a named export needs its own attributes.
+
+Runtime plugins do not support `exports`. They always use the default renderer export. Runtime callable steps are declared separately with `steps`.
 
 ## Default paths
 

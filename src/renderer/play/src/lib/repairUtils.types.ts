@@ -23,7 +23,7 @@ export interface RepairResourceUtils {
 }
 
 export interface RepairStoreUtils {
-    get<T = unknown>(key: string): T;
+    get<T = unknown>(key: string): Promise<T>;
     set(key: string, value: unknown): void;
 }
 

@@ -1,6 +1,7 @@
 <script>
     import { hoverHighlight } from "../../lib/highlight";
     import Icon from "../../assets/icons/Icon.svelte";
+    import { getVscode, openVscode } from "../../lib/vscode";
 
     let { info } = $props();
 
@@ -15,7 +16,7 @@
     <span class={["name", (!info.ready || info.error) && "error"]}>
         {info.name}
     </span>
-    {#if !info.ready}
+    {#if !info.ready || info.error}
         <Icon icon="warn" color="#ff3636" size={16} />
     {/if}
     {#if info.linked}
@@ -25,9 +26,11 @@
             size={16}
         />
     {/if}
-    <button bind:this={moreBtn} class="more"
-        ><Icon icon="ellipsis" color="#fff" size={14} />
-    </button>
+    {#if getVscode()}
+        <button bind:this={moreBtn} class="more" onclick={() => openVscode(info.path)}>
+            <Icon icon="vscode" color="#fff" size={18} />
+        </button>
+    {/if}
 </div>
 
 <style>
@@ -47,7 +50,7 @@
         height: 30px;
     }
     .plugin:hover {
-        border-color: rgba(255, 255, 255, 0.2);
+        border-color: var(--w-o2);
     }
     .name {
         margin-right: auto;
@@ -57,7 +60,7 @@
         color: #ff3636;
     }
     .more {
-        padding: 5px 5px;
+        padding: 3px 3px;
         border-radius: 5px;
         display: none;
         cursor: pointer;
@@ -66,6 +69,6 @@
         display: block;
     }
     .more:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--w-o1);
     }
 </style>

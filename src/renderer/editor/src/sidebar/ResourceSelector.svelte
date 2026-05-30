@@ -185,10 +185,10 @@
         width: 100%;
         max-height: 50vh;
         position: absolute;
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: var(--w-o8);
         backdrop-filter: blur(5px);
         z-index: 200;
-        box-shadow: rgba(0, 0, 0, 0.8) 0 0 8px;
+        box-shadow: var(--b-o8) 0 0 8px;
         display: flex;
         flex-direction: column;
     }
@@ -246,10 +246,10 @@
     }
     .resource:hover,
     .resource.focussed {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: var(--b-o1);
     }
     .resource.selected {
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: var(--b-o2);
     }
 
     .select-btn {
@@ -260,7 +260,7 @@
         align-items: center;
         justify-content: space-between;
         box-sizing: border-box;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
         height: 80px;
         color: #fff;
         font-weight: 400;

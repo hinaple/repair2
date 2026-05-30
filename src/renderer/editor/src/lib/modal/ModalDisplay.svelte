@@ -46,7 +46,7 @@
                     {@const af = f.autofocus && autofocus}
                     <div
                         class={["field", f.type ?? "input"]}
-                        onclick={f.type === "checkbox" && (() => (values[i] = !values[i]))}
+                        onclick={() => f.type === "checkbox" && (values[i] = !values[i])}
                     >
                         <span class="label">{f.label}</span>
                         {#if f.type === "checkbox"}
@@ -108,7 +108,7 @@
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.4);
+        background-color: var(--b-o4);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -128,7 +128,7 @@
         flex: 0 0 auto;
     }
     .title {
-        border-bottom: solid rgba(255, 255, 255, 0.8) 1px;
+        border-bottom: solid var(--w-o8) 1px;
     }
     .body {
         display: flex;
@@ -168,7 +168,7 @@
         padding: 3px 8px;
         font-size: 16px;
         border-radius: 5px;
-        border: solid rgba(255, 255, 255, 0.2) 1px;
+        border: solid var(--w-o2) 1px;
         color: #fff;
         cursor: pointer;
     }
@@ -184,6 +184,6 @@
     }
     button.confirm {
         border-color: transparent;
-        background-color: #2b6eff;
+        background-color: var(--blue-dark);
     }
 </style>

@@ -3,7 +3,7 @@ import { getVariables } from "../variables";
 import { preloads } from "../resources";
 import { WaitingSteps } from "../stepActions";
 import { getAppData } from "../appdata";
-import { getComponents } from "../components";
+import { getAllComponents } from "../components";
 
 let changesBuffer: Array<Array<string | string[]>> = [];
 
@@ -83,8 +83,7 @@ export function sendTotalInfo() {
         .filter((node: any) => node.type === "entry" && node.standbyMode && node.activated)
         .map((node: any) => node.id)
         .toArray();
-    const components = getComponents().map((c) => c.realId);
-
+    const components = getAllComponents().map((c) => c.realId);
     ipcRenderer.send("monitor-info", "total", {
         variables,
         preloads: preloadedArr,

@@ -135,8 +135,8 @@
     {:else if type === "input" || type === "number" || type === "textarea"}
         <HistoryInput {value} {type} {setter} {small} {previewer} {...props} />
     {:else if type === "select"}
-        <select {value} onchange={(evt) => selectChange(evt.target.value)}>
-            <option value={null} hidden>선택 안함</option>
+        <select {value} onchange={(evt) => selectChange(evt.target.value || null)}>
+            <option value={null} hidden={!props.canUnselect}>선택 안함</option>
             {#if Array.isArray(props.options)}
                 {#each props.options as value}
                     <option {value}>{value}</option>
@@ -148,7 +148,7 @@
             {/if}
         </select>
     {:else if type === "variable"}
-        <select value={value || null} onchange={(evt) => selectChange(evt.target.value)}>
+        <select {value} onchange={(evt) => selectChange(evt.target.value || null)}>
             <option value={null}>변수 할당 없음</option>
             {#each appData.variables as variable}
                 <option value={variable.id}>
@@ -183,7 +183,7 @@
         box-sizing: border-box;
     }
     .field.background {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
     }
     .field.row {
         flex-direction: row;
@@ -231,7 +231,7 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--w-o2);
         border: solid transparent 1px;
         margin: 0;
         padding: 5px 8px;
@@ -272,6 +272,6 @@
     }
     .remove:hover {
         opacity: 1;
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--w-o1);
     }
 </style>

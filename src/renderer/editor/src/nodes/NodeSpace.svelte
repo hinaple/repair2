@@ -292,7 +292,7 @@
         width: 0;
         height: 0;
         background-color: #2b6eff4a;
-        outline: solid 2px #2b6eff;
+        outline: solid 2px var(--blue-dark);
         display: none;
         border-radius: 2px;
     }

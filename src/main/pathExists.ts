@@ -6,3 +6,7 @@ export function pathExists(path: string) {
         .then(() => true)
         .catch(() => false);
 }
+
+export async function isDirEmpty(path: string) {
+    return (await fs.readdir(path, { recursive: false })).length === 0;
+}

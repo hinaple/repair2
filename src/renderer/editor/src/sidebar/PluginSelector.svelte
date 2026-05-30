@@ -2,33 +2,37 @@
     import { addHistory } from "../lib/workHistory";
     import Attributes from "./Attributes.svelte";
     import { plugins } from "../lib/plugins.svelte";
+    import InputField from "./InputField.svelte";
 
     let { plugin, type, canUnselect = true } = $props();
-
-    function onchange(evt) {
-        addHistory({
-            doFn: ({ pluginName, that }) => {
-                that.setName(pluginName);
-            },
-            doData: { pluginName: evt.target.value, that: plugin },
-            undoData: { pluginName: plugin.name, that: plugin }
-        });
-    }
 </script>
 
 <div class="plugin-select">
-    <select value={plugin.name} {onchange}>
-        <option value={null} selected hidden={!canUnselect}>선택 안함</option>
-        {#each Object.keys(plugins[type]) as pluginName}
-            <option value={pluginName}>{pluginName}</option>
-        {/each}
-    </select>
-    {#key plugin.name}
+    <InputField
+        type="select"
+        options={Object.keys(plugins[type])}
+        value={plugin.name}
+        setter={(v) => (plugin.name = v)}
+        canUnselect
+    />
+    {#if plugin.name && plugins[type][plugin.name]}
         {@const currentPlugin = plugins[type][plugin.name]}
-        {#if plugin.name && currentPlugin && currentPlugin.attributes?.length}
-            <Attributes attributes={currentPlugin.attributes} {plugin} />
+        {@const exportKeys = Object.keys(currentPlugin.exports)}
+        {#if !(exportKeys.length === 1 && exportKeys[0] === "default")}
+            <InputField
+                type="select"
+                options={exportKeys}
+                value={plugin.exportName}
+                setter={(v) => (plugin.exportName = v || "default")}
+            />
         {/if}
-    {/key}
+        {#if currentPlugin.exports[plugin.exportName ?? "default"]}
+            <Attributes
+                attributes={currentPlugin.exports[plugin.exportName ?? "default"]}
+                {plugin}
+            />
+        {/if}
+    {/if}
 </div>
 
 <style>

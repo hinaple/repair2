@@ -67,7 +67,7 @@
     label="편집기 단축키"
     value={data.editorShortcut}
     setter={(d) => (data.editorShortcut = d)}
-    maxlength="1"
+    maxLength="1"
     placeholder="E"
 />
 <InputField

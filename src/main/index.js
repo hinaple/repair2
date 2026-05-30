@@ -2,16 +2,13 @@ import { app, shell, BrowserWindow, Menu, dialog, ipcMain } from "electron";
 import { join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
 import fs, { readdir } from "fs/promises";
-import prompt from "electron-prompt";
-import Store from "electron-store";
 
 import SerialConnector from "./communication/serial";
 import SocketConnector from "./communication/socket";
 import ProjectFileManager from "./projectFileManager";
 import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "./screenManager";
 import { checkVscodeInstalled } from "./vscodeUtils.js";
-import { closeSplash, sendStartupInfo, showSplash } from "./splash.js";
-import { findService } from "./communication/bonjour.js";
+import { afterSplashClose, closeSplash, sendStartupInfo, showSplash } from "./splash.js";
 import { setupIpcHandlers } from "./ipcHandlers.js";
 import {
     getIsSuppressing,
@@ -24,9 +21,9 @@ import { createDiagnosticReporter } from "./diagnostics.js";
 import { PluginManager } from "./plugin/pluginManager.js";
 import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
-import electronPrompt from "electron-prompt";
 import { dataDir, assetDir, pluginDir, styleDir, templateDir } from "./dirs.js";
-import { createHmr } from "./hmrs.js";
+import { clearStore, getStore } from "./electronStore.js";
+import { createHmr } from "./hmrs.ts";
 
 /**
  * @type {BrowserWindow | null}
@@ -79,42 +76,82 @@ async function updateCss() {
     return cssCode;
 }
 
-const hmr = createHmr({
-    onHmr({ type, data }) {
-        if (type === "css") {
-            updateCss().then((css) => sendToMain("global-css", css));
-            return;
-        }
+/** @type {import("./hmrs.js").SetHmrActive | null} */
+let hmrSetter = null;
+/** @type {Promise<unknown> | null} */
+let hmrImporting = null;
 
-        if (!pluginManager) return;
-        if (data) pluginManager.updatePlugin(data, true);
-        else pluginManager.updateAllPluginInfo(false);
-    },
-    active: false,
-    styleDir,
-    pluginDir,
-    dataDir
-});
-function setPluginManager(isDev = false) {
-    if (pluginManager) pluginManager.closeWatchers();
+let isHmrActive = false;
+async function setHmrActive(active) {
+    if (isHmrActive === active) return;
+    isHmrActive = active;
+
+    if (hmrImporting) await hmrImporting;
+
+    if (!hmrSetter) {
+        hmrImporting = (async () => {
+            hmrSetter = createHmr({
+                onHmr(type) {
+                    if (type === "css") {
+                        updateCss().then((css) => sendToMain("global-css", css));
+                        return;
+                    }
+
+                    // if (type === "links") {
+                    //     pluginManager.pluginLinkService.getPluginLinks().then();
+                    // }
+                    pluginManager.updateAllPluginInfo({});
+                },
+                styleDir,
+                pluginDir,
+                dataDir
+            });
+            return hmrSetter(isHmrActive);
+        })();
+        try {
+            return await hmrImporting;
+        } catch (err) {
+            hmrSetter = null;
+            throw err;
+        } finally {
+            hmrImporting = null;
+        }
+    }
+
+    return hmrSetter(active);
+}
+async function setDevMode(devMode) {
+    if (pluginManager) await pluginManager.setDevMode(!!data.config?.devMode);
+    setHmrActive(devMode);
+}
+
+async function setPluginManager(devMode = false) {
+    if (pluginManager) await destroyPluginManager();
     pluginManager = new PluginManager({
-        isDev,
+        devMode,
         reportDiagnostic,
         onupdate: ({ type, updateData }) => {
             if (type === "single") {
                 sendToEditor("plugin:update", updateData);
                 sendToMain("plugin:update", updateData);
-                return;
-            }
-            const pluginList = pluginManager.simplePluginList;
-            sendToEditor("plugin:list", pluginList);
-            sendToMain("plugin:list", pluginList, updateData.buildChanges);
-        },
-        onhmr: (pluginInfo) => {
-            sendToMain("plugin-hmr", pluginInfo);
+            } else if (type === "all") {
+                const pluginList = pluginManager.simplePluginList;
+                sendToEditor("plugin:list", pluginList, updateData);
+                sendToMain("plugin:list", pluginList, updateData.buildChanges);
+            } else if (type === "hmr") {
+                sendToEditor("plugin:hmr", updateData);
+                sendToMain("plugin:hmr", updateData);
+            } else console.error(type, updateData);
         }
     });
     return pluginManager.initialize();
+}
+async function destroyPluginManager() {
+    if (!pluginManager) return;
+
+    const tempPM = pluginManager;
+    pluginManager = null;
+    return await tempPM.destroy();
 }
 
 const projectFileManager = new ProjectFileManager(dataDir, {
@@ -129,8 +166,7 @@ const projectFileManager = new ProjectFileManager(dataDir, {
             mainWindow.close();
             mainWindow = null;
         }
-        hmr.stopWatching();
-        pluginManager?.closeAllWatchers();
+        return Promise.all([setHmrActive(false), destroyPluginManager()]);
     },
     importProgress: sendStartupInfo,
     afterImport: async () => {
@@ -139,7 +175,7 @@ const projectFileManager = new ProjectFileManager(dataDir, {
         if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
         else createMainWindow();
 
-        store.clear();
+        await clearStore();
     },
     exportProgress: (progress) => {
         sendToEditor("exporting", progress);
@@ -214,28 +250,32 @@ async function loadData() {
         await fs.access(dataDir);
         const tempData = (await fs.readFile(join(dataDir, "data.json"))).toString();
         data = JSON.parse(tempData);
-
-        applyDataConfig();
     } catch (err) {
-        await importDefaultProject();
+        return await importDefaultProject();
     }
 
-    const migrateResult = await migrateProject({
-        currentVersion: __APP_VERSION__,
-        data,
-        dataDir,
-        pluginDir
-    });
+    sendStartupInfo("프로젝트 버전 처리 중...");
+    if (
+        await migrateProject({
+            currentVersion: __APP_VERSION__,
+            data,
+            dataDir,
+            pluginDir
+        })
+    ) {
+        afterSplashClose(() =>
+            dialog.showMessageBox(editorWindow || mainWindow, {
+                message: "구버전 프로젝트",
+                detail: "호환되지 않는 기능이 포함된 버전의 프로젝트입니다. 일부 데이터에 손실이 있을 수 있습니다.",
+                type: "warning",
+                noLink: true
+            })
+        );
+    }
     sendStartupInfo("플러그인 처리 중...");
     await Promise.all([setPluginManager(!!data.config?.devMode), updateCss()]);
-    if (migrateResult) {
-        dialog.showMessageBox({
-            message: "구버전 프로젝트",
-            detail: "호환되지 않는 기능이 포함된 버전의 프로젝트입니다. 일부 데이터에 손실이 있을 수 있습니다.",
-            type: "warning",
-            noLink: true
-        });
-    }
+    applyDataConfig();
+
     sendStartupInfo("Repair2 실행 중...");
     return true;
 }
@@ -244,9 +284,7 @@ let isMultiScreen = null;
 function applyDataConfig(forceUpdate = false) {
     if (!data?.config) return;
 
-    const devMode = !!data.config?.devMode;
-    hmr.setActive(devMode);
-    if (pluginManager) pluginManager.isDev = !!data.config?.devMode;
+    setDevMode(!!data.config?.devMode);
 
     if (!mainWindow) return;
 
@@ -415,6 +453,14 @@ function createEditorWindow() {
                     click: () => {
                         shell.openPath(dataDir);
                     }
+                },
+                { type: "separator" },
+                {
+                    label: "RepairV2 종료",
+                    click: () => {
+                        app.quit();
+                    },
+                    accelerator: "CommandOrControl+Q"
                 }
             ]
         },
@@ -466,7 +512,7 @@ function createEditorWindow() {
                     label: "플러그인 전체 다시 빌드",
                     click: async () => {
                         if (!pluginManager) return;
-                        await pluginManager.updateAllPluginInfo(true);
+                        await pluginManager.updateAllPluginInfo({ forceBuild: true });
                     }
                 }
             ]
@@ -584,9 +630,8 @@ if (!app.requestSingleInstanceLock()) {
             getGlobalCss: () => cssCode,
             getMainWindow: () => mainWindow,
             getPluginManager: () => pluginManager,
-            getStore: () => store,
+            getStore,
             createEditorWindow,
-            findService,
             reportDiagnostic,
             saveData,
             sendToEditor,
@@ -596,10 +641,8 @@ if (!app.requestSingleInstanceLock()) {
         });
 
         if (is.dev) {
-            setTimeout(() => {
-                createMainWindow();
-                createEditorWindow();
-            }, 1000);
+            createMainWindow();
+            createEditorWindow();
         } else {
             createMainWindow();
         }
@@ -609,5 +652,3 @@ if (!app.requestSingleInstanceLock()) {
 app.on("window-all-closed", () => {
     app.quit();
 });
-
-const store = new Store();

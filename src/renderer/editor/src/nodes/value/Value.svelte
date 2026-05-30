@@ -104,7 +104,7 @@
         flex-direction: column;
         justify-content: center;
         box-sizing: border-box;
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: var(--b-o2);
         flex: 0 0 auto;
     }
     .text {
@@ -120,14 +120,14 @@
             -45deg,
             rgba(0, 0, 0, 0.6),
             rgba(0, 0, 0, 0.6) 3px,
-            rgba(0, 0, 0, 0.3) 3px,
-            rgba(0, 0, 0, 0.3) 6px
+            var(--b-o3) 3px,
+            var(--b-o3) 6px
         );
     }
     .add {
         width: 100%;
         height: 20px;
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: var(--b-o2);
         color: #fff;
         display: flex;
         align-items: center;

@@ -4,33 +4,27 @@ The SDK is designed so that the types are the reference. The docs show the commo
 
 ## JavaScript with JSDoc
 
-Use `// @ts-check` and a JSDoc type import:
+Use a JSDoc type import to keep the plugin shape visible next to the code:
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ message: string }>} */
-export default {
-    function({ attributes, ctx }) {
-        ctx.logger.info(attributes.message);
-    }
-};
+export default function run({ attributes, ctx }) {
+    ctx.logger.info(attributes.message);
+}
 ```
 
-This keeps the runtime file plain JavaScript while giving you completion and type checking.
+This keeps the runtime file plain JavaScript while documenting the expected export shape.
 
 For longer generic types, define local typedefs first:
 
 ```js
-// @ts-check
 /** @typedef {{ message: string }} Attr */
 /** @typedef {import("@fainthit/repair2-plugin-sdk").FunctionExport<Attr, boolean>} Plugin */
 
 /** @type {Plugin} */
-export default {
-    function({ attributes }) {
-        return !!attributes.message;
-    }
-};
+export default function check({ attributes }) {
+    return !!attributes.message;
+}
 ```
 
 ## TypeScript
@@ -175,10 +169,9 @@ See [Runtime main](./runtime-main.md) for the full bridge behavior.
 
 ## Factory exports
 
-Runtime, function, transition, and runtime main entries may export either an object or a factory that returns the object.
+Runtime and runtime main entries may export either an object or a factory that returns the object.
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").RuntimeExport} */
 export default () => ({
     activate({ ctx }) {
@@ -187,26 +180,29 @@ export default () => ({
 });
 ```
 
-Function and transition factories follow the same rule:
+Function and transition plugin factories are not supported. Function plugins should export bare functions:
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default () => ({
-    function({ ctx }) {
-        ctx.logger.info("called");
-    }
-});
+export default function run({ ctx }) {
+    ctx.logger.info("called");
+}
 ```
 
-For function plugins, the object must have a `function` property. A bare function as the default export is not part of the contract.
+For compatibility, REPAIR2 still accepts an object with a `function` property, but that shape is deprecated for new plugins.
+
+Transition plugins should export keyframes directly, or export a function that returns keyframes:
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
-export default () => ({
-    keyframes: [{ opacity: 0 }, { opacity: 1 }]
-});
+export default [{ opacity: 0 }, { opacity: 1 }];
+```
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
+export function fade({ component }) {
+    return [{ opacity: 0 }, { opacity: 1 }];
+}
 ```
 
 Runtime main entries can also be factories:
@@ -223,26 +219,71 @@ const main: RuntimeMainExport = () => ({
 export default main;
 ```
 
-Element and frame plugins are different. They must export constructors, because REPAIR2 creates them with `new`.
+Element and frame plugins are different. They export mount functions, because REPAIR2 owns the host elements and calls the plugin when the host should be populated.
 
-Renderer runtime, function, and transition factories may be async when the SDK type allows it. Runtime main factories should return the main export object synchronously.
+Renderer runtime factories may be async when the SDK type allows it. Runtime main factories should return the main export object synchronously.
+
+## Multiple renderer exports
+
+Element, frame, function, and transition plugins can expose multiple renderer exports through the manifest `exports` field. Type each export directly:
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ value: string }, boolean>} */
+export function isFilled({ attributes }) {
+    return !!attributes.value;
+}
+
+/** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ value: string }>} */
+export function logValue({ attributes, ctx }) {
+    ctx.logger.info(attributes.value);
+}
+```
+
+In TypeScript, the export-map helper types can check a group of named exports before you export them:
+
+```ts
+import type { FunctionExport, FunctionExports } from "@fainthit/repair2-plugin-sdk";
+
+const functions = {
+    isFilled({ attributes }) {
+        return !!attributes.value;
+    },
+    logValue({ attributes, ctx }) {
+        ctx.logger.info(attributes.value);
+    }
+} satisfies FunctionExports<Record<string, FunctionExport<{ value: string }>>>;
+
+export const { isFilled, logValue } = functions;
+```
+
+The same pattern is available as `ElementExports`, `FrameExports`, and `TransitionExports`.
 
 ## Element and frame types
 
 ```js
-// @ts-check
-/** @typedef {import("@fainthit/repair2-plugin-sdk").FrameOptions} FrameOptions */
+/** @type {import("@fainthit/repair2-plugin-sdk").FrameExport<{ title?: string }>} */
+export default function mount({ attributes, ctx }, { target, children, showIntro }) {
+    target.dataset.plugin = ctx.plugin.id;
+    target.classList.toggle("intro", showIntro);
 
-export default class Frame extends HTMLElement {
-    /** @param {FrameOptions} [options] */
-    constructor({ ctx } = {}) {
-        super();
-        this.dataset.plugin = ctx?.plugin.id ?? "";
-    }
+    const header = document.createElement("header");
+    header.textContent = attributes.title ?? "";
+
+    const body = document.createElement("main");
+    body.append(children);
+
+    target.append(header, body);
+
+    return () => {
+        header.remove();
+        body.remove();
+    };
 }
 ```
 
-Constructor parameters are best typed with `ElementOptions` or `FrameOptions`. The export contract is still `ElementExport` or `FrameExport`, but constructor argument completion comes from the options type.
+Use `ElementExport` for element plugins and `FrameExport` for frame plugins. Element mount functions receive `{ target, dispatchEvent }`; frame mount functions receive `{ target, children, showIntro }`.
+
+Frame `children` is a runtime-owned `DocumentFragment`. Append it during initial mount, but do not destroy the child nodes, keep them for later mutation, or treat them as plugin-owned DOM. Cleanup should only release resources created by the frame plugin.
 
 ## Context
 

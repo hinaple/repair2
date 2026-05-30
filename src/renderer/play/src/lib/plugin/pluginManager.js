@@ -1,5 +1,3 @@
-import PluginPointer from "@classes/pluginPointer.svelte";
-import { genId } from "@classes/utils";
 import { ipcRenderer } from "electron";
 import { getAppData } from "../appdata";
 import { createPluginContext } from "./pluginContext";
@@ -26,6 +24,16 @@ function updateAllPlugin(pluginList, forceImports = []) {
     );
 }
 
+function resolveExportName(pluginApi, exportName = "default") {
+    if (!pluginApi) return null;
+
+    if (!exportName || typeof exportName !== "string" || !exportName.trim()) exportName = "default";
+
+    if (!(exportName in pluginApi)) return null;
+
+    return pluginApi[exportName];
+}
+
 function importPlugin(pluginData) {
     pluginData.importing = dynamicImportPlugin(pluginData.info.distFile)
         .then((p) => {
@@ -35,6 +43,15 @@ function importPlugin(pluginData) {
             pluginData.importing = null;
             pluginData.imported = p;
             console.log("PLUGIN LOADED: ", pluginData.info.name);
+            if (getAppData()?.config.devMode ?? ipcRenderer.sendSync("config:is-dev")) {
+                const unexported = Object.keys(pluginData.info.exports).filter((e) => !(e in p));
+                if (unexported.length)
+                    reportPluginException(
+                        { id: pluginData.info.name, type: pluginData.info.type },
+                        `Exports missing.`,
+                        { missingExports: unexported }
+                    );
+            }
             callHmr(pluginData.info, p);
             return p;
         })
@@ -67,14 +84,19 @@ function updatePlugin(pluginInfo, forceImport = false) {
     plugins[pluginInfo.type][pluginInfo.name] = tempData;
     return getPlugin(pluginInfo.type, pluginInfo.name);
 }
-async function getPlugin(type, pluginName) {
-    while (true) {
+export async function getPlugin(type, pluginName, exportName = "default") {
+    let result = null;
+    do {
         const target = plugins[type][pluginName];
         if (!target) return null;
-        if (target.imported) return target.imported;
-        const result = await target.importing;
-        if (!result?._expired) return result;
-    }
+        if (target.imported) {
+            result = target.imported;
+            break;
+        }
+        result = await target.importing;
+        if (!result?._expired) break;
+    } while (true);
+    return resolveExportName(result, exportName);
 }
 
 let pluginImporting = requestUpdatePluginList().then(() => (pluginImporting = null));
@@ -82,124 +104,45 @@ export function afterPluginImported() {
     return pluginImporting;
 }
 
-function definePlugin(pluginClass, name) {
-    if (customElements.getName(pluginClass)) return;
-
-    let basename = `plugin-${name.split(".")[0].toLowerCase()}`;
-    if (customElements.get(basename)) basename = `${basename}-${genId(3)}`;
-    customElements.define(basename, pluginClass);
-}
-
-export function safeCallPlugin(ctx, title, callback, fallback = null) {
+export function safeCallPlugin(ctx, title, callback, onerror = null) {
     try {
         const result = callback();
         if (result?.then)
             return result.catch((err) => {
                 reportPluginException(ctx.plugin, title, err);
-                return fallback;
+                return onerror?.(err);
             });
         return result;
     } catch (err) {
         reportPluginException(ctx.plugin, title, err);
-        return fallback;
+        return onerror?.(err);
     }
 }
 
-PluginPointer.prototype.getInfo = function () {
-    return plugins[this.type][this.name]?.info;
-};
-
-export async function usePlugin({
-    type,
+export async function callFunctionPlugin({
     name,
-    plugin = null,
+    exportName = null,
     contextOptions = {},
-    forceCtx = undefined,
-    functionName = "function",
-    payloads = {}
+    argument = null
 }) {
-    if (!plugin) plugin = await getPlugin(type, name);
-    if (!plugin) return null;
+    if (!name) return;
 
-    if (type === "runtime") return plugin;
+    let fn = await getPlugin("function", name, exportName);
 
-    if (type === "frame" || type === "element") {
-        const ce = plugin;
-        const ctx =
-            forceCtx ??
-            createPluginContext({
-                pluginId: name,
-                pluginType: type,
-                ...contextOptions
-            });
-        const temp = safeCallPlugin(ctx, "Plugin element creation failed.", () => {
-            definePlugin(ce, name);
-            return new ce({
-                attributes: payloads,
-                ctx
-            });
-        });
-        if (!temp) {
-            ctx.lifecycle.dispose();
-            return null;
-        }
-        temp.__repairPluginContext = ctx;
-        temp.id = name;
-        return temp;
-    }
+    if (fn && "function" in fn) fn = fn.function;
+    if (typeof fn !== "function") return null;
 
-    if (typeof plugin === "function") plugin = await plugin(); //plugin can be a factory
-    if (type === "function" || (type === "transition" && plugin?.[functionName])) {
-        const ctx =
-            forceCtx ??
-            createPluginContext({
-                pluginId: name,
-                pluginType: type,
-                ...contextOptions
-            });
-        return (argument = null) =>
-            safeCallPlugin(ctx, "Plugin function execution failed.", () =>
-                plugin?.[functionName]({
-                    attributes: payloads,
-                    ctx,
-                    ...argument
-                })
-            );
-    }
-    if (type === "transition") return plugin?.keyframes ?? [];
-
-    return plugin;
-}
-
-PluginPointer.prototype.use = async function (
-    plugin = null,
-    contextOptions = {},
-    forceCtx = undefined,
-    functionName = "function",
-    payloads = this.payloads
-) {
-    if (!this.name) return null;
-
-    return usePlugin({
-        plugin,
-        type: this.type,
-        name: this.name,
-        contextOptions,
-        forceCtx,
-        functionName,
-        payloads
+    const ctx = createPluginContext({
+        pluginId: name,
+        pluginType: "function",
+        ...contextOptions
     });
-};
-
-PluginPointer.prototype.hmrSubscribe = function (callback, contextOptions = {}) {
-    if (!this.name) return null;
-
-    return subscribePluginHMR(this.type, this.name, { contextOptions }, callback);
-};
+    return safeCallPlugin(ctx, "Plugin function execution failed.", () => fn({ ctx, ...argument }));
+}
 
 /** @type {Record<string, Record<string, Set<(any) => any>>>} */
 const hmrSubscribers = {};
-export default function subscribePluginHMR(type, pluginName, useParams = {}, callback) {
+export function subscribePluginHMR(type, pluginName, exportName = "default", callback) {
     const source = { id: pluginName, type: type };
 
     if (!hmrSubscribers[type]) hmrSubscribers[type] = {};
@@ -208,23 +151,24 @@ export default function subscribePluginHMR(type, pluginName, useParams = {}, cal
         targetSet = new Set();
         hmrSubscribers[type][pluginName] = targetSet;
     }
-    const fn = async (plugin, pluginInfo) => {
+    const fn = async (api, info) => {
         try {
-            callback(await usePlugin({ plugin, type, name: pluginName, ...useParams }), pluginInfo);
+            callback({ api: resolveExportName(api, exportName), info });
         } catch (err) {
             reportPluginException(source, "Plugin HMR callback failed.", err);
         }
     };
 
     let unsubscribed = false;
-    getPlugin(type, pluginName)
-        .then((plugin) => usePlugin({ type, name: pluginName, plugin, ...useParams }))
-        .then((using) => callback(using, plugins[type][pluginName].info))
-        .catch((err) => reportPluginException(source, "Plugin HMR initial callback failed.", err))
-        .finally(() => {
-            if (!unsubscribed) targetSet.add(fn);
-        });
+    console.log(type, pluginName);
+    getPlugin(type, pluginName, exportName)
+        .then((pluginApi) => {
+            if (!unsubscribed && pluginApi)
+                callback({ api: pluginApi, info: plugins[type][pluginName].info });
+        })
+        .catch((err) => reportPluginException(source, "Plugin HMR initial callback failed.", err));
 
+    targetSet.add(fn);
     return () => {
         unsubscribed = true;
         targetSet.delete(fn);
@@ -247,10 +191,10 @@ async function callHmr(pluginInfo, plugin) {
     });
 }
 
-ipcRenderer.on("plugin-hmr", async (_, pluginInfo) => {
+ipcRenderer.on("plugin:hmr", async (_, pluginInfo) => {
     if (!getAppData().config.devMode) return;
     console.log("Plugin HMR:", pluginInfo.name);
-    updatePlugin({ ...pluginInfo, ready: true }, true);
+    updatePlugin(pluginInfo, !pluginInfo.error);
 });
 
 ipcRenderer.on("plugin:list", (_, p, changedPlugins) => {
@@ -258,6 +202,10 @@ ipcRenderer.on("plugin:list", (_, p, changedPlugins) => {
 });
 
 ipcRenderer.on("plugin:update", (_, { info, previous, buildChanged }) => {
-    if (previous) delete plugins[previous.type]?.[previous.name];
+    if (previous && (info.name !== previous.name || info.type !== previous.type)) {
+        if (info.type === previous.type && plugins[info.type][info.name])
+            plugins[info.type][info.name] = plugins[previous.type]?.[previous.name];
+        delete plugins[previous.type]?.[previous.name];
+    }
     updatePlugin(info, buildChanged);
 });

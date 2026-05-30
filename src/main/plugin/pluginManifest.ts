@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { join } from "node:path";
+import { join } from "path";
 import { PLUGIN_TYPES, PluginManifest, RawManifest } from "./type";
 
 export const MANIFEST = "manifest.json";
@@ -11,6 +11,7 @@ export type ManifestReadResult =
           detail?: string;
           error?: any;
           silent?: boolean;
+          isENOENT?: boolean;
       };
 
 export function normalizeManifest(mani: RawManifest): PluginManifest {
@@ -20,8 +21,15 @@ export function normalizeManifest(mani: RawManifest): PluginManifest {
         entry = mani.main ? "src/renderer/index.js" : "src/index.js",
         outDir = mani.main ? "dist/renderer/" : "dist"
     } = mani;
-    const result: any = { name, type: type, entry, outDir };
-    result.attributes = mani.attributes ?? mani.attr ?? [];
+    const result: any = { name, type, entry, outDir };
+    if (typeof mani.description === "string") result.description = mani.description;
+    if (type === "runtime") result.exports = { default: mani.attributes ?? mani.attr ?? null };
+    else if (mani.exports) {
+        result.exports = Array.isArray(mani.exports)
+            ? Object.fromEntries(mani.exports.map((k) => [k, null]))
+            : mani.exports;
+    } else result.exports = { default: mani.attributes ?? mani.attr ?? null };
+
     if (type === "runtime") {
         let steps = mani.steps ?? {};
         if (Array.isArray(steps)) steps = Object.fromEntries(steps.map((s) => [s, null]));
@@ -34,10 +42,10 @@ export function normalizeManifest(mani: RawManifest): PluginManifest {
             };
         }
     } else if ((type === "element" || type === "frame") && mani.svelte) result.svelte = true;
+
     return result;
 }
-export async function getManifest(...dirs: string[]): Promise<ManifestReadResult> {
-    const manifestPath = join(...dirs, MANIFEST);
+export async function getManifest(manifestPath: string): Promise<ManifestReadResult> {
     let result = "";
     try {
         result = (await fs.readFile(manifestPath, "utf8")).toString();
@@ -47,7 +55,8 @@ export async function getManifest(...dirs: string[]): Promise<ManifestReadResult
             reason: "read-failed",
             detail: `Manifest file could not be read: ${manifestPath}`,
             error,
-            silent: error?.code === "ENOENT"
+            silent: error?.code === "ENOENT",
+            isENOENT: error?.code === "ENOENT"
         };
     }
 

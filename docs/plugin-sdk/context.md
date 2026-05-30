@@ -45,7 +45,7 @@ ctx.logger.error("failed to start");
 
 These messages go through the plugin log path. This is usually better than writing important plugin feedback only to `console`.
 
-Missing components, resources, variables, services, and invalid event usage are also reported through the app diagnostic path as plugin issues.
+Missing resources, variables, services, and invalid event usage are also reported through the app diagnostic path as plugin issues.
 
 ## Lifecycle
 
@@ -115,14 +115,82 @@ Use `use` when a missing service is an expected plugin issue. Use `tryUse` for o
 
 ## Components
 
-`ctx.components` gives you handles for live runtime components:
+`ctx.components` is a handle lookup API for live runtime components. It no longer acts as a manager where you pass an id into every mutation call. Find the component once, then use the returned handle:
 
 ```js
 const components = ctx.components.list();
 const panel = ctx.components.get("panel");
+
+panel?.setVisible(false);
+panel?.setPositionBy({ x: 20, y: -10 });
 ```
 
-Handles are snapshots of current runtime state. If you need ongoing updates, subscribe:
+`get(aliasOrId)` looks up a component by alias or real id. In a component-bound context, such as an element or frame plugin, `get()` without an argument returns the current component handle:
+
+```js
+const current = ctx.components.get();
+current?.setZIndex(10);
+```
+
+If no component matches, `get()` returns `undefined`.
+
+Component handles are stable frozen objects. Their getters read current runtime state, so a handle can be kept and reused:
+
+```js
+const panel = ctx.components.get("panel");
+
+ctx.events.on("toggle-panel", () => {
+    panel?.setVisible(!panel.visible);
+});
+```
+
+Handle state changes affect the live runtime only. They do not modify project source data.
+
+| Handle member | Meaning |
+| ------------- | ------- |
+| `id` | Alias when present, otherwise the real component id. |
+| `realId` | Stored project component id. |
+| `alias` | Component alias, or `null`. |
+| `visible` | Current runtime visibility. |
+| `zIndex` | Current runtime z-index. |
+| `position` | Snapshot of current runtime position. |
+| `destroyed` | Truthy after the runtime component has been disconnected and destroyed. |
+| `unbreakable` | Whether normal removal should be blocked. |
+| `hasFrame` | Whether the component currently has a frame plugin. |
+| `elementCount` | Number of runtime child elements. |
+| `node` | Live component DOM node. Use only when handle methods cannot express the behavior. |
+
+Use handle methods for runtime state changes:
+
+| Method | Effect |
+| ------ | ------ |
+| `remove(ignoreUnbreakable?)` | Removes the component from the runtime. |
+| `setVisible(visible)` | Sets runtime visibility. |
+| `setZIndex(zIndex)` | Sets runtime z-index. |
+| `setStyle(style?)` | Replaces the runtime override CSS declaration string. |
+| `setPosition(position)` | Sets one or both position axes. |
+| `setPositionBy(delta)` | Moves from the current position by a pixel delta. |
+
+`setPosition` accepts partial axis data. A number or numeric string sets the axis distance. An object can set `distance`, `origin`, and `relative`:
+
+```js
+const panel = ctx.components.get("panel");
+
+panel?.setPosition({
+    x: { distance: 50, origin: "start" },
+    y: { distance: 25, origin: "center", relative: true }
+});
+
+panel?.setPositionBy({ x: 10, y: -5 });
+```
+
+`origin` is `"start"`, `"center"`, or `"end"`. A relative axis uses percentages; otherwise the distance is pixels. A `"center"` origin leaves that axis to the runtime's centered flex layout instead of emitting a `left`, `right`, `top`, or `bottom` declaration.
+
+Objects returned by getters are read snapshots. Mutating `handle.position.x.distance` does not move the component. Use `setPosition()` or `setPositionBy()` instead.
+
+`ctx.components.clear(ignoreUnbreakable?)` removes runtime components in bulk. Other component mutation APIs live on each handle.
+
+`ctx.components.subscribe()` observes component list lifecycle changes. It runs immediately with the current handle list, then runs when components are created, removed, or replaced:
 
 ```js
 const stop = ctx.components.subscribe((components) => {
@@ -130,13 +198,7 @@ const stop = ctx.components.subscribe((components) => {
 });
 ```
 
-Component APIs affect live runtime state, not project source data.
-
-Prefer explicit component APIs such as `setVisible`, `setZIndex`, `setStyle`, `remove`, and `clear`. `modify` is an advanced mutation API and is more compatibility-sensitive.
-
-`setStyle` expects a CSS declaration string, such as `left: 10px; top: 20px;`. It replaces the runtime override style for the component.
-
-A component handle's `element` is the live DOM element. Prefer context component APIs for stateful changes. Direct DOM mutation is advanced and may be overwritten by runtime updates.
+Property changes through live handles, such as `setVisible()` or `setPosition()`, do not trigger component subscribers.
 
 ## Variables
 
@@ -172,6 +234,8 @@ Use `path` or `getPath()` when you need a resolved runtime asset path. `src` is 
 
 Preload stores a prepared media element for later use. `createElement()` may consume an existing preload for that resource.
 
+The play runtime also provides `<repair-asset>` for rendering image and video resources from plugin-created DOM. See [Rendering resources in plugin DOM](./plugin-types.md#rendering-resources-in-plugin-dom).
+
 ## App, communication, and store
 
 `ctx.app` gives read-oriented app information:
@@ -196,12 +260,12 @@ Communication send APIs are fire-and-forget. They do not report delivery success
 
 ```js
 ctx.store.set("my-plugin.enabled", true);
-const enabled = ctx.store.get("my-plugin.enabled");
+const enabled = await ctx.store.get("my-plugin.enabled");
 ```
 
 Use namespaced store keys to avoid collisions.
 
-`ctx.store` is backed by the app-level Electron Store. It is not project-local. Generic type parameters on `store.get<T>()` are authoring-time hints only; validate untrusted or versioned values yourself.
+`ctx.store` is backed by the app-level Electron Store. It is not project-local. `store.get<T>()` returns `Promise<T>`. Generic type parameters are authoring-time hints only; validate untrusted or versioned values yourself.
 
 ## Internal app data
 

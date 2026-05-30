@@ -1,3 +1,7 @@
+/** @typedef {Record<string, (...args: unknown[]) => unknown>} MainMethods */
+/** @typedef {Record<string, (...args: unknown[]) => void>} RendererMethods */
+
+/** @returns {import("@fainthit/repair2-plugin-sdk").RuntimeMain<Record<string, unknown>, MainMethods, RendererMethods>} */
 export default function () {
     let r = null;
     return {

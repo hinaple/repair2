@@ -19,7 +19,7 @@ Your plugin package should usually be an ES module package. The version range sh
     "name": "my-plugin",
     "type": "module",
     "devDependencies": {
-        "@fainthit/repair2-plugin-sdk": "^0.2.0"
+        "@fainthit/repair2-plugin-sdk": "^0.2.2"
     }
 }
 ```
@@ -27,14 +27,13 @@ Your plugin package should usually be an ES module package. The version range sh
 The package is type-first. Importing types is the normal way to use it:
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default {
-    function({ ctx }) {
-        ctx.logger.info("hello from a function plugin");
-    }
-};
+export default function hello({ ctx }) {
+    ctx.logger.info("hello from a function plugin");
+}
 ```
+
+Plugins created by the REPAIR2 editor include this dependency for you. The editor may also place its bundled SDK copy under the new plugin's `node_modules` directory so editor-created plugins work without a separate install step.
 
 ## Plugin directory
 
@@ -114,7 +113,23 @@ For a runtime plugin with a main-process entry, add `main`:
 }
 ```
 
-Element and frame plugins can set `svelte: true`. This lets REPAIR2 add the Svelte Vite plugin while building the plugin source. It does not create a separate plugin type or change the runtime export contract.
+Element and frame plugins can set `svelte: true`. This lets REPAIR2 add the Svelte Vite plugin while building the plugin source. It does not create a separate plugin type.
+
+Element, frame, function, and transition plugins can declare multiple renderer exports:
+
+```json
+{
+    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+    "name": "button-pack",
+    "type": "element",
+    "exports": {
+        "primary": ["label"],
+        "secondary": ["label"]
+    }
+}
+```
+
+When `exports` is present, the plugin entry must export every declared name. If a plugin only uses the default export, use `attributes` as the shorter default-export form.
 
 See [Manifest](./manifest.md) for the full manifest guide.
 
@@ -123,6 +138,8 @@ See [Manifest](./manifest.md) for the full manifest guide.
 REPAIR2 owns the plugin build and load path. It reads the manifest, builds the declared entry with Vite, then imports the built JavaScript output. In development mode, plugin changes can trigger hot replacement.
 
 For normal plugins, the default source entry is `src/index.js` and the default output directory is `dist`. For runtime plugins with `main`, the default renderer entry is `src/renderer/index.js`, the default renderer output is `dist/renderer`, the default main entry is `src/main/index.js`, and the default main output is `dist/main`.
+
+The source directory is needed while authoring or rebuilding a plugin. A project can still run from built plugin output when the original source directory is not present. See [Loading and HMR](./loading-and-hmr.md) for the deeper project loading, linked plugin, and hot-reload behavior.
 
 Your plugin should export the shape that matches its manifest type:
 
@@ -136,21 +153,18 @@ Use the type name as the reference. The docs explain when to use each shape, but
 
 ## Source formats
 
-Plain JavaScript is enough for plugins. Use `// @ts-check` and JSDoc type imports when you want type checking without a separate TypeScript build step.
+Plain JavaScript is enough for plugins. JSDoc type imports can document the expected plugin shape without adding a separate TypeScript build step.
 
 TypeScript is also fine when Vite can handle your source entry. JavaScript is the output format; plugin authors do not need a separate build step unless their source setup requires work outside Vite's normal handling.
 
 ## A minimal function plugin
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default {
-    function({ attributes, ctx }) {
-        ctx.logger.info("function plugin ran", attributes);
-        return true;
-    }
-};
+export default function run({ attributes, ctx }) {
+    ctx.logger.info("function plugin ran", attributes);
+    return true;
+}
 ```
 
 Function plugins are short-lived. If you subscribe to anything, clean it up before the function returns unless you have a very specific reason not to.
@@ -158,23 +172,40 @@ Function plugins are short-lived. If you subscribe to anything, clean it up befo
 ## A minimal element plugin
 
 ```js
-// @ts-check
-/** @typedef {import("@fainthit/repair2-plugin-sdk").ElementOptions} ElementOptions */
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
+export default function mount({ attributes, ctx }, { target, dispatchEvent }) {
+    target.textContent = attributes.label ?? ctx.plugin.id;
 
-export default class ExampleElement extends HTMLElement {
-    /** @param {ElementOptions} [options] */
-    constructor({ attributes, ctx } = {}) {
-        super();
-        this.textContent = attributes?.label ?? ctx?.plugin.id ?? "element";
-    }
+    const onClick = () => dispatchEvent("click");
+    target.addEventListener("click", onClick);
+
+    return () => {
+        target.removeEventListener("click", onClick);
+    };
 }
 ```
 
-Element and frame plugins are constructors. REPAIR2 creates them with `new Plugin({ attributes, ctx })`.
+Element plugins are mount functions. REPAIR2 calls them with `{ attributes, ctx }` and `{ target, dispatchEvent }`. The returned function, when present, is called during plugin cleanup.
 
-## Type checking
+Frame plugins use the same mount shape, but receive `{ target, children, showIntro }` as the second argument. Append `children` to the location where the component elements should render.
 
-Plain JavaScript plugins can use `// @ts-check` and JSDoc type imports. TypeScript plugins can import SDK types directly.
+For a plugin with multiple element or frame exports, type each named export:
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
+export function primary({ attributes }, { target }) {
+    target.textContent = attributes.label ?? "Primary";
+}
+
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
+export function secondary({ attributes }, { target }) {
+    target.textContent = attributes.label ?? "Secondary";
+}
+```
+
+## Type references
+
+Plain JavaScript plugins can use JSDoc type imports as references. TypeScript plugins can import SDK types directly.
 
 If your editor does not pick up DOM types such as `HTMLElement`, make sure your TypeScript configuration includes the `DOM` library.
 

@@ -70,12 +70,12 @@
         padding: 5px 5px 10px 10px;
     }
     .variable:hover {
-        border-color: rgba(255, 255, 255, 0.2);
+        border-color: var(--w-o2);
     }
     .variable.editing {
         opacity: 1;
         padding: 10px;
-        border-color: #4e86ff;
+        border-color: var(--blue-bright);
     }
     .icon {
         border-radius: 5px;
@@ -88,7 +88,7 @@
         opacity: 0.5;
     }
     .icon:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--w-o1);
         opacity: 1 !important;
     }
     .top {

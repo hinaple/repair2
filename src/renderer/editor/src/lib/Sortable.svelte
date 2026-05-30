@@ -271,10 +271,10 @@
     }
 
     .enum > .floating {
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: var(--b-o3);
     }
     .enum > .item-wrapper {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: var(--b-o1);
     }
 
     .listener > .floating {

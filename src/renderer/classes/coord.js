@@ -10,9 +10,7 @@ export default class Coord {
         return `${this.x.styleStringWhenX} ${this.y.styleStringWhenY}`;
     }
     //#endonly
-    //#only editor
     get storeData() {
         return { x: this.x.storeData, y: this.y.storeData };
     }
-    //#endonly
 }

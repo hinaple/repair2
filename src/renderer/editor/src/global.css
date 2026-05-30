@@ -4,6 +4,23 @@
     --toast-z: 120;
     --info-z: 150;
     --contextmenu-z: 200;
+
+    --w-o8: rgba(255, 255, 255, 0.8);
+    --w-o2: rgba(255, 255, 255, 0.2);
+    --w-o1: rgba(255, 255, 255, 0.1);
+
+    --b-o8: rgba(0, 0, 0, 0.8);
+    --b-o4: rgba(0, 0, 0, 0.4);
+    --b-o3: rgba(0, 0, 0, 0.3);
+    --b-o2: rgba(0, 0, 0, 0.2);
+    --b-o1: rgba(0, 0, 0, 0.1);
+
+    --blue-dark: #2b6eff;
+    --blue-bright: #4e86ff;
+
+    --orange: #e15300;
+    --orange-contextmenu: #ff8000;
+    --yellow-hightlight: #ffe734;
 }
 
 body {
@@ -64,15 +81,15 @@ hr {
     opacity: 0.6;
 }
 .focus {
-    outline: solid var(--outline-width) #2b6eff;
+    outline: solid var(--outline-width) var(--blue-dark);
 }
 .contextmenu {
-    outline: dashed var(--outline-width) #ff8000;
+    outline: dashed var(--outline-width) var(--orange-contextmenu);
 }
 .hl-variable,
 .hl-resource,
 .hl-plugin {
-    outline: solid var(--outline-width) #ffe734;
+    outline: solid var(--outline-width) var(--yellow-hightlight);
     outline-offset: 3px;
 }
 
@@ -81,7 +98,7 @@ textarea,
 select {
     padding: 2px 4px;
     border: solid transparent 1px;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--w-o2);
     font-family: "Pretend";
     font-size: 16px;
     color: #fff;
@@ -103,7 +120,7 @@ select.small {
 input:hover,
 textarea:hover,
 select:hover {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--w-o2);
 }
 option {
     background-color: #1e1e1e;
@@ -135,7 +152,7 @@ textarea {
 input:focus,
 textarea:focus,
 select:focus {
-    border-color: #4e86ff !important;
+    border-color: var(--blue-bright) !important;
 }
 
 button {
@@ -144,31 +161,6 @@ button {
     font-family: inherit;
 }
 
-@font-face {
-    font-family: "HelveticaExt";
-    src: url(./assets/fonts/helveticaExt.woff);
-    font-weight: 400;
-}
-@font-face {
-    font-family: "HelveticaExt";
-    src: url(./assets/fonts/helveticaExtLight.woff);
-    font-weight: 300;
-}
-@font-face {
-    font-family: "Noto Serif";
-    src: url(./assets/fonts/NotoSerifKR-Regular.ttf);
-    font-weight: 400;
-}
-@font-face {
-    font-family: "Noto Serif";
-    src: url(./assets/fonts/NotoSerifKR-Light.ttf);
-    font-weight: 300;
-}
-@font-face {
-    font-family: "Noto Serif";
-    src: url(./assets/fonts/NotoSerifKR-Medium.ttf);
-    font-weight: 500;
-}
 @font-face {
     font-family: "Pretend";
     src: url(./assets/fonts/PretendardVariable.woff2) format("woff2-variations");

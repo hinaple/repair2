@@ -254,10 +254,11 @@
         min-width: 200px;
         display: flex;
         flex-direction: column;
-        box-shadow: rgba(0, 0, 0, 0.3) 3px 3px 4px;
+        box-shadow: var(--b-o3) 3px 3px 4px;
         border-radius: 10px;
         left: 0;
         top: 0;
+        background-color: var(--w-o8);
     }
     .head {
         color: #fff;

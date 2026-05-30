@@ -17,13 +17,10 @@ npm install --save-dev @fainthit/repair2-plugin-sdk
 Use JSDoc type imports from JavaScript plugin code:
 
 ```js
-// @ts-check
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default {
-    function({ ctx }) {
-        ctx.logger.info("hello");
-    }
-};
+export default function hello({ ctx }) {
+    ctx.logger.info("hello");
+}
 ```
 
 Or import types from TypeScript:
@@ -40,7 +37,7 @@ const plugin: RuntimeExport = {
 export default plugin;
 ```
 
-Plugin exports may be plain objects or factory functions, depending on the plugin type. The exported SDK types model both forms where the runtime supports them.
+Plugin export shapes depend on the plugin type. Runtime plugins may use an object or factory default export. Element and frame plugins export mount functions. Function plugins export functions. Transition plugins export keyframes or functions that return keyframes.
 
 ## Manifest schema
 
@@ -63,8 +60,13 @@ The schema is exported as `@fainthit/repair2-plugin-sdk/plugin-manifest.schema.j
 - `FrameExport`
 - `FunctionExport`
 - `TransitionExport`
+- `ElementExports`
+- `FrameExports`
+- `FunctionExports`
+- `TransitionExports`
 - `RuntimeMainExport`
 - `PluginContext`
+- `PluginPointer`
 
 ## Context
 

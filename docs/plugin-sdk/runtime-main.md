@@ -30,6 +30,8 @@ The explicit paths above match the defaults used when `main` is present.
 
 The renderer entry exports `RuntimeExport`:
 
+Runtime plugins always use the default renderer export. Manifest `exports` is for element, frame, function, and transition plugins, not runtime plugins.
+
 ```ts
 import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 import type { Attr, Main, Renderer } from "./plugin-types";
@@ -122,6 +124,10 @@ The renderer method list is captured from the `renderer` object during activatio
 For each renderer activation request, REPAIR2 creates a new main runtime instance for that plugin and disposes the previous one. Main `activate()` runs before renderer `activate()` finishes.
 
 If main `activate()` calls a renderer method, REPAIR2 queues the call until renderer `activate()` has completed. Renderer methods should still be idempotent commands and should tolerate disposal before delivery.
+
+The main runtime instance follows the renderer runtime lifecycle. When the renderer runtime instance is replaced or disposed, the paired main instance is disposed too.
+
+During HMR, a main-side rebuild causes REPAIR2 to reload the main entry and replace the renderer runtime side as well. A renderer-side rebuild replaces the renderer runtime side; the existing main module is not necessarily re-imported, but the main instance is still recreated because activation follows the renderer lifecycle.
 
 The renderer entry may also be activated more than once over its lifetime. A later renderer `activate()` call does not mean that REPAIR2 re-imported the renderer module. The factory may run before main activation, and should not be used for main/renderer coordination. Do not use module-level mutable variables to model activation lifetime; keep activation state inside the activated object, inside `activate()`, or in runtime-owned storage such as `ctx.store`.
 

@@ -2,8 +2,6 @@ import { app, dialog, shell } from "electron";
 import { emptyDir } from "fs-extra";
 import { join } from "path";
 import { createWriteStream } from "fs";
-import archiver from "archiver";
-import StreamZip from "node-stream-zip";
 import { readdir } from "fs/promises";
 import { closeSplash } from "./splash";
 
@@ -35,7 +33,7 @@ export default class ProjectFileManager {
         return new Promise(async (res, rej) => {
             const result = await dialog.showSaveDialog({
                 title: "프로젝트 내보내기",
-                defaultPath: join(app.getPath("documents"), `${projectName}.repair`),
+                defaultPath: `${projectName}.repair`,
                 filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
             });
             if (!result || result.canceled) {
@@ -45,7 +43,7 @@ export default class ProjectFileManager {
             this.importing = true;
 
             const output = createWriteStream(result.filePath);
-            const archive = archiver("zip", { zlip: { level: 0 } });
+            const archive = (await import("archiver")).default("zip", { zlip: { level: 0 } });
             output.on("close", () => {
                 res(true);
                 shell.showItemInFolder(result.filePath);
@@ -80,11 +78,14 @@ export default class ProjectFileManager {
         return new Promise(async (res, rej) => {
             try {
                 this.importing = true;
-                this.beforeImport?.();
+                await this.beforeImport?.();
 
                 await emptyDir(this.dataDir);
 
-                const zip = new StreamZip.async({ file: filePath, storeEntries: true });
+                const zip = new (await import("node-stream-zip")).async({
+                    file: filePath,
+                    storeEntries: true
+                });
 
                 const totalEntrySize = Object.values(await zip.entries()).reduce(
                     (p, e) => p + e.size,
@@ -107,8 +108,8 @@ export default class ProjectFileManager {
                 await zip.extract(null, this.dataDir);
                 await zip.close();
 
+                await this.afterImport?.();
                 this.importing = false;
-                this.afterImport?.();
                 res();
             } catch (error) {
                 rej(error);

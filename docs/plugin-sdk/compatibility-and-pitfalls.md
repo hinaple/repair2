@@ -26,15 +26,21 @@ The schema describes the public manifest shape for editor support. Current runti
 
 See [Manifest](./manifest.md) for manifest fields and defaults.
 
+## Plugin names are global
+
+REPAIR2 identifies plugins by the manifest `name`, not by the directory name. Names should be unique across all plugin types.
+
+If multiple plugin manifests use the same name, REPAIR2 reports a warning and does not guarantee which one will be used. Treat duplicate plugin names as a project error, even when the duplicate plugins have different types.
+
 ## `runtime` with `main` is still `runtime`
 
 The manifest type is still `runtime`; the `main` property adds a main-process entry.
 
 If a runtime plugin does not have `main` in its manifest, renderer `activate()` receives `main: null`.
 
-## Object exports and factory exports
+## Export shapes differ by plugin type
 
-Runtime, function, transition, and runtime main entries can be object exports or factory exports.
+Runtime and runtime main entries can be object exports or factory exports.
 
 ```js
 export default {
@@ -48,11 +54,17 @@ export default () => ({
 });
 ```
 
-Element and frame plugins are constructor exports only. REPAIR2 calls `new Plugin({ attributes, ctx })`.
+Element and frame plugins are mount function exports. REPAIR2 calls the selected export when the plugin should render into a runtime-owned host element.
 
-Write element and frame constructors so the options object can be omitted. This keeps older or test code from breaking unnecessarily.
+```js
+export default function mount({ attributes, ctx }, options) {
+    // ...
+}
+```
 
-Renderer runtime, function, and transition factories may be async where the SDK type allows it. Runtime main factories should return the object synchronously.
+Element mount functions receive `{ target, dispatchEvent }` as their second argument. Frame mount functions receive `{ target, children, showIntro }`.
+
+Function plugins should export bare functions. Transition plugins should export keyframes directly or a function that returns keyframes. Function and transition factories are not supported. Runtime main factories should return the object synchronously.
 
 ## Renderer activation is not module construction
 
@@ -62,29 +74,53 @@ The renderer runtime does not promise a specific instance creation moment. Avoid
 
 Runtime plugins can be deactivated and activated again when runtime plugin config changes, project data resets runtime plugins, or HMR reloads the plugin. Runtime plugin payload comparison is shallow, so update payload objects immutably when you expect a runtime plugin to restart.
 
-## Function plugins are objects
+REPAIR2 tries to keep already-running plugins available when a rebuild, import, or HMR update fails. A failed update can leave the previous imported plugin instance in use so the play renderer can continue running. Plugin code should still report expected failures through `ctx.logger`, because production-style play can avoid interrupting the user with dialogs for plugin runtime errors.
 
-The current function plugin contract is an object with a `function` property.
+For project-level loading, linked plugin, and HMR details, see [Loading and HMR](./loading-and-hmr.md).
 
-```js
-export default {
-    function() {}
-};
-```
+## Function plugins are functions
 
-Do not export a bare function as the plugin itself.
-
-## Transition plugins are objects
-
-Transition plugins export an object with `keyframes` or `function`.
+The current function plugin contract is a function export.
 
 ```js
-export default {
-    keyframes: [{ opacity: 0 }, { opacity: 1 }]
-};
+export default function run({ attributes, ctx }) {}
 ```
 
-Direct keyframe array exports are not part of the current contract.
+For compatibility, REPAIR2 still accepts an object with a `function` property, but that shape is deprecated for new plugins.
+
+## Transition plugins return keyframes
+
+Transition plugins export keyframes directly, or export a function that returns keyframes.
+
+```js
+export default [{ opacity: 0 }, { opacity: 1 }];
+```
+
+```js
+export function fade({ component }) {
+    return [{ opacity: 0 }, { opacity: 1 }];
+}
+```
+
+For compatibility, REPAIR2 still accepts an object with a `keyframes` property, but that shape is deprecated for new plugins. A `function` property on a transition object is ignored.
+
+## Declared exports must exist
+
+If a manifest declares renderer exports, the plugin entry must export every declared name.
+
+```json
+{
+    "type": "function",
+    "exports": ["check", "run"]
+}
+```
+
+```js
+export function check() {}
+export function run() {}
+```
+
+During development, REPAIR2 reports missing declared exports through the plugin diagnostics path. Runtime plugins do not support manifest `exports`; they always use the default renderer export.
 
 ## Runtime step names must match the manifest
 
@@ -153,17 +189,29 @@ ctx.lifecycle.onDispose(() => clearInterval(interval));
 
 Function and transition plugins are usually short-lived. Avoid long-lived subscriptions there unless you clean them up explicitly.
 
-Element and frame plugins are replaced during HMR. Their previous context is disposed when the replacement is mounted.
+If a plugin needs persistent state or long-lived coordination, prefer a runtime, element, or frame plugin. Function and transition plugins should usually finish their work and release resources quickly.
+
+Element and frame plugins are replaced during HMR. Their previous mount cleanup and context disposal run before the replacement mount. Mount functions may also return a cleanup function. REPAIR2 calls it during plugin unmount.
+
+For element plugins, REPAIR2 clears the host `target` before mounting the plugin. Do not rely on DOM children from a previous mount still being present.
+
+For frame plugins, `children` contains runtime-owned component element nodes. Append it to the correct initial location, but avoid side effects on those child nodes. Do not destroy them, store them for later mutation, or treat them as plugin-owned DOM.
+
+During frame replacement, the previous frame cleanup runs before the new frame mount places the current `children` fragment. Frame cleanup should use direct references to the listeners, resources, and DOM created by that frame plugin, not queries against current child element placement.
 
 Renderer runtime plugins may also return a disposer from `activate()` or provide a `dispose` property. Runtime main entries should use `ctx.lifecycle.onDispose` or return a disposer from `activate()`.
 
-## Component handles are snapshots
+## Component handles are live handles
 
-Component and resource handles describe current runtime state. They are useful for decisions and rendering, but they are not permanent project data ownership.
+Component handles are stable frozen objects with getters that read current runtime state. Keep a handle when you want to operate on the same runtime component later.
 
-For ongoing UI, subscribe to changes. For one-time operations, read the handle close to the operation.
+Getter return values that are objects are snapshots. For example, mutating `handle.position.x.distance` does not move the component. Use handle methods such as `setPosition()` or `setPositionBy()` for runtime changes.
 
-The same rule applies to resource handles. They describe current runtime state, not a stable ownership model.
+`ctx.components.subscribe()` observes component creation, removal, and replacement. It does not run when a live handle changes visibility, style, z-index, or position.
+
+`handle.node` exposes the live component DOM node. Use it only when the handle methods cannot express the behavior; direct DOM mutation can be overwritten by runtime updates.
+
+Resource handles still describe current runtime state. Read them close to the operation that needs them.
 
 ## Event scope matters
 

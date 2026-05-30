@@ -19,7 +19,7 @@
         gap: 3px;
         padding: 3px;
         border-radius: 8px;
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: var(--b-o2);
         margin-inline: auto 0px;
         box-sizing: border-box;
     }

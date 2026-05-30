@@ -152,6 +152,6 @@
         cursor: pointer;
     }
     .add:hover {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: var(--b-o1);
     }
 </style>

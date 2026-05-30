@@ -2,22 +2,22 @@ import { setVar, subscribe } from "../lib/variables";
 
 export default class RepairInput extends HTMLElement {
     private unsubscribers: Array<() => void> = [];
-    private _value: string = null;
-    private variableId: string;
+    private _value: string | null = null;
+    private variableId: string | null;
     private inputListeners: Array<Function> = [];
-    public maxLength: number = null;
-    public securityText: string = null;
+    public maxLength: number | null = null;
+    public securityText: string | null = null;
 
-    private display: HTMLElement = null;
-    private blinkCursor: HTMLDivElement = null;
+    private display: HTMLElement | null = null;
+    private blinkCursor: HTMLDivElement | null = null;
     constructor({
         variableId = null,
         maxLength = null,
         securityText = null
     }: {
-        variableId: string;
-        maxLength: number;
-        securityText: string;
+        variableId: string | null;
+        maxLength: number | null;
+        securityText: string | null;
     }) {
         super();
         this.variableId = variableId;
@@ -31,7 +31,7 @@ export default class RepairInput extends HTMLElement {
         this.append(this.display, this.blinkCursor);
 
         if (variableId)
-            this.registerUnsubscriber(subscribe(variableId, (value) => (this.value = value)));
+            this.registerUnsubscriber(subscribe(variableId, (value: any) => (this.value = value)));
     }
     setValue(v: string) {
         this.value = v;
@@ -43,20 +43,24 @@ export default class RepairInput extends HTMLElement {
         let tempV = v ?? "";
         if (this.maxLength !== null) tempV = tempV.substring(0, this.maxLength);
 
-        this.display.innerText = this.securityText ? this.securityText.repeat(tempV.length) : tempV;
+        if (this.display)
+            this.display.innerText = this.securityText
+                ? this.securityText.repeat(tempV.length)
+                : tempV;
         this._value = tempV;
     }
     get value(): string {
         return this._value ?? "";
     }
-    registerUnsubscriber(unsub: () => void) {
+    registerUnsubscriber(unsub: (() => void) | null = null) {
+        if (!unsub) return;
         this.unsubscribers.push(unsub);
     }
     isInputEvent(evt: KeyboardEvent) {
         return evt.key.length === 1 && !evt.altKey && !evt.ctrlKey;
     }
     connectedCallback() {
-        const onkeydownOpt: [string, (object) => void, object] = [
+        const onkeydownOpt: [string, (evt: any) => void, object] = [
             "keydown",
             (evt) => {
                 if (evt.key === "Backspace")
@@ -75,8 +79,8 @@ export default class RepairInput extends HTMLElement {
     }
     addEventListener(
         type: keyof HTMLElementEventMap,
-        listener: (object) => void,
-        options?: unknown
+        listener: (evt: any) => void,
+        options?: any
     ): void {
         if (type === "input") {
             this.inputListeners.push(listener);

@@ -16,6 +16,8 @@ import Entry from "@classes/nodes/entry.svelte";
 import { sendChanges } from "./lib/runtimeMonitor";
 import { afterPluginImported } from "./lib/plugin/pluginManager";
 
+import "./webcomponents/repairAsset";
+
 const disabledNodes = [];
 Output.prototype.goto = function () {
     if (!this.to || disabledNodes.includes(this.to)) return;
