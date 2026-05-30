@@ -1,0 +1,13 @@
+.tippy-box {
+    background-color: #1e1e1e;
+    opacity: 0.9;
+}
+.tippy-arrow {
+    color: #1e1e1e;
+}
+
+.tippy-content {
+    font-size: 14px;
+    text-align: center;
+    line-break: anywhere;
+}

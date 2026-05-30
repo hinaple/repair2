@@ -2,6 +2,7 @@
     import { hoverHighlight } from "../../lib/highlight";
     import Icon from "../../assets/icons/Icon.svelte";
     import { getVscode, openVscode } from "../../lib/vscode";
+    import { tippy } from "../../lib/tippy";
 
     let { info } = $props();
 
@@ -9,7 +10,19 @@
     let showOpt = $state(false);
 </script>
 
-<div class="plugin" use:hoverHighlight={{ type: "plugin", data: info.name }}>
+<div
+    use:tippy={{
+        maxWidth: 250,
+        placement: "bottom",
+        animation: "fade",
+        content: `${info.linked?.sourcePath ?? info.dir}`,
+        delay: [200, null],
+        hideOnClick: false,
+        duration: 200
+    }}
+    class="plugin"
+    use:hoverHighlight={{ type: "plugin", data: info.name }}
+>
     {#if info.svelte}
         <Icon icon="svelte" color={!info.ready ? "#ff3636" : "#fff"} size={16} />
     {/if}
@@ -27,7 +40,11 @@
         />
     {/if}
     {#if getVscode()}
-        <button bind:this={moreBtn} class="more" onclick={() => openVscode(info.path)}>
+        <button
+            bind:this={moreBtn}
+            class="more"
+            onclick={() => openVscode(info.linked?.sourcePath ?? info.path)}
+        >
             <Icon icon="vscode" color="#fff" size={18} />
         </button>
     {/if}
