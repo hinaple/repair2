@@ -1,14 +1,16 @@
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { resolve } from "path";
+import { join } from "path";
 import renderer from "vite-plugin-electron-renderer";
-import onlyBlockPlugin from "../../../vitePlugins/only-block-plugin.mjs";
+import onlyBlockPlugin from "../../vitePlugins/only-block-plugin.mjs";
 
+const classPath = join(__dirname, "../classes");
+const outDir = join(__dirname, "../../../out/editor");
 export default defineConfig({
-    root: "src/renderer/editor",
-    cacheDir: "node_modules/.vite-editor",
+    root: __dirname,
+    cacheDir: join(__dirname, "../../../node_modules/.vite-editor"),
     plugins: [
-        onlyBlockPlugin({ target: "editor", dir: "../classes" }),
+        onlyBlockPlugin({ target: "editor", dir: "renderer/classes" }),
         svelte({
             onwarn: (warning, handler) => {
                 if (!warning.code.startsWith("a11y") && warning.code !== "state_referenced_locally")
@@ -26,11 +28,11 @@ export default defineConfig({
     base: "./",
     build: {
         emptyOutDir: true,
-        outDir: resolve(__dirname, "out/editor")
+        outDir: outDir
     },
     resolve: {
         alias: {
-            "@classes": resolve(__dirname, "../classes")
+            "@classes": classPath
         }
     },
     define: {

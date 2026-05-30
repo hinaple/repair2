@@ -2,9 +2,8 @@
     "compilerOptions": {
         "ignoreDeprecations": "6.0",
         "paths": {
-            "@classes/*": ["../../classes/*"]
+            "@classes/*": ["../classes/*"]
         }
     },
-    "include": ["./**/*"],
     "exclude": ["node_modules", "dist"]
 }

@@ -1,13 +1,19 @@
 import { defineConfig } from "vite";
-import { resolve } from "path";
+import { join } from "path";
 import renderer from "vite-plugin-electron-renderer";
-import vanillizer from "../../../vitePlugins/vanillizer";
-import onlyBlockPlugin from "../../../vitePlugins/only-block-plugin.mjs";
+import vanillizer from "../../vitePlugins/vanillizer";
+import onlyBlockPlugin from "../../vitePlugins/only-block-plugin.mjs";
 
+const classPath = join(__dirname, "../classes");
+const outDir = join(__dirname, "../../../out/play");
 export default defineConfig({
-    root: "src/renderer/play",
-    cacheDir: "node_modules/.vite-play",
-    plugins: [onlyBlockPlugin({ target: "play", dir: "../classes" }), renderer(), vanillizer],
+    root: __dirname,
+    cacheDir: join(__dirname, "../../../node_modules/.vite-play"),
+    plugins: [
+        onlyBlockPlugin({ target: "play", dir: "renderer/classes/" }),
+        renderer(),
+        vanillizer
+    ],
     server: {
         port: 3100
     },
@@ -18,11 +24,11 @@ export default defineConfig({
     base: "./",
     build: {
         emptyOutDir: true,
-        outDir: resolve(__dirname, "out/play")
+        outDir: outDir
     },
     resolve: {
         alias: {
-            "@classes": resolve(__dirname, "../classes")
+            "@classes": classPath
         }
     },
     define: {
