@@ -30,6 +30,8 @@ The explicit paths above match the defaults used when `main` is present.
 
 The renderer entry exports `RuntimeExport`:
 
+Runtime plugins always use the default renderer export. Manifest `exports` is for element, frame, function, and transition plugins, not runtime plugins.
+
 ```ts
 import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 import type { Attr, Main, Renderer } from "./plugin-types";

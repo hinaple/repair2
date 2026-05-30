@@ -8,6 +8,7 @@ import RepairInput from "./repairInput";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
 import { subscribePluginMount } from "../lib/plugin/pluginMount";
+import { callFunctionPlugin } from "../lib/plugin/pluginManager";
 
 const regexMap = {
     english: /[a-z]/gi,
@@ -132,6 +133,7 @@ export default class RepairElement extends HTMLElement {
                 subscribePluginMount({
                     type: "element",
                     name: element.payload.name,
+                    exportName: element.payload.exportName,
                     contextOption: {
                         component: this.componentIdentity,
                         element: this.elementIdentity
@@ -232,17 +234,23 @@ export default class RepairElement extends HTMLElement {
                                 .includes(evt?.detail?.hotspotIndex))
                     )
                         return;
-                    else if (l.types[0] === "plugin" && l.payload) {
+                    else if (l.types[0] === "plugin" && l.payload && l.payload.plugin?.name) {
                         try {
+                            const p = l.payload.plugin;
                             if (
-                                await l.payload
-                                    .use(null, {
+                                await callFunctionPlugin({
+                                    name: p.name,
+                                    exportName: p.exportName,
+                                    contextOptions: {
                                         component: this.componentIdentity,
                                         element: this.elementIdentity
-                                    })
-                                    .then((func) =>
-                                        func?.({ channel: l.payload.channel, event: evt })
-                                    )
+                                    },
+                                    argument: {
+                                        channel: l.payload.channel,
+                                        event: evt,
+                                        attributes: p.payloads
+                                    }
+                                })
                             )
                                 return;
                         } catch (err) {

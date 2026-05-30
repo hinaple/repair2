@@ -8,11 +8,9 @@ JSDoc type import를 사용하면 코드 옆에서 플러그인 형태를 확인
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ message: string }>} */
-export default {
-    function({ attributes, ctx }) {
-        ctx.logger.info(attributes.message);
-    }
-};
+export default function run({ attributes, ctx }) {
+    ctx.logger.info(attributes.message);
+}
 ```
 
 이 방식은 런타임 파일을 plain JavaScript로 유지하면서 기대되는 export shape를 문서화합니다.
@@ -24,11 +22,9 @@ export default {
 /** @typedef {import("@fainthit/repair2-plugin-sdk").FunctionExport<Attr, boolean>} Plugin */
 
 /** @type {Plugin} */
-export default {
-    function({ attributes }) {
-        return !!attributes.message;
-    }
-};
+export default function check({ attributes }) {
+    return !!attributes.message;
+}
 ```
 
 ## TypeScript
@@ -173,7 +169,7 @@ renderer.bar(123);
 
 ## Factory exports
 
-Runtime, function, transition, runtime main entry는 객체 또는 객체를 반환하는 factory를 export할 수 있습니다.
+Runtime 및 runtime main entry는 객체 또는 객체를 반환하는 factory를 export할 수 있습니다.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").RuntimeExport} */
@@ -184,24 +180,29 @@ export default () => ({
 });
 ```
 
-Function 및 transition factory도 같은 규칙을 따릅니다.
+Function 및 transition plugin factory는 지원하지 않습니다. Function plugin은 bare function을 export해야 합니다.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default () => ({
-    function({ ctx }) {
-        ctx.logger.info("called");
-    }
-});
+export default function run({ ctx }) {
+    ctx.logger.info("called");
+}
 ```
 
-Function plugin에서 객체는 반드시 `function` property를 가져야 합니다. Bare function default export는 contract에 포함되지 않습니다.
+호환성을 위해 REPAIR2는 `function` property가 있는 객체도 계속 허용하지만, 새 플러그인에서는 deprecated 형태입니다.
+
+Transition plugin은 keyframes를 직접 export하거나, keyframes를 반환하는 function을 export해야 합니다.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
-export default () => ({
-    keyframes: [{ opacity: 0 }, { opacity: 1 }]
-});
+export default [{ opacity: 0 }, { opacity: 1 }];
+```
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
+export function fade({ component }) {
+    return [{ opacity: 0 }, { opacity: 1 }];
+}
 ```
 
 Runtime main entry도 factory일 수 있습니다.
@@ -220,7 +221,42 @@ export default main;
 
 Element 및 frame plugin은 다릅니다. REPAIR2가 host element를 소유하고 host가 채워져야 할 때 플러그인을 호출하므로 mount function을 export합니다.
 
-Renderer runtime, function, transition factory는 SDK 타입이 허용하는 곳에서는 async일 수 있습니다. Runtime main factory는 main export object를 동기적으로 반환해야 합니다.
+Renderer runtime factory는 SDK 타입이 허용하는 곳에서는 async일 수 있습니다. Runtime main factory는 main export object를 동기적으로 반환해야 합니다.
+
+## 여러 renderer exports
+
+Element, frame, function, transition plugin은 manifest `exports` field를 통해 여러 renderer export를 노출할 수 있습니다. 각 export에 직접 타입을 붙이세요.
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ value: string }, boolean>} */
+export function isFilled({ attributes }) {
+    return !!attributes.value;
+}
+
+/** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ value: string }>} */
+export function logValue({ attributes, ctx }) {
+    ctx.logger.info(attributes.value);
+}
+```
+
+TypeScript에서는 export-map helper type으로 named export 그룹을 export하기 전에 확인할 수 있습니다.
+
+```ts
+import type { FunctionExport, FunctionExports } from "@fainthit/repair2-plugin-sdk";
+
+const functions = {
+    isFilled({ attributes }) {
+        return !!attributes.value;
+    },
+    logValue({ attributes, ctx }) {
+        ctx.logger.info(attributes.value);
+    }
+} satisfies FunctionExports<Record<string, FunctionExport<{ value: string }>>>;
+
+export const { isFilled, logValue } = functions;
+```
+
+같은 패턴을 `ElementExports`, `FrameExports`, `TransitionExports`로도 사용할 수 있습니다.
 
 ## Element 및 frame types
 

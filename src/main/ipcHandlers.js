@@ -6,6 +6,7 @@ import { basename, extname, join } from "path";
 import { createEmptyPlugin } from "./plugin/createEmptyPlugin";
 import { pathExists } from "./pathExists";
 
+/** @param {{ getPluginManager: () => PluginManager }} setupOpt */
 export function setupIpcHandlers({
     assetDir,
     dataDir,
@@ -98,6 +99,10 @@ export function setupIpcHandlers({
     //#endregion
 
     //#region appdata IPCs
+    ipcMain.on("config:is-dev", (evt) => {
+        evt.returnValue = !!getData()?.config?.devMode;
+    });
+
     ipcMain.on("request-data", (evt) => {
         evt.returnValue = { ...getData(), globalStyles: getGlobalCss() };
     });

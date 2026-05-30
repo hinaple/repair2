@@ -27,6 +27,17 @@ ipcRenderer.on("plugin:update", (_, { info, previous }) => {
             duration: 5000
         });
 });
+ipcRenderer.on("plugin:hmr", (_, info) => {
+    if (info.error) {
+        showToast({ title: `${info.name} 플러그인 오류`, content: info.error, duration: 5000 });
+        return;
+    } else if (!info.ready)
+        showToast({
+            title: "사용 불가능한 플러그인이 있습니다.",
+            content: info.name,
+            duration: 5000
+        });
+});
 
 function updatePlugins(p) {
     PLUGIN_TYPES.forEach((t) => {

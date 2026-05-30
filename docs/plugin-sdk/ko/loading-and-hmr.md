@@ -18,6 +18,8 @@ REPAIR2는 project `plugin-links.json` 파일도 읽습니다. 이 파일은 lin
 
 `plugin-links.json`은 project 내부 registry입니다. 일반적인 author-edited plugin configuration file로 취급하지 마세요. Editor link/unlink tool이 제공되는 경우 그 도구를 사용하는 것을 선호하세요.
 
+`plugin-links.json`을 수동으로 수정, 삭제, 이동, 재작성하지 마세요. 이 파일은 REPAIR2의 plugin link 기능이 관리하며, 사람이 직접 수정하면 project registry와 설치된 plugin manifest가 서로 맞지 않는 상태가 될 수 있습니다.
+
 Plugin list가 정해지면 REPAIR2는 각 plugin의 built output이 있는지 확인합니다. Built output이 없는 plugin은 play가 시작되기 전에 빌드됩니다. Development mode가 켜져 있으면 built output이 이미 있어도 linked plugin과 project-local plugin을 다시 빌드합니다.
 
 `main` entry가 있는 runtime plugin은 main process가 main-process output을 로드합니다. Plugin build와 main-side loading이 끝나면 play renderer가 시작되고 ready 상태의 renderer plugin output을 import합니다.
@@ -59,15 +61,15 @@ HMR이 active일 때 REPAIR2는 project plugin metadata를 감시합니다.
 
 - `plugins/*/manifest.json` 변경
 - `plugins/` 바로 아래 directory의 생성, 삭제, rename
-- `plugin-links.json` 변경
+- source directory가 사용 가능한 linked plugin의 source `manifest.json` 변경
 
-Project plugin manifest가 변경되면 REPAIR2는 해당 plugin 정보를 다시 로드하고 rebuild합니다. Directory 변경과 `plugin-links.json` 변경은 전체 plugin list rescan을 일으킵니다.
+Project plugin manifest가 변경되면 REPAIR2는 해당 plugin 정보를 다시 로드하고 rebuild합니다. Directory 변경은 전체 plugin list rescan을 일으킵니다.
 
 `name`이나 `type` 같은 manifest identity field를 바꾸거나, HMR이 실행 중인 동안 plugin directory structure를 바꾸면 일반 replacement path가 끊길 수 있습니다. 개발 중 plugin identity나 directory layout을 바꿨다면 full plugin reload 또는 project reload가 가장 명확한 복구 방법입니다.
 
-Linked plugin source manifest는 initial link creation 이후 live metadata source로 감시되지 않습니다. 일반 loading과 HMR 중 REPAIR2가 사용하는 metadata는 project copy의 manifest입니다. Linked plugin manifest를 source에서 갱신하는 기능은 추후 지원 예정입니다.
+Linked plugin에서는 REPAIR2가 source manifest를 development metadata source로 사용합니다. Linked source manifest가 변경되면 REPAIR2는 project copy의 `manifest.json`을 업데이트하고, plugin 정보를 다시 로드한 뒤 rebuild합니다.
 
-HMR에 의존하는 동안 `plugin-links.json`을 수동으로 삭제, 이동, 재작성하지 마세요. 현재 watcher는 일반적인 registry update를 위한 것이며, 임의의 registry file recovery를 위한 것이 아닙니다.
+Development mode가 켜진 동안 manifest가 일시적으로 invalid한 상태가 되면, REPAIR2는 해당 manifest를 계속 감시하고 파일이 다시 변경된 뒤 plugin update를 재시도할 수 있습니다. 현재 manifest 또는 build error는 editor diagnostics로 확인하세요.
 
 ## Runtime main HMR
 

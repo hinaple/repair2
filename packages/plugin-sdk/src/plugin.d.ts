@@ -1,7 +1,8 @@
-import type { ElementContext, FrameContext, FunctionContext, TransitionContext } from "./context";
+import type { ComponentIdentity, ElementContext, FrameContext, FunctionContext } from "./context";
 import type { Attributes, MaybePromise } from "./shared";
 
 export type PluginUnmount = () => MaybePromise<void>;
+export type TransitionKeyframes = Keyframe[] | PropertyIndexedKeyframes;
 
 export interface ElementMountArgs<TAttributes = Attributes> {
     attributes: TAttributes;
@@ -38,6 +39,8 @@ export type FramePlugin<TAttributes = Attributes> = (
 
 export type ElementExport<TAttributes = Attributes> = ElementPlugin<TAttributes>;
 export type FrameExport<TAttributes = Attributes> = FramePlugin<TAttributes>;
+export type ElementExports<TExports extends Record<string, ElementExport<any>>> = TExports;
+export type FrameExports<TExports extends Record<string, FrameExport<any>>> = TExports;
 
 export interface FunctionArgs<TAttributes = Attributes> {
     /** Stored plugin pointer payloads passed to this call. */
@@ -56,48 +59,28 @@ export type FunctionHandler<TAttributes = Attributes, TResult = unknown> = (
     args: FunctionArgs<TAttributes>
 ) => MaybePromise<TResult>;
 
-/**
- * Function plugin export contract.
- * The current runtime calls the `function` property; bare function exports are not part of this contract.
- */
+/** @deprecated Export a bare function instead. Object exports with a `function` key are legacy-only. */
 export interface FunctionPlugin<TAttributes = Attributes, TResult = unknown> {
     function: FunctionHandler<TAttributes, TResult>;
     [key: string]: unknown;
 }
 
-export type FunctionFactory<TAttributes = Attributes, TResult = unknown> = () => MaybePromise<
-    FunctionPlugin<TAttributes, TResult>
->;
-
 export type FunctionExport<TAttributes = Attributes, TResult = unknown> =
-    | FunctionPlugin<TAttributes, TResult>
-    | FunctionFactory<TAttributes, TResult>;
+    | FunctionHandler<TAttributes, TResult>
+    | FunctionPlugin<TAttributes, TResult>;
+export type FunctionExports<TExports extends Record<string, FunctionExport<any, any>>> = TExports;
 
-export interface TransitionArgs<TAttributes = Attributes> {
-    attributes: TAttributes;
-    ctx: TransitionContext;
+export interface TransitionArgs {
+    component: ComponentIdentity;
+}
+
+export type TransitionHandler = (args: TransitionArgs) => MaybePromise<TransitionKeyframes>;
+
+/** @deprecated Export keyframes or a keyframe-producing function directly instead. */
+export interface TransitionPlugin {
+    keyframes: TransitionKeyframes;
     [key: string]: unknown;
 }
 
-export type TransitionHandler<TAttributes = Attributes> = (
-    args: TransitionArgs<TAttributes>
-) => MaybePromise<Keyframe[] | (() => Keyframe[])>;
-
-/**
- * Transition plugin export contract.
- * Export an object with static `keyframes` or a `function` that returns keyframes.
- * Direct keyframe array exports are not part of this contract.
- */
-export interface TransitionPlugin<TAttributes = Attributes> {
-    keyframes?: Keyframe[] | (() => Keyframe[]);
-    function?: TransitionHandler<TAttributes>;
-    [key: string]: unknown;
-}
-
-export type TransitionFactory<TAttributes = Attributes> = () => MaybePromise<
-    TransitionPlugin<TAttributes>
->;
-
-export type TransitionExport<TAttributes = Attributes> =
-    | TransitionPlugin<TAttributes>
-    | TransitionFactory<TAttributes>;
+export type TransitionExport = TransitionKeyframes | TransitionHandler | TransitionPlugin;
+export type TransitionExports<TExports extends Record<string, TransitionExport>> = TExports;

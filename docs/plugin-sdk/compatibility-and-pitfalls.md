@@ -38,9 +38,9 @@ The manifest type is still `runtime`; the `main` property adds a main-process en
 
 If a runtime plugin does not have `main` in its manifest, renderer `activate()` receives `main: null`.
 
-## Object exports, factory exports, and mount functions
+## Export shapes differ by plugin type
 
-Runtime, function, transition, and runtime main entries can be object exports or factory exports.
+Runtime and runtime main entries can be object exports or factory exports.
 
 ```js
 export default {
@@ -54,7 +54,7 @@ export default () => ({
 });
 ```
 
-Element and frame plugins are mount function exports only. REPAIR2 calls the default export when the plugin should render into a runtime-owned host element.
+Element and frame plugins are mount function exports. REPAIR2 calls the selected export when the plugin should render into a runtime-owned host element.
 
 ```js
 export default function mount({ attributes, ctx }, options) {
@@ -64,7 +64,7 @@ export default function mount({ attributes, ctx }, options) {
 
 Element mount functions receive `{ target, dispatchEvent }` as their second argument. Frame mount functions receive `{ target, children, showIntro }`.
 
-Renderer runtime, function, and transition factories may be async where the SDK type allows it. Runtime main factories should return the object synchronously.
+Function plugins should export bare functions. Transition plugins should export keyframes directly or a function that returns keyframes. Function and transition factories are not supported. Runtime main factories should return the object synchronously.
 
 ## Renderer activation is not module construction
 
@@ -78,31 +78,49 @@ REPAIR2 tries to keep already-running plugins available when a rebuild, import, 
 
 For project-level loading, linked plugin, and HMR details, see [Loading and HMR](./loading-and-hmr.md).
 
-## Function plugins are objects
+## Function plugins are functions
 
-The current function plugin contract is an object with a `function` property.
-
-```js
-export default {
-    function() {}
-};
-```
-
-Do not export a bare function as the plugin itself.
-
-## Transition plugins are objects
-
-Transition plugins export an object with `keyframes` or `function`.
+The current function plugin contract is a function export.
 
 ```js
-export default {
-    keyframes: [{ opacity: 0 }, { opacity: 1 }]
-};
+export default function run({ attributes, ctx }) {}
 ```
 
-Direct keyframe array exports are not part of the current contract.
+For compatibility, REPAIR2 still accepts an object with a `function` property, but that shape is deprecated for new plugins.
 
-The current runtime also accepts `keyframes` or a transition `function` result as a function returning the keyframe array. Prefer returning the array directly unless delayed keyframe creation is useful.
+## Transition plugins return keyframes
+
+Transition plugins export keyframes directly, or export a function that returns keyframes.
+
+```js
+export default [{ opacity: 0 }, { opacity: 1 }];
+```
+
+```js
+export function fade({ component }) {
+    return [{ opacity: 0 }, { opacity: 1 }];
+}
+```
+
+For compatibility, REPAIR2 still accepts an object with a `keyframes` property, but that shape is deprecated for new plugins. A `function` property on a transition object is ignored.
+
+## Declared exports must exist
+
+If a manifest declares renderer exports, the plugin entry must export every declared name.
+
+```json
+{
+    "type": "function",
+    "exports": ["check", "run"]
+}
+```
+
+```js
+export function check() {}
+export function run() {}
+```
+
+During development, REPAIR2 reports missing declared exports through the plugin diagnostics path. Runtime plugins do not support manifest `exports`; they always use the default renderer export.
 
 ## Runtime step names must match the manifest
 

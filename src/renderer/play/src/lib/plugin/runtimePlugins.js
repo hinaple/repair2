@@ -108,7 +108,7 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
         localGen !== myLocalGen ||
         generation !== currentRuntimePluginConfigs.get(pluginName)?.generation;
 
-    const hmrUnsub = subscribePluginHMR("runtime", pluginName, ({ api, info }) => {
+    const hmrUnsub = subscribePluginHMR("runtime", pluginName, "default", ({ api, info }) => {
         async function setup() {
             const myLocalGen = ++localGen;
             const activationId = createActivationId(pluginName, generation, myLocalGen);

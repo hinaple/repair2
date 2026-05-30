@@ -20,6 +20,8 @@ Room Escape Pc App InteRface
 - [ ] Patch code feature
 - [ ] Resources searching
 - [ ] Styling element plugin host
+- [ ] bulk plugin
+- [ ] plugin attributes typing
 
 ## Done
 

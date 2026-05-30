@@ -1,15 +1,16 @@
 export const PLUGIN_TYPES = ["runtime", "element", "transition", "function", "frame"] as const;
 export type PluginType = (typeof PLUGIN_TYPES)[number];
 
+type Attributes = string[];
 export type PluginManifest = {
     name: string;
     description?: string;
     type: PluginType;
     entry: string;
     outDir: string;
-    attributes: string[];
+    exports: Record<string, null | Attributes>;
     svelte?: boolean;
-    steps?: Record<string, null | string[]>;
+    steps?: Record<string, null | Attributes>;
     main?: {
         outDir: string;
         entry: string;
@@ -21,9 +22,10 @@ export type RawManifest = {
     type: PluginType;
     entry?: string;
     outDir?: string;
-    attributes?: string[];
+    attributes?: Attributes;
     attr?: string[];
-    steps?: string[] | Record<string, string[] | null>;
+    steps?: string[] | Record<string, Attributes | null>;
+    exports?: string[] | Record<string, Attributes | null>;
     main?: {
         outDir?: string;
         entry?: string;
@@ -35,8 +37,8 @@ export type PluginInfo = PluginManifest & {
     path: string;
     distFile: string;
     mainDistFile?: string;
-    linked?: {
+    linked: {
         sourcePath: string;
         linked: boolean;
-    };
+    } | null;
 };

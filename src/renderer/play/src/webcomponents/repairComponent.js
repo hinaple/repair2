@@ -1,9 +1,9 @@
 import RepairElement from "./repairElement";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
-import { pluginAppended } from "../lib/plugin/pluginStyles";
 import { subscribePluginMount } from "../lib/plugin/pluginMount";
 import { removeComponent } from "../lib/components";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
+import { getPlugin } from "../lib/plugin/pluginManager";
 
 import Coord from "@classes/coord";
 
@@ -67,6 +67,7 @@ export default class RepairComponent extends HTMLElement {
         this.unsubscriber = subscribePluginMount({
             type: "frame",
             name: frameData.name,
+            exportName: frameData.exportName,
             contextOption: {
                 component: this.componentIdentity,
                 frame: this.frameIdentity
@@ -138,7 +139,6 @@ export default class RepairComponent extends HTMLElement {
         if (this.rendered || !this.isConnected) return;
         this.rendered = true;
         if (!ignoreFrame && typeof this.frame?.mount === "function") {
-            pluginAppended("frame", this.componentData.frame.name);
             const children = this.makeChildrenFrag();
             this.replaceChildren();
             this.frame.mount({ target: this, children, showIntro: !!this.showIntro });
@@ -153,17 +153,29 @@ export default class RepairComponent extends HTMLElement {
         this.showIntro = true;
     }
 
+    /**
+     * @param {import("@classes/transition.svelte").default} transition
+     * @param {boolean} isOutro
+     * */
     startTransition(transition, isOutro = false) {
         return new Promise(async (res) => {
             try {
                 if (!transition.plugin) return res();
 
-                let keyframes = await transition.plugin.use(null, {
-                    component: this.componentIdentity
-                });
-                if (!keyframes) return res();
+                const transitionExport = await getPlugin(
+                    "transition",
+                    transition.plugin.name,
+                    transition.plugin.exportName
+                );
 
-                if (typeof keyframes === "function") keyframes = keyframes();
+                let keyframes = transitionExport;
+                if (typeof transitionExport === "function")
+                    keyframes = transitionExport({
+                        component: this.componentIdentity
+                    });
+                else if (keyframes && "keyframes" in keyframes) keyframes = keyframes.keyframes;
+
+                if (!keyframes) return res();
 
                 const ani = this.animate(keyframes, {
                     duration: transition.duration,

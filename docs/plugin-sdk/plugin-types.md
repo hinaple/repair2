@@ -38,6 +38,20 @@ Element plugins are tied to the element lifecycle. REPAIR2 clears the host `targ
 
 Use element plugins for local UI. Avoid using them as global controllers.
 
+If the manifest declares multiple `exports`, each export is a separate mount function that can be selected from the editor:
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport} */
+export function compact({ attributes, ctx }, { target }) {
+    target.textContent = attributes.label ?? ctx.plugin.id;
+}
+
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport} */
+export function detailed({ attributes, ctx }, { target }) {
+    target.textContent = `${attributes.label ?? ctx.plugin.id}: detailed`;
+}
+```
+
 ## Frame plugins
 
 Use a frame plugin when you need to wrap a whole component. If a component has a frame plugin, child elements are rendered inside the frame element.
@@ -65,6 +79,8 @@ export default function mount({ ctx }, { target, children, showIntro }) {
 Frame plugins should append `children` to the correct initial location. Treat those nodes as runtime-owned component elements: do not destroy, store for later mutation, or otherwise side-effect them beyond initial placement.
 
 Use frame plugins for component-level layout and chrome. As with element plugins, register long-lived work with `ctx.lifecycle.onDispose` or return a cleanup function. Cleanup should only release DOM, listeners, resources, and references created by the frame plugin. Avoid putting project-wide coordination in a frame; use a runtime plugin for that.
+
+Frame plugins can also declare multiple `exports`. Each export is a separate frame mount function.
 
 ## Rendering resources in plugin DOM
 
@@ -125,24 +141,34 @@ Use `anchor` when the asset should keep its original ratio while sizing against 
 
 Use a function plugin for short-lived logic called from steps, listeners, or similar execution paths.
 
-Function plugins export an object with a `function` property, or a factory returning that object:
+Function plugins export a function:
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default {
-    function({ attributes, ctx, signal }) {
-        if (signal?.aborted) return false;
-        ctx.logger.info("running", attributes);
-        return true;
-    }
-};
+export default function run({ attributes, ctx, signal }) {
+    if (signal?.aborted) return false;
+    ctx.logger.info("running", attributes);
+    return true;
+}
 ```
 
-Bare function exports are not part of the current contract.
+For compatibility, REPAIR2 still accepts an object with a `function` property, but that shape is deprecated for new plugins. Function plugin factories are not supported.
 
 The function receives the stored plugin pointer payload as `attributes` and an injected function context as `ctx`. It may also receive a `signal` from step execution or reset cancellation paths. When called as an element listener plugin, it receives the configured `channel` and the event-like listener payload.
 
 Use function plugins for calculations, checks, small async actions, and listener conditions. Avoid long-lived subscriptions unless you clean them up before the call finishes.
+
+With manifest `exports`, each named export should be a separate function:
+
+```js
+export function check({ attributes }) {
+    return !!attributes.value;
+}
+
+export function run({ ctx }) {
+    ctx.logger.info("run");
+}
+```
 
 ## Transition plugins
 
@@ -150,12 +176,19 @@ Use a transition plugin to provide animation keyframes or generate them from att
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
-export default {
-    keyframes: [{ opacity: 0 }, { opacity: 1 }]
-};
+export default [{ opacity: 0 }, { opacity: 1 }];
 ```
 
-You can also export a `function` property that returns keyframes. The function receives `{ attributes, ctx, ...argument }` and may return a promise. The current runtime also accepts a function that returns the keyframe array. Direct keyframe array default exports are not part of the current contract.
+You can also export a function that returns keyframes:
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
+export function slide({ component }) {
+    return [{ transform: "translateX(20px)" }, { transform: "translateX(0)" }];
+}
+```
+
+For compatibility, REPAIR2 still accepts an object with a `keyframes` property, but that shape is deprecated for new plugins. Transition factories are not supported, and a `function` property on a transition object is ignored.
 
 Use transition plugins for animation output. Avoid component mutation, project events, or long-lived side effects.
 
@@ -200,9 +233,9 @@ See [Runtime main](./runtime-main.md) for bridge typing and activation details.
 
 | Type                 | Export shape                                    |
 | -------------------- | ----------------------------------------------- |
-| `element`            | mount function                                  |
-| `frame`              | mount function                                  |
-| `function`           | object with `function`, or factory returning it |
-| `transition`         | object with `keyframes`/`function`, or factory  |
-| `runtime`            | object or factory                               |
+| `element`            | mount function for each declared export         |
+| `frame`              | mount function for each declared export         |
+| `function`           | function for each declared export               |
+| `transition`         | keyframes or a keyframe function per export     |
+| `runtime`            | default export object or factory                |
 | runtime `main` entry | object or factory                               |

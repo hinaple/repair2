@@ -23,6 +23,7 @@ import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
 import { dataDir, assetDir, pluginDir, styleDir, templateDir } from "./dirs.js";
 import { clearStore, getStore } from "./electronStore.js";
+import { createHmr } from "./hmrs.ts";
 
 /**
  * @type {BrowserWindow | null}
@@ -89,16 +90,17 @@ async function setHmrActive(active) {
 
     if (!hmrSetter) {
         hmrImporting = (async () => {
-            hmrSetter = (await import("./hmrs.js")).createHmr({
-                onHmr({ type, data }) {
+            hmrSetter = createHmr({
+                onHmr(type) {
                     if (type === "css") {
                         updateCss().then((css) => sendToMain("global-css", css));
                         return;
                     }
 
-                    if (!pluginManager) return;
-                    if (data) pluginManager.updatePlugin(data, true);
-                    else pluginManager.updateAllPluginInfo(true);
+                    // if (type === "links") {
+                    //     pluginManager.pluginLinkService.getPluginLinks().then();
+                    // }
+                    pluginManager.updateAllPluginInfo({});
                 },
                 styleDir,
                 pluginDir,
@@ -118,24 +120,28 @@ async function setHmrActive(active) {
 
     return hmrSetter(active);
 }
+async function setDevMode(devMode) {
+    if (pluginManager) await pluginManager.setDevMode(!!data.config?.devMode);
+    setHmrActive(devMode);
+}
 
-async function setPluginManager(isDev = false) {
+async function setPluginManager(devMode = false) {
     if (pluginManager) await destroyPluginManager();
     pluginManager = new PluginManager({
-        isDev,
+        devMode,
         reportDiagnostic,
         onupdate: ({ type, updateData }) => {
             if (type === "single") {
                 sendToEditor("plugin:update", updateData);
                 sendToMain("plugin:update", updateData);
-                return;
-            }
-            const pluginList = pluginManager.simplePluginList;
-            sendToEditor("plugin:list", pluginList);
-            sendToMain("plugin:list", pluginList, updateData.buildChanges);
-        },
-        onhmr: (pluginInfo) => {
-            sendToMain("plugin-hmr", pluginInfo);
+            } else if (type === "all") {
+                const pluginList = pluginManager.simplePluginList;
+                sendToEditor("plugin:list", pluginList, updateData);
+                sendToMain("plugin:list", pluginList, updateData.buildChanges);
+            } else if (type === "hmr") {
+                sendToEditor("plugin:hmr", updateData);
+                sendToMain("plugin:hmr", updateData);
+            } else console.error(type, updateData);
         }
     });
     return pluginManager.initialize();
@@ -278,9 +284,7 @@ let isMultiScreen = null;
 function applyDataConfig(forceUpdate = false) {
     if (!data?.config) return;
 
-    const devMode = !!data.config?.devMode;
-    setHmrActive(devMode);
-    if (pluginManager) pluginManager.isDev = !!data.config?.devMode;
+    setDevMode(!!data.config?.devMode);
 
     if (!mainWindow) return;
 
@@ -449,6 +453,14 @@ function createEditorWindow() {
                     click: () => {
                         shell.openPath(dataDir);
                     }
+                },
+                { type: "separator" },
+                {
+                    label: "RepairV2 종료",
+                    click: () => {
+                        app.quit();
+                    },
+                    accelerator: "CommandOrControl+Q"
                 }
             ]
         },
@@ -500,7 +512,7 @@ function createEditorWindow() {
                     label: "플러그인 전체 다시 빌드",
                     click: async () => {
                         if (!pluginManager) return;
-                        await pluginManager.updateAllPluginInfo(true);
+                        await pluginManager.updateAllPluginInfo({ forceBuild: true });
                     }
                 }
             ]

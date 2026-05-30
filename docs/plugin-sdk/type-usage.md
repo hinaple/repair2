@@ -8,11 +8,9 @@ Use a JSDoc type import to keep the plugin shape visible next to the code:
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ message: string }>} */
-export default {
-    function({ attributes, ctx }) {
-        ctx.logger.info(attributes.message);
-    }
-};
+export default function run({ attributes, ctx }) {
+    ctx.logger.info(attributes.message);
+}
 ```
 
 This keeps the runtime file plain JavaScript while documenting the expected export shape.
@@ -24,11 +22,9 @@ For longer generic types, define local typedefs first:
 /** @typedef {import("@fainthit/repair2-plugin-sdk").FunctionExport<Attr, boolean>} Plugin */
 
 /** @type {Plugin} */
-export default {
-    function({ attributes }) {
-        return !!attributes.message;
-    }
-};
+export default function check({ attributes }) {
+    return !!attributes.message;
+}
 ```
 
 ## TypeScript
@@ -173,7 +169,7 @@ See [Runtime main](./runtime-main.md) for the full bridge behavior.
 
 ## Factory exports
 
-Runtime, function, transition, and runtime main entries may export either an object or a factory that returns the object.
+Runtime and runtime main entries may export either an object or a factory that returns the object.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").RuntimeExport} */
@@ -184,24 +180,29 @@ export default () => ({
 });
 ```
 
-Function and transition factories follow the same rule:
+Function and transition plugin factories are not supported. Function plugins should export bare functions:
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default () => ({
-    function({ ctx }) {
-        ctx.logger.info("called");
-    }
-});
+export default function run({ ctx }) {
+    ctx.logger.info("called");
+}
 ```
 
-For function plugins, the object must have a `function` property. A bare function as the default export is not part of the contract.
+For compatibility, REPAIR2 still accepts an object with a `function` property, but that shape is deprecated for new plugins.
+
+Transition plugins should export keyframes directly, or export a function that returns keyframes:
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
-export default () => ({
-    keyframes: [{ opacity: 0 }, { opacity: 1 }]
-});
+export default [{ opacity: 0 }, { opacity: 1 }];
+```
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
+export function fade({ component }) {
+    return [{ opacity: 0 }, { opacity: 1 }];
+}
 ```
 
 Runtime main entries can also be factories:
@@ -220,7 +221,42 @@ export default main;
 
 Element and frame plugins are different. They export mount functions, because REPAIR2 owns the host elements and calls the plugin when the host should be populated.
 
-Renderer runtime, function, and transition factories may be async when the SDK type allows it. Runtime main factories should return the main export object synchronously.
+Renderer runtime factories may be async when the SDK type allows it. Runtime main factories should return the main export object synchronously.
+
+## Multiple renderer exports
+
+Element, frame, function, and transition plugins can expose multiple renderer exports through the manifest `exports` field. Type each export directly:
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ value: string }, boolean>} */
+export function isFilled({ attributes }) {
+    return !!attributes.value;
+}
+
+/** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ value: string }>} */
+export function logValue({ attributes, ctx }) {
+    ctx.logger.info(attributes.value);
+}
+```
+
+In TypeScript, the export-map helper types can check a group of named exports before you export them:
+
+```ts
+import type { FunctionExport, FunctionExports } from "@fainthit/repair2-plugin-sdk";
+
+const functions = {
+    isFilled({ attributes }) {
+        return !!attributes.value;
+    },
+    logValue({ attributes, ctx }) {
+        ctx.logger.info(attributes.value);
+    }
+} satisfies FunctionExports<Record<string, FunctionExport<{ value: string }>>>;
+
+export const { isFilled, logValue } = functions;
+```
+
+The same pattern is available as `ElementExports`, `FrameExports`, and `TransitionExports`.
 
 ## Element and frame types
 

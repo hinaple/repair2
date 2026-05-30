@@ -32,6 +32,32 @@
             "uniqueItems": true,
             "default": []
         },
+        "exportDeclarations": {
+            "description": "Export declarations. Array form declares export names only. Object form maps export names to optional attribute names.",
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "uniqueItems": true
+                },
+                {
+                    "type": "object",
+                    "propertyNames": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "additionalProperties": {
+                        "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/attributeList" }]
+                    }
+                }
+            ],
+            "default": {
+                "default": null
+            }
+        },
         "runtimeSteps": {
             "description": "Runtime step declarations. Array form declares step names only. Object form maps step names to optional attribute names.",
             "oneOf": [
@@ -103,12 +129,16 @@
                 },
                 "attributes": {
                     "$ref": "#/$defs/attributeList",
-                    "description": "Public plugin attributes shown/configured by REPAIR2."
+                    "description": "Legacy default export attributes shown/configured by REPAIR2. Prefer exports."
                 },
                 "attr": {
                     "$ref": "#/$defs/attributeList",
                     "deprecated": true,
                     "description": "Legacy alias for attributes. Prefer attributes."
+                },
+                "exports": {
+                    "$ref": "#/$defs/exportDeclarations",
+                    "description": "Public renderer exports shown/configured by REPAIR2. The default export key is \"default\"."
                 }
             }
         },
@@ -117,6 +147,9 @@
                 { "$ref": "#/$defs/baseManifest" },
                 {
                     "type": "object",
+                    "not": {
+                        "required": ["exports"]
+                    },
                     "properties": {
                         "type": { "const": "runtime" },
                         "entry": {

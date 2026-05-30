@@ -49,9 +49,55 @@ Scaffolded plugin names are normalized to lowercase kebab-case. The schema docum
 
 `outDir` is the renderer/plugin output directory relative to the plugin root.
 
-`attributes` declares public attribute names shown or configured by the REPAIR2 editor. At runtime, the stored payload object is passed to plugin code as `attributes`. The manifest declaration does not type-check, validate, or filter that runtime payload.
+`attributes` declares public attribute names shown or configured by the REPAIR2 editor for the plugin's default export. At runtime, the stored payload object is passed to plugin code as `attributes`. The manifest declaration does not type-check, validate, or filter that runtime payload.
 
 `attr` is a legacy alias for `attributes`. Prefer `attributes`. If both fields are present, `attributes` wins and `attr` is ignored.
+
+## Renderer exports
+
+Element, frame, function, and transition plugins can expose more than one renderer execution point from the same plugin entry. Declare them with `exports` when the plugin has named exports in addition to, or instead of, `default`:
+
+```json
+{
+    "name": "button-pack",
+    "type": "element",
+    "exports": ["primary", "secondary"]
+}
+```
+
+The plugin entry must export every declared name:
+
+```js
+export function primary({ attributes, ctx }, options) {}
+export function secondary({ attributes, ctx }, options) {}
+```
+
+Use the object form when each export needs its own editor attribute inputs:
+
+```json
+{
+    "name": "button-pack",
+    "type": "element",
+    "exports": {
+        "primary": ["label", "color"],
+        "secondary": ["label"]
+    }
+}
+```
+
+If `exports` is not present, REPAIR2 treats the plugin as if it declared:
+
+```json
+{
+    "exports": {
+        "default": ["label"]
+    }
+}
+```
+
+In that default-only case, using `attributes` is the simpler form. Use `exports` when the plugin has multiple public execution points or when a named export needs its own attributes.
+
+Runtime plugins do not support `exports`. They always use the default renderer export. Runtime callable steps are declared separately with `steps`.
 
 ## Default paths
 

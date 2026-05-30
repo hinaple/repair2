@@ -1,14 +1,10 @@
 import { type FSWatcher } from "chokidar";
-import path, { join } from "path";
-import { MANIFEST } from "./plugin/pluginManifest";
-import { PLUGIN_LINK } from "./plugin/pluginLinks";
-import chokidar from "chokidar";
-
-type HmrType = "css" | "plugin";
+import { join } from "path";
 
 const HMR_PENDING_MS = 100;
 
-export type SetHmrActive = (active: boolean) => Promise<void[]> | void;
+type HmrType = "css" | "plugin" | "links";
+export type SetHmrActive = (active: boolean) => Promise<void[] | void> | null;
 
 let hmr: SetHmrActive | null = null;
 export function createHmr({
@@ -17,7 +13,7 @@ export function createHmr({
     pluginDir,
     dataDir
 }: {
-    onHmr: (data: { type: HmrType; data?: string }) => void;
+    onHmr: (type: HmrType) => void;
     styleDir: string;
     pluginDir: string;
     dataDir: string;
@@ -35,48 +31,53 @@ export function createHmr({
     let active = false;
     let isOnlyCreated = true;
     function setActive(a: boolean) {
-        if (!isOnlyCreated && active === a) return;
+        if (!isOnlyCreated && active === a) return null;
         isOnlyCreated = false;
 
         if (a) return startWatching();
         else return stopWatching();
     }
-    function sendHmrEvent(type: HmrType, data?: string) {
-        const key = !data ? type : `${type}:${data}`;
+    function sendHmrEvent(type: HmrType) {
+        const key = type;
         const before = pendingTimeouts.get(key);
         if (before) clearTimeout(before);
         pendingTimeouts.set(
             key,
             setTimeout(() => {
                 console.log(`===CHOKIDAR HMR: ${key}===`);
-                onHmr({ type, data });
+                onHmr(type);
                 pendingTimeouts.delete(key);
             }, HMR_PENDING_MS)
         );
     }
-    function startWatching() {
+    async function startWatching() {
         if (active) stopWatching();
         active = true;
 
+        const watch = (await import("chokidar")).watch;
+
+        console.log("CHOKIDAR STARTED");
         watchers = [
-            chokidar.watch(cssPath).on("change", () => {
-                sendHmrEvent("css");
-            }),
-            chokidar
-                .watch(pluginDir, {
-                    depth: 1,
-                    cwd: pluginDir
+            watch(cssPath, {
+                ignoreInitial: true
+            })
+                .on("change", () => {
+                    console.log("CHANGED: CSS");
+                    sendHmrEvent("css");
                 })
-                .on("change", (p) => {
-                    console.log("CHANGED: ", p);
-                    const { dir, name } = path.parse(p);
-                    if (name === MANIFEST) sendHmrEvent("plugin", dir);
+                .on("unlink", () => {
+                    console.log("UNLINKED: CSS");
+                    sendHmrEvent("css");
                 })
-                .on("unlink", (p) => {
-                    console.log("UNLINKED: ", p);
-                    if (path.basename(p) !== MANIFEST) return;
-                    sendHmrEvent("plugin");
-                })
+                .on("add", () => {
+                    console.log("ADDED: CSS");
+                    sendHmrEvent("css");
+                }),
+            watch(pluginDir, {
+                depth: 0,
+                cwd: pluginDir,
+                ignoreInitial: true
+            })
                 .on("unlinkDir", (p) => {
                     console.log("UNLINKED DIR: ", p);
                     sendHmrEvent("plugin");
@@ -84,18 +85,20 @@ export function createHmr({
                 .on("addDir", (p) => {
                     console.log("ADDED DIR: ", p);
                     sendHmrEvent("plugin");
-                }),
-            chokidar.watch(join(dataDir, PLUGIN_LINK)).on("change", (p) => {
-                sendHmrEvent("plugin");
-                console.log("CHANGED: ", p);
-            })
+                })
+            // chokidar
+            //     .watch(join(dataDir, PLUGIN_LINK), { ignoreInitial: true })
+            //     .on("change", async (p) => {
+            //         console.log("CHANGED: ", p);
+            //         sendHmrEvent("links");
+            //     })
         ];
     }
     function stopWatching() {
         active = false;
         pendingTimeouts.forEach((timeout) => clearTimeout(timeout));
         pendingTimeouts.clear();
-        if (!watchers) return;
+        if (!watchers) return null;
         const tempWatchers = watchers;
         watchers = null;
         return Promise.all(tempWatchers.map((w) => w.close()));

@@ -28,11 +28,9 @@ The package is type-first. Importing types is the normal way to use it:
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default {
-    function({ ctx }) {
-        ctx.logger.info("hello from a function plugin");
-    }
-};
+export default function hello({ ctx }) {
+    ctx.logger.info("hello from a function plugin");
+}
 ```
 
 Plugins created by the REPAIR2 editor include this dependency for you. The editor may also place its bundled SDK copy under the new plugin's `node_modules` directory so editor-created plugins work without a separate install step.
@@ -117,6 +115,22 @@ For a runtime plugin with a main-process entry, add `main`:
 
 Element and frame plugins can set `svelte: true`. This lets REPAIR2 add the Svelte Vite plugin while building the plugin source. It does not create a separate plugin type.
 
+Element, frame, function, and transition plugins can declare multiple renderer exports:
+
+```json
+{
+    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+    "name": "button-pack",
+    "type": "element",
+    "exports": {
+        "primary": ["label"],
+        "secondary": ["label"]
+    }
+}
+```
+
+When `exports` is present, the plugin entry must export every declared name. If a plugin only uses the default export, use `attributes` as the shorter default-export form.
+
 See [Manifest](./manifest.md) for the full manifest guide.
 
 ## Build and load
@@ -147,12 +161,10 @@ TypeScript is also fine when Vite can handle your source entry. JavaScript is th
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default {
-    function({ attributes, ctx }) {
-        ctx.logger.info("function plugin ran", attributes);
-        return true;
-    }
-};
+export default function run({ attributes, ctx }) {
+    ctx.logger.info("function plugin ran", attributes);
+    return true;
+}
 ```
 
 Function plugins are short-lived. If you subscribe to anything, clean it up before the function returns unless you have a very specific reason not to.
@@ -176,6 +188,20 @@ export default function mount({ attributes, ctx }, { target, dispatchEvent }) {
 Element plugins are mount functions. REPAIR2 calls them with `{ attributes, ctx }` and `{ target, dispatchEvent }`. The returned function, when present, is called during plugin cleanup.
 
 Frame plugins use the same mount shape, but receive `{ target, children, showIntro }` as the second argument. Append `children` to the location where the component elements should render.
+
+For a plugin with multiple element or frame exports, type each named export:
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
+export function primary({ attributes }, { target }) {
+    target.textContent = attributes.label ?? "Primary";
+}
+
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
+export function secondary({ attributes }, { target }) {
+    target.textContent = attributes.label ?? "Secondary";
+}
+```
 
 ## Type references
 

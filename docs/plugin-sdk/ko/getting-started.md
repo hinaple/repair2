@@ -28,11 +28,9 @@ npm install --save-dev @fainthit/repair2-plugin-sdk
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default {
-    function({ ctx }) {
-        ctx.logger.info("hello from a function plugin");
-    }
-};
+export default function hello({ ctx }) {
+    ctx.logger.info("hello from a function plugin");
+}
 ```
 
 REPAIR2 에디터에서 만든 플러그인은 이 dependency를 자동으로 포함합니다. 에디터는 새 플러그인의 `node_modules` 디렉터리 아래에 번들된 SDK 사본을 둘 수도 있으므로, 에디터에서 만든 플러그인은 별도 설치 단계 없이 동작할 수 있습니다.
@@ -117,6 +115,22 @@ main-process entry가 있는 runtime plugin은 `main`을 추가합니다.
 
 Element 및 frame plugin은 `svelte: true`를 설정할 수 있습니다. 이렇게 하면 REPAIR2가 플러그인 소스를 빌드할 때 Svelte Vite plugin을 추가합니다. 별도의 플러그인 타입을 만드는 것은 아닙니다.
 
+Element, frame, function, transition plugin은 여러 renderer export를 선언할 수 있습니다.
+
+```json
+{
+    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+    "name": "button-pack",
+    "type": "element",
+    "exports": {
+        "primary": ["label"],
+        "secondary": ["label"]
+    }
+}
+```
+
+`exports`가 있으면 plugin entry는 선언된 이름을 모두 export해야 합니다. Plugin이 default export만 사용한다면 `attributes`가 더 짧은 default-export 형태입니다.
+
 전체 매니페스트 가이드는 [매니페스트](./manifest.md)를 참고하세요.
 
 ## 빌드와 로드
@@ -147,12 +161,10 @@ Vite가 source entry를 처리할 수 있다면 TypeScript도 괜찮습니다. J
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
-export default {
-    function({ attributes, ctx }) {
-        ctx.logger.info("function plugin ran", attributes);
-        return true;
-    }
-};
+export default function run({ attributes, ctx }) {
+    ctx.logger.info("function plugin ran", attributes);
+    return true;
+}
 ```
 
 Function plugin은 짧게 실행됩니다. 매우 구체적인 이유가 없다면, 무언가를 subscribe했을 때 function이 반환되기 전에 정리하세요.
@@ -176,6 +188,20 @@ export default function mount({ attributes, ctx }, { target, dispatchEvent }) {
 Element plugin은 mount function입니다. REPAIR2는 `{ attributes, ctx }`와 `{ target, dispatchEvent }`를 넘겨 호출합니다. 반환된 함수가 있으면 플러그인 cleanup 중에 호출됩니다.
 
 Frame plugin도 같은 mount 형태를 사용하지만, 두 번째 인자로 `{ target, children, showIntro }`를 받습니다. Component element가 렌더링될 위치에 `children`을 append하세요.
+
+여러 element 또는 frame export를 가진 plugin에서는 각 named export에 타입을 붙이세요.
+
+```js
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
+export function primary({ attributes }, { target }) {
+    target.textContent = attributes.label ?? "Primary";
+}
+
+/** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
+export function secondary({ attributes }, { target }) {
+    target.textContent = attributes.label ?? "Secondary";
+}
+```
 
 ## 타입 참조
 

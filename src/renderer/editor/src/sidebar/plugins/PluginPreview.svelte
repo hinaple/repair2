@@ -15,7 +15,7 @@
     <span class={["name", (!info.ready || info.error) && "error"]}>
         {info.name}
     </span>
-    {#if !info.ready}
+    {#if !info.ready || info.error}
         <Icon icon="warn" color="#ff3636" size={16} />
     {/if}
     {#if info.linked}

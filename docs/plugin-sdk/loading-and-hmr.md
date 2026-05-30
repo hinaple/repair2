@@ -18,6 +18,8 @@ REPAIR2 also reads the project `plugin-links.json` file. This file records exter
 
 `plugin-links.json` is an internal project registry. Do not treat it as a normal author-edited plugin configuration file. Editor link and unlink tools should be preferred when they are available.
 
+Do not manually edit, delete, move, or rewrite `plugin-links.json`. The file is maintained by REPAIR2's plugin link features, and manual edits can leave the project registry out of sync with installed plugin manifests.
+
 After the plugin list is known, REPAIR2 checks whether each plugin has built output. Plugins without built output are built before play starts. If development mode is enabled, REPAIR2 rebuilds linked and project-local plugins even when built output already exists.
 
 Runtime plugins with a `main` entry have their main-process output loaded by the main process. After plugin builds and main-side loading are complete, the play renderer starts and imports ready renderer plugin output.
@@ -59,15 +61,15 @@ While HMR is active, REPAIR2 watches project plugin metadata:
 
 - changes to `plugins/*/manifest.json`
 - creation, deletion, or rename of directories directly under `plugins/`
-- changes to `plugin-links.json`
+- source `manifest.json` changes for linked plugins that still have an available source directory
 
-Changing a project plugin manifest reloads that plugin's information and rebuilds it. Directory changes and `plugin-links.json` changes cause REPAIR2 to rescan the full plugin list.
+Changing a project plugin manifest reloads that plugin's information and rebuilds it. Directory changes cause REPAIR2 to rescan the full plugin list.
 
 Changing manifest identity fields such as `name` or `type`, or changing plugin directory structure while HMR is running, can interrupt the normal replacement path. If plugin identity or directory layout changes during development, a full plugin reload or project reload is the clearest recovery path.
 
-Linked plugin source manifests are not currently watched as the live source of metadata after initial link creation. The project copy of the manifest is the metadata REPAIR2 uses during normal loading and HMR. Support for updating linked plugin manifests from source is planned.
+For linked plugins, REPAIR2 uses the source manifest as the development source of metadata. When the linked source manifest changes, REPAIR2 updates the project copy of `manifest.json`, reloads the plugin information, and rebuilds the plugin.
 
-`plugin-links.json` should not be manually deleted, moved, or rewritten while relying on HMR. The current watcher is intended for normal registry updates, not arbitrary registry file recovery.
+If a manifest is temporarily invalid while development mode is enabled, REPAIR2 can keep watching that manifest and retry the plugin update after the file changes again. The editor diagnostics should be used to find the current manifest or build error.
 
 ## Runtime main HMR
 

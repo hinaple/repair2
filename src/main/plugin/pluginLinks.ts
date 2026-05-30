@@ -1,10 +1,10 @@
 import { join } from "path";
 import fs from "fs/promises";
 import { dataDir, pluginDir } from "../dirs";
-import type { ReportDiagnostic } from "../diagnostics";
 import { getManifest, MANIFEST, normalizeManifest } from "./pluginManifest";
-import { PluginManifest } from "./type";
 import { pathExists } from "../pathExists";
+import type { ReportDiagnostic } from "../diagnostics";
+import type { PluginType } from "./type";
 
 export type PluginLinks = Record<string, { sourcePath: string; linked: boolean }>;
 
@@ -54,22 +54,22 @@ export function createPluginLinkService({
 }: PluginLinkServiceOptions = {}) {
     const reportPluginLinkIssue = createPluginLinkReporter(reportDiagnostic);
 
-    let currentPluginLinks: PluginLinks = {};
+    let currentPluginLinks: PluginLinks;
 
-    async function readManifest(sourceDir: string) {
-        const manifestReadResult = await getManifest(sourceDir);
+    async function readManifest(manifestPath: string) {
+        const manifestReadResult = await getManifest(manifestPath);
         if (manifestReadResult.ok === false) {
             if (!manifestReadResult.silent) {
                 await reportPluginLinkIssue({
                     level: "error",
                     title: "Linked plugin manifest could not be loaded.",
                     detail: {
-                        sourceDir,
+                        manifestPath,
                         reason: manifestReadResult.reason,
                         detail: manifestReadResult.detail
                     },
                     error: manifestReadResult.error,
-                    subject: getLinkSubject(sourceDir, "plugin-source"),
+                    subject: getLinkSubject(manifestPath, "plugin-source"),
                     logType: "plugin-link-manifest"
                 });
             }
@@ -78,35 +78,64 @@ export function createPluginLinkService({
         return normalizeManifest(manifestReadResult.data);
     }
 
-    async function updateManifestFromSource(sourceDir: string, manifest?: PluginManifest | null) {
-        if (!manifest) manifest = await readManifest(sourceDir);
-        if (!manifest) return false;
-        const targetDir = join(pluginDir, manifest.name);
+    async function replaceName(beforeName: string, newName: string) {
+        if (newName === beforeName) return false;
+        await getPluginLinks();
+        if (currentPluginLinks[newName]) return false;
+        const temp = currentPluginLinks[beforeName];
+        if (!temp) return false;
+        delete currentPluginLinks[beforeName];
+        currentPluginLinks[newName] = temp;
+        await updatePluginLinks();
+        return true;
+    }
+
+    async function updateManifestFromSource(
+        sourceDir: string,
+        destDir: string,
+        forceUpdate = false,
+        { name, type }: { name: string | null; type: PluginType | null } = {
+            name: null,
+            type: null
+        }
+    ): Promise<{ updated: false; unlinked?: boolean } | { updated: true }> {
+        const sourceManifest = join(sourceDir, MANIFEST);
+        const destManifest = join(destDir, MANIFEST);
+        if (!forceUpdate) {
+            const should = await shouldUpdate(sourceManifest, destManifest);
+            if (name && should.unlinked && name in currentPluginLinks)
+                currentPluginLinks[name].linked = false;
+            if (!should.update) return { updated: false, unlinked: should.unlinked };
+        }
         try {
-            await fs.mkdir(targetDir, { recursive: true });
-            await fs.copyFile(join(sourceDir, MANIFEST), join(targetDir, MANIFEST));
-            return true;
+            await fs.mkdir(destDir, { recursive: true }).then(() =>
+                fs.cp(sourceManifest, destManifest, {
+                    preserveTimestamps: true
+                })
+            );
+            if (name && name in currentPluginLinks) currentPluginLinks[name].linked = true;
+            return { updated: true };
         } catch (err) {
             await reportPluginLinkIssue({
                 level: "error",
                 title: "Linked plugin manifest could not be copied.",
                 detail: {
-                    pluginName: manifest.name,
-                    sourceManifest: join(sourceDir, MANIFEST),
-                    targetManifest: join(targetDir, MANIFEST)
+                    pluginName: name ?? "unknown",
+                    sourceManifest,
+                    destManifest
                 },
                 error: err,
-                subject: getLinkSubject(manifest.name, manifest.type),
+                subject: getLinkSubject(name ?? "unknown", type ?? "unknown"),
                 logType: "plugin-link-copy"
             });
-            return false;
+            return { updated: false };
         }
     }
 
     async function addPluginLink(sourceDir: string, replace: boolean = false): Promise<boolean> {
         const current = await getPluginLinks();
         if (!current) return false;
-        const manifest = await readManifest(sourceDir);
+        const manifest = await readManifest(join(sourceDir, MANIFEST));
         if (!manifest) return false;
         if (!replace && current[manifest.name]) {
             await reportPluginLinkIssue({
@@ -122,7 +151,17 @@ export function createPluginLinkService({
             });
             return false;
         }
-        if (!(await updateManifestFromSource(sourceDir, manifest))) return false;
+        if (
+            !(
+                await updateManifestFromSource(
+                    sourceDir,
+                    join(pluginDir, manifest.name),
+                    true,
+                    manifest
+                )
+            ).updated
+        )
+            return false;
         const newLinks = { ...current, [manifest.name]: { sourcePath: sourceDir, linked: true } };
         return await updatePluginLinks(newLinks);
     }
@@ -136,6 +175,8 @@ export function createPluginLinkService({
     }
 
     async function getPluginLinks(): Promise<PluginLinks | null> {
+        if (currentPluginLinks) return currentPluginLinks;
+
         if (!(await pathExists(LINKS_FILE_PATH))) return {};
 
         try {
@@ -171,14 +212,14 @@ export function createPluginLinkService({
         }
     }
 
-    async function updatePluginLinks(newLinks: PluginLinks): Promise<boolean> {
+    async function updatePluginLinks(newLinks: PluginLinks = currentPluginLinks): Promise<boolean> {
         try {
+            currentPluginLinks = newLinks;
             await fs.writeFile(
                 LINKS_FILE_PATH,
                 JSON.stringify(serializePluginLinks(newLinks)),
                 "utf8"
             );
-            currentPluginLinks = newLinks;
             return true;
         } catch (err) {
             await reportPluginLinkIssue({
@@ -195,16 +236,12 @@ export function createPluginLinkService({
         }
     }
 
-    function getCachedPluginLinks() {
-        return currentPluginLinks;
-    }
-
     return {
         addPluginLink,
         unlinkPlugin,
+        updateManifestFromSource,
         getPluginLinks,
-        updatePluginLinks,
-        getCachedPluginLinks
+        replaceName
     };
 }
 
@@ -216,6 +253,20 @@ function serializePluginLinks(links: PluginLinks) {
         result[name] = { sourcePath: link.sourcePath };
     }
     return result;
+}
+
+const UPDATE_TIME_TOLERANCE_MS = 1000;
+async function shouldUpdate(sourcePath: string, destPath: string) {
+    const destStat = await fs.stat(destPath).catch(() => null);
+    if (!destStat) return { update: true };
+    const srcStat = await fs.stat(sourcePath).catch(() => null);
+    if (!srcStat) return { unlinked: true };
+    return {
+        update:
+            !destStat ||
+            srcStat.size !== destStat.size ||
+            Math.abs(srcStat.mtimeMs - destStat.mtimeMs) > UPDATE_TIME_TOLERANCE_MS
+    };
 }
 
 async function normalizeLinks(

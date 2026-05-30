@@ -23,6 +23,7 @@ import { getAppData } from "./appdata";
 import { sendChanges, sendTotalInfo } from "./runtimeMonitor";
 import { callRuntimePluginStep, restartRuntimePlugins } from "./plugin/runtimePlugins";
 import { customLog } from "./logger";
+import { callFunctionPlugin } from "./plugin/pluginManager";
 
 let resetAbort = new AbortController();
 
@@ -103,9 +104,11 @@ const actions = {
         setVariable: (s) => setVar(s.payload.variableId, s.payload.value),
         resetAllVariables: () => resetAllVar(),
         executePlugin: (s) => {
-            const prom = s.payload.plugin
-                .use()
-                .then((func) => func?.({ signal: resetAbort.signal }));
+            const prom = callFunctionPlugin({
+                name: s.payload.plugin.name,
+                exportName: s.payload.plugin.exportName,
+                argument: { attributes: s.payload.plugin.payloads, signal: resetAbort.signal }
+            });
             return s.payload.waitTillEnd ? prom : true;
         },
         runtimePluginStep: (s) => {

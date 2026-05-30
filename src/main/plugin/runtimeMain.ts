@@ -276,6 +276,18 @@ export default class MainRuntimePluginEngine {
         target.instance = instance;
         return target.instance;
     }
+    removePlugin(pluginName: string) {
+        const target = this.plugins.get(pluginName);
+        if (!target) return;
+        target.instance?.dispose();
+        this.plugins.delete(pluginName);
+    }
+    removeAllPluginExcept(exceptNames: string[]) {
+        this.plugins.keys().forEach((name) => {
+            if (exceptNames.includes(name)) return;
+            this.removePlugin(name);
+        });
+    }
     disposeInstance(pluginName: string, activationId?: string) {
         const target = this.plugins.get(pluginName);
         const instance = target?.instance;

@@ -5,6 +5,7 @@ import { pluginAppended } from "./pluginStyles";
 export function subscribePluginMount({
     type,
     name,
+    exportName = "default",
     beforeMount = null,
     onMountReady = null,
     afterMount = null,
@@ -13,7 +14,7 @@ export function subscribePluginMount({
     contextOption = {},
     payloads = {}
 }) {
-    return subscribePluginHMR(type, name, ({ api, info }) => {
+    return subscribePluginHMR(type, name, exportName, ({ api, info }) => {
         if (!api || typeof api !== "function" || beforeMount?.(api) === false) return;
         const ctx = createPluginContext({
             pluginId: info.name,

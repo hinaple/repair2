@@ -38,9 +38,9 @@ REPAIR2는 directory name이 아니라 manifest `name`으로 플러그인을 식
 
 Runtime plugin의 매니페스트에 `main`이 없으면 renderer `activate()`는 `main: null`을 받습니다.
 
-## Object exports, factory exports, mount functions
+## Export shape는 plugin type마다 다릅니다
 
-Runtime, function, transition, runtime main entry는 object export 또는 factory export일 수 있습니다.
+Runtime 및 runtime main entry는 object export 또는 factory export일 수 있습니다.
 
 ```js
 export default {
@@ -54,7 +54,7 @@ export default () => ({
 });
 ```
 
-Element 및 frame plugin은 mount function export만 지원합니다. REPAIR2는 플러그인이 runtime-owned host element 안에 렌더링되어야 할 때 default export를 호출합니다.
+Element 및 frame plugin은 mount function export입니다. REPAIR2는 플러그인이 runtime-owned host element 안에 렌더링되어야 할 때 선택된 export를 호출합니다.
 
 ```js
 export default function mount({ attributes, ctx }, options) {
@@ -64,7 +64,7 @@ export default function mount({ attributes, ctx }, options) {
 
 Element mount function은 두 번째 인자로 `{ target, dispatchEvent }`를 받습니다. Frame mount function은 `{ target, children, showIntro }`를 받습니다.
 
-Renderer runtime, function, transition factory는 SDK 타입이 허용하는 곳에서는 async일 수 있습니다. Runtime main factory는 객체를 동기적으로 반환해야 합니다.
+Function plugin은 bare function을 export해야 합니다. Transition plugin은 keyframes를 직접 export하거나 keyframes를 반환하는 function을 export해야 합니다. Function 및 transition factory는 지원하지 않습니다. Runtime main factory는 객체를 동기적으로 반환해야 합니다.
 
 ## Renderer activation은 module construction이 아닙니다
 
@@ -78,31 +78,49 @@ REPAIR2는 rebuild, import, HMR update가 실패해도 이미 실행 중인 plug
 
 Project-level loading, linked plugin, HMR 세부사항은 [로드와 HMR](./loading-and-hmr.md)을 참고하세요.
 
-## Function plugin은 객체입니다
+## Function plugin은 function입니다
 
-현재 function plugin contract는 `function` property가 있는 객체입니다.
-
-```js
-export default {
-    function() {}
-};
-```
-
-Bare function을 plugin 자체로 export하지 마세요.
-
-## Transition plugin은 객체입니다
-
-Transition plugin은 `keyframes` 또는 `function`이 있는 객체를 export합니다.
+현재 function plugin contract는 function export입니다.
 
 ```js
-export default {
-    keyframes: [{ opacity: 0 }, { opacity: 1 }]
-};
+export default function run({ attributes, ctx }) {}
 ```
 
-Direct keyframe array export는 현재 contract에 포함되지 않습니다.
+호환성을 위해 REPAIR2는 `function` property가 있는 객체도 계속 허용하지만, 새 플러그인에서는 deprecated 형태입니다.
 
-현재 런타임은 `keyframes` 또는 transition `function` 결과가 keyframe array를 반환하는 function인 경우도 허용합니다. 지연된 keyframe creation이 유용하지 않다면 array를 직접 반환하는 것을 선호하세요.
+## Transition plugin은 keyframes를 반환합니다
+
+Transition plugin은 keyframes를 직접 export하거나, keyframes를 반환하는 function을 export합니다.
+
+```js
+export default [{ opacity: 0 }, { opacity: 1 }];
+```
+
+```js
+export function fade({ component }) {
+    return [{ opacity: 0 }, { opacity: 1 }];
+}
+```
+
+호환성을 위해 REPAIR2는 `keyframes` property가 있는 객체도 계속 허용하지만, 새 플러그인에서는 deprecated 형태입니다. Transition 객체의 `function` property는 무시됩니다.
+
+## 선언한 exports는 실제로 존재해야 합니다
+
+Manifest가 renderer exports를 선언하면 plugin entry는 선언된 이름을 모두 export해야 합니다.
+
+```json
+{
+    "type": "function",
+    "exports": ["check", "run"]
+}
+```
+
+```js
+export function check() {}
+export function run() {}
+```
+
+Development 중에는 선언된 export가 없을 때 REPAIR2가 plugin diagnostics path로 보고합니다. Runtime plugin은 manifest `exports`를 지원하지 않으며 항상 default renderer export를 사용합니다.
 
 ## Runtime step 이름은 매니페스트와 일치해야 합니다
 

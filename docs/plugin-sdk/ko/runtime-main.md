@@ -30,6 +30,8 @@ Main entry는 Electron main process에서 실행되며 trusted code로 취급해
 
 Renderer entry는 `RuntimeExport`를 export합니다.
 
+Runtime plugin은 항상 default renderer export를 사용합니다. Manifest `exports`는 element, frame, function, transition plugin을 위한 것이며 runtime plugin에는 사용하지 않습니다.
+
 ```ts
 import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 import type { Attr, Main, Renderer } from "./plugin-types";
