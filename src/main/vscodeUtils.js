@@ -1,4 +1,4 @@
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 
 export function checkVscodeInstalled() {
     return new Promise((res) => {
@@ -9,6 +9,12 @@ export function checkVscodeInstalled() {
     });
 }
 
+const env = { ...process.env };
+delete env.NODE_ENV;
 export function openVsCode(dir) {
-    exec(`code ${dir}`);
+    spawn("cmd.exe", ["/c", "code", dir], {
+        cwd: dir,
+        env,
+        stdio: "ignore"
+    }).unref();
 }

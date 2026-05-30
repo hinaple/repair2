@@ -11,7 +11,6 @@ import {
     clearComponents,
     getAllComponentHandles,
     getAllComponents,
-    getComponent,
     subscribeComponentHandles
 } from "../components";
 import { getVariableIdByName, getVarByName, setVarByName, subscribeVarByName } from "../variables";
