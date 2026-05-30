@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import { basename, extname, join } from "path";
 import { createEmptyPlugin } from "./plugin/createEmptyPlugin";
 import { pathExists } from "./pathExists";
+import { checkVscodeInstalled, openVsCode } from "./vscodeUtils";
 
 /** @param {{ getPluginManager: () => PluginManager }} setupOpt */
 export function setupIpcHandlers({
@@ -130,6 +131,13 @@ export function setupIpcHandlers({
         const editorWindow = getEditorWindow();
         if (!editorWindow) return;
         editorWindow.setTitle("Editor");
+    });
+
+    ipcMain.handle("vscode:is-installed", () => checkVscodeInstalled());
+
+    ipcMain.on("vscode:open", (_, src) => {
+        console.log(src);
+        openVsCode(src);
     });
     //#endregion
 

@@ -1,6 +1,7 @@
 <script>
     import { hoverHighlight } from "../../lib/highlight";
     import Icon from "../../assets/icons/Icon.svelte";
+    import { getVscode, openVscode } from "../../lib/vscode";
 
     let { info } = $props();
 
@@ -25,9 +26,11 @@
             size={16}
         />
     {/if}
-    <button bind:this={moreBtn} class="more"
-        ><Icon icon="ellipsis" color="#fff" size={14} />
-    </button>
+    {#if getVscode()}
+        <button bind:this={moreBtn} class="more" onclick={() => openVscode(info.path)}>
+            <Icon icon="vscode" color="#fff" size={18} />
+        </button>
+    {/if}
 </div>
 
 <style>
@@ -57,7 +60,7 @@
         color: #ff3636;
     }
     .more {
-        padding: 5px 5px;
+        padding: 3px 3px;
         border-radius: 5px;
         display: none;
         cursor: pointer;
