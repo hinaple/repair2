@@ -117,22 +117,24 @@ For video resources, `volume` controls playback volume. The default is `1`. `0` 
 <repair-asset src="intro-video" volume="2" loop></repair-asset>
 ```
 
-By default, the internal asset is stretched to the size of `<repair-asset>` using `width: 100%` and `height: 100%`.
+By default, the internal asset uses its original size.
 
-Use `anchor` when the asset should keep its original ratio while sizing against one axis.
+Use `sizing` when the asset should size against one or both axes of `<repair-asset>`.
 
-| `anchor` | Behavior |
+| `sizing` | Behavior |
 | -------- | -------- |
-| unset    | Stretches the internal asset to both the width and height of `<repair-asset>`. |
+| unset    | Uses the original asset size. |
+| `none`   | Uses the original asset size. |
 | `width`  | Uses the width of `<repair-asset>` and automatically calculates height from the asset ratio. |
 | `height` | Uses the height of `<repair-asset>` and automatically calculates width from the asset ratio. |
-| `none`   | Uses the original asset size. |
+| `both`   | Stretches the internal asset to both the width and height of `<repair-asset>`. |
 
 ```html
-<repair-asset src="logo" style="width: 300px; height: 200px;"></repair-asset>
-<repair-asset src="logo" anchor="width" style="width: 300px;"></repair-asset>
-<repair-asset src="logo" anchor="height" style="height: 200px;"></repair-asset>
-<repair-asset src="logo" anchor="none"></repair-asset>
+<repair-asset src="logo"></repair-asset>
+<repair-asset src="logo" sizing="width" style="width: 300px;"></repair-asset>
+<repair-asset src="logo" sizing="height" style="height: 200px;"></repair-asset>
+<repair-asset src="logo" sizing="none"></repair-asset>
+<repair-asset src="logo" sizing="both" style="width: 300px; height: 200px;"></repair-asset>
 ```
 
 `<repair-asset>` defaults to `object-fit: contain` and `object-position: center`. The internal `<img>` or `<video>` inherits those values, so normal CSS can adjust fit and positioning.

@@ -29,10 +29,10 @@
         "serialport": "^13.0.0",
         "socket.io-client": "^4.8.1",
         "svelte": "^5.20.1",
-        "tippy.js": "^6.3.7",
         "vite": "^7.0.0"
     },
     "devDependencies": {
+        "tippy.js": "^6.3.7",
         "@babel/core": "^7.26.10",
         "@babel/generator": "^7.26.10",
         "@babel/parser": "^7.26.10",
@@ -49,6 +49,7 @@
         "electron-prompt": "^1.7.0",
         "electron-store": "^11.0.2",
         "electron-vite": "^5.0.0",
+        "esbuild": "^0.28.0",
         "fs-extra": "^11.3.0",
         "hangul-js": "^0.2.6",
         "node-stream-zip": "^1.15.0",
