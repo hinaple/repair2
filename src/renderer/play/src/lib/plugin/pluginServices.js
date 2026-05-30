@@ -1,3 +1,4 @@
+import { getAppData } from "../appdata";
 import { reportPluginIssue } from "./pluginReporter";
 
 const serviceProviders = new Map();

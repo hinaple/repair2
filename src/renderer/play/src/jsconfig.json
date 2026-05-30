@@ -1,9 +1,8 @@
 {
     "compilerOptions": {
         "ignoreDeprecations": "6.0",
-        "baseUrl": "../",
         "paths": {
-            "@classes/*": ["../classes/*"]
+            "@classes/*": ["../../classes/*"]
         }
     },
     "exclude": ["node_modules", "dist"]
