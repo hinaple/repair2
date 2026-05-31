@@ -17,7 +17,6 @@ import { sendChanges } from "./lib/runtimeMonitor";
 import { afterPluginImported } from "./lib/plugin/pluginManager";
 
 import "./webcomponents/repairAsset";
-import { pluginAppended } from "./lib/plugin/pluginStyles";
 
 const disabledNodes = [];
 Output.prototype.goto = function () {

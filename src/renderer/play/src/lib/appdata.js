@@ -10,7 +10,9 @@ import { registerPluginContextApi } from "./plugin/pluginContext";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
-const globalStyles = document.getElementById("global-styles");
+const globalStyles = document.createElement("style");
+globalStyles.id = "global-styles";
+document.head.append(globalStyles);
 
 export function updateData(data = ipcRenderer.sendSync("request-data")) {
     appdata = new AppDataClass(data);

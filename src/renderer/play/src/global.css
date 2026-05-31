@@ -55,33 +55,35 @@ repair-component,
     max-height: var(--gamezone-height);
 }
 
-img,
-video {
-    display: block;
-    -webkit-user-drag: none;
-    object-fit: fill;
-}
+@layer repair2 {
+    img,
+    video {
+        display: block;
+        -webkit-user-drag: none;
+        object-fit: fill;
+    }
 
-input,
-textarea {
-    margin: 0;
-    display: block;
-    -webkit-user-drag: none;
-    box-sizing: border-box;
-    border: none;
-    background: none;
-}
-textarea {
-    resize: none;
-    overflow: hidden;
-}
-input:focus,
-textarea:focus {
-    outline: none;
-}
+    input,
+    textarea {
+        margin: 0;
+        display: block;
+        -webkit-user-drag: none;
+        box-sizing: border-box;
+        border: none;
+        background: none;
+    }
+    textarea {
+        resize: none;
+        overflow: hidden;
+    }
+    input:focus,
+    textarea:focus {
+        outline: none;
+    }
 
-* {
-    user-select: none;
+    * {
+        user-select: none;
+    }
 }
 
 repair-component,
@@ -142,15 +144,6 @@ repair-input {
         animation: blink step-start 1s 0s infinite;
     }
 }
-@keyframes blink {
-    0%,
-    100% {
-        opacity: 0;
-    }
-    50% {
-        opacity: 1;
-    }
-}
 
 #preview-component:not(.show-content) {
     outline: dashed #2b6eff 2px;
@@ -201,7 +194,15 @@ repair-input {
     border-radius: 10px;
     font-weight: 500;
 }
-
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+}
 @font-face {
     font-family: "HelveticaExt";
     src: url("./fonts/helveticaExt.woff") format("woff");
