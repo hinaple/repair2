@@ -29,6 +29,8 @@ ipcRenderer.addListener("global-key-event", (_, type, evt) => {
 
 const Specials = ["ctrlKey", "shiftKey", "metaKey", "altKey"];
 function keydownHandler(e) {
+    if (!e.key) return;
+
     const entries = shortcuts[e.key.toUpperCase()];
     if (!entries) return;
     entries
@@ -48,6 +50,8 @@ function keydownHandler(e) {
         });
 }
 function keyupHandler(e) {
+    if (!e.key) return;
+
     const entries = shortcuts[e.key.toUpperCase()];
     if (!entries) return;
     entries.forEach((d) => {
