@@ -29,5 +29,8 @@ export default class Sequence extends AdvancedNode {
             output: this.output.copyData(availableOuputIds)
         };
     }
+    get outputs() {
+        return [this.output, ...this.steps.outputs];
+    }
     //#endonly
 }

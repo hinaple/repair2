@@ -195,7 +195,11 @@
     use:rightclick={contextmenu}
 >
     <div class="node-wrapper" style={`--node-color: ${color};`}>
-        <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
+        <div
+            class={["node", isFocused && "focus"]}
+            id={node.id}
+            style={`min-width: ${minWidth}px;`}
+        >
             <div
                 class="head"
                 class:folded={folded && !innerOutputs?.length}

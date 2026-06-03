@@ -7,6 +7,8 @@
 - Add editor guides.
 - Improve preview behavior.
 - Add comment nodes.
+- Select all connected nodes on double-click.
+- Add an option to stay inactive while a sequence is unfinished or when a specific component exists.
 - Add code patching support.
 - Add resource search.
 - Cache positions for all elements in the node space to minimize `getClientBoundingRect()` calls.
@@ -26,6 +28,8 @@
 
 - Add bulk plugin support.
 - Add typed plugin attributes.
+- Add plugin attribute type configuration.
+- Add default settings for transition plugins.
 - Validate/report invalid plugin type or name for pointer-free `usePlugin()` calls.
 - Changing plugin selection should reset or reconcile `exportName`; stale exports from the previous plugin can make the new plugin look unavailable.
 

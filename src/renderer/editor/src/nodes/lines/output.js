@@ -53,6 +53,7 @@ export default function outputNode(node, { id, output }) {
 
     const frameUpdater = new FrameUpdater(async () => {
         if (destroyed) return;
+
         const rect = node.getBoundingClientRect();
         const originalPos = getOriginalPos(rect.x, rect.y);
         fromCoord = { x: originalPos.x + 16 / 2, y: originalPos.y + 16 / 2 };

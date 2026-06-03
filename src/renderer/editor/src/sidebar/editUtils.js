@@ -2,6 +2,7 @@ import { get, writable } from "svelte/store";
 import { appData } from "../lib/syncData.svelte";
 import { ipcRenderer } from "electron";
 import { NodeClasses } from "@classes/utils";
+import { getAllChainedNodes } from "../lib/connects";
 
 const NodeTypes = Object.keys(NodeClasses);
 
@@ -16,17 +17,38 @@ export function selectManyNodes(nodes) {
     else currentFocus.set({ type: "nodes", arr: nodes.map((n) => n.getFocusData()) });
 }
 
+function expandFocus(type, obj) {
+    if (!NodeTypes.includes(type)) return null;
+
+    return getAllChainedNodes(obj).values().toArray();
+}
+
+const FOCUS_EXPAND_TIME_MS = 400;
+let lastFocussed = null;
 export function focusData(type, obj = appData.config, data = null) {
-    const currentType = get(currentFocus).type;
+    const cf = get(currentFocus);
+
+    if (lastFocussed && lastFocussed.obj === obj) {
+        clearTimeout(lastFocussed.timeout);
+        lastFocussed = null;
+        const expanded = expandFocus(type, obj);
+        if (expanded) {
+            type = "nodes";
+            obj = expanded.map((e) => ({ type: e.type, obj: e }));
+        }
+    } else
+        lastFocussed = {
+            timeout: setTimeout(() => (lastFocussed = null), FOCUS_EXPAND_TIME_MS),
+            obj
+        };
+
     if (
+        type === "nodes" ||
         !NodeTypes.includes(type) ||
-        (!(
-            currentType === "nodes" &&
-            (isShiftPressed || get(currentFocus).arr.some((n) => n.obj === obj))
-        ) &&
-            (!NodeTypes.includes(currentType) || !isShiftPressed))
+        (!(cf.type === "nodes" && (isShiftPressed || cf.arr.some((n) => n.obj === obj))) &&
+            (!NodeTypes.includes(cf.type) || !isShiftPressed))
     ) {
-        currentFocus.set({ type, obj, data });
+        currentFocus.set({ type, [type === "nodes" ? "arr" : "obj"]: obj, data });
         if (type === "component" || type === "element") {
             ipcRenderer.send("layout-preview", { compData: data.preview.storeData });
             previewing = data.preview;
@@ -37,9 +59,8 @@ export function focusData(type, obj = appData.config, data = null) {
 
         return;
     }
-
-    if (currentType !== "nodes") {
-        if (get(currentFocus).obj !== obj)
+    if (cf.type !== "nodes") {
+        if (cf.obj !== obj)
             currentFocus.update((cf) => ({ type: "nodes", arr: [cf, { type, obj, data }] }));
         return;
     }

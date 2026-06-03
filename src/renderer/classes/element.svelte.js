@@ -119,5 +119,8 @@ export default class Element extends TypePayload {
             dragOption: this.dragOption.storeData
         };
     }
+    get outputs() {
+        return this.listeners.outputs;
+    }
     //#endonly
 }

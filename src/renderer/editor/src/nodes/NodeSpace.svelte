@@ -215,6 +215,11 @@
     use:rightclick={contextmenu}
 >
     <Background />
+    {#if renderWithWebGL}
+        <Lines {unsupported} />
+    {:else}
+        <LinesOld />
+    {/if}
     <div class="viewport" bind:this={viewportEl}>
         {#each appData.nodes.values() as node (node.id)}
             {#if node.type === "sequence"}
@@ -244,11 +249,6 @@
             {/if}
         {/each}
     </div>
-    {#if renderWithWebGL}
-        <Lines {unsupported} />
-    {:else}
-        <LinesOld />
-    {/if}
 </div>
 {#if selectOrigin}
     <div
@@ -279,11 +279,15 @@
         cursor: grabbing !important;
     }
     .viewport {
+        width: 100%;
+        height: 100%;
         position: absolute;
         left: 0;
         top: 0;
         pointer-events: none;
         transform-origin: left top;
+        will-change: transform;
+        contain: layout size style;
     }
 
     .select-box {

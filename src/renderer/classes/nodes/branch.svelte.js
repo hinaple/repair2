@@ -85,5 +85,9 @@ export default class Branch extends Node {
             falseOutput: this.falseOutput.copyData(availableOuputIds)
         };
     }
+
+    get outputs() {
+        return [this.trueOutput, this.falseOutput];
+    }
     //#endonly
 }

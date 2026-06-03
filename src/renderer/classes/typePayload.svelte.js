@@ -91,5 +91,8 @@ export default class TypePayload {
                 $state.snapshot(this.payload)
         };
     }
+    get outputs() {
+        return this.payload?.outputs ?? this.payload?.output;
+    }
     //#endonly
 }

@@ -79,5 +79,8 @@ export default class Component {
             outroTransition: this.outroTransition.storeData
         };
     }
+    get outputs() {
+        return this.elements.outputs;
+    }
     //#endonly
 }

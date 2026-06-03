@@ -67,5 +67,10 @@ export default class Sortable {
     copyData(availableOuputIds = null) {
         return this.list.map((s) => s.copyData(availableOuputIds));
     }
+    get outputs() {
+        const arr = [];
+        this.list.forEach((s) => arr.push(...(s.outputs ?? [s.output])));
+        return arr.filter(Boolean);
+    }
     //#endonly
 }
