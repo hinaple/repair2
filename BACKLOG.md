@@ -4,6 +4,7 @@
 
 - Make all attributes variable-capable, similar to After Effects expressions/controls.
 - Support touchpad-friendly editor navigation.
+- Add per-machine preferences.
 - Add editor guides.
 - Improve preview behavior.
 - Add comment nodes.
@@ -15,6 +16,7 @@
 - Add project validation in the editor to detect and report issues before they cause runtime or build problems.
 - Find and clean up unused resources and plugins in a project.
 - Add an option to delete the previous resource file when replacing or editing a resource.
+- Switch project file export packaging from `archiver` to `yazl`.
 - Cache positions for all elements in the node space to minimize `getClientBoundingRect()` calls.
 - Improve the default project template.
 - Add an online viewer.
