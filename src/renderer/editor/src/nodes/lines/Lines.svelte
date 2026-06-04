@@ -207,6 +207,7 @@
         viewport.screen.subscribe(({ width, height }) => {
             WIDTH = width;
             HEIGHT = height;
+            changeLineSegments();
             setCanvas();
         }),
         viewport.pos.subscribe(() => {

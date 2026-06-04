@@ -2,6 +2,7 @@ import { get, writable } from "svelte/store";
 import { outClicked } from "../lib/contextMenu/contextUtils";
 import { ipcRenderer } from "electron";
 import { appData } from "../lib/syncData.svelte";
+import FrameUpdater from "../lib/frameUpdater";
 
 export const rInfo = {
     ratio: 0,
@@ -9,23 +10,47 @@ export const rInfo = {
     RH: 0
 };
 
-let screenSize;
+let screenRect;
 export const viewport = {
     screen: writable({ width: 0, height: 0 }),
     size: writable(0),
     pos: writable({ x: 0, y: 0 })
 };
 
+export function setViewportEl(node) {
+    observer.observe(node);
+
+    return {
+        destroy() {
+            observer.unobserve(node);
+        }
+    };
+}
+
+const fu = new FrameUpdater(() => {
+    calcRatio();
+});
+
+const SIDEBAR_WIDTH = 340;
+const observer = new ResizeObserver((entries) => {
+    if (!entries || !entries.length) return;
+
+    const rect = entries[0].contentRect;
+    screenRect = { width: rect.width, height: rect.height, x: SIDEBAR_WIDTH, y: 0 };
+
+    fu.draw();
+});
+
 function calcRatio() {
-    screenSize = { width: window.innerWidth, height: window.innerHeight };
+    if (!screenRect) return;
+
     rInfo.ratio = Math.pow(10, get(viewport.size));
-    rInfo.RW = screenSize.width / rInfo.ratio;
-    rInfo.RH = screenSize.height / rInfo.ratio;
-    viewport.screen.set(screenSize);
+    rInfo.RW = screenRect.width / rInfo.ratio;
+    rInfo.RH = screenRect.height / rInfo.ratio;
+    viewport.screen.set(screenRect);
 
     document.body.style.setProperty("--viewport-ratio", rInfo.ratio);
 }
-calcRatio();
 
 function posFromAnchor(len, anchor, pos) {
     return pos - anchor + len / 2;
@@ -41,10 +66,11 @@ export function posFromViewport(x, y, vpPos = get(viewport.pos)) {
     };
 }
 export function getOriginalPos(x, y) {
+    if (!screenRect) return { x, y };
     const vpPos = get(viewport.pos);
     return {
-        x: removeAnchor(rInfo.RW, vpPos.x, x / rInfo.ratio),
-        y: removeAnchor(rInfo.RH, vpPos.y, y / rInfo.ratio)
+        x: removeAnchor(rInfo.RW, vpPos.x, (x - screenRect.x) / rInfo.ratio),
+        y: removeAnchor(rInfo.RH, vpPos.y, (y - screenRect.y) / rInfo.ratio)
     };
 }
 
@@ -68,8 +94,8 @@ export function setViewportSize(size, considerLimit = true) {
 
 export function isBoundOutViewport(x1, y1, x2, y2) {
     return (
-        ((x1 < 0 && x2 < 0) || (x1 > screenSize.width && x2 > screenSize.width)) &&
-        ((y1 < 0 && y2 < 0) || (y1 > screenSize.height && y2 > screenSize.height))
+        ((x1 < 0 && x2 < 0) || (x1 > screenRect.width && x2 > screenRect.width)) &&
+        ((y1 < 0 && y2 < 0) || (y1 > screenRect.height && y2 > screenRect.height))
     );
 }
 
@@ -133,9 +159,9 @@ export function fitViewportToNodes(nodes) {
     // Calculate required scale
     const width = bounds.maxX - bounds.minX;
     const height = bounds.maxY - bounds.minY;
-    const screenSize = get(viewport.screen);
-    const scaleX = Math.log10(screenSize.width / width);
-    const scaleY = Math.log10(screenSize.height / height);
+    const screenRect = get(viewport.screen);
+    const scaleX = Math.log10(screenRect.width / width);
+    const scaleY = Math.log10(screenRect.height / height);
     const scale = Math.min(scaleX, scaleY, sizeLimit[1]);
 
     // Apply new viewport settings
@@ -147,10 +173,6 @@ export function getViewportCenter() {
     const vp = get(viewport.pos);
     return { x: vp.x - sideBarWidth / 2 / rInfo.ratio, y: vp.y };
 }
-
-window.onresize = () => {
-    calcRatio();
-};
 
 ipcRenderer.on("zoom", (_, step) => {
     const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };

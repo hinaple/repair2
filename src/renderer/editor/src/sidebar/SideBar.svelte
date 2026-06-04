@@ -18,6 +18,7 @@
     import Resources from "./resource/Resources.svelte";
     import VariableSetEdit from "./edits/VariableSetEdit.svelte";
     import Plugins from "./plugins/Plugins.svelte";
+    import BigIcons from "../assets/icons/BigIcons.svelte";
     // import Grabber from "../lib/grabber";
 
     const EditComponents = {
@@ -47,25 +48,24 @@
         edit: "Edit",
         variables: "Variables",
         resources: "Resources",
-        plugins: "Plugins"
+        plugins: "Plugins",
+        logs: "Logs"
     };
-
-    // let resizer = $state(null);
-    // onMount(() => {
-    //     const grabber = new Grabber({container: resizer})
-    // })
 </script>
 
 <div class="side-bar">
     <div class="tabs">
-        {#each Object.entries(tabs).toReversed() as [id, label]}
-            <button class="tab" class:active={currentTab === id} onclick={() => (currentTab = id)}>
-                {label}
+        {#each Object.keys(tabs) as id}
+            <button
+                class={["tab-wrapper", currentTab === id && "active"]}
+                onclick={() => (currentTab = id)}
+            >
+                <div class="tab">
+                    <BigIcons icon={id} color="#fff" size={30} />
+                </div>
             </button>
         {/each}
     </div>
-
-    <!-- <div bind:this={resizer} class="resizer"></div> -->
     <div class="side-bar-body">
         {#if currentTab === "edit"}
             <div class="title">{SideBarOptions[currentFocus.type]}</div>
@@ -89,10 +89,7 @@
 
 <style>
     .side-bar {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 300px;
+        width: 340px;
         height: 100%;
         z-index: var(--sidebar-z);
         color: #fff;
@@ -100,61 +97,50 @@
         box-sizing: border-box;
         font-family: "Pretend";
         user-select: none;
-        pointer-events: none;
-    }
-    .tabs {
-        position: absolute;
-        left: 0;
-        top: 0;
         display: flex;
         flex-direction: row;
-        pointer-events: all;
-        height: fit-content;
-        transform-origin: right bottom;
-        transform: translate(-100%, -100%) rotate(-90deg);
-        overflow-y: hidden;
-
-        gap: 1px;
-    }
-    .tab {
-        padding: 5px 10px;
-        border: none;
-        color: #fff;
-        font-family: "Pretend";
-        font-size: 16px;
-        cursor: pointer;
-        border-radius: 5px 5px 0 0;
-        opacity: 0.7;
-        width: fit-content;
-        height: fit-content;
+        background-color: hsl(0, 0%, 20%);
         flex: 0 0 auto;
-        background: #000;
-        transform: translateY(6px);
-
-        transition: transform 100ms ease-out;
     }
-    .tab:hover,
-    .tab.active {
-        transform: translateY(0);
-    }
-    .tab.active {
-        background: var(--b-o8);
-        opacity: 1;
-    }
-    .side-bar-body {
-        width: 100%;
-        height: 100%;
-        pointer-events: all;
+    .tabs {
         display: flex;
         flex-direction: column;
-        background-color: var(--b-o8);
+        flex: 0 0 auto;
+        box-sizing: border-box;
+    }
+    .tab-wrapper {
+        padding: 3px;
+        cursor: pointer;
+        opacity: 0.5;
+    }
+    .tab-wrapper:hover,
+    .tab-wrapper.active {
+        opacity: 1;
+    }
+    .tab {
+        box-sizing: border-box;
+        padding: 5px;
+        border-radius: 5px;
+        flex: 0 0 auto;
+        margin-bottom: 3px;
+    }
+    .tab-wrapper.active > .tab {
+        background-color: var(--w-o1);
+    }
+    .side-bar-body {
+        border-inline: solid var(--w-o6) 1px;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
         flex: 1 1 auto;
-        backdrop-filter: blur(4px);
+
+        contain: paint layout size;
     }
     .title {
         font-size: 20px;
         padding: 15px 0 15px 20px;
-        border-bottom: solid #fff 1px;
+        border-bottom: solid var(--w-o6) 1px;
         font-weight: 600;
         flex: 0 0 auto;
     }

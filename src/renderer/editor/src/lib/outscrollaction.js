@@ -1,4 +1,4 @@
-export default function outClickAction(node, callback) {
+export default function outScrollAction(node, callback) {
     const handleScroll = (e) => {
         if (!node.contains(e.target)) {
             callback();

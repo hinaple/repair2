@@ -45,18 +45,29 @@
 <ContextMenu />
 <ToastDisplay />
 <Modal />
-<SideBar />
-<NodeSpace />
+<div class="screen">
+    <SideBar />
+    <NodeSpace />
+</div>
 
 <style>
     .info {
         position: fixed;
         right: 5px;
         bottom: 5px;
-        color: #fff;
+        color: #000;
         font-size: 12px;
         opacity: 0.8;
         pointer-events: none;
         z-index: var(--info-z);
+    }
+    .screen {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
     }
 </style>

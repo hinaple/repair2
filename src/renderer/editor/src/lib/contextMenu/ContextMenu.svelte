@@ -46,8 +46,7 @@
     .context-menu {
         position: fixed;
         z-index: var(--contextmenu-z);
-        background-color: var(--w-o8);
-        backdrop-filter: blur(4px);
+        background-color: #fff;
         box-shadow: var(--b-o3) 3px 3px 10px;
         border: solid #000 1px;
         display: flex;

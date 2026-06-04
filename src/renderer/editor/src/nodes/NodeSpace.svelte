@@ -7,7 +7,8 @@
         resizeViewport,
         moveViewport,
         posFromViewport,
-        getOriginalPos
+        getOriginalPos,
+        setViewportEl
     } from "./viewport";
     import Sequence from "./Sequence.svelte";
     import { grabbing } from "../lib/stores";
@@ -198,6 +199,17 @@
     function unsupported() {
         renderWithWebGL = false;
     }
+
+    function addOnwheel(node, callback) {
+        const opt = ["wheel", callback, { passive: true }];
+        node.addEventListener(...opt);
+
+        return {
+            destroy() {
+                node.removeEventListener(...opt);
+            }
+        };
+    }
 </script>
 
 <svelte:body
@@ -211,8 +223,9 @@
     class:grabbing={realGrabbing}
     class:ready-to-grab={readyToGrab}
     onpointerdown={pointerdown}
-    onwheel={wheel}
+    use:addOnwheel={wheel}
     use:rightclick={contextmenu}
+    use:setViewportEl
 >
     <Background />
     {#if renderWithWebGL}
@@ -263,9 +276,8 @@
     .node-space {
         width: 100%;
         height: 100%;
-        position: absolute;
-        left: 0;
-        top: 0;
+        position: relative;
+        flex: 1 1 auto;
     }
     .node-space :global(*) {
         user-select: none;
@@ -278,6 +290,9 @@
     .node-space.grabbing :global(*) {
         cursor: grabbing !important;
     }
+    .node-space.grabbing > .viewport {
+        will-change: transform;
+    }
     .viewport {
         width: 100%;
         height: 100%;
@@ -286,7 +301,6 @@
         top: 0;
         pointer-events: none;
         transform-origin: left top;
-        will-change: transform;
         contain: layout size style;
     }
 

@@ -136,6 +136,7 @@
         stroke: var(--color);
         stroke-width: var(--line-width);
     }
+    .fill,
     path:not(.stroke) {
         fill: var(--color);
     }

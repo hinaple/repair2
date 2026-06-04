@@ -185,8 +185,7 @@
         width: 100%;
         max-height: 50vh;
         position: absolute;
-        background-color: var(--w-o8);
-        backdrop-filter: blur(5px);
+        background-color: hsl(0, 0%, 80%);
         z-index: 200;
         box-shadow: var(--b-o8) 0 0 8px;
         display: flex;

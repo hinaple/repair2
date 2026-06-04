@@ -11,7 +11,7 @@
         <div
             class="toast"
             in:fly={{ duration: 200, y: 200, opacity: 0, easing: quadOut }}
-            out:fly={{ duration: 200, x: -260, opacity: 0, easing: quadIn }}
+            out:fly={{ duration: 200, x: 260, opacity: 0, easing: quadIn }}
             animate:flip={{ duration: 200, easing: quadInOut }}
         >
             {#if toast.closable}
@@ -31,7 +31,7 @@
     .toasts-container {
         max-height: 100%;
         position: fixed;
-        left: 10px;
+        right: 10px;
         bottom: 10px;
         display: flex;
         flex-direction: column;
@@ -50,8 +50,7 @@
         flex-direction: column;
         flex: 0 0 auto;
         user-select: none;
-        background-color: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(5px);
+        background-color: hsl(0, 0%, 20%);
         box-sizing: border-box;
         color: #fff;
         gap: 10px;
