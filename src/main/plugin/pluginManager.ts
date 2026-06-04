@@ -7,6 +7,7 @@ import MainRuntimePluginEngine from "./runtimeMain";
 import type { ReportDiagnostic } from "../diagnostics";
 import { pluginDir } from "../dirs";
 import { createPluginLinkService, PluginLinkService } from "./pluginLinks";
+import { createPluginDiagnostics, type PluginDiagnostics } from "./pluginDiagnostics";
 import type { RollupWatcher } from "rollup";
 import type { ChokidarOptions, FSWatcher } from "chokidar";
 
@@ -71,7 +72,7 @@ function makeInfoForRenderer({ info, data }: PluginInfoData): InfoForRenderer {
 export class PluginManager {
     private devMode: boolean;
     private updated: boolean;
-    private reportDiagnostic?: ReportDiagnostic;
+    private pluginDiagnostics: PluginDiagnostics;
     private _onupdate?: UpdateHandler;
     private errorWatchers: Set<{ watcher: FSWatcher; close: () => Promise<void> }> = new Set();
 
@@ -94,9 +95,14 @@ export class PluginManager {
         this.plugins = new Map();
         this.devMode = devMode;
         this.updated = false;
-        this.reportDiagnostic = reportDiagnostic ?? undefined;
-        this.pluginLinkService = createPluginLinkService({ reportDiagnostic });
-        this.mainRuntime = new MainRuntimePluginEngine({ pluginDir, reportDiagnostic });
+        this.pluginDiagnostics = createPluginDiagnostics(reportDiagnostic);
+        this.pluginLinkService = createPluginLinkService({
+            pluginDiagnostics: this.pluginDiagnostics
+        });
+        this.mainRuntime = new MainRuntimePluginEngine({
+            pluginDir,
+            pluginDiagnostics: this.pluginDiagnostics
+        });
     }
     async initialize() {
         if (this.updated) return;
@@ -361,15 +367,11 @@ export class PluginManager {
         const manifestResult = await getManifest(join(pluginDir, dir, MANIFEST));
         if (manifestResult.ok === false) {
             if (!manifestResult.silent) {
-                await this.reportDiagnostic?.({
-                    level: "warning",
-                    title: "Plugin manifest is invalid.",
-                    detail: manifestResult.detail ?? `Plugin directory: ${dir}`,
+                await this.pluginDiagnostics.manifestInvalid({
+                    dir,
+                    detail: manifestResult.detail,
                     error: manifestResult.error,
-                    source: "plugin",
-                    subject: { id: dir, type: "unknown", reason: manifestResult.reason },
-                    dialogue: false,
-                    logType: "plugin-manifest-warning"
+                    reason: manifestResult.reason
                 });
             }
             return {
@@ -400,15 +402,7 @@ export class PluginManager {
     private checkExistingName(name: string) {
         if (!this.plugins.has(name)) return false;
 
-        this.reportDiagnostic?.({
-            level: "warning",
-            title: "Duplicated plugin name.",
-            detail: `Plugin name: ${name}`,
-            source: "plugin",
-            subject: { id: name },
-            dialogue: false,
-            logType: "plugin-duplicated-name-warning"
-        });
+        this.pluginDiagnostics.duplicatedName(name);
         return true;
     }
 
@@ -439,13 +433,7 @@ export class PluginManager {
                 );
                 if (replaceSucceed) newInfo.linked = await this.getPluginLinkedInfo(newInfo.name);
                 else {
-                    this.reportDiagnostic?.({
-                        level: "warning",
-                        title: "Failed to update plugin links",
-                        source: "plugin",
-                        dialogue: false,
-                        logType: "plugin-links-warning"
-                    });
+                    this.pluginDiagnostics.pluginLinksWarning("Failed to update plugin links");
                     return { error: true, reason: "Failed to update pligin links", plugin: null };
                 }
             }
@@ -462,13 +450,7 @@ export class PluginManager {
 
         const tempPlugin = this.plugins.get(oldInfo.name);
         if (!tempPlugin) {
-            this.reportDiagnostic?.({
-                level: "warning",
-                title: "Old plugin info doesn't exist",
-                source: "plugin",
-                dialogue: false,
-                logType: "plugin-manifest-warning"
-            });
+            this.pluginDiagnostics.pluginInfoMissing();
             return { error: true, reason: "Plugin information not found", plugin: null };
         }
         this.plugins.delete(oldInfo.name);
@@ -541,16 +523,7 @@ export class PluginManager {
                 .catch(async (err) => {
                     data.ready = false;
                     data.error = err;
-                    await this.reportDiagnostic?.({
-                        level: "error",
-                        title: "Plugin build failed.",
-                        detail: `Plugin: ${info.name}`,
-                        error: err,
-                        source: "plugin",
-                        subject: { id: info.name, type: info.type },
-                        dialogue: false,
-                        logType: "plugin-build-error"
-                    });
+                    await this.pluginDiagnostics.buildFailed(info, err);
                     return false;
                 })
                 .finally(() => delete data.building);
@@ -583,16 +556,7 @@ export class PluginManager {
                             if (evt.code === "ERROR") {
                                 data.error = evt.error;
                                 if (tryResolve(evt.error)) return;
-                                this.reportDiagnostic?.({
-                                    level: "error",
-                                    title: "Plugin build failed.",
-                                    detail: `Plugin: ${pluginInfo.name}`,
-                                    error: evt.error,
-                                    source: "plugin",
-                                    subject: { id: pluginInfo.name, type: pluginInfo.type },
-                                    dialogue: false,
-                                    logType: "plugin-build-error"
-                                });
+                                this.pluginDiagnostics.buildFailed(pluginInfo, evt.error);
                                 callHmr();
                             }
                             if (evt.code !== "END" || tryResolve()) return;

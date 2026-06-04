@@ -27,7 +27,14 @@ function disposeMainRuntimePlugin(runtimeData, pluginName) {
             reportPluginException(
                 runtimeData.ctx?.plugin ?? { id: pluginName, type: "runtime" },
                 "Runtime main plugin deactivation failed.",
-                err
+                err,
+                {
+                    type: "plugin-runtime-main-deactivation-error",
+                    phase: "runtime-main",
+                    groupKey: `plugin:runtime-main:${pluginName}:deactivation`,
+                    summary: `${pluginName} runtime main deactivation failed`,
+                    overlay: false
+                }
             )
         );
 }
@@ -43,7 +50,13 @@ function disposeRuntimePlugin(runtimeData) {
             if (typeof dispose === "function") dispose();
         });
     } catch (err) {
-        reportPluginException(ctx.plugin, "Runtime plugin disposer failed.", err);
+        reportPluginException(ctx.plugin, "Runtime plugin disposer failed.", err, {
+            type: "plugin-runtime-disposer-error",
+            phase: "runtime",
+            groupKey: `plugin:runtime:${ctx.plugin.id}:disposer`,
+            summary: `${ctx.plugin.id} runtime disposer failed`,
+            overlay: false
+        });
     }
     ctx.lifecycle.dispose();
 }
@@ -57,11 +70,25 @@ function callRendererMethod(target, methodName, args) {
         );
         if (result?.then) {
             result.catch((err) =>
-                reportPluginException(target.ctx.plugin, "Runtime renderer method failed.", err)
+                reportPluginException(target.ctx.plugin, "Runtime renderer method failed.", err, {
+                    type: "plugin-runtime-renderer-method-error",
+                    phase: "runtime",
+                    groupKey: `plugin:runtime:${target.ctx.plugin.id}:renderer-method:${methodName}`,
+                    summary: `${target.ctx.plugin.id} runtime renderer method failed`,
+                    status: "active",
+                    overlay: true
+                })
             );
         }
     } catch (err) {
-        reportPluginException(target.ctx.plugin, "Runtime renderer method failed.", err);
+        reportPluginException(target.ctx.plugin, "Runtime renderer method failed.", err, {
+            type: "plugin-runtime-renderer-method-error",
+            phase: "runtime",
+            groupKey: `plugin:runtime:${target.ctx.plugin.id}:renderer-method:${methodName}`,
+            summary: `${target.ctx.plugin.id} runtime renderer method failed`,
+            status: "active",
+            overlay: true
+        });
     }
 }
 
@@ -132,17 +159,38 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                         reportPluginIssue(
                             ctx.plugin,
                             `Runtime plugin step does not exist: ${functionName}`,
-                            `Plugin "${pluginName}" does not define "${functionName}".`
+                            `Plugin "${pluginName}" does not define "${functionName}".`,
+                            "warning",
+                            {
+                                type: "plugin-runtime-step-missing",
+                                phase: "runtime",
+                                groupKey: `plugin:runtime:${pluginName}:step:${functionName}`,
+                                summary: `${pluginName} runtime step does not exist`,
+                                status: "active",
+                                overlay: true
+                            }
                         );
                         return null;
                     }
 
-                    return safeCallPlugin(ctx, "Plugin function execution failed.", () =>
-                        targetMethod({
-                            attributes,
-                            ctx,
-                            ...args
-                        })
+                    return safeCallPlugin(
+                        ctx,
+                        "Plugin function execution failed.",
+                        () =>
+                            targetMethod({
+                                attributes,
+                                ctx,
+                                ...args
+                            }),
+                        null,
+                        {
+                            type: "plugin-runtime-step-error",
+                            phase: "runtime",
+                            groupKey: `plugin:runtime:${pluginName}:step:${functionName}`,
+                            summary: `${pluginName} runtime step failed`,
+                            status: "active",
+                            overlay: true
+                        }
                     );
                 };
 
@@ -228,7 +276,15 @@ function activateRuntimePlugin(pluginName, payloads, generation) {
                 reportPluginException(
                     ctx?.plugin ?? { id: pluginName, type: "runtime" },
                     "Runtime plugin activation failed.",
-                    err
+                    err,
+                    {
+                        type: "plugin-runtime-activation-error",
+                        phase: "runtime",
+                        groupKey: `plugin:runtime:${pluginName}:activation`,
+                        summary: `${pluginName} runtime activation failed`,
+                        status: "active",
+                        overlay: true
+                    }
                 );
                 disposeMainRuntimePlugin(runtimeData, pluginName);
                 if (runtimeData) disposeRuntimePlugin(runtimeData);

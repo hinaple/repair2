@@ -1,7 +1,7 @@
 import { join } from "path";
 import { PluginInfo } from "./type";
 import { createRequire } from "module";
-import type { ReportDiagnostic } from "../diagnostics";
+import { createPluginDiagnostics, type PluginDiagnostics } from "./pluginDiagnostics";
 
 const require = createRequire(import.meta.url);
 
@@ -41,7 +41,7 @@ class RuntimePluginInstance {
     pluginInfo: PluginInfo;
     methods: PluginMethods;
     ctx?: Record<string, any>;
-    private reportDiagnostic?: ReportDiagnostic;
+    private pluginDiagnostics: PluginDiagnostics;
     disposers: Set<() => any> = new Set();
     active: boolean = false;
     disposed: boolean = false;
@@ -49,24 +49,15 @@ class RuntimePluginInstance {
         pluginInfo: PluginInfo,
         imported: ImportedPlugin,
         activationId: string,
-        reportDiagnostic?: ReportDiagnostic
+        pluginDiagnostics: PluginDiagnostics
     ) {
         this.activationId = activationId;
         this.pluginInfo = pluginInfo;
-        this.reportDiagnostic = reportDiagnostic;
+        this.pluginDiagnostics = pluginDiagnostics;
         try {
             this.methods = typeof imported === "function" ? imported() : imported;
         } catch (err) {
-            this.reportDiagnostic?.({
-                level: "error",
-                title: "Runtime main plugin factory failed.",
-                detail: `Plugin: ${this.pluginInfo.name}`,
-                error: err,
-                source: "plugin",
-                subject: { id: this.pluginInfo.name, type: this.pluginInfo.type },
-                dialogue: false,
-                logType: "plugin-runtime-main-factory-error"
-            });
+            this.pluginDiagnostics.runtimeMainFactoryFailed(this.pluginInfo, err);
             throw err;
         }
     }
@@ -117,16 +108,7 @@ class RuntimePluginInstance {
         try {
             return this.methods?.main?.[methodName]?.(...args);
         } catch (err) {
-            this.reportDiagnostic?.({
-                level: "error",
-                title: "Runtime main plugin method failed.",
-                detail: `Plugin: ${this.pluginInfo.name}\nMethod: ${methodName}`,
-                error: err,
-                source: "plugin",
-                subject: { id: this.pluginInfo.name, type: this.pluginInfo.type },
-                dialogue: false,
-                logType: "plugin-runtime-main-method-error"
-            });
+            this.pluginDiagnostics.runtimeMainMethodFailed(this.pluginInfo, methodName, err);
             throw err;
         }
     }
@@ -141,16 +123,7 @@ class RuntimePluginInstance {
         return () => this.disposers.delete(disposer);
     }
     private reportDisposeError(err: any) {
-        this.reportDiagnostic?.({
-            level: "error",
-            title: "Runtime main plugin disposer failed.",
-            detail: `Plugin: ${this.pluginInfo.name}`,
-            error: err,
-            source: "plugin",
-            subject: { id: this.pluginInfo.name, type: this.pluginInfo.type },
-            dialogue: false,
-            logType: "plugin-runtime-main-disposer-error"
-        });
+        this.pluginDiagnostics.runtimeMainDisposerFailed(this.pluginInfo, err);
     }
     private safeDispose(disposer: () => any) {
         try {
@@ -175,17 +148,17 @@ class RuntimePluginInstance {
 export default class MainRuntimePluginEngine {
     private pluginDir: string;
     private plugins: Map<string, RuntimePluginData> = new Map();
-    private reportDiagnostic?: ReportDiagnostic;
+    private pluginDiagnostics: PluginDiagnostics;
 
     constructor({
         pluginDir,
-        reportDiagnostic = null
+        pluginDiagnostics = null
     }: {
         pluginDir: string;
-        reportDiagnostic?: ReportDiagnostic | null;
+        pluginDiagnostics?: PluginDiagnostics | null;
     }) {
         this.pluginDir = pluginDir;
-        this.reportDiagnostic = reportDiagnostic ?? undefined;
+        this.pluginDiagnostics = pluginDiagnostics ?? createPluginDiagnostics();
     }
     updatePlugin(pluginInfo: PluginInfo, forceImport = false) {
         if (pluginInfo.type !== "runtime" || !pluginInfo.main) return null;
@@ -219,16 +192,7 @@ export default class MainRuntimePluginEngine {
                     tempData.imported = null;
                 }
 
-                this.reportDiagnostic?.({
-                    level: "error",
-                    title: "Runtime main plugin load failed.",
-                    detail: `Plugin: ${pluginInfo.name}`,
-                    error: err,
-                    source: "plugin",
-                    subject: { id: pluginInfo.name, type: pluginInfo.type },
-                    dialogue: false,
-                    logType: "plugin-runtime-main-load-error"
-                });
+                this.pluginDiagnostics.runtimeMainLoadFailed(pluginInfo, err);
                 return null;
             });
         this.plugins.set(pluginInfo.name, tempData);
@@ -271,7 +235,7 @@ export default class MainRuntimePluginEngine {
             target.info,
             plugin,
             activationId,
-            this.reportDiagnostic
+            this.pluginDiagnostics
         );
         target.instance = instance;
         return target.instance;
@@ -297,16 +261,7 @@ export default class MainRuntimePluginEngine {
         try {
             instance.dispose();
         } catch (err) {
-            this.reportDiagnostic?.({
-                level: "error",
-                title: "Runtime main plugin dispose failed.",
-                detail: `Plugin: ${pluginName}`,
-                error: err,
-                source: "plugin",
-                subject: { id: pluginName, type: target.info.type },
-                dialogue: false,
-                logType: "plugin-runtime-main-dispose-error"
-            });
+            this.pluginDiagnostics.runtimeMainDisposeFailed(target.info, err);
         } finally {
             if (target.instance === instance) delete target.instance;
         }
@@ -317,16 +272,7 @@ export default class MainRuntimePluginEngine {
             try {
                 if (p.instance) p.instance.dispose();
             } catch (err) {
-                this.reportDiagnostic?.({
-                    level: "error",
-                    title: "Runtime main plugin dispose failed.",
-                    detail: `Plugin: ${pluginName}`,
-                    error: err,
-                    source: "plugin",
-                    subject: { id: pluginName, type: p.info.type },
-                    dialogue: false,
-                    logType: "plugin-runtime-main-dispose-error"
-                });
+                this.pluginDiagnostics.runtimeMainDisposeFailed(p.info, err);
             } finally {
                 delete p.instance;
             }

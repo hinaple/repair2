@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import { dataDir, pluginDir } from "../dirs";
 import { getManifest, MANIFEST, normalizeManifest } from "./pluginManifest";
 import { pathExists } from "../pathExists";
-import type { ReportDiagnostic } from "../diagnostics";
+import { createPluginDiagnostics, type PluginDiagnostics } from "./pluginDiagnostics";
 import type { PluginType } from "./type";
 
 export type PluginLinks = Record<string, { sourcePath: string; linked: boolean }>;
@@ -12,47 +12,13 @@ export const PLUGIN_LINK = "plugin-links.json";
 const LINKS_FILE_PATH = join(dataDir, PLUGIN_LINK);
 
 type PluginLinkServiceOptions = {
-    reportDiagnostic?: ReportDiagnostic | null;
+    pluginDiagnostics?: PluginDiagnostics | null;
 };
 
-function getLinkSubject(id: string, type: string = "plugin-link") {
-    return { id, type };
-}
-
-function createPluginLinkReporter(reportDiagnostic: ReportDiagnostic | null = null) {
-    return async function reportPluginLinkIssue({
-        level = "error",
-        title,
-        detail,
-        error,
-        subject,
-        logType
-    }: {
-        level?: "warning" | "error";
-        title: string;
-        detail?: any;
-        error?: any;
-        subject?: { id?: string; type?: string };
-        logType: string;
-    }) {
-        if (!reportDiagnostic) return;
-        await reportDiagnostic({
-            level,
-            title,
-            detail,
-            error,
-            source: "plugin-link",
-            subject,
-            logType,
-            dialogue: false
-        });
-    };
-}
-
 export function createPluginLinkService({
-    reportDiagnostic = null
+    pluginDiagnostics = null
 }: PluginLinkServiceOptions = {}) {
-    const reportPluginLinkIssue = createPluginLinkReporter(reportDiagnostic);
+    const diagnostics = pluginDiagnostics ?? createPluginDiagnostics();
 
     let currentPluginLinks: PluginLinks;
 
@@ -60,17 +26,11 @@ export function createPluginLinkService({
         const manifestReadResult = await getManifest(manifestPath);
         if (manifestReadResult.ok === false) {
             if (!manifestReadResult.silent) {
-                await reportPluginLinkIssue({
-                    level: "error",
-                    title: "Linked plugin manifest could not be loaded.",
-                    detail: {
-                        manifestPath,
-                        reason: manifestReadResult.reason,
-                        detail: manifestReadResult.detail
-                    },
-                    error: manifestReadResult.error,
-                    subject: getLinkSubject(manifestPath, "plugin-source"),
-                    logType: "plugin-link-manifest"
+                await diagnostics.linkedManifestLoadFailed({
+                    manifestPath,
+                    reason: manifestReadResult.reason,
+                    detail: manifestReadResult.detail,
+                    error: manifestReadResult.error
                 });
             }
             return null;
@@ -116,17 +76,12 @@ export function createPluginLinkService({
             if (name && name in currentPluginLinks) currentPluginLinks[name].linked = true;
             return { updated: true };
         } catch (err) {
-            await reportPluginLinkIssue({
-                level: "error",
-                title: "Linked plugin manifest could not be copied.",
-                detail: {
-                    pluginName: name ?? "unknown",
-                    sourceManifest,
-                    destManifest
-                },
-                error: err,
-                subject: getLinkSubject(name ?? "unknown", type ?? "unknown"),
-                logType: "plugin-link-copy"
+            await diagnostics.linkedManifestCopyFailed({
+                pluginName: name ?? "unknown",
+                pluginType: type ?? "unknown",
+                sourceManifest,
+                destManifest,
+                error: err
             });
             return { updated: false };
         }
@@ -138,16 +93,11 @@ export function createPluginLinkService({
         const manifest = await readManifest(join(sourceDir, MANIFEST));
         if (!manifest) return false;
         if (!replace && current[manifest.name]) {
-            await reportPluginLinkIssue({
-                level: "warning",
-                title: "Plugin source is already linked.",
-                detail: {
-                    pluginName: manifest.name,
-                    currentSourcePath: current[manifest.name].sourcePath,
-                    requestedSourcePath: sourceDir
-                },
-                subject: getLinkSubject(manifest.name, manifest.type),
-                logType: "plugin-link-duplicate"
+            await diagnostics.duplicateLink({
+                pluginName: manifest.name,
+                pluginType: manifest.type,
+                currentSourcePath: current[manifest.name].sourcePath,
+                requestedSourcePath: sourceDir
             });
             return false;
         }
@@ -184,30 +134,13 @@ export function createPluginLinkService({
             const obj = JSON.parse(content);
             const links = await normalizeLinks(obj);
             if (!links) {
-                await reportPluginLinkIssue({
-                    level: "warning",
-                    title: "Plugin link registry is invalid.",
-                    detail: {
-                        linksFilePath: LINKS_FILE_PATH
-                    },
-                    subject: getLinkSubject(LINKS_FILE_PATH, "plugin-link-registry"),
-                    logType: "plugin-link-registry"
-                });
+                await diagnostics.linkRegistryInvalid(LINKS_FILE_PATH);
                 return null;
             }
             currentPluginLinks = links;
             return links;
         } catch (err) {
-            await reportPluginLinkIssue({
-                level: "warning",
-                title: "Plugin link registry could not be read.",
-                detail: {
-                    linksFilePath: LINKS_FILE_PATH
-                },
-                error: err,
-                subject: getLinkSubject(LINKS_FILE_PATH, "plugin-link-registry"),
-                logType: "plugin-link-registry"
-            });
+            await diagnostics.linkRegistryReadFailed(LINKS_FILE_PATH, err);
             return null;
         }
     }
@@ -222,16 +155,7 @@ export function createPluginLinkService({
             );
             return true;
         } catch (err) {
-            await reportPluginLinkIssue({
-                level: "error",
-                title: "Plugin link registry could not be saved.",
-                detail: {
-                    linksFilePath: LINKS_FILE_PATH
-                },
-                error: err,
-                subject: getLinkSubject(LINKS_FILE_PATH, "plugin-link-registry"),
-                logType: "plugin-link-save"
-            });
+            await diagnostics.linkRegistrySaveFailed(LINKS_FILE_PATH, err);
             return false;
         }
     }

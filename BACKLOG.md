@@ -8,9 +8,13 @@
 - Improve preview behavior.
 - Add comment nodes.
 - Select all connected nodes on double-click.
+- Constrain node movement to one axis while Shift is held.
 - Add an option to stay inactive while a sequence is unfinished or when a specific component exists.
 - Add code patching support.
 - Add resource search.
+- Add project validation in the editor to detect and report issues before they cause runtime or build problems.
+- Find and clean up unused resources and plugins in a project.
+- Add an option to delete the previous resource file when replacing or editing a resource.
 - Cache positions for all elements in the node space to minimize `getClientBoundingRect()` calls.
 - Improve the default project template.
 - Add an online viewer.
@@ -29,6 +33,7 @@
 - Add bulk plugin support.
 - Add typed plugin attributes.
 - Add plugin attribute type configuration.
+- Add global shortcut listener registration support to plugin context.
 - Add default settings for transition plugins.
 - Validate/report invalid plugin type or name for pointer-free `usePlugin()` calls.
 - Changing plugin selection should reset or reconcile `exportName`; stale exports from the previous plugin can make the new plugin look unavailable.
@@ -37,6 +42,7 @@
 
 - Add per-plugin enable/disable controls in the editor.
 - Collect and display logs per plugin.
+- Improve editor log styling, show remaining time before logs disappear, and keep logs visible while hovered.
 
 ## Plugin Build, Packaging, And HMR
 

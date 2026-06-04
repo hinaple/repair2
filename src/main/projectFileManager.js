@@ -122,7 +122,12 @@ export default class ProjectFileManager {
                     source: "project",
                     editor: false,
                     dialogue: true,
-                    logType: "project-import-error"
+                    logType: "project-import-error",
+                    groupKey: "project:import:error",
+                    phase: "import",
+                    summary: "프로젝트 불러오기 실패",
+                    subject: { kind: "project" },
+                    status: "resolved"
                 });
                 app.quit();
             }

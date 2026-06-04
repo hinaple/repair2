@@ -49,7 +49,15 @@ function importPlugin(pluginData) {
                     reportPluginException(
                         { id: pluginData.info.name, type: pluginData.info.type },
                         `Exports missing.`,
-                        { missingExports: unexported }
+                        { missingExports: unexported },
+                        {
+                            type: "plugin-exports-missing",
+                            phase: "exports",
+                            groupKey: `plugin:exports:${pluginData.info.name}`,
+                            summary: `${pluginData.info.name} exports missing`,
+                            status: "active",
+                            overlay: true
+                        }
                     );
             }
             callHmr(pluginData.info, p);
@@ -64,7 +72,15 @@ function importPlugin(pluginData) {
             reportPluginException(
                 { id: pluginData.info.name, type: pluginData.info.type },
                 "Plugin importing failed.",
-                err
+                err,
+                {
+                    type: "plugin-import-error",
+                    phase: "import",
+                    groupKey: `plugin:import:${pluginData.info.name}`,
+                    summary: `${pluginData.info.name} import failed`,
+                    status: "active",
+                    overlay: true
+                }
             );
             return null;
         });
@@ -104,17 +120,17 @@ export function afterPluginImported() {
     return pluginImporting;
 }
 
-export function safeCallPlugin(ctx, title, callback, onerror = null) {
+export function safeCallPlugin(ctx, title, callback, onerror = null, logOptions = {}) {
     try {
         const result = callback();
         if (result?.then)
             return result.catch((err) => {
-                reportPluginException(ctx.plugin, title, err);
+                reportPluginException(ctx.plugin, title, err, logOptions);
                 return onerror?.(err);
             });
         return result;
     } catch (err) {
-        reportPluginException(ctx.plugin, title, err);
+        reportPluginException(ctx.plugin, title, err, logOptions);
         return onerror?.(err);
     }
 }
@@ -137,7 +153,20 @@ export async function callFunctionPlugin({
         pluginType: "function",
         ...contextOptions
     });
-    return safeCallPlugin(ctx, "Plugin function execution failed.", () => fn({ ctx, ...argument }));
+    return safeCallPlugin(
+        ctx,
+        "Plugin function execution failed.",
+        () => fn({ ctx, ...argument }),
+        null,
+        {
+            type: "plugin-function-error",
+            phase: "runtime",
+            groupKey: `plugin:function:${name}:${exportName ?? "default"}`,
+            summary: `${name} function execution failed`,
+            status: "active",
+            overlay: true
+        }
+    );
 }
 
 /** @type {Record<string, Record<string, Set<(any) => any>>>} */
@@ -155,7 +184,14 @@ export function subscribePluginHMR(type, pluginName, exportName = "default", cal
         try {
             callback({ api: resolveExportName(api, exportName), info });
         } catch (err) {
-            reportPluginException(source, "Plugin HMR callback failed.", err);
+            reportPluginException(source, "Plugin HMR callback failed.", err, {
+                type: "plugin-hmr-error",
+                phase: "hmr",
+                groupKey: `plugin:hmr:${pluginName}:callback`,
+                summary: `${pluginName} HMR callback failed`,
+                status: "active",
+                overlay: true
+            });
         }
     };
 
@@ -166,7 +202,16 @@ export function subscribePluginHMR(type, pluginName, exportName = "default", cal
             if (!unsubscribed && pluginApi)
                 callback({ api: pluginApi, info: plugins[type][pluginName].info });
         })
-        .catch((err) => reportPluginException(source, "Plugin HMR initial callback failed.", err));
+        .catch((err) =>
+            reportPluginException(source, "Plugin HMR initial callback failed.", err, {
+                type: "plugin-hmr-error",
+                phase: "hmr",
+                groupKey: `plugin:hmr:${pluginName}:initial`,
+                summary: `${pluginName} HMR initial callback failed`,
+                status: "active",
+                overlay: true
+            })
+        );
 
     targetSet.add(fn);
     return () => {
@@ -185,7 +230,15 @@ async function callHmr(pluginInfo, plugin) {
                 reportPluginException(
                     { id: pluginInfo.name, type: pluginInfo.type },
                     "Plugin HMR subscriber failed.",
-                    err
+                    err,
+                    {
+                        type: "plugin-hmr-error",
+                        phase: "hmr",
+                        groupKey: `plugin:hmr:${pluginInfo.name}:subscriber`,
+                        summary: `${pluginInfo.name} HMR subscriber failed`,
+                        status: "active",
+                        overlay: true
+                    }
                 );
             });
     });

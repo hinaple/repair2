@@ -34,7 +34,14 @@ export function subscribePluginMount({
                                 ctx,
                                 "Plugin unmounting failed.",
                                 unmountCb,
-                                onUnmountError
+                                onUnmountError,
+                                {
+                                    type: "plugin-unmount-error",
+                                    phase: "mount",
+                                    groupKey: `plugin:unmount:${type}:${name}:${contextOption.component?.id ?? ctx.plugin.instanceId}`,
+                                    summary: `${name} unmounting failed`,
+                                    overlay: false
+                                }
                             );
                         plugin.unmount = null;
                     };
@@ -43,6 +50,14 @@ export function subscribePluginMount({
                 (err) => {
                     disposePluginContext(ctx);
                     onMountError?.(err);
+                },
+                {
+                    type: "plugin-mount-error",
+                    phase: "mount",
+                    groupKey: `plugin:mount:${type}:${name}:${contextOption.component?.id ?? ctx.plugin.instanceId}`,
+                    summary: `${name} mounting failed`,
+                    status: "active",
+                    overlay: true
                 }
             );
         const plugin = { ctx, mount, info };

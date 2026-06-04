@@ -3,6 +3,8 @@
 import { ipcMain, dialog, shell } from "electron";
 import fs from "fs/promises";
 import { basename, extname, join } from "path";
+import { logStore } from "./logs/logStore.js";
+import { createProjectCustomLogReporter } from "./logs/projectLog.js";
 import { createEmptyPlugin } from "./plugin/createEmptyPlugin";
 import { pathExists } from "./pathExists";
 import { checkVscodeInstalled, openVsCode } from "./vscodeUtils";
@@ -25,9 +27,42 @@ export function setupIpcHandlers({
     serial,
     socket
 }) {
+    logStore.subscribe((change) => {
+        sendToEditor("log:changed", change);
+    });
+    function reportLog(payload = {}) {
+        return reportDiagnostic?.({
+            ...payload,
+            logType: payload.logType ?? payload.type ?? `${payload.source ?? "app"}-log`
+        });
+    }
+    const reportProjectCustomLog = createProjectCustomLogReporter(reportLog);
+
     ipcMain.on("open-dir", (evt, dir) => {
         shell.openPath(dir);
     });
+
+    //#region log IPCs
+    ipcMain.handle("log:list", (evt, filter = {}) => {
+        return logStore.list(filter);
+    });
+
+    ipcMain.handle("log:get", (evt, id) => {
+        return logStore.get(id);
+    });
+
+    ipcMain.handle("log:resolve", (evt, groupKey) => {
+        return logStore.resolve(groupKey);
+    });
+
+    ipcMain.handle("log:clear", (evt, filter = {}) => {
+        return logStore.clear(filter);
+    });
+
+    ipcMain.on("log:report", async (evt, payload = {}) => {
+        await reportLog(payload);
+    });
+    //#endregion
 
     //#region plugin IPCs
     ipcMain.handle("plugin:get-list", (evt) => {
@@ -241,20 +276,8 @@ export function setupIpcHandlers({
     });
 
     ipcMain.on("custom-log", (evt, content) => {
+        reportProjectCustomLog(content);
         sendToEditor("custom-log", content);
-    });
-
-    ipcMain.on("plugin-log", async (evt, payload = {}) => {
-        const level = payload.level ?? "info";
-        await reportDiagnostic?.({
-            level,
-            title: payload.title ?? "Plugin message",
-            detail: payload.detail ?? "",
-            source: "plugin",
-            subject: payload.plugin ?? null,
-            dialogue: level === "error" && !!payload.dialogue,
-            logType: `plugin-${level}`
-        });
     });
     //#endregion
 

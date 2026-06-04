@@ -68,9 +68,13 @@ async function updateCss() {
             level: "error",
             title: "Failed to load global.css file",
             error: err,
-            source: "style",
+            source: "project",
             dialogue: false,
-            logType: "global-css"
+            logType: "global-css",
+            groupKey: "style:global-css:load",
+            phase: "load",
+            summary: "Failed to load global.css file",
+            subject: { kind: "project", id: "global.css", type: "style" }
         });
     }
     return cssCode;
@@ -233,7 +237,12 @@ function saveData(tempData) {
                 error: e,
                 source: "project",
                 dialogue: true,
-                logType: "project-save-error"
+                logType: "project-save-error",
+                groupKey: "project:save:error",
+                phase: "save",
+                summary: "프로젝트 저장 실패",
+                subject: { kind: "project" },
+                status: "resolved"
             });
             return false;
         });

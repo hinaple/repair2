@@ -190,7 +190,15 @@ export default class RepairComponent extends HTMLElement {
                 reportPluginException(
                     { id: transition.plugin?.name, type: "transition" },
                     "Plugin transition failed.",
-                    err
+                    err,
+                    {
+                        type: "plugin-transition-error",
+                        phase: "runtime",
+                        groupKey: `plugin:transition:${transition.plugin?.name ?? "unknown"}`,
+                        summary: `${transition.plugin?.name ?? "Plugin"} transition failed`,
+                        status: "active",
+                        overlay: true
+                    }
                 );
                 res();
             }

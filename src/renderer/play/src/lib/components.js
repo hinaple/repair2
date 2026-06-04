@@ -80,7 +80,14 @@ function notifyComponentSubscribers() {
         try {
             listener(componentHandles);
         } catch (err) {
-            reportPluginException(source, "Component subscriber failed.", err);
+            reportPluginException(source, "Component subscriber failed.", err, {
+                type: "plugin-component-subscriber-error",
+                phase: "runtime",
+                groupKey: `plugin:component-subscriber:${source?.id ?? "unknown"}`,
+                summary: `${source?.id ?? "Plugin"} component subscriber failed`,
+                status: "active",
+                overlay: true
+            });
         }
     });
 }
@@ -93,7 +100,14 @@ export function subscribeComponentHandles(listener, source = null) {
     try {
         listener(getAllComponentHandles());
     } catch (err) {
-        reportPluginException(source, "Component subscriber failed.", err);
+        reportPluginException(source, "Component subscriber failed.", err, {
+            type: "plugin-component-subscriber-error",
+            phase: "runtime",
+            groupKey: `plugin:component-subscriber:${source?.id ?? "unknown"}`,
+            summary: `${source?.id ?? "Plugin"} component subscriber failed`,
+            status: "active",
+            overlay: true
+        });
     }
 
     return () => {

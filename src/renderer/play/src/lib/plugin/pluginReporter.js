@@ -1,4 +1,4 @@
-import { ipcRenderer } from "electron";
+import { reportLog } from "../logClient";
 import { customLog } from "../logger";
 
 function stringify(value) {
@@ -11,9 +11,14 @@ function stringify(value) {
     }
 }
 
-function getPluginLabel(source) {
-    if (!source) return "unknown";
-    return [source.id, source.type, source.instanceId].filter(Boolean).join(" / ");
+function normalizePluginSubject(plugin) {
+    if (!plugin) return null;
+    return {
+        kind: "plugin",
+        id: plugin.id,
+        type: plugin.type,
+        instanceId: plugin.instanceId
+    };
 }
 
 export function sendPluginLog({
@@ -21,28 +26,48 @@ export function sendPluginLog({
     source = null,
     title,
     detail = null,
-    dialogue = false
+    dialogue = false,
+    type = null,
+    groupKey = null,
+    phase = "user",
+    summary = null,
+    status = null,
+    toast = null,
+    overlay = null
 }) {
-    ipcRenderer.send("plugin-log", {
+    reportLog({
         level,
-        plugin: source,
+        source: "plugin",
+        subject: normalizePluginSubject(source),
         title,
+        summary: summary ?? title,
         detail,
-        dialogue
+        dialogue,
+        logType: type ?? `plugin-${level}`,
+        groupKey:
+            groupKey ??
+            (source?.id
+                ? `plugin:${phase}:${source.id}:${level}:${title}`
+                : `plugin:${phase}:unknown:${level}:${title}`),
+        phase,
+        status: status ?? "resolved",
+        toast,
+        overlay: overlay ?? false
     });
     customLog(`PLUGIN: ${source?.id ?? "unknown"}\n${title}`);
 }
 
-export function reportPluginIssue(source, title, detail = null, level = "warning") {
+export function reportPluginIssue(source, title, detail = null, level = "warning", options = {}) {
     sendPluginLog({
         level,
         source,
         title: `[Plugin ${level}] ${title}`,
         detail,
-        dialogue: level === "error" || level === "warning"
+        dialogue: level === "error" || level === "warning",
+        ...options
     });
 }
 
-export function reportPluginException(source, title, error) {
-    reportPluginIssue(source, title, stringify(error), "error");
+export function reportPluginException(source, title, error, options = {}) {
+    reportPluginIssue(source, title, stringify(error), "error", options);
 }
