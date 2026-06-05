@@ -27,12 +27,12 @@ function requestDraw() {
         const reupdates = [];
         while (asyncBuffer.length) {
             const current = asyncBuffer.pop();
-            if (current.callback()) reupdates.push(current);
+            if (current.callback(ts)) reupdates.push(current);
         }
         for (const works of promiseBuffer) {
             const tempWorks = works.splice(0);
             works.length = 0;
-            await Promise.all(tempWorks.map((w) => w.callback()));
+            await Promise.all(tempWorks.map((w) => w.callback(ts)));
         }
 
         reupdates.forEach((r) => r.draw());

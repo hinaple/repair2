@@ -33,9 +33,34 @@
 
     let finalGrabIdx = -1;
     let grabItemIdx = $state(-1);
-    const frameUpdater = new FrameUpdater(() => {
+    const frameUpdater = new FrameUpdater((now) => {
         if (grabItemIdx === -1) return;
 
+        if (mouseMoved) {
+            reorderWhileGrabbing(now);
+            mouseMoved = false;
+        }
+
+        let stillMoving = false;
+        listArr.forEach((l, i) => {
+            if (i === grabItemIdx)
+                l.top = Math.max(
+                    0,
+                    Math.min(containerInfo.height - l.rect.height / rInfo.ratio, l.grabTop)
+                );
+            else if (l.flip) {
+                const t = cubicOut(Math.min(1, (now - l.flip.startedAt) / FLIP_DURATION));
+                l.top = l.flip.from + (l.flip.to - l.flip.from) * t;
+                if (t < 1) stillMoving = true;
+                else l.flip = null;
+            }
+            l.el.style.transform = `translateY(${l.top}px)`;
+        });
+        onmoved?.();
+        return stillMoving;
+    });
+
+    function reorderWhileGrabbing(now) {
         const grabbing = listArr[grabItemIdx];
 
         let targetIdx = grabItemIdx;
@@ -57,30 +82,9 @@
 
         if (targetIdx !== finalGrabIdx) {
             finalGrabIdx = targetIdx;
-            calcFlipTop();
+            calcFlipTop(now);
         }
-
-        let stillMoving = false;
-        const now = Date.now();
-        listArr.forEach((l, i) => {
-            if (i === grabItemIdx)
-                l.top = Math.max(
-                    0,
-                    Math.min(containerInfo.height - l.rect.height / rInfo.ratio, l.grabTop)
-                );
-            else if (l.flip) {
-                const t = cubicOut(Math.min(1, (now - l.flip.startedAt) / FLIP_DURATION));
-                l.top = l.flip.from + (l.flip.to - l.flip.from) * t;
-                if (t < 1) stillMoving = true;
-                else l.flip = null;
-            }
-            l.el.style.transform = `translateY(${l.top}px)`;
-        });
-        onmoved?.();
-        return stillMoving;
-    });
-
-    let mounted = false;
+    }
 
     function calcRealTop() {
         let currentTop = 0;
@@ -94,8 +98,7 @@
     }
 
     const FLIP_DURATION = 200;
-    function calcFlipTop() {
-        const now = Date.now();
+    function calcFlipTop(now) {
         let currentTop = 0;
         for (let i = 0; i < listArr.length; i++) {
             const ii =
@@ -124,6 +127,7 @@
         }
     }
 
+    let mouseMoved = false;
     async function update() {
         if (!mounted) return;
         clearGrabbers();
@@ -155,6 +159,7 @@
                 onMoved: ({ dy }) => {
                     listArr[grabItemIdx].grabTop += dy;
 
+                    mouseMoved = true;
                     frameUpdater.draw();
                 },
                 onMoveEnd: () => {
@@ -178,6 +183,7 @@
         });
     }
 
+    let mounted = false;
     onMount(() => {
         mounted = true;
         update();
