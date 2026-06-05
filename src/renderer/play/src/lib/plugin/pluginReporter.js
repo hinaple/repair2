@@ -43,7 +43,7 @@ export function sendPluginLog({
         summary: summary ?? title,
         detail,
         dialogue,
-        logType: type ?? `plugin-${level}`,
+        type: type ?? `plugin-${level}`,
         groupKey:
             groupKey ??
             (source?.id

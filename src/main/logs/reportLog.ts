@@ -1,32 +1,22 @@
-import { stringifyLogValue, type LogStatus, type LogToastPolicy } from "./logEntry";
+import {
+    normalizeLogLevel,
+    normalizeLogSubject,
+    stringifyLogValue,
+    type LogEntryInput,
+    type LogLevel
+} from "./logEntry";
 import { logStore } from "./logStore";
 
-type LogLevel = "debug" | "info" | "warning" | "error";
-
-type LogSubject = {
-    id?: string;
-    type?: string;
-    instanceId?: string;
-    [key: string]: any;
-};
-
-export type LogPayload = {
-    level?: LogLevel | string;
+export type LogPayload = Omit<
+    LogEntryInput,
+    "title" | "logFile" | "createdAt" | "updatedAt" | "count"
+> & {
     title?: string;
-    detail?: any;
-    error?: any;
-    source?: string;
-    subject?: LogSubject | string | null;
     log?: boolean;
     dialogue?: boolean;
     editor?: boolean;
+    /** Compatibility alias. New code should use `type`. */
     logType?: string | null;
-    groupKey?: string | null;
-    phase?: string | null;
-    summary?: string | null;
-    status?: LogStatus | null;
-    toast?: LogToastPolicy | null;
-    overlay?: boolean | null;
 };
 
 export type ReportLog = (payload: LogPayload) => Promise<any> | any;
@@ -41,20 +31,9 @@ type LogReporterOptions = {
     };
 };
 
-const LEVELS = new Set(["debug", "info", "warning", "error"]);
 const LOG_SEGMENT_MAX_LENGTH = 16;
 
-function normalizeLevel(level: LogPayload["level"]): LogLevel {
-    return typeof level === "string" && LEVELS.has(level) ? (level as LogLevel) : "info";
-}
-
-function normalizeSubject(subject: LogPayload["subject"]): LogSubject | null {
-    if (!subject) return null;
-    if (typeof subject === "string") return { id: subject };
-    return subject;
-}
-
-function getSubjectLabel(subject: LogSubject | null) {
+function getSubjectLabel(subject: ReturnType<typeof normalizeLogSubject>) {
     if (!subject) return null;
     return [subject.id, subject.type, subject.instanceId].filter(Boolean).join(" / ") || null;
 }
@@ -104,6 +83,7 @@ export function createLogReporter({
         log = undefined,
         dialogue = false,
         editor = true,
+        type = null,
         logType = null,
         groupKey = null,
         phase = null,
@@ -112,8 +92,10 @@ export function createLogReporter({
         toast = null,
         overlay = null
     }: LogPayload = {}) {
-        const normalizedLevel = normalizeLevel(level);
-        const normalizedSubject = normalizeSubject(subject);
+        const normalizedLevel = normalizeLogLevel(level);
+        const normalizedSubject = normalizeLogSubject(subject);
+        const normalizedSource = source ?? "app";
+        const normalizedType = type ?? logType;
         const subjectLabel = getSubjectLabel(normalizedSubject);
         const detailText = [stringifyLogValue(detail), stringifyLogValue(error)]
             .filter(Boolean)
@@ -125,10 +107,10 @@ export function createLogReporter({
         if (shouldLog && typeof makeLog === "function") {
             try {
                 logFile = await makeLog(
-                    normalizeLogSegment(logType ?? `${source}-${normalizedLevel}`),
+                    normalizeLogSegment(normalizedType ?? `${normalizedSource}-${normalizedLevel}`),
                     [
                         title,
-                        source ? `Source: ${source}` : null,
+                        normalizedSource ? `Source: ${normalizedSource}` : null,
                         subjectLabel ? `Subject: ${subjectLabel}` : null,
                         normalizedSubject ? JSON.stringify(normalizedSubject, null, 4) : null,
                         detailText
@@ -142,8 +124,8 @@ export function createLogReporter({
 
         logStore.upsert({
             groupKey,
-            type: logType,
-            source,
+            type: normalizedType,
+            source: normalizedSource,
             level: normalizedLevel,
             subject: normalizedSubject,
             phase,
@@ -162,7 +144,7 @@ export function createLogReporter({
                 level: normalizedLevel,
                 title,
                 detail: finalDetail,
-                source,
+                source: normalizedSource,
                 subject: normalizedSubject
             });
         }
@@ -171,7 +153,7 @@ export function createLogReporter({
             level: normalizedLevel,
             title,
             detail: finalDetail,
-            source,
+            source: normalizedSource,
             subject: normalizedSubject
         };
 

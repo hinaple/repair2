@@ -14,6 +14,7 @@ export default class ProjectFileManager {
             afterImport = null,
             exportProgress = null,
             afterExport = null,
+            reportLog = null,
             reportDiagnostic = null
         }
     ) {
@@ -23,7 +24,7 @@ export default class ProjectFileManager {
         this.afterImport = afterImport;
         this.exportProgress = exportProgress;
         this.afterExport = afterExport;
-        this.reportDiagnostic = reportDiagnostic;
+        this.reportLog = reportLog ?? reportDiagnostic;
 
         this.exporting = false;
         this.importing = false;
@@ -114,7 +115,7 @@ export default class ProjectFileManager {
             } catch (error) {
                 rej(error);
                 closeSplash();
-                await this.reportDiagnostic?.({
+                await this.reportLog?.({
                     level: "error",
                     title: "프로젝트 불러오기",
                     detail: "프로젝트를 불러오는 중 오류가 발생했습니다.",
@@ -122,7 +123,7 @@ export default class ProjectFileManager {
                     source: "project",
                     editor: false,
                     dialogue: true,
-                    logType: "project-import-error",
+                    type: "project-import-error",
                     groupKey: "project:import:error",
                     phase: "import",
                     summary: "프로젝트 불러오기 실패",

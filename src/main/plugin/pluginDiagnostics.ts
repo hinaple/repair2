@@ -1,43 +1,23 @@
-import type { ReportDiagnostic } from "../diagnostics";
-import type { LogStatus, LogToastPolicy } from "../logs/logEntry";
+import type { LogPayload, ReportLog } from "../logs/reportLog";
+import type { LogLevel, LogSubject } from "../logs/logEntry";
 import type { PluginInfo, PluginType } from "./type";
 
-type PluginLevel = "debug" | "info" | "warning" | "error";
-type PluginSubject = {
-    kind?: string;
-    id?: string;
-    type?: string;
-    instanceId?: string;
-    [key: string]: any;
-};
-
-type PluginReportPayload = {
-    level?: PluginLevel;
+type PluginReportPayload = Omit<LogPayload, "source" | "title" | "type"> & {
+    level?: LogLevel;
     title: string;
-    detail?: any;
-    error?: any;
     source?: "plugin" | "plugin-link";
-    subject?: PluginSubject | string | null;
-    dialogue?: boolean;
-    log?: boolean;
-    logType: string;
-    groupKey?: string | null;
-    phase?: string | null;
-    summary?: string | null;
-    status?: LogStatus | null;
-    toast?: LogToastPolicy | null;
-    overlay?: boolean | null;
+    type: string;
 };
 
 type PluginRef = Pick<PluginInfo, "name" | "type">;
 
 const PLUGINS_SUBJECT = { kind: "project", id: "plugins" };
 
-function pluginSubject(plugin: PluginRef): PluginSubject {
+function pluginSubject(plugin: PluginRef): LogSubject {
     return { kind: "plugin", id: plugin.name, type: plugin.type };
 }
 
-function pluginLinkSubject(pluginName: string, pluginType: PluginType | string): PluginSubject {
+function pluginLinkSubject(pluginName: string, pluginType: PluginType | string): LogSubject {
     if (!pluginName || pluginName === "unknown") return { ...PLUGINS_SUBJECT, type: "plugin-link" };
     return { kind: "plugin", id: pluginName, type: pluginType };
 }
@@ -46,14 +26,14 @@ function pluginRuntimeMainKey(pluginName: string, action: string) {
     return `plugin:runtime-main:${pluginName}:${action}`;
 }
 
-export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | null = null) {
+export function createPluginDiagnostics(reportLog: ReportLog | null = null) {
     function report({
         level = "warning",
         source = "plugin",
         dialogue = false,
         ...payload
     }: PluginReportPayload) {
-        return reportDiagnostic?.({ level, source, dialogue, ...payload });
+        return reportLog?.({ level, source, dialogue, ...payload });
     }
 
     function reportPlugin({
@@ -78,7 +58,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
         error?: any;
         active?: boolean;
         overlay?: boolean;
-        level?: PluginLevel;
+        level?: LogLevel;
         groupKey?: string;
     }) {
         return report({
@@ -87,7 +67,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
             detail,
             error,
             subject: pluginSubject(plugin),
-            logType: code,
+            type: code,
             groupKey,
             phase,
             summary,
@@ -102,7 +82,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
         detail,
         error,
         subject,
-        logType,
+        type,
         groupKey,
         level = "warning"
     }: {
@@ -110,10 +90,10 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
         summary: string;
         detail?: any;
         error?: any;
-        subject: PluginSubject;
-        logType: string;
+        subject: LogSubject;
+        type: string;
         groupKey: string;
-        level?: PluginLevel;
+        level?: LogLevel;
     }) {
         return report({
             level,
@@ -122,7 +102,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
             error,
             source: "plugin-link",
             subject,
-            logType,
+            type,
             groupKey,
             phase: "link",
             summary
@@ -148,7 +128,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 detail: detail ?? `Plugin directory: ${dir}`,
                 error,
                 subject: { kind: "plugin", id: dir, type: "unknown", reason },
-                logType: "plugin-manifest-warning",
+                type: "plugin-manifest-warning",
                 groupKey: `plugin:manifest:${dir}`,
                 phase: "manifest",
                 summary: `Plugin manifest is invalid: ${dir}`,
@@ -162,7 +142,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 title: "Duplicated plugin name.",
                 detail: `Plugin name: ${name}`,
                 subject: { kind: "plugin", id: name },
-                logType: "plugin-duplicated-name-warning",
+                type: "plugin-duplicated-name-warning",
                 groupKey: `plugin:duplicated-name:${name}`,
                 phase: "manifest",
                 summary: `Duplicated plugin name: ${name}`,
@@ -175,7 +155,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 level: "warning",
                 title,
                 detail: reason,
-                logType: "plugin-links-warning",
+                type: "plugin-links-warning",
                 groupKey: `plugin:links:${title}`,
                 phase: "link",
                 summary: title
@@ -185,7 +165,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
             return report({
                 level: "warning",
                 title: "Old plugin info doesn't exist",
-                logType: "plugin-manifest-warning",
+                type: "plugin-manifest-warning",
                 groupKey: "plugin:manifest:old-plugin-info-missing",
                 phase: "manifest",
                 summary: "Old plugin info doesn't exist"
@@ -223,7 +203,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 detail: { manifestPath, reason, detail },
                 error,
                 subject: { ...PLUGINS_SUBJECT, type: "plugin-source", manifestPath },
-                logType: "plugin-link-manifest",
+                type: "plugin-link-manifest",
                 groupKey: `plugin-link:manifest:${manifestPath}`
             });
         },
@@ -247,7 +227,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 detail: { pluginName, sourceManifest, destManifest },
                 error,
                 subject: pluginLinkSubject(pluginName, pluginType),
-                logType: "plugin-link-copy",
+                type: "plugin-link-copy",
                 groupKey: `plugin-link:copy:${pluginName}`
             });
         },
@@ -267,7 +247,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 summary: `Plugin source is already linked: ${pluginName}`,
                 detail: { pluginName, currentSourcePath, requestedSourcePath },
                 subject: pluginLinkSubject(pluginName, pluginType),
-                logType: "plugin-link-duplicate",
+                type: "plugin-link-duplicate",
                 groupKey: `plugin-link:duplicate:${pluginName}`
             });
         },
@@ -277,7 +257,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 summary: "Plugin link registry is invalid",
                 detail: { linksFilePath },
                 subject: { ...PLUGINS_SUBJECT, type: "plugin-link-registry" },
-                logType: "plugin-link-registry",
+                type: "plugin-link-registry",
                 groupKey: "plugin-link:registry:invalid"
             });
         },
@@ -288,7 +268,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 detail: { linksFilePath },
                 error,
                 subject: { ...PLUGINS_SUBJECT, type: "plugin-link-registry" },
-                logType: "plugin-link-registry",
+                type: "plugin-link-registry",
                 groupKey: "plugin-link:registry:read"
             });
         },
@@ -300,7 +280,7 @@ export function createPluginDiagnostics(reportDiagnostic: ReportDiagnostic | nul
                 detail: { linksFilePath },
                 error,
                 subject: { ...PLUGINS_SUBJECT, type: "plugin-link-registry" },
-                logType: "plugin-link-save",
+                type: "plugin-link-save",
                 groupKey: "plugin-link:registry:save"
             });
         },

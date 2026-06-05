@@ -4,7 +4,7 @@ import { RawManifest, PluginInfo, PluginType } from "./type";
 import { buildPlugin } from "./pluginBuild";
 import { getManifest, MANIFEST, normalizeManifest } from "./pluginManifest";
 import MainRuntimePluginEngine from "./runtimeMain";
-import type { ReportDiagnostic } from "../diagnostics";
+import type { ReportLog } from "../logs/reportLog";
 import { pluginDir } from "../dirs";
 import { createPluginLinkService, PluginLinkService } from "./pluginLinks";
 import { createPluginDiagnostics, type PluginDiagnostics } from "./pluginDiagnostics";
@@ -84,18 +84,20 @@ export class PluginManager {
     plugins: Map<string, PluginInfoData>;
     constructor({
         devMode = false,
+        reportLog = null,
         reportDiagnostic = null,
         onupdate
     }: {
         devMode: boolean;
-        reportDiagnostic?: ReportDiagnostic | null;
+        reportLog?: ReportLog | null;
+        reportDiagnostic?: ReportLog | null;
         onupdate?: UpdateHandler;
     }) {
         if (onupdate) this.onupdate(onupdate);
         this.plugins = new Map();
         this.devMode = devMode;
         this.updated = false;
-        this.pluginDiagnostics = createPluginDiagnostics(reportDiagnostic);
+        this.pluginDiagnostics = createPluginDiagnostics(reportLog ?? reportDiagnostic);
         this.pluginLinkService = createPluginLinkService({
             pluginDiagnostics: this.pluginDiagnostics
         });

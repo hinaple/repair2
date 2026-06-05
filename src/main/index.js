@@ -17,7 +17,7 @@ import {
     stopSuppress
 } from "./globalKey.js";
 import makeLog from "./logger.js";
-import { createDiagnosticReporter } from "./diagnostics.js";
+import { createLogReporter } from "./logs/reportLog.js";
 import { PluginManager } from "./plugin/pluginManager.js";
 import { migrateProject } from "./migrateProject.js";
 import { setSendToWin } from "./plugin/runtimeMain.js";
@@ -48,7 +48,7 @@ function sendToEditor(channel, ...params) {
     if (editorWindow) editorWindow.webContents.send(channel, ...params);
 }
 
-const reportDiagnostic = createDiagnosticReporter({
+const reportLog = createLogReporter({
     makeLog,
     sendToEditor,
     getEditorWindow: () => editorWindow,
@@ -64,13 +64,13 @@ async function updateCss() {
             join(styleDir, "fonts").replace(/\\/g, "/")
         );
     } catch (err) {
-        reportDiagnostic({
+        reportLog({
             level: "error",
             title: "Failed to load global.css file",
             error: err,
             source: "project",
             dialogue: false,
-            logType: "global-css",
+            type: "global-css",
             groupKey: "style:global-css:load",
             phase: "load",
             summary: "Failed to load global.css file",
@@ -133,7 +133,7 @@ async function setPluginManager(devMode = false) {
     if (pluginManager) await destroyPluginManager();
     pluginManager = new PluginManager({
         devMode,
-        reportDiagnostic,
+        reportLog,
         onupdate: ({ type, updateData }) => {
             if (type === "single") {
                 sendToEditor("plugin:update", updateData);
@@ -187,7 +187,7 @@ const projectFileManager = new ProjectFileManager(dataDir, {
     afterExport: (filePath) => {
         sendToEditor("exported", filePath);
     },
-    reportDiagnostic
+    reportLog
 });
 
 const socket = new SocketConnector((channel, data, url) => {
@@ -230,14 +230,14 @@ function saveData(tempData) {
         })
         .catch(async (e) => {
             afterSave = null;
-            await reportDiagnostic({
+            await reportLog({
                 level: "error",
                 title: "프로젝트 저장 실패",
                 detail: "프로젝트 데이터를 저장하는 중 오류가 발생했습니다.",
                 error: e,
                 source: "project",
                 dialogue: true,
-                logType: "project-save-error",
+                type: "project-save-error",
                 groupKey: "project:save:error",
                 phase: "save",
                 summary: "프로젝트 저장 실패",
@@ -641,7 +641,7 @@ if (!app.requestSingleInstanceLock()) {
             getPluginManager: () => pluginManager,
             getStore,
             createEditorWindow,
-            reportDiagnostic,
+            reportLog,
             saveData,
             sendToEditor,
             sendToMain,

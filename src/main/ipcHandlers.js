@@ -20,6 +20,7 @@ export function setupIpcHandlers({
     getPluginManager,
     getStore,
     createEditorWindow,
+    reportLog: incomingReportLog,
     reportDiagnostic,
     saveData,
     sendToEditor,
@@ -30,10 +31,11 @@ export function setupIpcHandlers({
     logStore.subscribe((change) => {
         sendToEditor("log:changed", change);
     });
+    const emitLog = incomingReportLog ?? reportDiagnostic;
     function reportLog(payload = {}) {
-        return reportDiagnostic?.({
+        return emitLog?.({
             ...payload,
-            logType: payload.logType ?? payload.type ?? `${payload.source ?? "app"}-log`
+            type: payload.type ?? payload.logType ?? `${payload.source ?? "app"}-log`
         });
     }
     const reportProjectCustomLog = createProjectCustomLogReporter(reportLog);
