@@ -115,8 +115,13 @@ export async function getPlugin(type, pluginName, exportName = "default") {
     return resolveExportName(result, exportName);
 }
 
-let pluginImporting = requestUpdatePluginList().then(() => (pluginImporting = null));
+let pluginImported = false;
+let pluginImporting;
 export function afterPluginImported() {
+    if (pluginImported) return Promise.resolve();
+    if (!pluginImporting)
+        pluginImporting = requestUpdatePluginList().then(() => (pluginImported = true));
+
     return pluginImporting;
 }
 
