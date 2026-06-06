@@ -12,13 +12,13 @@ export const rInfo = {
 
 let screenRect;
 export const viewport = {
-    screen: writable({ width: 0, height: 0 }),
+    screen: writable({ width: 0, height: 0, pixelWidth: 0, pixelHeight: 0 }),
     size: writable(0),
     pos: writable({ x: 0, y: 0 })
 };
 
 export function setViewportEl(node) {
-    observer.observe(node);
+    observer.observe(node, { box: "device-pixel-content-box" });
 
     return {
         destroy() {
@@ -27,16 +27,22 @@ export function setViewportEl(node) {
     };
 }
 
-const fu = new FrameUpdater(() => {
-    calcRatio();
-});
+const fu = new FrameUpdater(calcRatio);
 
 const SIDEBAR_WIDTH = 340;
 const observer = new ResizeObserver((entries) => {
     if (!entries.length) return;
 
     const rect = entries[0].contentRect;
-    screenRect = { width: rect.width, height: rect.height, x: SIDEBAR_WIDTH, y: 0 };
+    const deviceRect = entries[0].devicePixelContentBoxSize?.[0];
+    screenRect = {
+        width: rect.width,
+        height: rect.height,
+        x: SIDEBAR_WIDTH,
+        y: 0,
+        pixelWidth: deviceRect?.inlineSize ?? rect.width,
+        pixelHeight: deviceRect?.blockSize ?? rect.height
+    };
 
     fu.draw();
 });
@@ -66,11 +72,10 @@ export function posFromViewport(x, y, vpPos = get(viewport.pos)) {
     };
 }
 export function getOriginalPos(x, y) {
-    if (!screenRect) return { x, y };
     const vpPos = get(viewport.pos);
     return {
-        x: removeAnchor(rInfo.RW, vpPos.x, (x - screenRect.x) / rInfo.ratio),
-        y: removeAnchor(rInfo.RH, vpPos.y, (y - screenRect.y) / rInfo.ratio)
+        x: removeAnchor(rInfo.RW, vpPos.x, (x - screenRect?.x ?? 0) / rInfo.ratio),
+        y: removeAnchor(rInfo.RH, vpPos.y, (y - screenRect?.y ?? 0) / rInfo.ratio)
     };
 }
 
@@ -93,10 +98,10 @@ export function setViewportSize(size, considerLimit = true) {
 }
 
 export function isBoundOutViewport(x1, y1, x2, y2) {
-    return (
-        ((x1 < 0 && x2 < 0) || (x1 > screenRect.width && x2 > screenRect.width)) &&
-        ((y1 < 0 && y2 < 0) || (y1 > screenRect.height && y2 > screenRect.height))
-    );
+    return screenRect
+        ? ((x1 < 0 && x2 < 0) || (x1 > screenRect.width && x2 > screenRect.width)) &&
+              ((y1 < 0 && y2 < 0) || (y1 > screenRect.height && y2 > screenRect.height))
+        : true;
 }
 
 export function resizeViewport(step, mousePos = null) {

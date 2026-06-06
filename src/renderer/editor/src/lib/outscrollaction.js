@@ -4,8 +4,9 @@ export default function outScrollAction(node, callback) {
             callback();
         }
     };
-    document.addEventListener("scroll", handleScroll, true);
+    const opt = ["scroll", handleScroll, { capture: true, passive: true }];
+    document.addEventListener(...opt);
     return {
-        destroy: () => document.removeEventListener("scroll", handleScroll, true)
+        destroy: () => document.removeEventListener(...opt)
     };
 }

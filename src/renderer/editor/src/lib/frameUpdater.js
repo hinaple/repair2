@@ -2,27 +2,12 @@ const asyncBuffer = [];
 const promiseBuffer = Array.from({ length: 5 }, () => []);
 let isScheduled = false;
 
-// let fps = 0;
-// let lastUpdateTs = 0;
-// let frameCount = 0;
 function requestDraw() {
     if (isScheduled) return;
     isScheduled = true;
 
     window.requestAnimationFrame(async (ts) => {
         isScheduled = false;
-
-        // frameCount++;
-        // const elasped = ts - lastUpdateTs;
-
-        // if (elasped >= 1000) {
-        //     fps = (frameCount * 1000) / elasped;
-
-        //     console.log("FPS:", ~~(fps * 10000) / 10000);
-
-        //     frameCount = 0;
-        //     lastUpdateTs = ts;
-        // }
 
         const reupdates = [];
         while (asyncBuffer.length) {
