@@ -2,7 +2,7 @@ import { ipcRenderer } from "electron";
 import { updateSaveIdx } from "./workHistory";
 import { setViewportSize, viewport } from "../nodes/viewport";
 import { get } from "svelte/store";
-import { showToast } from "./toast.svelte";
+import { showToast } from "./toast/toast.svelte";
 import EditableAppData from "../editableClasses/editableAppData";
 
 import Node from "@classes/nodes/node.svelte";
@@ -46,11 +46,19 @@ export async function saveData() {
     const storeData = getStoreData();
     console.log("Saved", storeData);
     updateSaveIdx();
-    await ipcRenderer.invoke("update-data", storeData);
-    showToast({ title: "프로젝트를 저장했습니다.", duration: 2000 });
-    return true;
+    const saved = await ipcRenderer.invoke("update-data", storeData);
+    if (saved) showToast({ title: "프로젝트를 저장했습니다.", duration: 2000 });
+    return saved;
 }
 
-ipcRenderer.on("request-save", () => {
-    saveData();
+ipcRenderer.on("request-save", async (event, request = {}) => {
+    let saved = false;
+    try {
+        saved = await saveData();
+    } catch (err) {
+        console.error(err);
+    }
+    if (request.requestId) {
+        ipcRenderer.send("request-save:done", { requestId: request.requestId, saved });
+    }
 });

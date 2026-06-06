@@ -2,7 +2,8 @@
     "compilerOptions": {
         "ignoreDeprecations": "6.0",
         "paths": {
-            "@classes/*": ["../classes/*"]
+            "@classes/*": ["../classes/*"],
+            "@shared/*": ["../../shared/*"]
         }
     },
     "include": ["./**/*"],

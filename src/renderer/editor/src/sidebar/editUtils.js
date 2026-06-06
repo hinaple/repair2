@@ -2,7 +2,7 @@ import { get, writable } from "svelte/store";
 import { appData } from "../lib/syncData.svelte";
 import { ipcRenderer } from "electron";
 import { NodeClasses } from "@classes/utils";
-import { getAllChainedNodes } from "../lib/connects";
+import { getAllChainedNodes } from "../nodes/connects";
 
 const NodeTypes = Object.keys(NodeClasses);
 

@@ -74,6 +74,9 @@ if (argv.report) {
 export default defineConfig({
     main: {
         build: {
+            lib: {
+                entry: join(__dirname, "src/index.ts")
+            },
             rollupOptions: {
                 plugins,
                 output: {
@@ -87,6 +90,11 @@ export default defineConfig({
             __APP_VERSION__: JSON.stringify(pkg.version),
             __SVELTE_VERSION__: JSON.stringify(svelteVersion),
             __SDK_VERSION__: JSON.stringify(sdkVersion)
+        },
+        resolve: {
+            alias: {
+                "@shared": join(__dirname, "../shared")
+            }
         }
     }
 });

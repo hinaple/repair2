@@ -126,7 +126,7 @@
     });
 
     function onpointerdown(evt) {
-        if (evt.button || get(grabbing) === "viewport") return;
+        if (evt.button || $grabbing === "viewport" || $grabbing === "viewportReady") return;
         focusData(type, node, { clipboardFn });
         bubbleMouseDown(evt);
     }

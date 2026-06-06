@@ -22,7 +22,7 @@
     });
 
     function onpointerdown(evt) {
-        if (evt.button || get(grabbing)) return;
+        if (evt.button || $grabbing) return;
         evt.stopPropagation();
         focusData("component", comp, {
             preview: comp,
@@ -34,7 +34,8 @@
     }
 
     function addElement(evt) {
-        if (get(grabbing)) return;
+        if (evt.button || $grabbing) return;
+        evt.stopPropagation();
         const newElement = comp.elements.addWithHistory(addHistory, {
             afterChange: () => reload("nodeMoved")
         });
@@ -42,7 +43,6 @@
             comp.elements.removeWithHistory(newElement, addHistory, () => reload("nodeMoved"))
         );
         focusData("element", newElement, { clipboardFn: newClipboardFn, preview: comp });
-        evt.stopPropagation();
     }
 
     let activated = $state(false);

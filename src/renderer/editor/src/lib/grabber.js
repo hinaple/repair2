@@ -17,14 +17,18 @@ export default class Grabber {
 
         let prvMouse;
         let actuallyMoved = false;
-        this.handle.addEventListener("pointerdown", (evt) => {
+
+        this.pointerdown = (evt) => {
             if (get(grabbing) || evt.button) return;
+            evt.stopPropagation();
+
             grabbing.set(myGrab);
             this.container.classList.add("grabbing");
 
             prvMouse = { x: evt.clientX, y: evt.clientY };
             if (onMoveStart) onMoveStart({ px: prvMouse.x, py: prvMouse.y });
-        });
+        };
+        this.handle.addEventListener("pointerdown", this.pointerdown, true);
 
         this.pointermove = (evt) => {
             if (get(grabbing) !== myGrab) {
@@ -50,12 +54,13 @@ export default class Grabber {
             actuallyMoved = false;
         };
 
-        document.body.addEventListener("pointermove", this.pointermove);
-        document.body.addEventListener("pointerup", this.pointerup);
+        document.body.addEventListener("pointermove", this.pointermove, true);
+        document.body.addEventListener("pointerup", this.pointerup, true);
     }
     destroy() {
         this.pointerup();
-        document.body.removeEventListener("pointermove", this.pointermove);
-        document.body.removeEventListener("pointerup", this.pointerup);
+        this.handle.removeEventListener("pointerdown", this.pointerdown, true);
+        document.body.removeEventListener("pointermove", this.pointermove, true);
+        document.body.removeEventListener("pointerup", this.pointerup, true);
     }
 }

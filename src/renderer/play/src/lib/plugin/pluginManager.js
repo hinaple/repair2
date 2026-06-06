@@ -5,12 +5,27 @@ import { reportPluginException } from "./pluginReporter";
 import { dynamicImportPlugin } from "./pluginImport";
 import { PLUGIN_TYPES } from "@classes/utils";
 
-/** @type {Record<string, Record<string, { info: PluginInfo, imported: any, importing: Promise<any> | null }>>} */
+/**
+ * @typedef {import("@shared/plugin.types").PluginType} PluginType
+ * @typedef {import("@shared/plugin.types").PluginList} PluginList
+ * @typedef {import("@shared/plugin.types").PluginRendererInfo} PluginRendererInfo
+ * @typedef {import("@shared/plugin.types").PluginSingleUpdate} PluginSingleUpdate
+ * @typedef {{ info: PluginRendererInfo, imported: any, importing?: Promise<any> | null }} RendererPluginData
+ * @typedef {(payload: { api: any, info: PluginRendererInfo }) => any} PluginHmrCallback
+ * @typedef {(api: any, info: PluginRendererInfo) => any} PluginHmrSubscriber
+ */
+
+/** @type {Record<PluginType, Record<string, RendererPluginData>>} */
 const plugins = Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}]));
 
 async function requestUpdatePluginList() {
     await ipcRenderer.invoke("plugin:get-list").then(updateAllPlugin);
 }
+
+/**
+ * @param {PluginList} pluginList
+ * @param {string[]} forceImports
+ */
 function updateAllPlugin(pluginList, forceImports = []) {
     PLUGIN_TYPES.forEach((t) => {
         plugins[t] = Object.fromEntries(
@@ -24,6 +39,10 @@ function updateAllPlugin(pluginList, forceImports = []) {
     );
 }
 
+/**
+ * @param {any} pluginApi
+ * @param {string | null} exportName
+ */
 function resolveExportName(pluginApi, exportName = "default") {
     if (!pluginApi) return null;
 
@@ -34,6 +53,7 @@ function resolveExportName(pluginApi, exportName = "default") {
     return pluginApi[exportName];
 }
 
+/** @param {RendererPluginData} pluginData */
 function importPlugin(pluginData) {
     pluginData.importing = dynamicImportPlugin(pluginData.info.distFile)
         .then((p) => {
@@ -53,10 +73,9 @@ function importPlugin(pluginData) {
                         {
                             type: "plugin-exports-missing",
                             phase: "exports",
-                            groupKey: `plugin:exports:${pluginData.info.name}`,
-                            summary: `${pluginData.info.name} exports missing`,
-                            status: "active",
-                            overlay: true
+                            summary: `Exports ${unexported
+                                .map((e) => `"${e}"`)
+                                .join(", ")} ${unexported.length === 1 ? "is" : "are"} missing.`
                         }
                     );
             }
@@ -76,15 +95,16 @@ function importPlugin(pluginData) {
                 {
                     type: "plugin-import-error",
                     phase: "import",
-                    groupKey: `plugin:import:${pluginData.info.name}`,
-                    summary: `${pluginData.info.name} import failed`,
-                    status: "active",
-                    overlay: true
+                    summary: `${pluginData.info.name} import failed`
                 }
             );
             return null;
         });
 }
+/**
+ * @param {PluginRendererInfo} pluginInfo
+ * @param {boolean} forceImport
+ */
 function updatePlugin(pluginInfo, forceImport = false) {
     if (!forceImport && plugins[pluginInfo.type][pluginInfo.name]) {
         plugins[pluginInfo.type][pluginInfo.name].info = pluginInfo;
@@ -100,6 +120,11 @@ function updatePlugin(pluginInfo, forceImport = false) {
     plugins[pluginInfo.type][pluginInfo.name] = tempData;
     return getPlugin(pluginInfo.type, pluginInfo.name);
 }
+/**
+ * @param {PluginType} type
+ * @param {string} pluginName
+ * @param {string | null} exportName
+ */
 export async function getPlugin(type, pluginName, exportName = "default") {
     let result = null;
     do {
@@ -166,16 +191,20 @@ export async function callFunctionPlugin({
         {
             type: "plugin-function-error",
             phase: "runtime",
-            groupKey: `plugin:function:${name}:${exportName ?? "default"}`,
-            summary: `${name} function execution failed`,
-            status: "active",
-            overlay: true
+            summary: `${name} function execution failed`
         }
     );
 }
 
-/** @type {Record<string, Record<string, Set<(any) => any>>>} */
+/** @type {Record<PluginType, Record<string, Set<PluginHmrSubscriber>>>} */
 const hmrSubscribers = {};
+
+/**
+ * @param {PluginType} type
+ * @param {string} pluginName
+ * @param {string | null} exportName
+ * @param {PluginHmrCallback} callback
+ */
 export function subscribePluginHMR(type, pluginName, exportName = "default", callback) {
     const source = { id: pluginName, type: type };
 
@@ -192,10 +221,7 @@ export function subscribePluginHMR(type, pluginName, exportName = "default", cal
             reportPluginException(source, "Plugin HMR callback failed.", err, {
                 type: "plugin-hmr-error",
                 phase: "hmr",
-                groupKey: `plugin:hmr:${pluginName}:callback`,
-                summary: `${pluginName} HMR callback failed`,
-                status: "active",
-                overlay: true
+                summary: `${pluginName} HMR callback failed`
             });
         }
     };
@@ -211,10 +237,7 @@ export function subscribePluginHMR(type, pluginName, exportName = "default", cal
             reportPluginException(source, "Plugin HMR initial callback failed.", err, {
                 type: "plugin-hmr-error",
                 phase: "hmr",
-                groupKey: `plugin:hmr:${pluginName}:initial`,
-                summary: `${pluginName} HMR initial callback failed`,
-                status: "active",
-                overlay: true
+                summary: `${pluginName} HMR initial callback failed`
             })
         );
 
@@ -225,6 +248,10 @@ export function subscribePluginHMR(type, pluginName, exportName = "default", cal
     };
 }
 
+/**
+ * @param {PluginRendererInfo} pluginInfo
+ * @param {any} plugin
+ */
 async function callHmr(pluginInfo, plugin) {
     const targetSet = hmrSubscribers[pluginInfo.type]?.[pluginInfo.name];
     if (!targetSet) return;
@@ -239,10 +266,7 @@ async function callHmr(pluginInfo, plugin) {
                     {
                         type: "plugin-hmr-error",
                         phase: "hmr",
-                        groupKey: `plugin:hmr:${pluginInfo.name}:subscriber`,
-                        summary: `${pluginInfo.name} HMR subscriber failed`,
-                        status: "active",
-                        overlay: true
+                        summary: `${pluginInfo.name} HMR subscriber failed`
                     }
                 );
             });
@@ -250,16 +274,22 @@ async function callHmr(pluginInfo, plugin) {
 }
 
 ipcRenderer.on("plugin:hmr", async (_, pluginInfo) => {
+    /** @type {PluginRendererInfo} */
+    const info = pluginInfo;
     if (!getAppData().config.devMode) return;
-    console.log("Plugin HMR:", pluginInfo.name);
-    updatePlugin(pluginInfo, !pluginInfo.error);
+    console.log("Plugin HMR:", info.name);
+    updatePlugin(info, !info.error);
 });
 
 ipcRenderer.on("plugin:list", (_, p, changedPlugins) => {
-    updateAllPlugin(p, changedPlugins);
+    /** @type {PluginList} */
+    const pluginList = p;
+    updateAllPlugin(pluginList, changedPlugins);
 });
 
-ipcRenderer.on("plugin:update", (_, { info, previous, buildChanged }) => {
+ipcRenderer.on("plugin:update", (_, update) => {
+    /** @type {PluginSingleUpdate} */
+    const { info, previous, buildChanged } = update;
     if (previous && (info.name !== previous.name || info.type !== previous.type)) {
         if (info.type === previous.type && plugins[info.type][info.name])
             plugins[info.type][info.name] = plugins[previous.type]?.[previous.name];

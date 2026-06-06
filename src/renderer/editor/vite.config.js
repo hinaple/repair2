@@ -5,6 +5,7 @@ import renderer from "vite-plugin-electron-renderer";
 import onlyBlockPlugin from "../../vitePlugins/only-block-plugin.mjs";
 
 const classPath = join(__dirname, "../classes");
+const sharedPath = join(__dirname, "../../shared");
 const outDir = join(__dirname, "../../../out/editor");
 export default defineConfig({
     root: __dirname,
@@ -32,7 +33,8 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            "@classes": classPath
+            "@classes": classPath,
+            "@shared": sharedPath
         }
     },
     define: {

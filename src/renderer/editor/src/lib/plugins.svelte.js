@@ -1,62 +1,88 @@
 import { ipcRenderer } from "electron";
 import { showModalPromise } from "./modal/modal.svelte";
-import { showToast } from "./toast.svelte";
+import { showToast } from "./toast/toast.svelte";
 import { PLUGIN_TYPES } from "@classes/utils";
 
+/**
+ * @typedef {import("@shared/plugin.types").PluginType} PluginType
+ * @typedef {import("@shared/plugin.types").PluginList} PluginList
+ * @typedef {import("@shared/plugin.types").PluginRendererInfo} PluginRendererInfo
+ * @typedef {import("@shared/plugin.types").PluginSingleUpdate} PluginSingleUpdate
+ */
+
+/** @type {Record<PluginType, Record<string, PluginRendererInfo>>} */
 export const plugins = $state(Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}])));
 
 export async function requestUpdatePluginList() {
     updatePlugins(await ipcRenderer.invoke("plugin:get-list"));
-    console.log(plugins);
 }
 requestUpdatePluginList();
 
-ipcRenderer.on("plugin:list", (_, p) => {
-    console.log(p);
-    updatePlugins(p);
-});
-ipcRenderer.on("plugin:update", (_, { info, previous }) => {
-    if (previous) delete plugins[previous.type][previous.name];
-    console.log(info);
+ipcRenderer.on(
+    "plugin:list",
+    /** @param {PluginList} p */
+    (_, p) => {
+        updatePlugins(p);
+    }
+);
+ipcRenderer.on(
+    "plugin:update",
+    /** @param {PluginSingleUpdate} update */
+    (_, update) => {
+        const { info, previous } = update;
+        if (previous) delete plugins[previous.type][previous.name];
 
-    plugins[info.type][info.name] = { ...info };
-    if (!info.ready)
-        showToast({
-            title: "사용 불가능한 플러그인이 있습니다.",
-            content: info.name,
-            duration: 5000
-        });
-});
-ipcRenderer.on("plugin:hmr", (_, info) => {
-    if (info.error) {
-        showToast({ title: `${info.name} 플러그인 오류`, content: info.error, duration: 5000 });
-        return;
-    } else if (!info.ready)
-        showToast({
-            title: "사용 불가능한 플러그인이 있습니다.",
-            content: info.name,
-            duration: 5000
-        });
-});
+        plugins[info.type][info.name] = info;
+        updatePluginErrors(info);
+    }
+);
 
+ipcRenderer.on(
+    "plugin:hmr",
+    /** @param {PluginRendererInfo} info */
+    (_, info) => {
+        plugins[info.type][info.name] = info;
+        updatePluginErrors(info);
+    }
+);
+
+/** @param {PluginList} p */
 function updatePlugins(p) {
     PLUGIN_TYPES.forEach((t) => {
         plugins[t] = {};
     });
-    let warningPlugins = [];
     Object.values(p).forEach((plugin) => {
         plugins[plugin.type][plugin.name] = plugin;
-        if (!plugin.ready) warningPlugins.push(plugin.name);
+        updatePluginErrors(plugin);
     });
-    if (warningPlugins.length)
-        showToast({
-            title: "사용 불가능한 플러그인이 있습니다.",
-            content: warningPlugins.join(", "),
-            duration: 5000
-        });
 }
 
-ipcRenderer.on("showPluginCreateModal", async () => {
+/** @type {Map<string, import("./toast/toast.svelte").Toast>} */
+const errorToasts = new Map();
+/** @param {PluginRendererInfo} plugin */
+function updatePluginErrors(plugin) {
+    const existing = errorToasts.get(plugin.name);
+    if (existing) {
+        existing.forEach((t) => t.destroy());
+        errorToasts.delete(plugin.name);
+    }
+    if (!plugin.error) return;
+
+    errorToasts.set(
+        plugin.name,
+        plugin.error.map(([p, e]) =>
+            showToast({
+                id: `plugin:error:${plugin.name}:${p}`,
+                title: e.title,
+                content: e.summary,
+                duration: 0,
+                closable: false
+            })
+        )
+    );
+}
+
+ipcRenderer.on("plugin:show-create-modal", async () => {
     const modalResult = await showModalPromise({
         title: "새로운 플러그인 생성",
         fields: [

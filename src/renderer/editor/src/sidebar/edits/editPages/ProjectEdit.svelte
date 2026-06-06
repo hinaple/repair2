@@ -1,0 +1,96 @@
+<script>
+    import PluginPointer from "@classes/pluginPointer.svelte";
+    import { screenConfigTypes } from "../../../lib/translate";
+    import InputField from "../../input/InputField.svelte";
+
+    const { data } = $props();
+</script>
+
+<InputField label="프로젝트 이름" value={data.title} setter={(d) => (data.title = d)} />
+<hr />
+<InputField label="화면 너비" value={data.width} setter={(d) => (data.width = d)} type="number" />
+<InputField label="화면 높이" value={data.height} setter={(d) => (data.height = d)} type="number" />
+<InputField
+    label="확대 비율"
+    value={data.sizeRatio}
+    setter={(d) => (data.sizeRatio = d)}
+    placeholder="가로비율,세로비율"
+/>
+<InputField label="창 유형" type="type" value={data.screenConfig} options={screenConfigTypes} />
+{#if data.screenConfig.types[0] === "windowMode"}
+    <InputField
+        label="창 X좌표(px)"
+        type="number"
+        value={data.screenConfig.payload.x}
+        setter={(d) => (data.screenConfig.payload.x = d)}
+    />
+    <InputField
+        label="창 Y좌표(px)"
+        type="number"
+        value={data.screenConfig.payload.y}
+        setter={(d) => (data.screenConfig.payload.y = d)}
+    />
+{/if}
+<hr />
+<InputField
+    label="화면 필터"
+    value={data.filter}
+    setter={(d) => (data.filter = d)}
+    type="textarea"
+    code
+    placeholder="css filter"
+/>
+<InputField
+    label="CSS style"
+    value={data.style}
+    setter={(d) => (data.style = d)}
+    type="textarea"
+    code
+    placeholder="inline CSS style"
+/>
+<InputField
+    label="투명한 창"
+    value={data.transparent}
+    setter={(d) => (data.transparent = d)}
+    type="checkbox"
+/>
+<hr />
+<InputField
+    label="런타임 플러그인"
+    seriesOption={{ array: data.runtimePlugins, newData: () => new PluginPointer({}, "runtime") }}
+    type="plugin"
+    pluginType="runtime"
+    canUnselect={false}
+/>
+<hr />
+<InputField
+    label="편집기 단축키"
+    value={data.editorShortcut}
+    setter={(d) => (data.editorShortcut = d)}
+    maxLength="1"
+    placeholder="E"
+/>
+<InputField
+    label="에디터 비밀번호"
+    value={data.editorPassword}
+    setter={(d) => (data.editorPassword = d)}
+    placeholder="비밀번호 없음"
+/>
+<InputField
+    label="창을 항상 최상위에 표시"
+    value={data.alwaysOnTop}
+    setter={(d) => (data.alwaysOnTop = d)}
+    type="checkbox"
+/>
+<InputField
+    label="플러그인 HMR 활성화"
+    value={data.devMode}
+    setter={(d) => (data.devMode = d)}
+    type="checkbox"
+/>
+<InputField
+    label="시스템 키 비활성화"
+    value={data.suppressGlobalKeys}
+    setter={(d) => (data.suppressGlobalKeys = d)}
+    type="checkbox"
+/>

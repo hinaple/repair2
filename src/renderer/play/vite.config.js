@@ -5,7 +5,9 @@ import vanillizer from "../../vitePlugins/vanillizer";
 import onlyBlockPlugin from "../../vitePlugins/only-block-plugin.mjs";
 
 const classPath = join(__dirname, "../classes");
+const sharedPath = join(__dirname, "../../shared");
 const outDir = join(__dirname, "../../../out/play");
+
 export default defineConfig({
     root: __dirname,
     cacheDir: join(__dirname, "../../../node_modules/.vite-play"),
@@ -28,7 +30,8 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            "@classes": classPath
+            "@classes": classPath,
+            "@shared": sharedPath
         }
     },
     define: {

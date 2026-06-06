@@ -38,9 +38,7 @@ export function subscribePluginMount({
                                 {
                                     type: "plugin-unmount-error",
                                     phase: "mount",
-                                    groupKey: `plugin:unmount:${type}:${name}:${contextOption.component?.id ?? ctx.plugin.instanceId}`,
-                                    summary: `${name} unmounting failed`,
-                                    overlay: false
+                                    summary: `${name} unmounting failed`
                                 }
                             );
                         plugin.unmount = null;
@@ -54,10 +52,7 @@ export function subscribePluginMount({
                 {
                     type: "plugin-mount-error",
                     phase: "mount",
-                    groupKey: `plugin:mount:${type}:${name}:${contextOption.component?.id ?? ctx.plugin.instanceId}`,
-                    summary: `${name} mounting failed`,
-                    status: "active",
-                    overlay: true
+                    summary: `${name} mounting failed`
                 }
             );
         const plugin = { ctx, mount, info };

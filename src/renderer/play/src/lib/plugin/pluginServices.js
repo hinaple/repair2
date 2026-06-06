@@ -1,15 +1,15 @@
 import { getAppData } from "../appdata";
-import { reportPluginIssue } from "./pluginReporter";
+import { reportPluginWarning } from "./pluginReporter";
 
 const serviceProviders = new Map();
 
 export function providePluginService(source, name, service) {
     if (!name) {
-        reportPluginIssue(source, "Plugin service name is required.");
+        reportPluginWarning(source, "Plugin service name is required.");
         return () => {};
     }
     if (serviceProviders.has(name)) {
-        reportPluginIssue(source, `Plugin service already exists: ${name}`);
+        reportPluginWarning(source, `Plugin service already exists: ${name}`);
         return () => {};
     }
 
@@ -26,7 +26,7 @@ export function providePluginService(source, name, service) {
 export function usePluginService(name, source = null) {
     const provider = serviceProviders.get(name);
     if (!provider) {
-        reportPluginIssue(source, `Plugin service does not exist: ${name}`);
+        reportPluginWarning(source, `Plugin service does not exist: ${name}`);
         return null;
     }
     return provider.service;

@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script>
-    import ToastDisplay from "./lib/ToastDisplay.svelte";
+    import ToastDisplay from "./lib/toast/ToastDisplay.svelte";
     import ContextMenu from "./lib/contextMenu/ContextMenu.svelte";
     import { appData } from "./lib/syncData.svelte";
     import { redo, undo } from "./lib/workHistory";

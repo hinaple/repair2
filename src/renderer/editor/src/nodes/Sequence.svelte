@@ -12,13 +12,13 @@
     let { sequence, isLastHold, onpointerdown, ...nodeData } = $props();
 
     function addStep(evt) {
-        if (get(grabbing)) return;
+        if (evt.button || $grabbing) return;
+        evt.stopPropagation();
         const newStep = sequence.steps.addWithHistory(addHistory);
         const newClipboardFn = genClipboardFn("step", newStep, () =>
             sequence.steps.removeWithHistory(newStep, addHistory, () => reload("nodeMoved"))
         );
         focusData("step", newStep, { clipboardFn: newClipboardFn });
-        evt.stopPropagation();
     }
 
     let innerOutputs = $state([]);
@@ -40,7 +40,7 @@
     type="sequence"
     outputs={[{ output: sequence.output, id: sequence.id }]}
     {innerOutputs}
-    title={sequence.alias?.length ? sequence.alias : "이름 없는 시퀀스"}
+    title={sequence.alias?.length ? sequence.alias : "시퀀스"}
     {isLastHold}
     {onpointerdown}
     {...nodeData}
@@ -57,7 +57,7 @@
                 onmoved={() => reload("nodeMoved")}
                 {nodeCountChanged}
             />
-            <div class="add" onclick={addStep}>
+            <div class="add" onpointerdown={addStep}>
                 <Icon color="#fff" lineWidth={2} />
             </div>
         </div>

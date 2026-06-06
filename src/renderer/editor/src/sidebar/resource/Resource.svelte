@@ -1,6 +1,6 @@
 <script>
     import Icon from "../../assets/icons/Icon.svelte";
-    import InputField from "../InputField.svelte";
+    import InputField from "../input/InputField.svelte";
     import { hoverHighlight } from "../../lib/highlight";
     import FoldArrow from "../../lib/FoldArrow.svelte";
     import ResourcePreview from "../../lib/ResourcePreview.svelte";

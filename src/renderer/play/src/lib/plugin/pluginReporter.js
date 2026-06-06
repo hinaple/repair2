@@ -1,3 +1,4 @@
+import { ipcRenderer } from "electron";
 import { reportLog } from "../logClient";
 import { customLog } from "../logger";
 
@@ -26,14 +27,9 @@ export function sendPluginLog({
     source = null,
     title,
     detail = null,
-    dialogue = false,
     type = null,
-    groupKey = null,
     phase = "user",
-    summary = null,
-    status = null,
-    toast = null,
-    overlay = null
+    summary = null
 }) {
     reportLog({
         level,
@@ -42,32 +38,24 @@ export function sendPluginLog({
         title,
         summary: summary ?? title,
         detail,
-        dialogue,
+        dialogue: false,
         type: type ?? `plugin-${level}`,
-        groupKey:
-            groupKey ??
-            (source?.id
-                ? `plugin:${phase}:${source.id}:${level}:${title}`
-                : `plugin:${phase}:unknown:${level}:${title}`),
-        phase,
-        status: status ?? "resolved",
-        toast,
-        overlay: overlay ?? false
+        phase
     });
     customLog(`PLUGIN: ${source?.id ?? "unknown"}\n${title}`);
 }
 
-export function reportPluginIssue(source, title, detail = null, level = "warning", options = {}) {
+export function reportPluginWarning(source, title, detail = null, options = {}) {
     sendPluginLog({
         level,
         source,
         title: `[Plugin ${level}] ${title}`,
         detail,
-        dialogue: level === "error" || level === "warning",
         ...options
     });
 }
 
-export function reportPluginException(source, title, error, options = {}) {
-    reportPluginIssue(source, title, stringify(error), "error", options);
+export function reportPluginException(plugin, title, error, logOptions = {}) {
+    ipcRenderer.invoke("plugin:runtime-error", { name: plugin.id, title, error, logOptions });
+    // reportPluginWarning(source, title, stringify(error), "error", options);
 }

@@ -12,7 +12,6 @@
     } from "./viewport";
     import Sequence from "./Sequence.svelte";
     import { grabbing } from "../lib/stores";
-    import { get } from "svelte/store";
     import Lines from "./lines/Lines.svelte";
     import { appData } from "../lib/syncData.svelte";
     import { focusData, selectManyNodes } from "../sidebar/editUtils";
@@ -28,43 +27,48 @@
     import FrameUpdater from "../lib/frameUpdater";
     import VariableSet from "./VariableSet.svelte";
     import LinesOld from "./lines/LinesOld.svelte";
+    import event from "../lib/actions/eventAction";
 
     let readyToGrab = $state(false);
     function keydown(evt) {
         if (evt.target.tagName === "INPUT" || evt.target.tagName === "TEXTAREA") return;
-        if (evt.key === " " && !get(grabbing)) {
+        if (evt.key === " " && !$grabbing) {
             readyToGrab = true;
+            $grabbing = myReadyGrab;
         }
     }
     function keyup(evt) {
         if (evt.key === " ") {
             readyToGrab = false;
-            if (get(grabbing) === myGrab) grabbing.set(null);
+            if ($grabbing === myGrab || $grabbing === myReadyGrab) $grabbing = null;
         }
         if (evt.key === "Alt") evt.preventDefault();
     }
 
+    const myReadyGrab = "viewportReady";
     const myGrab = "viewport";
     let realGrabbing = $state(false);
     let prvMouse = null;
     let selectOrigin = $state(null);
     let selectBoxEl = $state(null);
     function pointerdown(evt) {
-        if (evt.button === 0 && !readyToGrab && !get(grabbing)) {
+        if (evt.button === 0 && !$grabbing) {
             selectOrigin = { x1: evt.clientX, y1: evt.clientY };
         }
 
-        if (!((evt.button === 0 && readyToGrab) || (evt.button === 1 && !get(grabbing)))) {
-            if (!evt.button && !get(grabbing)) focusData("project");
-            return;
-        }
-        grabbing.set(myGrab);
-        realGrabbing = true;
-        prvMouse = { x: evt.screenX, y: evt.screenY };
+        if (
+            (evt.button === 0 && readyToGrab) ||
+            (evt.button === 1 && (readyToGrab || !$grabbing))
+        ) {
+            $grabbing = myGrab;
+            realGrabbing = true;
+            prvMouse = { x: evt.screenX, y: evt.screenY };
+            evt.preventDefault();
+        } else if (evt.button === 0 && (!$grabbing || readyToGrab)) focusData("project");
     }
     function pointermove(evt) {
         if (selectOrigin) {
-            if (get(grabbing) !== "select") grabbing.set("select");
+            if ($grabbing !== "select") $grabbing = "select";
 
             selectOrigin.x2 = evt.clientX;
             selectOrigin.y2 = evt.clientY;
@@ -107,16 +111,16 @@
                 );
             }
             selectOrigin = null;
-            grabbing.set(null);
+            $grabbing = null;
             return;
         }
         if (!realGrabbing || evt.button === 2) return;
-        if (!readyToGrab) grabbing.set(null);
+        $grabbing = readyToGrab ? myReadyGrab : null;
         realGrabbing = false;
     }
 
     function wheel(evt) {
-        if (get(grabbing)) return;
+        if (!readyToGrab && $grabbing) return;
         const dir = Math.abs(evt.deltaY) / evt.deltaY;
         if (isNaN(dir)) return;
         if (evt.ctrlKey || evt.shiftKey)
@@ -199,17 +203,6 @@
     function unsupported() {
         renderWithWebGL = false;
     }
-
-    function addOnwheel(node, callback) {
-        const opt = ["wheel", callback, { passive: true }];
-        node.addEventListener(...opt);
-
-        return {
-            destroy() {
-                node.removeEventListener(...opt);
-            }
-        };
-    }
 </script>
 
 <svelte:body
@@ -223,7 +216,7 @@
     class:grabbing={realGrabbing}
     class:ready-to-grab={readyToGrab}
     onpointerdown={pointerdown}
-    use:addOnwheel={wheel}
+    use:event={["wheel", wheel, { passive: true }]}
     use:rightclick={contextmenu}
     use:setViewportEl
 >

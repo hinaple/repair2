@@ -261,10 +261,7 @@ export default class RepairElement extends HTMLElement {
                                 {
                                     type: "plugin-listener-error",
                                     phase: "runtime",
-                                    groupKey: `plugin:listener:${l.payload?.name ?? "unknown"}:${l.payload?.channel ?? "event"}`,
-                                    summary: `${l.payload?.name ?? "Plugin"} listener failed`,
-                                    status: "active",
-                                    overlay: true
+                                    summary: `${l.payload?.name ?? "Plugin"} listener failed`
                                 }
                             );
                             return;

@@ -1,48 +1,17 @@
 <script>
-    import { onDestroy, onMount } from "svelte";
-    import { currentFocus as currentFocusStore } from "./editUtils";
-    import SideBarOptions from "./sideBarTitles";
-
-    import ProjectEdit from "./edits/ProjectEdit.svelte";
-    import SequenceEdit from "./edits/SequenceEdit.svelte";
-    import StepEdit from "./edits/StepEdit.svelte";
-    import BranchEdit from "./edits/BranchEdit.svelte";
-    import ValueProcessEdit from "./edits/ValueProcessEdit.svelte";
-    import ValueEdit from "./edits/ValueEdit.svelte";
-    import ComponentEdit from "./edits/ComponentEdit.svelte";
-    import { get } from "svelte/store";
-    import ElementEdit from "./edits/ElementEdit.svelte";
-    import ListenerEdit from "./edits/ListenerEdit.svelte";
-    import EntryEdit from "./edits/EntryEdit.svelte";
     import Variables from "./variable/Variables.svelte";
     import Resources from "./resource/Resources.svelte";
-    import VariableSetEdit from "./edits/VariableSetEdit.svelte";
     import Plugins from "./plugins/Plugins.svelte";
     import BigIcons from "../assets/icons/BigIcons.svelte";
-    // import Grabber from "../lib/grabber";
+    import Edit from "./edits/Edit.svelte";
+    import Logs from "./log/Logs.svelte";
 
-    const EditComponents = {
-        project: ProjectEdit,
-        sequence: SequenceEdit,
-        step: StepEdit,
-        branch: BranchEdit,
-        valueProcess: ValueProcessEdit,
-        value: ValueEdit,
-        component: ComponentEdit,
-        element: ElementEdit,
-        listener: ListenerEdit,
-        entry: EntryEdit,
-        variableSet: VariableSetEdit
-    };
-    let CurrentEditComponent = $state();
-    let currentFocus = $state();
     let currentTab = $state("edit");
 
-    const unsub = currentFocusStore.subscribe((cf) => {
-        currentFocus = cf;
-        CurrentEditComponent = EditComponents[cf.type];
+    let title = $state();
+    $effect(() => {
+        if (currentTab !== "edit") title = tabs[currentTab];
     });
-    onDestroy(unsub);
 
     const tabs = {
         edit: "Edit",
@@ -67,22 +36,17 @@
         {/each}
     </div>
     <div class="side-bar-body">
+        <div class="title">{title}</div>
         {#if currentTab === "edit"}
-            <div class="title">{SideBarOptions[currentFocus.type]}</div>
-            <div class="options">
-                {#key currentFocus}
-                    <CurrentEditComponent data={get(currentFocusStore).obj} />
-                {/key}
-            </div>
-        {:else}
-            <div class="title">{tabs[currentTab]}</div>
-            {#if currentTab === "variables"}
-                <Variables />
-            {:else if currentTab === "resources"}
-                <Resources />
-            {:else if currentTab === "plugins"}
-                <Plugins />
-            {/if}
+            <Edit bind:title />
+        {:else if currentTab === "variables"}
+            <Variables />
+        {:else if currentTab === "resources"}
+            <Resources />
+        {:else if currentTab === "plugins"}
+            <Plugins />
+        {:else if currentTab === "logs"}
+            <Logs />
         {/if}
     </div>
 </div>
@@ -143,17 +107,5 @@
         border-bottom: solid var(--w-o6) 1px;
         font-weight: 600;
         flex: 0 0 auto;
-    }
-    .options {
-        width: 100%;
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-        overflow-y: scroll;
-        padding-block: 20px 70px;
-        gap: 15px;
-        box-sizing: border-box;
-        padding-inline: 14px;
-        --hr-pad: -14px;
     }
 </style>

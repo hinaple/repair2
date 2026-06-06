@@ -9,7 +9,7 @@
     let { branch, onpointerdown, ...nodeData } = $props();
 
     function focusZoneMouseDown(evt) {
-        if (evt.button || get(grabbing)) return;
+        if (evt.button || $grabbing) return;
         evt.stopPropagation();
         outClicked();
         onpointerdown();
