@@ -39,16 +39,18 @@
 
         const selectBtnRect = selectBtnEl.getBoundingClientRect();
         await tick();
-        inputEl.focus();
 
         containerEl.style.width = `${selectBtnRect.width}px`;
         containerEl.style.maxHeight = `${window.innerHeight / 2 - selectBtnRect.height / 2}px`;
-        if (selectBtnRect.top + selectBtnRect.height / 2 < window.innerHeight / 2)
-            containerEl.style.top = `${selectBtnRect.bottom}px`;
-        else {
+        if (selectBtnRect.top + selectBtnRect.height / 2 < window.innerHeight / 2) {
+            containerEl.style.transform = `translateY(${selectBtnRect.bottom}px)`;
+        } else {
             containerEl.style.top = `${selectBtnRect.top}px`;
             containerEl.style.transform = "translateY(-100%)";
         }
+
+        inputEl.focus();
+
         if (!resourceId) {
             selectedResourceIdx = 0;
             return;
@@ -180,11 +182,13 @@
 
 <style>
     .resource-selector {
+        border-radius: 5px;
         padding-left: 5px;
         box-sizing: border-box;
         width: 100%;
         max-height: 50vh;
-        position: absolute;
+        position: fixed;
+        top: 0;
         background-color: hsl(0, 0%, 80%);
         z-index: 200;
         box-shadow: var(--b-o8) 0 0 8px;
@@ -194,7 +198,7 @@
     .search-zone {
         flex: 0 0 auto;
         width: 100%;
-        padding: 5px 18px 0 0;
+        padding: 5px 14px 0 0;
         box-sizing: border-box;
         overflow: hidden;
         input {
@@ -222,8 +226,13 @@
         scroll-padding-block: 5px;
         padding-block: 5px;
     }
+    .resource-list::-webkit-scrollbar {
+        border: none;
+        width: 12px;
+    }
     .resource-list::-webkit-scrollbar-thumb {
         background-color: #000;
+        border-width: 3px;
     }
     .resource {
         padding: 5px;
@@ -252,6 +261,7 @@
     }
 
     .select-btn {
+        border-radius: 5px;
         width: 100%;
         padding: 5px 8px 5px 5px;
         display: flex;
@@ -267,12 +277,12 @@
         gap: 5px;
         overflow: hidden;
         border: solid transparent 1px;
-
-        transition: border-color 200ms;
     }
-    .select-btn:hover,
+    .select-btn:hover {
+        border-color: var(--w-o2);
+    }
     .select-btn.active {
-        border-color: #fff;
+        border-color: var(--blue-bright);
     }
     .preview {
         flex: 1 1 100px;

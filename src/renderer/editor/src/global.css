@@ -16,6 +16,9 @@
     --b-o2: rgba(0, 0, 0, 0.2);
     --b-o1: rgba(0, 0, 0, 0.1);
 
+    --darkgray: #1b1c1d;
+    --option-bg: #1e1f20;
+
     --blue-dark: #2b6eff;
     --blue-bright: #4e86ff;
 
@@ -59,6 +62,8 @@ svg {
 
 *::-webkit-scrollbar {
     width: 14px;
+    border-left: solid var(--w-o6) 1px;
+    box-sizing: border-box;
 }
 *::-webkit-scrollbar-track {
     background: transparent;
@@ -76,8 +81,9 @@ svg {
 hr {
     box-sizing: border-box;
     margin-block: 10px;
+    margin-inline: var(--hr-pad);
     padding: 0;
-    width: 100%;
+    width: calc(100% - calc(var(--hr-pad) * 2px));
     background-color: #fff;
     opacity: 0.6;
 }
@@ -124,7 +130,7 @@ select:hover {
     border-color: var(--w-o2);
 }
 option {
-    background-color: #1e1e1e;
+    background-color: var(--option-bg);
 }
 textarea::placeholder,
 input::placeholder {

@@ -33,7 +33,7 @@ const fu = new FrameUpdater(() => {
 
 const SIDEBAR_WIDTH = 340;
 const observer = new ResizeObserver((entries) => {
-    if (!entries || !entries.length) return;
+    if (!entries.length) return;
 
     const rect = entries[0].contentRect;
     screenRect = { width: rect.width, height: rect.height, x: SIDEBAR_WIDTH, y: 0 };
@@ -122,7 +122,6 @@ export function resizeViewport(step, mousePos = null) {
 }
 
 const padding = 100;
-const sideBarWidth = 300;
 export function fitViewportToNodes(nodes) {
     if (!nodes || nodes.size === 0) {
         setViewportSize(0);
@@ -149,7 +148,7 @@ export function fitViewportToNodes(nodes) {
     // Add padding
     bounds.minX -= padding;
     bounds.minY -= padding;
-    bounds.maxX += padding + sideBarWidth;
+    bounds.maxX += padding;
     bounds.maxY += padding;
 
     // Calculate center position
@@ -169,7 +168,7 @@ export function fitViewportToNodes(nodes) {
     viewport.pos.set({ x: centerX, y: centerY });
 }
 
-export function getViewportCenter() {
+export function getViewportCenter(sideBarWidth) {
     const vp = get(viewport.pos);
     return { x: vp.x - sideBarWidth / 2 / rInfo.ratio, y: vp.y };
 }

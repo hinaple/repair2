@@ -99,7 +99,7 @@
         user-select: none;
         display: flex;
         flex-direction: row;
-        background-color: hsl(0, 0%, 20%);
+        background-color: var(--darkgray);
         flex: 0 0 auto;
     }
     .tabs {
@@ -149,11 +149,11 @@
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
-        overflow-y: auto;
+        overflow-y: scroll;
         padding-block: 20px 70px;
         gap: 15px;
         box-sizing: border-box;
-        scrollbar-gutter: stable;
-        padding-left: 14px;
+        padding-inline: 14px;
+        --hr-pad: -14px;
     }
 </style>

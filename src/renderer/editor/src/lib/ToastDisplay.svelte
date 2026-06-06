@@ -50,7 +50,7 @@
         flex-direction: column;
         flex: 0 0 auto;
         user-select: none;
-        background-color: hsl(0, 0%, 20%);
+        background-color: var(--darkgray) ee;
         box-sizing: border-box;
         color: #fff;
         gap: 10px;

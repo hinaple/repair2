@@ -278,6 +278,8 @@
         height: 100%;
         position: relative;
         flex: 1 1 auto;
+        background-color: #eeeff0;
+        overflow: hidden;
     }
     .node-space :global(*) {
         user-select: none;

@@ -18,7 +18,7 @@
     button {
         padding: 5px;
         border-radius: 5px;
-        opacity: 0.8;
+        opacity: 0.7;
         flex: 0 0 auto;
         cursor: pointer;
     }
@@ -27,6 +27,5 @@
     }
     button:hover {
         opacity: 1;
-        background-color: var(--w-o1);
     }
 </style>
