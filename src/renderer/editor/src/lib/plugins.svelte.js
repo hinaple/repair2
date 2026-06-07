@@ -8,21 +8,33 @@ import { PLUGIN_TYPES } from "@classes/utils";
  * @typedef {import("@shared/plugin.types").PluginList} PluginList
  * @typedef {import("@shared/plugin.types").PluginRendererInfo} PluginRendererInfo
  * @typedef {import("@shared/plugin.types").PluginSingleUpdate} PluginSingleUpdate
+ * @typedef {import("@shared/plugin.types").ManifestErrorForRenderer} ManifestErrorForRenderer
+ * @typedef {import("./toast/toast.svelte").Toast} Toast
  */
 
 /** @type {Record<PluginType, Record<string, PluginRendererInfo>>} */
 export const plugins = $state(Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}])));
 
-export async function requestUpdatePluginList() {
-    updatePlugins(await ipcRenderer.invoke("plugin:get-list"));
+export function requestUpdatePlugins() {
+    return Promise.all([
+        ipcRenderer.invoke("plugin:get-list").then(updatePlugins),
+        ipcRenderer.invoke("plugin:get-manifest-errors").then(updateManifestErrors)
+    ]);
 }
-requestUpdatePluginList();
+requestUpdatePlugins();
 
 ipcRenderer.on(
     "plugin:list",
-    /** @param {PluginList} p */
-    (_, p) => {
-        updatePlugins(p);
+    /**
+     * @param {{
+     *     plugins: PluginList,
+     *     buildChanges: strings[],
+     *     manifestErrors: ManifestErrorForRenderer[]
+     * }} updateData
+     * */
+    (_, updateData) => {
+        updatePlugins(updateData.plugins);
+        updateManifestErrors(updateData.manifestErrors);
     }
 );
 ipcRenderer.on(
@@ -36,7 +48,6 @@ ipcRenderer.on(
         updatePluginErrors(info);
     }
 );
-
 ipcRenderer.on(
     "plugin:hmr",
     /** @param {PluginRendererInfo} info */
@@ -44,6 +55,17 @@ ipcRenderer.on(
         plugins[info.type][info.name] = info;
         updatePluginErrors(info);
     }
+);
+ipcRenderer.on("plugin:removed", (_, info) => {
+    console.log("PLUGIN REMOVED: ", info);
+    errorToasts.get(info.name)?.forEach((t) => t.destroy());
+    errorToasts.delete(info.name);
+    delete plugins[info.type]?.[info.name];
+});
+ipcRenderer.on(
+    "plugin:manifest-error",
+    /** @param {ManifestErrorForRenderer[]} manifestErrors */
+    (_, manifestErrors) => updateManifestErrors(manifestErrors)
 );
 
 /** @param {PluginList} p */
@@ -57,7 +79,7 @@ function updatePlugins(p) {
     });
 }
 
-/** @type {Map<string, import("./toast/toast.svelte").Toast>} */
+/** @type {Map<string, Toast>} */
 const errorToasts = new Map();
 /** @param {PluginRendererInfo} plugin */
 function updatePluginErrors(plugin) {
@@ -73,13 +95,42 @@ function updatePluginErrors(plugin) {
         plugin.error.map(([p, e]) =>
             showToast({
                 id: `plugin:error:${plugin.name}:${p}`,
-                title: e.title,
+                type: "error",
+                title: `[${plugin.name}]: ${e.title}`,
                 content: e.summary,
                 duration: 0,
                 closable: false
             })
         )
     );
+}
+
+/** @type {Map<string, Toast>} */
+const manifestErrorToasts = new Map();
+
+/** @param {ManifestErrorForRenderer[]} manifestErrors */
+function updateManifestErrors(manifestErrors) {
+    const removedErrors = new Set([...manifestErrorToasts.keys()]);
+
+    manifestErrors.forEach((ME) => {
+        removedErrors.delete(ME.dir);
+        manifestErrorToasts.set(
+            ME.dir,
+            showToast({
+                id: `plugin:manifest-error:${ME.dir}`,
+                type: "error",
+                title: ME.error,
+                content: ME.manifestDir,
+                duration: 0,
+                closable: false
+            })
+        );
+    });
+
+    removedErrors.forEach((dir) => {
+        manifestErrorToasts.get(dir).destroy();
+        manifestErrorToasts.delete(dir);
+    });
 }
 
 ipcRenderer.on("plugin:show-create-modal", async () => {
@@ -134,6 +185,7 @@ ipcRenderer.on("plugin:show-create-modal", async () => {
     if (createResult.error) {
         showToast({
             id: "pluginCreate",
+            type: "error",
             title: "An error occurred while creating plugin.",
             content: createResult.error,
             duration: 5000

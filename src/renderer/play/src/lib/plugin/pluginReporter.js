@@ -56,6 +56,12 @@ export function reportPluginWarning(source, title, detail = null, options = {}) 
 }
 
 export function reportPluginException(plugin, title, error, logOptions = {}) {
-    ipcRenderer.invoke("plugin:runtime-error", { name: plugin.id, title, error, logOptions });
+    ipcRenderer.invoke("plugin:runtime-error", {
+        name: plugin.id,
+        type: plugin.type,
+        title,
+        error,
+        logOptions
+    });
     // reportPluginWarning(source, title, stringify(error), "error", options);
 }

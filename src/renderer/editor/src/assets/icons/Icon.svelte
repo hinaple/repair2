@@ -131,6 +131,7 @@
 <style>
     svg {
         display: block;
+        flex: 0 0 auto;
     }
     .stroke {
         stroke: var(--color);

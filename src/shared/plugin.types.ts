@@ -1,4 +1,3 @@
-import type { LogEntry } from "./log.types";
 import type { RollupError } from "rollup";
 
 export const PLUGIN_TYPES = ["runtime", "element", "transition", "function", "frame"] as const;
@@ -68,9 +67,16 @@ export type PluginReportOptions = {
 
 export type PluginErrorPayload = {
     name: string;
+    type: PluginType;
     title?: string;
     error: string | RollupError;
     logOptions?: PluginReportOptions;
 };
 
 export type PluginRunningTarget = "main" | "renderer";
+
+export type ManifestErrorForRenderer = {
+    dir: string;
+    manifestDir: string;
+    error: string;
+};

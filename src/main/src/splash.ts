@@ -10,7 +10,7 @@ let onSplashClose: (() => void) | null = null;
 export function showSplash(isDev = false, appVersion: string) {
     if (splashWindow) return;
 
-    cli.info("SPLASH WINDOW OPENING");
+    cli.status("SPLASH WINDOW OPENING");
 
     splashWindow = new BrowserWindow({
         width: 800,

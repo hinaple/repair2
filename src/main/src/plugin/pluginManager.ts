@@ -1,101 +1,48 @@
 import fs from "fs/promises";
 import { join } from "path";
-import { RawManifest, PluginInfo, PluginRendererInfo, PluginType } from "./type";
+import { cli } from "../console";
 import { buildPlugin } from "./pluginBuild";
-import { getManifest, MANIFEST, normalizeManifest } from "./pluginManifest";
+import { getManifest, MANIFEST, normalizeManifest, watchManifest } from "./pluginManifest";
 import MainRuntimePluginEngine from "./runtimeMain";
-import type { ReportLog } from "../logs/reportLog";
 import { pluginDir } from "../dirs";
-import { createPluginLinkService, PluginLinkService } from "./pluginLinks";
+import { createPluginLinkService, type PluginLinkService } from "./pluginLinks";
 import {
     createPluginDiagnostics,
     getPluginPhasePriority,
     pluginBuildErrorToSummary,
     type PluginDiagnostics
 } from "./pluginDiagnostics";
+import type {
+    RawManifest,
+    PluginInfo,
+    PluginData,
+    ManifestError,
+    PluginInfoData,
+    ManifestWatcher
+} from "./type";
+import type { PluginErrorPayload, PluginRunningTarget } from "@shared/plugin.types";
+import { createSender, type UpdateHandler, type UpdateSender } from "./sendPluginUpdate";
 import type { RollupError, RollupWatcher } from "rollup";
-import type { ChokidarOptions, FSWatcher } from "chokidar";
-import { cli } from "../console";
-import { PluginErrorPayload, PluginRunningTarget, PluginErrorData } from "@shared/plugin.types";
-
-type PreviousData = {
-    type: PluginType;
-    name: string;
-};
-
-type PluginInfoData = {
-    info: PluginInfo;
-    data: PluginData;
-    error: Partial<Record<PluginRunningTarget, PluginErrorData>>;
-};
-
-type PluginData = {
-    building?: Promise<boolean>;
-    ready?: boolean;
-    watchers?: RollupWatcher[];
-    sourceWatcher?: { watcher: FSWatcher; close: () => Promise<void> };
-};
-
-export type UpdateHandlerParams =
-    | {
-          type: "single";
-          updateData: {
-              info: InfoForRenderer;
-              previous: PreviousData | null;
-              buildChanged: boolean;
-          };
-      }
-    | {
-          type: "all";
-          updateData: {
-              buildChanges: string[];
-              errors?: { dir: string; reason?: string }[];
-          };
-      }
-    | {
-          type: "manifest-error";
-          updateData: {
-              dir: string;
-              reason?: string;
-          };
-      }
-    | {
-          type: "runtime-error";
-          updateData: {
-              info: InfoForRenderer;
-          };
-      }
-    | {
-          type: "hmr";
-          updateData: InfoForRenderer;
-      };
-type UpdateHandler = (updateInfo: UpdateHandlerParams) => void;
+import type { ReportLog } from "../logs/reportLog";
 
 function closeViteWatchers(data: PluginData) {
     if (data.watchers && data.watchers.length)
         return Promise.all(data.watchers.splice(0).map((w) => w.close()));
 }
 
-type InfoForRenderer = PluginRendererInfo;
-
-function makeInfoForRenderer({ info, data, error }: PluginInfoData): InfoForRenderer {
-    const errorEntries = Object.entries(error);
-    return { ...info, ready: !!data.ready, error: errorEntries.length ? errorEntries : null };
-}
-
 export class PluginManager {
     private devMode: boolean;
     private updated: boolean;
     private pluginDiagnostics: PluginDiagnostics;
-    private _onupdate?: UpdateHandler;
-    private errorWatchers: Set<{ watcher: FSWatcher; close: () => Promise<void> }> = new Set();
+    private sendUpdate: UpdateSender;
 
-    private destroyed: boolean = false;
+    destroyed: boolean = false;
 
     pluginLinkService: PluginLinkService;
     mainRuntime: MainRuntimePluginEngine;
 
     plugins: Map<string, PluginInfoData>;
+    manifestErrors: Map<string, ManifestError> = new Map();
     constructor({
         devMode = false,
         reportLog,
@@ -103,9 +50,9 @@ export class PluginManager {
     }: {
         devMode: boolean;
         reportLog: ReportLog;
-        onupdate?: UpdateHandler;
+        onupdate: UpdateHandler;
     }) {
-        if (onupdate) this.onupdate(onupdate);
+        this.sendUpdate = createSender(this, onupdate);
         this.plugins = new Map();
         this.devMode = devMode;
         this.updated = false;
@@ -132,13 +79,6 @@ export class PluginManager {
         if (this.devMode) await this.updateAllPluginInfo({ forceBuild: this.devMode });
         else return this.closeAllWatchers();
     }
-    onupdate(updateHandler: UpdateHandler) {
-        this._onupdate = updateHandler;
-    }
-    private callOnUpdate(onupdateParam: UpdateHandlerParams) {
-        if (this.destroyed || !this._onupdate) return;
-        return this._onupdate(onupdateParam);
-    }
     closeAllWatchers() {
         const works = Promise.all([
             ...this.plugins.values().map(({ data }) => {
@@ -146,71 +86,123 @@ export class PluginManager {
                 delete data.sourceWatcher;
                 return p;
             }),
-            ...this.errorWatchers.values().map((w) => w.close())
+            ...this.manifestErrors.values().map((w) => w.watch?.close())
         ]);
-        this.errorWatchers.clear();
+        // DO NOT clear. manifestError.watch.close() now only removes watch data. must leave error data.
+        // this.manifestErrors.clear();
         return works;
     }
     private get watchable() {
         return !this.destroyed && this.devMode;
     }
-    private async watchErrorManifest(dir: string, manifestDir: string) {
-        if (!this.watchable) return;
+    private async manifestErrorHandler(
+        dir: string,
+        manifestDir: string,
+        error: string,
+        existingWatcher?: ManifestWatcher
+    ) {
+        await this.manifestErrors.get(dir)?.remove({ sendUpdate: false });
 
-        const watching = await watchManifest(
-            manifestDir,
-            async () => {
-                if (!this.watchable) return watching.close();
-
-                const result = await this.updatePluginFromDir(dir);
-                if (result.status === "error") {
-                    this.callOnUpdate({
-                        type: "manifest-error",
-                        updateData: {
-                            dir,
-                            reason: result.reason
-                        }
-                    });
-                    return;
-                }
-                if (result.status === "succeed") {
-                    this.callOnUpdate({
-                        type: "single",
-                        updateData: {
-                            info: makeInfoForRenderer(result.plugin),
-                            previous: null,
-                            buildChanged: result.builtNow
-                        }
-                    });
-                }
-                watching.close();
+        const errorData: ManifestError = {
+            remove: async ({ closeWatcher = true, sendUpdate = false } = {}) => {
+                this.manifestErrors.delete(dir);
+                if (sendUpdate) this.sendUpdate({ type: "manifest-error" });
+                if (closeWatcher) await errorData.watch?.close();
             },
-            () => this.errorWatchers.delete(watching)
-        );
-
-        if (!this.watchable) return watching.close();
-
-        this.errorWatchers.add(watching);
-    }
-    private async watchFineManifest({ info, data }: PluginInfoData) {
-        if ((info.linked && !info.linked.linked) || !this.watchable) return;
-
-        await data.sourceWatcher?.close();
-        if (info.linked && !info.linked.linked) return;
-        const manifestDir = join(info.linked ? info.linked?.sourcePath : info.path);
-
-        const watching = await watchManifest(
+            dir,
             manifestDir,
-            async () => {
-                const updateResult = await this.reupdatePlugin({
-                    info,
+            lastError: error
+        };
+        this.manifestErrors.set(dir, errorData);
+
+        if (this.watchable) {
+            let ended = false;
+            const callback = async () => {
+                if (!this.watchable) return errorData.watch?.close();
+                if (ended) return;
+
+                const result = await this.updatePluginFromDir(dir, {
                     forceBuild: true,
                     forceUpdateSource: true
                 });
-                if (updateResult.plugin) info = updateResult.plugin.info;
-            },
-            () => delete data.sourceWatcher
-        );
+                if (result.status === "manifest-error") {
+                    errorData.lastError = result.reason;
+                    this.sendUpdate({ type: "manifest-error" });
+                    return;
+                }
+                ended = true;
+                if (result.status === "succeed") {
+                    this.sendUpdate({
+                        type: "single",
+                        plugin: result.plugin,
+                        previous: null,
+                        buildChanged: result.builtNow
+                    });
+                } else if (result.status === "removed") errorData.remove({ sendUpdate: true });
+            };
+            const closer = () => delete errorData.watch;
+
+            errorData.watch =
+                existingWatcher?.setCallbacks(callback, closer) ??
+                (await watchManifest(manifestDir, callback, closer));
+
+            if (!this.watchable) errorData.watch?.close();
+        }
+    }
+    private async watchFineManifest({ info, data }: PluginInfoData) {
+        if (!this.watchable) return;
+
+        let prevError = this.manifestErrors.get(info.dir);
+        const closeErrorWatcher = prevError?.watch?.close;
+        prevError?.remove({ closeWatcher: false, sendUpdate: true });
+
+        await data.sourceWatcher?.close();
+        if (info.linked && !info.linked.linked) {
+            closeErrorWatcher?.();
+            return;
+        }
+
+        const manifestDir = join(info.linked ? info.linked?.sourcePath : info.path);
+        if (prevError && prevError.manifestDir !== manifestDir) {
+            await closeErrorWatcher!();
+            prevError = undefined;
+        }
+
+        let ended = false;
+        const callback = async () => {
+            if (!this.watchable || ended) return;
+
+            const updateResult = await this.reupdatePlugin({
+                info,
+                forceBuild: true,
+                forceUpdateSource: true
+            });
+            if ("plugin" in updateResult) {
+                info = updateResult.plugin.info;
+                return;
+            }
+
+            ended = true;
+            this.mainRuntime.removePlugin(info.name);
+            await closeViteWatchers(data);
+            this.plugins.delete(info.name);
+            this.sendUpdate({ type: "removed", pluginInfo: info });
+
+            if ("manifestError" in updateResult) {
+                await this.manifestErrorHandler(
+                    info.dir,
+                    manifestDir,
+                    updateResult.reason,
+                    watching
+                );
+                this.sendUpdate({ type: "manifest-error" });
+            } else watching.close();
+        };
+        const closer = () => delete data.sourceWatcher;
+
+        const watching =
+            prevError?.watch?.setCallbacks(callback, closer) ??
+            (await watchManifest(manifestDir, callback, closer));
 
         if (!this.watchable || this.plugins.get(info.name)?.info !== info) {
             watching.close();
@@ -237,24 +229,24 @@ export class PluginManager {
         { forceBuild = false, forceUpdateSource = false } = {}
     ): Promise<
         | { status: "succeed"; plugin: PluginInfoData; builtNow: boolean }
-        | { status: "error"; reason?: string; sourcePath?: string }
+        | { status: "manifest-error"; reason: string; sourcePath?: string }
         | { status: "removed" }
     > {
         const result = await this.getPluginInfoFromDir(dir);
 
-        if (!result.info && !result.isENOENT) return { status: "error", reason: result.reason };
+        if (!result.info && !result.isENOENT)
+            return { status: "manifest-error", reason: result.reason };
 
         if (!result.info) return { status: "removed" };
 
         const tempInfo = result.info;
 
-        const manifestChanged = await this.updateSourceManifest(tempInfo, forceUpdateSource);
         let info = tempInfo;
-        if (tempInfo.linked && manifestChanged) {
+        if (tempInfo.linked && (await this.updateSourceManifest(tempInfo, forceUpdateSource))) {
             const newResult = await this.getPluginInfoFromDir(dir);
             if (!newResult.info && !newResult.isENOENT)
                 return {
-                    status: "error",
+                    status: "manifest-error",
                     reason: newResult.reason,
                     sourcePath: tempInfo.linked.sourcePath
                 };
@@ -266,17 +258,20 @@ export class PluginManager {
             const changeResult = await this.changePluginInfo(tempInfo, info, false);
             if (changeResult.error)
                 return {
-                    status: "error",
+                    status: "manifest-error",
                     reason: changeResult.reason,
                     sourcePath: tempInfo.linked.sourcePath
                 };
         } else if (this.checkExistingName(info.name)) {
-            return { status: "error", reason: "Duplicated plugin name" };
+            return {
+                status: "manifest-error",
+                reason: `Plugin named "${info.name}" is already exists.`
+            };
         }
 
         const plugin = { info, data: {}, error: {} };
         this.plugins.set(info.name, plugin);
-        if (this.watchable) this.watchFineManifest(plugin);
+        this.watchFineManifest(plugin);
         const readyResult = await this.ready(plugin, forceBuild, this.devMode);
         return {
             status: "succeed",
@@ -290,19 +285,22 @@ export class PluginManager {
         this.updated = false;
         await this.closeAllWatchers();
         this.plugins.clear();
+        this.manifestErrors.clear();
         await this.pluginLinkService.getPluginLinks();
 
         const dirs = await this.getPluginDirList();
         const updatedNames: string[] = [];
-        const errors: { reason?: string; dir: string }[] = [];
         await Promise.all(
             dirs.map(async (dir) => {
                 const result = await this.updatePluginFromDir(dir, forceOpt);
                 if (result.status === "succeed" && result.builtNow)
                     updatedNames.push(result.plugin.info.name);
-                else if (result.status === "error") {
-                    errors.push({ dir, reason: result.reason });
-                    await this.watchErrorManifest(dir, result.sourcePath ?? join(pluginDir, dir));
+                else if (result.status === "manifest-error") {
+                    await this.manifestErrorHandler(
+                        dir,
+                        result.sourcePath ?? join(pluginDir, dir),
+                        result.reason
+                    );
                 }
             })
         );
@@ -314,12 +312,9 @@ export class PluginManager {
                 .toArray()
         );
         this.updated = true;
-        this.callOnUpdate({
+        this.sendUpdate({
             type: "all",
-            updateData: {
-                buildChanges: updatedNames,
-                errors
-            }
+            buildChanges: updatedNames
         });
     }
 
@@ -331,27 +326,32 @@ export class PluginManager {
         info: PluginInfo;
         forceBuild: boolean;
         forceUpdateSource: boolean;
-    }): Promise<{ error: boolean; plugin: PluginInfoData | null }> {
+    }): Promise<
+        { removed: true } | { manifestError: true; reason: string } | { plugin: PluginInfoData }
+    > {
         await this.updateSourceManifest(info, forceUpdateSource);
         const result = await this.getPluginInfoFromDir(info.dir);
         if (!result.info) {
-            if (result.isENOENT) this.updateAllPluginInfo();
-            return { error: !result.isENOENT, plugin: null };
+            return result.isENOENT
+                ? { removed: true }
+                : {
+                      manifestError: true,
+                      reason: result.reason
+                  };
         }
-        const { error: secondErr, plugin } = await this.changePluginInfo(info, result.info, true);
-        if (secondErr) return { error: true, plugin: null };
+        const changeResult = await this.changePluginInfo(info, result.info, true);
+        if (changeResult.error) return { manifestError: true, reason: changeResult.reason };
 
+        const plugin = changeResult.plugin;
         const { builtNow } = await this.ready(plugin, forceBuild, this.devMode);
 
-        this.callOnUpdate({
+        this.sendUpdate({
             type: "single",
-            updateData: {
-                info: makeInfoForRenderer(plugin),
-                previous: info,
-                buildChanged: builtNow
-            }
+            plugin,
+            previous: info,
+            buildChanged: builtNow
         });
-        return { error: false, plugin };
+        return { plugin };
     }
 
     private async getPluginLinkedInfo(pluginName: string) {
@@ -378,7 +378,7 @@ export class PluginManager {
 
     private async getPluginInfoFromDir(
         dir: string
-    ): Promise<{ info: PluginInfo } | { reason?: string; isENOENT: boolean; info: null }> {
+    ): Promise<{ info: PluginInfo } | { reason: string; isENOENT: boolean; info: null }> {
         const manifestResult = await getManifest(join(pluginDir, dir, MANIFEST));
         if (manifestResult.ok === false) {
             if (!manifestResult.silent) {
@@ -390,7 +390,7 @@ export class PluginManager {
                 });
             }
             return {
-                reason: manifestResult.detail,
+                reason: manifestResult.detail || manifestResult.reason,
                 isENOENT: !!manifestResult.isENOENT,
                 info: null
             };
@@ -511,7 +511,7 @@ export class PluginManager {
         const { info, data } = plugin;
         await closeViteWatchers(data);
         if (!data.building) {
-            cli.info("PLUGIN BUILDING: " + info.name);
+            cli.status("PLUGIN BUILDING: " + info.name);
             data.building = (async () => {
                 plugin.error = {};
                 const buildResult = await buildPlugin(info, {
@@ -530,14 +530,15 @@ export class PluginManager {
                 this.mainRuntime.updatePlugin(info, true);
 
                 data.ready = true;
-                cli.info("PLUGIN BUILT: " + info.name);
+                cli.status("PLUGIN BUILT: " + info.name);
                 return true;
             })()
                 .catch(async (err) => {
                     data.ready = false;
                     this.reportPluginError("renderer", "build", {
                         name: info.name,
-                        title: `"${plugin.info.name}" build error`,
+                        type: info.type,
+                        title: `"${info.name}" build error`,
                         error: err,
                         logOptions: {
                             summary: pluginBuildErrorToSummary(err)
@@ -553,9 +554,9 @@ export class PluginManager {
     }
     private registerWatchers(plugin: PluginInfoData) {
         const callHmr = () => {
-            this.callOnUpdate({
+            this.sendUpdate({
                 type: "hmr",
-                updateData: makeInfoForRenderer(plugin)
+                plugin
             });
         };
         return Promise.all(
@@ -576,7 +577,7 @@ export class PluginManager {
                                 errorInThisCycle = null;
                                 if (plugin.error[buildTarget]) delete plugin.error[buildTarget];
                                 plugin.data.ready = false;
-                                if (resolved) cli.info(`BUNDLE STARTED: ${plugin.info.name}`);
+                                if (resolved) cli.status(`BUNDLE STARTED: ${plugin.info.name}`);
                                 return;
                             }
                             if (evt.code === "ERROR") {
@@ -589,6 +590,7 @@ export class PluginManager {
                             if (errorInThisCycle) {
                                 this.reportPluginError(buildTarget, "build", {
                                     name: plugin.info.name,
+                                    type: plugin.info.type,
                                     title: `"${plugin.info.name}" build error`,
                                     error: errorInThisCycle,
                                     logOptions: {
@@ -614,17 +616,18 @@ export class PluginManager {
     reportPluginError(
         target: PluginRunningTarget,
         phase: "runtime" | "build",
-        { name, title, error, logOptions = {} }: PluginErrorPayload
+        { name, type, title, error, logOptions = {} }: PluginErrorPayload
     ) {
-        const plugin = this.plugins.get(name);
-        if (!plugin) return;
-
         const log = this.pluginDiagnostics[phase === "build" ? "buildFailed" : "runtimeError"](
-            plugin.info,
+            { name, type },
             error,
             title,
             logOptions
         );
+
+        const plugin = this.plugins.get(name);
+        if (!plugin) return;
+
         const prevError = plugin.error[target];
         if (
             prevError &&
@@ -640,68 +643,17 @@ export class PluginManager {
             summary: log.summary
         };
         if (phase === "runtime") {
-            this.callOnUpdate({
+            this.sendUpdate({
                 type: "runtime-error",
-                updateData: { info: makeInfoForRenderer(plugin) }
+                plugin
             });
         }
     }
 
-    get simplePluginList() {
-        if (!this.updated) return {};
-        const result: Record<string, InfoForRenderer> = {};
-        this.plugins.forEach((p, pluginName) => {
-            if (typeof p.info.exports === "object" && Object.keys(p.info.exports).length)
-                result[pluginName] = makeInfoForRenderer(p);
-        });
-        return result;
-    }
     destroy() {
         if (this.destroyed) return;
         this.destroyed = true;
         this.mainRuntime.disposeAll();
         return this.closeAllWatchers();
     }
-}
-
-async function watch(paths: string | string[], options?: ChokidarOptions) {
-    const w = (await import("chokidar")).watch;
-    return w(paths, options);
-}
-
-const MANIFEST_DEBOUNCE = 200;
-async function watchManifest(
-    manifestDir: string,
-    callback: (type: "change" | "unlink" | "add") => void,
-    closer: () => any
-): Promise<{ watcher: FSWatcher; close: () => Promise<void> }> {
-    let closed = false;
-    const close = async () => {
-        if (closed) return;
-
-        closed = true;
-        if (timeout) clearTimeout(timeout);
-        closer();
-        await watcher.close();
-    };
-
-    let timeout: NodeJS.Timeout | null = null;
-    const watchHandler = async (type: "change" | "unlink" | "add") => {
-        if (timeout) clearTimeout(timeout);
-
-        timeout = setTimeout(() => {
-            timeout = null;
-            callback(type);
-            cli.info("MANIFEST HMR", manifestDir);
-        }, MANIFEST_DEBOUNCE);
-    };
-    const watcher = (
-        await watch(join(manifestDir, MANIFEST), {
-            ignoreInitial: true
-        })
-    )
-        .on("change", () => watchHandler("change"))
-        .on("unlink", () => watchHandler("unlink"))
-        .on("add", () => watchHandler("add"));
-    return { watcher, close };
 }

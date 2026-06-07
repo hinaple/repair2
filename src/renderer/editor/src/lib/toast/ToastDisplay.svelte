@@ -1,23 +1,10 @@
 <script>
     import { fly } from "svelte/transition";
-    import { showToast, toasts } from "./toast.svelte";
+    import { toasts } from "./toast.svelte";
     import { quadIn, quadInOut, quadOut } from "svelte/easing";
     import { flip } from "svelte/animate";
     import Icon from "../../assets/icons/Icon.svelte";
     import event from "../actions/eventAction";
-
-    // const i = setInterval(() => {
-    //     showToast({
-    //         title: `${Date.now()} 테스트테스트테스트테스트테스트테스트 테스트 테스스트트 세트트`,
-    //         content:
-    //             "A테스트테스트테스트테스트테스트테스트 테스트 테스스트트 세트트테스트테스트테스트테스트테스트테스트 테스트 테스스트트 세트트JSDASD ASD",
-    //         duration: 0,
-    //         closable: true
-    //     });
-    // }, 250);
-    // setTimeout(() => {
-    //     clearTimeout(i);
-    // }, 500);
 
     let wrapper;
 
@@ -31,7 +18,7 @@
         <div class="toasts-container" use:event={["wheel", scroll, { passive: true }]}>
             {#each toasts as toast (toast.symbol)}
                 <div
-                    class="toast"
+                    class={["toast", toast.type]}
                     in:fly|global={{ duration: 200, y: 200, opacity: 0, easing: quadOut }}
                     out:fly|global={{ duration: 200, x: 260, opacity: 0, easing: quadIn }}
                     animate:flip={{ duration: 200, easing: quadInOut }}
@@ -41,7 +28,14 @@
                             <Icon icon="close" size={10} lineWidth={2} color="#fff" />
                         </div>
                     {/if}
-                    <div class="title">{toast.title}</div>
+                    <div class="title">
+                        {#if toast.type === "error"}
+                            <Icon icon="warn" color="#000" size={16} />
+                        {/if}
+                        <div class="title-text">
+                            {toast.title}
+                        </div>
+                    </div>
                     {#if toast.content}
                         <div class="content">{toast.content}</div>
                     {/if}
@@ -82,7 +76,7 @@
         width: 100%;
         padding: 12px 10px;
         box-sizing: border-box;
-        border-radius: 10px;
+        border-radius: 5px;
         display: flex;
         flex-direction: column;
         flex: 0 0 auto;
@@ -91,6 +85,11 @@
         box-sizing: border-box;
         color: #fff;
         gap: 5px;
+    }
+    .toast.error {
+        color: #000;
+        font-weight: 600;
+        background-color: #ff3636;
     }
     .close-btn {
         position: absolute;
@@ -114,11 +113,17 @@
     }
     .title {
         font-size: 14px;
-        word-break: break-all;
-        white-space: pre-wrap;
         line-height: 120%;
         font-weight: 600;
         margin-inline: auto;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 5px;
+    }
+    .title-text {
+        word-break: break-all;
+        white-space: pre-wrap;
     }
     .content {
         font-size: 12px;

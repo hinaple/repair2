@@ -54,7 +54,7 @@
     .info {
         position: fixed;
         right: 5px;
-        bottom: 5px;
+        top: 5px;
         color: #000;
         font-size: 12px;
         opacity: 0.8;

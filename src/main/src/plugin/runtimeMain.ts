@@ -153,13 +153,13 @@ export default class MainRuntimePluginEngine {
 
     constructor({
         pluginDir,
-        pluginDiagnostics = null
+        pluginDiagnostics
     }: {
         pluginDir: string;
-        pluginDiagnostics?: PluginDiagnostics | null;
+        pluginDiagnostics: PluginDiagnostics;
     }) {
         this.pluginDir = pluginDir;
-        this.pluginDiagnostics = pluginDiagnostics ?? createPluginDiagnostics();
+        this.pluginDiagnostics = pluginDiagnostics;
     }
     updatePlugin(pluginInfo: PluginInfo, forceImport = false) {
         if (pluginInfo.type !== "runtime" || !pluginInfo.main) return null;
@@ -184,7 +184,7 @@ export default class MainRuntimePluginEngine {
 
                 tempData.importing = null;
                 tempData.imported = p;
-                cli.info("PLUGIN LOADED: " + pluginInfo.name);
+                cli.status("PLUGIN LOADED: " + pluginInfo.name);
                 return p;
             })
             .catch((err) => {

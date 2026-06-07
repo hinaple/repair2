@@ -1,6 +1,15 @@
 import fs from "fs/promises";
 import { join } from "path";
-import { PLUGIN_TYPES, PluginManifest, RawManifest } from "./type";
+import {
+    ManifestCloser,
+    ManifestHandler,
+    ManifestWatcher,
+    PLUGIN_TYPES,
+    PluginManifest,
+    RawManifest
+} from "./type";
+import { cli } from "../console";
+import type { ChokidarOptions, FSWatcher } from "chokidar";
 
 export const MANIFEST = "manifest.json";
 export type ManifestReadResult =
@@ -8,6 +17,7 @@ export type ManifestReadResult =
     | {
           ok: false;
           reason: string;
+          file: string;
           detail?: string;
           error?: any;
           silent?: boolean;
@@ -53,7 +63,8 @@ export async function getManifest(manifestPath: string): Promise<ManifestReadRes
         return {
             ok: false,
             reason: "read-failed",
-            detail: `Manifest file could not be read: ${manifestPath}`,
+            file: manifestPath,
+            detail: "Manifest file could not be read",
             error,
             silent: error?.code === "ENOENT",
             isENOENT: error?.code === "ENOENT"
@@ -63,8 +74,9 @@ export async function getManifest(manifestPath: string): Promise<ManifestReadRes
     if (!result) {
         return {
             ok: false,
+            file: manifestPath,
             reason: "empty",
-            detail: `Manifest file is empty: ${manifestPath}`
+            detail: "Manifest file is empty"
         };
     }
 
@@ -74,8 +86,9 @@ export async function getManifest(manifestPath: string): Promise<ManifestReadRes
     } catch (error) {
         return {
             ok: false,
+            file: manifestPath,
             reason: "parse-failed",
-            detail: `Manifest JSON could not be parsed: ${manifestPath}`,
+            detail: "Manifest JSON could not be parsed",
             error
         };
     }
@@ -83,18 +96,71 @@ export async function getManifest(manifestPath: string): Promise<ManifestReadRes
     if (!data?.name || !data?.type) {
         return {
             ok: false,
+            file: manifestPath,
             reason: "missing-required-fields",
-            detail: `Manifest requires "name" and "type": ${manifestPath}`
+            detail: `Manifest requires "name" and "type"`
         };
     }
 
     if (!PLUGIN_TYPES.some((t) => t === data.type)) {
         return {
             ok: false,
+            file: manifestPath,
             reason: "invalid-type",
-            detail: `Invalid plugin type "${data.type}": ${manifestPath}`
+            detail: `Invalid plugin type "${data.type}"`
         };
     }
 
     return { ok: true, data };
+}
+
+async function watch(paths: string | string[], options?: ChokidarOptions) {
+    const w = (await import("chokidar")).watch;
+    return w(paths, options);
+}
+
+const MANIFEST_DEBOUNCE = 200;
+export async function watchManifest(
+    manifestDir: string,
+    callback: (type: "change" | "unlink" | "add") => void,
+    closer: ManifestCloser
+): Promise<ManifestWatcher> {
+    let closed = false;
+    const close = async () => {
+        if (closed) return;
+
+        closed = true;
+        if (timeout) clearTimeout(timeout);
+        closer();
+        await watcher.close();
+    };
+
+    let timeout: NodeJS.Timeout | null = null;
+    const watchHandler = async (type: "change" | "unlink" | "add") => {
+        if (timeout) clearTimeout(timeout);
+
+        timeout = setTimeout(() => {
+            timeout = null;
+            callback(type);
+            cli.info("MANIFEST HMR", manifestDir);
+        }, MANIFEST_DEBOUNCE);
+    };
+    const watcher = (
+        await watch(join(manifestDir, MANIFEST), {
+            ignoreInitial: true
+        })
+    )
+        .on("change", () => watchHandler("change"))
+        .on("unlink", () => watchHandler("unlink"))
+        .on("add", () => watchHandler("add"));
+
+    function setCallbacks(newCallback: ManifestHandler, newCloser: ManifestCloser) {
+        closer();
+        callback = newCallback;
+        closer = newCloser;
+
+        return myWatch;
+    }
+    const myWatch = { watcher, close, setCallbacks };
+    return myWatch;
 }

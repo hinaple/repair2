@@ -281,11 +281,18 @@ ipcRenderer.on("plugin:hmr", async (_, pluginInfo) => {
     updatePlugin(info, !info.error);
 });
 
-ipcRenderer.on("plugin:list", (_, p, changedPlugins) => {
-    /** @type {PluginList} */
-    const pluginList = p;
-    updateAllPlugin(pluginList, changedPlugins);
-});
+ipcRenderer.on(
+    "plugin:list",
+    /**
+     * @param {{
+     *     plugins: PluginList,
+     *     buildChanges: strings[]
+     * }} updateData
+     * */
+    (_, updateData) => {
+        updateAllPlugin(updateData.plugins, updateData.buildChanges);
+    }
+);
 
 ipcRenderer.on("plugin:update", (_, update) => {
     /** @type {PluginSingleUpdate} */

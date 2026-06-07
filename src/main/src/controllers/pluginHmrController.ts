@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import { join } from "path";
-import { PluginManager, UpdateHandlerParams } from "../plugin/pluginManager";
+import { PluginManager } from "../plugin/pluginManager";
 import { createHmr } from "../hmrs";
 import type { ReportLog } from "../logs/reportLog";
 import type { MainContext } from "../app/mainContext.types";
@@ -60,7 +60,7 @@ export class PluginHmrController {
     }
 
     async setHmrActive(active: boolean) {
-        const { state, service, message } = this.#context;
+        const { state, message } = this.#context;
         if (state.hmr.isActive === active) return;
         state.hmr.isActive = active;
 
@@ -97,9 +97,9 @@ export class PluginHmrController {
     }
 
     async setDevMode(devMode: boolean) {
-        const { state, service } = this.#context;
+        const { service } = this.#context;
         const pluginManager = service.pluginManager;
-        if (pluginManager) await pluginManager.setDevMode(!!state.project.data?.config?.devMode);
+        if (pluginManager) await pluginManager.setDevMode(devMode);
         return this.setHmrActive(devMode);
     }
 
@@ -109,24 +109,29 @@ export class PluginHmrController {
         const pluginManager = new PluginManager({
             devMode,
             reportLog: this.#reportLog,
-            onupdate: ({ type, updateData }: UpdateHandlerParams) => {
+            onupdate: ({ type, updateData }) => {
                 if (type === "single") {
                     message.sendToEditor("plugin:update", updateData);
                     message.sendToMain("plugin:update", updateData);
                 } else if (type === "all") {
-                    const pluginList = this.#requirePluginManager().simplePluginList;
-                    message.sendToEditor("plugin:list", pluginList, updateData);
-                    message.sendToMain("plugin:list", pluginList, updateData.buildChanges);
+                    message.sendToEditor("plugin:list", updateData);
+                    message.sendToMain("plugin:list", updateData);
                 } else if (type === "hmr") {
-                    message.sendToEditor("plugin:hmr", updateData);
-                    message.sendToMain("plugin:hmr", updateData);
+                    message.sendToEditor("plugin:hmr", updateData.info);
+                    message.sendToMain("plugin:hmr", updateData.info);
                 } else if (type === "runtime-error") {
                     message.sendToEditor("plugin:update", {
                         info: updateData.info,
                         previous: null,
                         buildChanged: false
                     });
-                } else cli.error(type, JSON.stringify(updateData, null, 2));
+                } else if (type === "removed") {
+                    message.sendToEditor("plugin:removed", updateData.info);
+                    message.sendToMain("plugin:removed", updateData.info);
+                } else if (type === "manifest-error") {
+                    message.sendToEditor("plugin:manifest-error", updateData.manifestErrors);
+                    // cli.error(type, JSON.stringify(updateData, null, 2));
+                }
             }
         });
         service.pluginManager = pluginManager;

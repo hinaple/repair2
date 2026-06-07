@@ -13,7 +13,6 @@
     let showOpt = $state(false);
 
     let color = $derived(info.error ? "#ff3636" : "#fff");
-    $inspect(info.error);
 </script>
 
 <div

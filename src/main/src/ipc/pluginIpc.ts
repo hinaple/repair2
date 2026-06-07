@@ -3,6 +3,7 @@ import { createEmptyPlugin, PLUGIN_ENTRY_TYPE } from "../plugin/createEmptyPlugi
 import { cli } from "../console";
 import type { PluginManager } from "../plugin/pluginManager";
 import { PluginErrorPayload } from "@shared/plugin.types";
+import { makeManifestErrorsForRenderer, makeSimplePluginList } from "../plugin/sendPluginUpdate";
 
 type PluginRuntimeDeactivatePayload = {
     pluginName: string;
@@ -29,7 +30,14 @@ export function setupPluginIpc({
     getDialogOwnerWindow: () => BrowserWindow | null;
 }) {
     ipcMain.handle("plugin:get-list", () => {
-        return requirePluginManager(getPluginManager).simplePluginList;
+        const pluginMap = requirePluginManager(getPluginManager)?.plugins;
+        if (!pluginMap) return {};
+        return makeSimplePluginList(pluginMap);
+    });
+    ipcMain.handle("plugin:get-manifest-errors", () => {
+        const pluginManager = requirePluginManager(getPluginManager);
+        if (!pluginManager) return [];
+        return makeManifestErrorsForRenderer(pluginManager);
     });
 
     ipcMain.handle(
@@ -44,7 +52,7 @@ export function setupPluginIpc({
             }
         ) => {
             const { activationId, rendererMethods, attributes } = payload;
-            cli.info("PLUGIN ACTIVATING: ", pluginName);
+            cli.status("PLUGIN ACTIVATING: ", pluginName);
             const pluginManager = requirePluginManager(getPluginManager);
             const instance = await pluginManager.mainRuntime.createInstance(
                 pluginName,

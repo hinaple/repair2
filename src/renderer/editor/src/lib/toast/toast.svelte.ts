@@ -2,8 +2,11 @@ import { ipcRenderer } from "electron";
 
 type EditFn = (editOpt: { title: string | null; content: string | null }) => boolean;
 
+type ToastTypes = "normal" | "error" | "warning";
+
 export type Toast = {
     id: string | null;
+    type: ToastTypes;
     symbol: symbol;
     title: string | null;
     content: string | null;
@@ -14,21 +17,21 @@ export type Toast = {
     edit: EditFn;
 };
 
-type ShowToastOptions =
+type ShowToastOptions = (
     | {
           id: string | null;
           title?: string | null;
-          content?: string | null;
-          duration?: number | null;
-          closable?: boolean | null;
       }
     | {
           id?: string | null;
           title: string | null;
-          content?: string | null;
-          duration?: number | null;
-          closable?: boolean | null;
-      };
+      }
+) & {
+    type?: ToastTypes;
+    content?: string | null;
+    duration?: number | null;
+    closable?: boolean | null;
+};
 
 export const toasts: Toast[] = $state([]);
 
@@ -37,7 +40,8 @@ export function showToast({
     title = null,
     content = null,
     duration = null,
-    closable = null
+    closable = null,
+    type = "normal"
 }: ShowToastOptions): Toast {
     console.log(
         `%c${title}${content ? `\n${content}` : ""}`,
@@ -83,6 +87,7 @@ export function showToast({
     const toast = {
         id,
         symbol,
+        type,
         title,
         content,
         duration: duration === null ? 3000 : duration,
