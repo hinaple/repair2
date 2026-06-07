@@ -3,7 +3,7 @@ import { join } from "path";
 import { createEditorMenu } from "./editorMenu";
 import { checkVscodeInstalled } from "../vscodeUtils";
 import type { MainContext } from "../app/mainContext.types";
-import { cli } from "../console";
+import { logger } from "../logs/logger";
 
 type WindowControllerOptions = {
     context: MainContext;
@@ -85,12 +85,12 @@ export class WindowController {
         });
 
         mainWindow.webContents.on("render-process-gone", (evt, details) => {
-            cli.error("[Play renderer gone]", details.reason);
+            logger.error("[Play renderer gone]", details.reason);
         });
         mainWindow.webContents.on(
             "did-fail-load",
             (event, errorCode, errorDescription, validatedURL) => {
-                cli.error(
+                logger.error(
                     "Play load failed",
                     JSON.stringify(
                         {
@@ -106,7 +106,7 @@ export class WindowController {
         );
         mainWindow.webContents.on("console-message", (event, level, message, line, sourceId) => {
             if (level < 3) return;
-            cli.error("Play renderer error", message + `\n\tat ${sourceId}:${line}`);
+            logger.error("Play renderer error", message + `\n\tat ${sourceId}:${line}`);
         });
     }
 

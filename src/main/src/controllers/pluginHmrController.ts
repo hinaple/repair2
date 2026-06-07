@@ -4,7 +4,6 @@ import { PluginManager } from "../plugin/pluginManager";
 import { createHmr } from "../hmrs";
 import type { ReportLog } from "../logs/reportLog";
 import type { MainContext } from "../app/mainContext.types";
-import { cli } from "../console";
 
 type PluginHmrControllerOptions = {
     context: MainContext;
@@ -46,13 +45,11 @@ export class PluginHmrController {
         } catch (err) {
             this.#reportLog({
                 level: "error",
-                title: "Failed to load global.css file",
-                error: err,
+                content: ["global.css 파일 로드 중 오류가 발생했습니다:", err],
                 source: "project",
                 dialogue: false,
                 type: "global-css",
                 phase: "load",
-                summary: "Failed to load global.css file",
                 subject: { kind: "project", id: "global.css", type: "style" }
             });
         }
@@ -130,7 +127,6 @@ export class PluginHmrController {
                     message.sendToMain("plugin:removed", updateData.info);
                 } else if (type === "manifest-error") {
                     message.sendToEditor("plugin:manifest-error", updateData.manifestErrors);
-                    // cli.error(type, JSON.stringify(updateData, null, 2));
                 }
             }
         });

@@ -1,12 +1,13 @@
-import type { LogPayload, ReportLog } from "../logs/reportLog";
-import type { LogLevel, LogSubject } from "../logs/logEntry";
-import type { PluginInfo, PluginType } from "./type";
-import { PluginReportOptions } from "@shared/plugin.types";
 import { stripVTControlCharacters } from "util";
 
-type PluginReportPayload = Omit<LogPayload, "source" | "title" | "type"> & {
+import type { LogPayload, ReportLog } from "../logs/reportLog";
+import type { LogLevel, LogSubject } from "../logs/logEntry";
+import type { PluginInfo, PluginInfoData, PluginType } from "./type";
+import type { LogFrom } from "@shared/log.types";
+import type { RollupError } from "rollup";
+
+type PluginReportPayload = Omit<LogPayload, "source" | "type"> & {
     level?: LogLevel;
-    title: string;
     source?: "plugin" | "plugin-link";
     type: string;
 };
@@ -32,171 +33,133 @@ export function createPluginDiagnostics(reportLog: ReportLog) {
     function reportPlugin({
         plugin,
         code,
+        content,
+        from,
         phase,
-        title,
-        summary,
-        detail,
-        error,
         level = "error"
     }: {
         plugin: PluginRef;
         code: string;
         phase: string;
-        title: string;
-        summary: string;
-        detail?: any;
-        error?: any;
+        content: any;
+        from?: LogFrom;
         level?: LogLevel;
     }) {
         return report({
             level,
-            title,
-            detail,
-            error,
+            content,
+            from,
             subject: pluginSubject(plugin),
             type: code,
-            phase,
-            summary
+            phase
         });
     }
 
     function reportPluginLink({
-        title,
-        summary,
-        detail,
-        error,
+        content,
         subject,
         type,
-        level = "warning"
+        level = "warning",
+        from
     }: {
-        title: string;
-        summary: string;
-        detail?: any;
-        error?: any;
+        content: any;
         subject: LogSubject;
         type: string;
         level?: LogLevel;
+        from?: LogFrom;
     }) {
         return report({
             level,
-            title,
-            detail,
-            error,
+            content,
             source: "plugin-link",
             subject,
             type,
             phase: "link",
-            summary
+            from
         });
     }
 
     return {
         report,
-        manifestInvalid({
-            dir,
-            detail,
-            error,
-            reason
-        }: {
-            dir: string;
-            detail?: string;
-            error?: any;
-            reason?: string;
-        }) {
+        manifestInvalid({ dir, content }: { dir: string; content: any[] }) {
             return report({
                 level: "warning",
-                title: "Plugin manifest is invalid.",
-                detail: detail ?? `Plugin directory: ${dir}`,
-                error,
-                subject: { kind: "plugin", id: dir, type: "unknown", reason },
+                content: ["Plugin manifest is invalid: ", ...content],
+                subject: { kind: "plugin", id: dir, type: "unknown" },
                 type: "plugin-manifest-warning",
                 phase: "manifest",
-                summary: `Plugin manifest is invalid: ${dir}`
+                from: { filename: dir }
             });
         },
-        duplicatedName(name: string) {
+        duplicatedName({ name, from }: { name: string; from?: LogFrom }) {
             return report({
                 level: "warning",
-                title: "Duplicated plugin name.",
-                detail: `Plugin name: ${name}`,
+                content: ["Duplicated plugin name:", name],
                 subject: { kind: "plugin", id: name },
                 type: "plugin-duplicated-name-warning",
                 phase: "manifest",
-                summary: `Duplicated plugin name: ${name}`
+                from
             });
         },
-        pluginLinksWarning(title: string, reason?: string) {
+        pluginLinksWarning(content: string[]) {
             return report({
                 level: "warning",
-                title,
-                detail: reason,
+                content,
                 type: "plugin-links-warning",
-                phase: "link",
-                summary: title
+                phase: "link"
             });
         },
         pluginInfoMissing() {
             return report({
                 level: "warning",
-                title: "Old plugin info doesn't exist",
+                content: "Old plugin info doesn't exist",
                 type: "plugin-manifest-warning",
-                phase: "manifest",
-                summary: "Old plugin info doesn't exist"
+                phase: "manifest"
             });
         },
         buildFailed(
             pluginInfo: PluginRef,
-            error: any,
-            title = "Plugin build failed.",
-            reportOptions?: PluginReportOptions
+            content: any[] | any = `${pluginInfo.name} Plugin build failed.`,
+            phase: string = "build",
+            code: string = "plugin-build-error",
+            from?: LogFrom
         ) {
             return reportPlugin({
                 plugin: pluginInfo,
-                code: "plugin-build-error",
-                phase: "build",
-                title,
-                summary: `${pluginInfo.name} build failed`,
-                detail: `Plugin: ${pluginInfo.name}`,
-                error,
-                ...reportOptions
+                code,
+                phase: phase,
+                content,
+                from
             });
         },
         runtimeError(
             pluginInfo: PluginRef,
-            error: any,
-            title: string = "Plugin runtime error occurred.",
-            reportOptions?: PluginReportOptions
+            content: any[] | any = "Plugin runtime error occurred.",
+            phase: string = "runtime",
+            code: string = "plugin-runtime-error",
+            from?: LogFrom
         ) {
             return reportPlugin({
                 plugin: pluginInfo,
-                code: "plugin-runtime-error",
-                phase: "runtime",
-                title,
-                summary: title,
-                detail: `Plugin: ${pluginInfo.name}`,
-                error,
-                ...reportOptions
+                code,
+                phase: phase,
+                content,
+                from
             });
         },
         linkedManifestLoadFailed({
             manifestPath,
-            reason,
-            detail,
-            error
+            content = []
         }: {
             manifestPath: string;
-            reason?: string;
-            detail?: string;
-            error?: any;
+            content: any[];
         }) {
             return reportPluginLink({
                 level: "error",
-                title: "Linked plugin manifest could not be loaded.",
-                summary: "Linked plugin manifest could not be loaded",
-                detail: { manifestPath, reason, detail },
-                error,
+                content: ["Failed to load source manifest.", ...content],
                 subject: { ...PLUGINS_SUBJECT, type: "plugin-source", manifestPath },
-                type: "plugin-link-manifest"
+                type: "plugin-link-manifest",
+                from: { filename: manifestPath }
             });
         },
         linkedManifestCopyFailed({
@@ -204,20 +167,21 @@ export function createPluginDiagnostics(reportLog: ReportLog) {
             pluginType,
             sourceManifest,
             destManifest,
-            error
+            content = []
         }: {
             pluginName: string;
             pluginType: PluginType | string;
             sourceManifest: string;
             destManifest: string;
-            error?: any;
+            content: any[];
         }) {
             return reportPluginLink({
                 level: "error",
-                title: "Linked plugin manifest could not be copied.",
-                summary: `Linked plugin manifest could not be copied: ${pluginName}`,
-                detail: { pluginName, sourceManifest, destManifest },
-                error,
+                content: [
+                    `Linked plugin manifest of "${pluginName}" could not be copied from ${sourceManifest} to ${destManifest}.`,
+                    ...content
+                ],
+                from: { filename: sourceManifest },
                 subject: pluginLinkSubject(pluginName, pluginType),
                 type: "plugin-link-copy"
             });
@@ -234,96 +198,93 @@ export function createPluginDiagnostics(reportLog: ReportLog) {
             requestedSourcePath: string;
         }) {
             return reportPluginLink({
-                title: "Plugin source is already linked.",
-                summary: `Plugin source is already linked: ${pluginName}`,
-                detail: { pluginName, currentSourcePath, requestedSourcePath },
+                content: [
+                    `Plugin source is already linked: ${pluginName}`,
+                    { pluginName, currentSourcePath, requestedSourcePath }
+                ],
+                from: {
+                    filename: requestedSourcePath
+                },
                 subject: pluginLinkSubject(pluginName, pluginType),
                 type: "plugin-link-duplicate"
             });
         },
         linkRegistryInvalid(linksFilePath: string) {
             return reportPluginLink({
-                title: "Plugin link registry is invalid.",
-                summary: "Plugin link registry is invalid",
-                detail: { linksFilePath },
+                content: "Plugin link registry is invalid.",
+                from: { filename: linksFilePath },
                 subject: { ...PLUGINS_SUBJECT, type: "plugin-link-registry" },
                 type: "plugin-link-registry"
             });
         },
-        linkRegistryReadFailed(linksFilePath: string, error: any) {
+        linkRegistryReadFailed(linksFilePath: string, content: any[] = []) {
             return reportPluginLink({
-                title: "Plugin link registry could not be read.",
-                summary: "Plugin link registry could not be read",
-                detail: { linksFilePath },
-                error,
+                content: ["Plugin link registry could not be read.", ...content],
+                from: { filename: linksFilePath },
                 subject: { ...PLUGINS_SUBJECT, type: "plugin-link-registry" },
                 type: "plugin-link-registry"
             });
         },
-        linkRegistrySaveFailed(linksFilePath: string, error: any) {
+        linkRegistrySaveFailed(linksFilePath: string, content: any[] = []) {
             return reportPluginLink({
                 level: "error",
-                title: "Plugin link registry could not be saved.",
-                summary: "Plugin link registry could not be saved",
-                detail: { linksFilePath },
-                error,
+                content: ["Plugin link registry could not be saved.", content],
+                from: { filename: linksFilePath },
                 subject: { ...PLUGINS_SUBJECT, type: "plugin-link-registry" },
                 type: "plugin-link-save"
             });
         },
-        runtimeMainFactoryFailed(pluginInfo: PluginRef, error: any) {
+        runtimeMainFactoryFailed(pluginInfo: PluginRef, content: any[] = [], from?: LogFrom) {
             return reportPlugin({
                 plugin: pluginInfo,
                 code: "plugin-runtime-main-factory-error",
                 phase: "runtime-main",
-                title: "Runtime main plugin factory failed.",
-                summary: `${pluginInfo.name} runtime main factory failed`,
-                detail: `Plugin: ${pluginInfo.name}`,
-                error
+                content: [`${pluginInfo.name} runtime main factory failed.`, ...content],
+                from
             });
         },
-        runtimeMainMethodFailed(pluginInfo: PluginRef, methodName: string, error: any) {
+        runtimeMainMethodFailed(
+            pluginInfo: PluginRef,
+            methodName: string,
+            content: any[] = [],
+            from?: LogFrom
+        ) {
             return reportPlugin({
                 plugin: pluginInfo,
                 code: "plugin-runtime-main-method-error",
                 phase: "runtime-main",
-                title: "Runtime main plugin method failed.",
-                summary: `${pluginInfo.name} runtime main method failed: ${methodName}`,
-                detail: `Plugin: ${pluginInfo.name}\nMethod: ${methodName}`,
-                error
+                content: [
+                    `${pluginInfo.name} runtime main method failed: ${methodName}`,
+                    ...content
+                ],
+                from
             });
         },
-        runtimeMainDisposerFailed(pluginInfo: PluginRef, error: any) {
+        runtimeMainDisposerFailed(pluginInfo: PluginRef, content: any[] = [], from?: LogFrom) {
             return reportPlugin({
                 plugin: pluginInfo,
                 code: "plugin-runtime-main-disposer-error",
                 phase: "runtime-main",
-                title: "Runtime main plugin disposer failed.",
-                summary: `${pluginInfo.name} runtime main disposer failed`,
-                detail: `Plugin: ${pluginInfo.name}`,
-                error
+                content: [`${pluginInfo.name} runtime main disposer failed.`, ...content],
+                from
             });
         },
-        runtimeMainLoadFailed(pluginInfo: PluginRef, error: any) {
+        runtimeMainLoadFailed(pluginInfo: PluginRef, content: any[] = [], from?: LogFrom) {
             return reportPlugin({
                 plugin: pluginInfo,
                 code: "plugin-runtime-main-load-error",
                 phase: "runtime-main",
-                title: "Runtime main plugin load failed.",
-                summary: `${pluginInfo.name} runtime main load failed`,
-                detail: `Plugin: ${pluginInfo.name}`,
-                error
+                content: [`${pluginInfo.name} runtime main load failed`, ...content],
+                from
             });
         },
-        runtimeMainDisposeFailed(pluginInfo: PluginRef, error: any) {
+        runtimeMainDisposeFailed(pluginInfo: PluginRef, content: any[] = [], from?: LogFrom) {
             return reportPlugin({
                 plugin: pluginInfo,
                 code: "plugin-runtime-main-dispose-error",
                 phase: "runtime-main",
-                title: "Runtime main plugin dispose failed.",
-                summary: `${pluginInfo.name} runtime main dispose failed`,
-                detail: `Plugin: ${pluginInfo.name}`,
-                error
+                content: [`${pluginInfo.name} runtime main dispose failed`, ...content],
+                from
             });
         }
     };
@@ -347,9 +308,17 @@ export function getPluginPhasePriority(phase: string) {
     return idx === -1 ? Infinity : idx;
 }
 
-export function pluginBuildErrorToSummary(error: any) {
+export function pluginBuildErrorToSummary(error: RollupError | string) {
     if (typeof error === "string") return error.split("\n")[0];
     if ("stack" in error) return stripVTControlCharacters(String(error.stack).split("\n")[0]);
-    if ("loc" in error) return `at ${error.loc.file ?? error.id}:${error.loc.line}`;
+    if ("loc" in error && error.loc) return `at ${error.loc.file ?? error.id}:${error.loc.line}`;
     return error.message ?? null;
+}
+
+export function pluginErrorToFrom(plugin: PluginInfoData, error: RollupError): LogFrom {
+    return {
+        filename: error.loc?.file ?? error.id ?? plugin.info.path,
+        lineNumber: error.loc?.line,
+        columnNumber: error.loc?.column
+    };
 }

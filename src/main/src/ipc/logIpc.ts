@@ -20,7 +20,7 @@ export function setupLogIpc({ sendToEditor, reportLog }: LogIpcOptions) {
         return logStore.get(id);
     });
 
-    ipcMain.on("log:report", async (evt, payload: LogPayload = {}) => {
-        await reportLog(payload);
+    ipcMain.on("log:report", async (evt, payload: LogPayload) => {
+        await reportLog(payload, true);
     });
 }

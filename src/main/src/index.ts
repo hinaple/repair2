@@ -17,6 +17,7 @@ import { WindowController } from "./windows/windows";
 import { createControllerRegistry } from "./app/controllerRegistry";
 import { createServiceRegistry } from "./app/serviceRegistry";
 import type { MainContext, MainState } from "./app/mainContext.types";
+import { registerLogger } from "./logs/logger";
 
 declare const __APP_VERSION__: string;
 
@@ -79,6 +80,7 @@ const reportLog = createLogReporter({
     getMainWindow: () => state.window.main,
     dialog
 });
+registerLogger(reportLog);
 
 function createMainContext(): MainContext {
     return {

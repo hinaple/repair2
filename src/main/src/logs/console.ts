@@ -1,7 +1,7 @@
 import pc from "picocolors";
 import type { Formatter } from "picocolors/types";
 
-type CliLogTypes = "error" | "warning" | "info" | "status";
+export type CliLogTypes = "error" | "warning" | "info" | "status";
 const TypeColors: Record<CliLogTypes, { full: Formatter; title?: Formatter }> = {
     error: { full: pc.redBright, title: (input) => pc.bgRedBright(pc.whiteBright(pc.bold(input))) },
     warning: { full: pc.yellowBright },

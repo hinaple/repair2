@@ -49,14 +49,11 @@ export class ProjectController {
             .catch(async (e: unknown) => {
                 await this.#reportLog({
                     level: "error",
-                    title: "프로젝트 저장 실패",
-                    detail: "프로젝트 데이터를 저장하는 중 오류가 발생했습니다.",
-                    error: e,
+                    content: ["프로젝트 데이터 저장 중 오류가 발생했습니다:", e],
                     source: "project",
                     dialogue: true,
                     type: "project-save-error",
                     phase: "save",
-                    summary: "프로젝트 저장 실패",
                     subject: { kind: "project" }
                 });
                 return false;

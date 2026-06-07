@@ -1,9 +1,9 @@
 import { ipcMain, dialog, shell, type BrowserWindow, type OpenDialogOptions } from "electron";
 import { createEmptyPlugin, PLUGIN_ENTRY_TYPE } from "../plugin/createEmptyPlugin";
-import { cli } from "../console";
 import type { PluginManager } from "../plugin/pluginManager";
 import { PluginErrorPayload } from "@shared/plugin.types";
 import { makeManifestErrorsForRenderer, makeSimplePluginList } from "../plugin/sendPluginUpdate";
+import { logger } from "../logs/logger";
 
 type PluginRuntimeDeactivatePayload = {
     pluginName: string;
@@ -52,7 +52,7 @@ export function setupPluginIpc({
             }
         ) => {
             const { activationId, rendererMethods, attributes } = payload;
-            cli.status("PLUGIN ACTIVATING: ", pluginName);
+            logger.info("PLUGIN ACTIVATING: ", pluginName);
             const pluginManager = requirePluginManager(getPluginManager);
             const instance = await pluginManager.mainRuntime.createInstance(
                 pluginName,

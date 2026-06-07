@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import { join } from "path";
 import { isDirEmpty } from "../pathExists";
 import { ProjectData } from "@shared/projectData.types";
+import { logger } from "../logs/logger";
 
 export async function migrateProject({
     currentVersion,
@@ -11,10 +12,14 @@ export async function migrateProject({
     pluginDir
 }: {
     currentVersion: string;
-    data: ProjectData;
+    data: ProjectData | null;
     dataDir: string;
     pluginDir: string;
 }) {
+    if (!data) {
+        logger.crash("Project data is empty.");
+        return;
+    }
     const DataVer = data.VERSION;
     if (!DataVer) {
         if (await isDirEmpty(pluginDir)) return false;

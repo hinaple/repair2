@@ -1,4 +1,5 @@
 import type { RollupError } from "rollup";
+import { LogFrom } from "./log.types";
 
 export const PLUGIN_TYPES = ["runtime", "element", "transition", "function", "frame"] as const;
 
@@ -19,11 +20,10 @@ export type PluginIdentity = {
 };
 
 export type PluginErrorData = {
-    phase: "build" | "runtime";
+    phase: "build" | "runtime" | string;
     title: string;
-    detail: RollupError | string;
+    summary: string;
     logId: string;
-    summary?: string;
 };
 
 export type PluginRendererInfo = PluginIdentity & {
@@ -59,18 +59,16 @@ export type PluginAllUpdate = {
     errors?: { dir: string; reason?: string }[];
 };
 
-export type PluginReportOptions = {
-    type?: string;
-    phase?: string;
-    summary?: string;
-};
-
 export type PluginErrorPayload = {
     name: string;
     type: PluginType;
-    title?: string;
-    error: string | RollupError;
-    logOptions?: PluginReportOptions;
+    title: string;
+    summary: string;
+    error: string | RollupError | Error | any;
+    logType?: string;
+    from?: LogFrom;
+    phase?: string;
+    activeError?: boolean;
 };
 
 export type PluginRunningTarget = "main" | "renderer";

@@ -1,5 +1,5 @@
 import { SerialPort } from "serialport";
-import { cli } from "../console";
+import { logger } from "../logs/logger";
 
 type SerialDataHandler = (data: string) => void;
 type SerialConnectHandler = (port: string) => void;
@@ -23,9 +23,8 @@ export default class SerialConnector {
         if (portAlias || !path) {
             const list = await SerialPort.list();
             realPort =
-                list.find((port) =>
-                    port.friendlyName?.includes(portAlias || "USB-SERIAL")
-                )?.path ?? path;
+                list.find((port) => port.friendlyName?.includes(portAlias || "USB-SERIAL"))?.path ??
+                path;
         }
 
         if (!realPort) return;
@@ -35,7 +34,7 @@ export default class SerialConnector {
             baudRate: baudRate ?? 9600
         });
 
-        cli.info("SERIAL OPENED: ", realPort);
+        logger.info("SERIAL OPENED: ", realPort);
         this.#onconnect(realPort);
 
         this.port.on("readable", () => {
@@ -47,7 +46,7 @@ export default class SerialConnector {
 
     send(data: unknown) {
         if (!this.port) {
-            cli.warning("SerialPort", "No port connection");
+            logger.warning("SerialPort", "No port connection");
             return;
         }
         this.port.write(String(data));

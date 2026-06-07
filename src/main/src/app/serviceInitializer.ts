@@ -3,7 +3,7 @@ import SocketConnector from "../communication/socket";
 import SerialConnector from "../communication/serial";
 import type { ReportLog } from "../logs/reportLog";
 import type { MainContext } from "./mainContext.types";
-import { cli } from "../console";
+import { logger } from "../logs/logger";
 
 type ServiceInitializerOptions = {
     context: MainContext;
@@ -59,7 +59,7 @@ export class ServiceInitializer {
         return new ProjectFileManager(paths.dataDir, {
             getDialogOwnerWindow: () => state.window.editor ?? state.window.main,
             beforeImport: () => {
-                cli.status("IMPORT STARTED NOW");
+                logger.info("IMPORT STARTED NOW");
                 this.#showSplash(this.#isDev, this.#appVersion);
                 controllers.window.closeProjectWindows();
                 return Promise.all([
@@ -69,7 +69,7 @@ export class ServiceInitializer {
             },
             importProgress: this.#sendStartupInfo,
             afterImport: async () => {
-                cli.status("IMPORTING DONE");
+                logger.info("IMPORTING DONE");
                 await controllers.project.loadData();
                 if (state.window.main) state.window.main.webContents.reloadIgnoringCache();
                 else controllers.window.createMainWindow();
@@ -91,7 +91,7 @@ export class ServiceInitializer {
         return new SocketConnector((channel, data, url) => {
             if (!state.window.main) return;
 
-            cli.info("SOCKET INCOMING:" + channel);
+            logger.info("SOCKET INCOMING:" + channel);
 
             message.sendToEditor("socket-income", channel, data, url);
             message.sendToMain("socket-income", channel, data);
@@ -104,7 +104,7 @@ export class ServiceInitializer {
             (data) => {
                 if (!state.window.main) return;
 
-                cli.info("SERIAL INCOMING:" + data);
+                logger.info("SERIAL INCOMING:" + data);
 
                 message.sendToEditor("serial-income", data);
                 message.sendToMain("serial-income", data);

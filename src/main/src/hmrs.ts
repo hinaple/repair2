@@ -1,6 +1,6 @@
 import { type FSWatcher } from "chokidar";
 import { join } from "path";
-import { cli } from "./console";
+import { logger } from "./logs/logger";
 
 const HMR_PENDING_MS = 100;
 
@@ -45,7 +45,7 @@ export function createHmr({
         pendingTimeouts.set(
             key,
             setTimeout(() => {
-                cli.info("CHOKIDAR HMR", key);
+                logger.info("CHOKIDAR HMR: ", key);
                 onHmr(type);
                 pendingTimeouts.delete(key);
             }, HMR_PENDING_MS)
@@ -57,21 +57,21 @@ export function createHmr({
 
         const watch = (await import("chokidar")).watch;
 
-        cli.status("CHOKIDAR STARTED");
+        logger.info("CHOKIDAR STARTED");
         watchers = [
             watch(cssPath, {
                 ignoreInitial: true
             })
                 .on("change", () => {
-                    cli.info("[HMR] CHANGED: CSS");
+                    logger.info("[HMR] CHANGED: CSS");
                     sendHmrEvent("css");
                 })
                 .on("unlink", () => {
-                    cli.info("[HMR] UNLINKED: CSS");
+                    logger.info("[HMR] UNLINKED: CSS");
                     sendHmrEvent("css");
                 })
                 .on("add", () => {
-                    cli.info("[HMR] ADDED: CSS");
+                    logger.info("[HMR] ADDED: CSS");
                     sendHmrEvent("css");
                 }),
             watch(pluginDir, {
@@ -80,11 +80,11 @@ export function createHmr({
                 ignoreInitial: true
             })
                 .on("unlinkDir", (p) => {
-                    cli.info("[HMR] UNLINKED DIR: " + p);
+                    logger.info("[HMR] UNLINKED DIR: " + p);
                     sendHmrEvent("plugin");
                 })
                 .on("addDir", (p) => {
-                    cli.info("[HMR] ADDED DIR: " + p);
+                    logger.info("[HMR] ADDED DIR: " + p);
                     sendHmrEvent("plugin");
                 })
         ];

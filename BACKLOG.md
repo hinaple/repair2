@@ -20,6 +20,7 @@
 - Cache positions for all elements in the node space to minimize `getClientBoundingRect()` calls.
 - Improve the default project template.
 - Add an online viewer.
+- `logContent()` returns `{ _circularRef: true }` even when it's duplicated reference.
 
 ## Documentation
 

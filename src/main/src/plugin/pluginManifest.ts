@@ -8,8 +8,8 @@ import {
     PluginManifest,
     RawManifest
 } from "./type";
-import { cli } from "../console";
 import type { ChokidarOptions, FSWatcher } from "chokidar";
+import { logger } from "../logs/logger";
 
 export const MANIFEST = "manifest.json";
 export type ManifestReadResult =
@@ -142,7 +142,7 @@ export async function watchManifest(
         timeout = setTimeout(() => {
             timeout = null;
             callback(type);
-            cli.info("MANIFEST HMR", manifestDir);
+            logger.info("MANIFEST HMR", manifestDir);
         }, MANIFEST_DEBOUNCE);
     };
     const watcher = (

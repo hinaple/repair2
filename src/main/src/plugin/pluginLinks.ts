@@ -26,9 +26,7 @@ export function createPluginLinkService({
             if (!manifestReadResult.silent) {
                 await diagnostics.linkedManifestLoadFailed({
                     manifestPath,
-                    reason: manifestReadResult.reason,
-                    detail: manifestReadResult.detail,
-                    error: manifestReadResult.error
+                    content: [manifestReadResult]
                 });
             }
             return null;
@@ -79,7 +77,7 @@ export function createPluginLinkService({
                 pluginType: type ?? "unknown",
                 sourceManifest,
                 destManifest,
-                error: err
+                content: [err]
             });
             return { updated: false };
         }
@@ -138,7 +136,7 @@ export function createPluginLinkService({
             currentPluginLinks = links;
             return links;
         } catch (err) {
-            await diagnostics.linkRegistryReadFailed(LINKS_FILE_PATH, err);
+            await diagnostics.linkRegistryReadFailed(LINKS_FILE_PATH, [err]);
             return null;
         }
     }
@@ -153,7 +151,7 @@ export function createPluginLinkService({
             );
             return true;
         } catch (err) {
-            await diagnostics.linkRegistrySaveFailed(LINKS_FILE_PATH, err);
+            await diagnostics.linkRegistrySaveFailed(LINKS_FILE_PATH, [err]);
             return false;
         }
     }

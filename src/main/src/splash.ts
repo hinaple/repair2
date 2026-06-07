@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
-import { cli } from "./console";
+import { logger } from "./logs/logger";
 
 let splashWindow: BrowserWindow | null = null;
 let version: string | null = null;
@@ -10,7 +10,7 @@ let onSplashClose: (() => void) | null = null;
 export function showSplash(isDev = false, appVersion: string) {
     if (splashWindow) return;
 
-    cli.status("SPLASH WINDOW OPENING");
+    logger.info("SPLASH WINDOW OPENING");
 
     splashWindow = new BrowserWindow({
         width: 800,

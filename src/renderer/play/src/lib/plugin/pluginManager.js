@@ -76,7 +76,8 @@ function importPlugin(pluginData) {
                             summary: `Exports ${unexported
                                 .map((e) => `"${e}"`)
                                 .join(", ")} ${unexported.length === 1 ? "is" : "are"} missing.`
-                        }
+                        },
+                        true
                     );
             }
             callHmr(pluginData.info, p);
@@ -96,7 +97,8 @@ function importPlugin(pluginData) {
                     type: "plugin-import-error",
                     phase: "import",
                     summary: `${pluginData.info.name} import failed`
-                }
+                },
+                true
             );
             return null;
         });

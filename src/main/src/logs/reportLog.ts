@@ -1,27 +1,26 @@
+import { logStore } from "./logStore";
 import {
     normalizeLogLevel,
     normalizeLogSubject,
     stringifyLogValue,
     type LogEntry,
-    type LogEntryInput,
     type LogLevel
 } from "./logEntry";
-import { logStore } from "./logStore";
+import type { LogContent } from "@shared/logContent";
+import type { MessageBoxOptions } from "electron";
+import type { LogEntryInput } from "@shared/log.types";
 
-export type LogPayload = Omit<LogEntryInput, "title" | "createdAt" | "updatedAt" | "count"> & {
-    title?: string;
+export type LogPayload = Omit<LogEntryInput, "createdAt" | "updatedAt" | "count"> & {
     log?: boolean;
     dialogue?: boolean;
 };
-
-export type ReportLog = (payload?: LogPayload) => LogEntry;
 
 type LogReporterOptions = {
     makeLogFile?: (type: string, content: string) => Promise<string>;
     getEditorWindow?: () => any;
     getMainWindow?: () => any;
     dialog?: {
-        showMessageBox?: (browserWindowOrOptions: any, options?: any) => Promise<any>;
+        showMessageBox?: (browserWindowOrOptions: any, options?: MessageBoxOptions) => Promise<any>;
     };
 };
 
@@ -61,20 +60,17 @@ function shouldLogByDefault(level: LogLevel) {
 }
 
 function makeLogFileContent({
-    title,
     source,
     subject,
     subjectLabel,
     detailText
 }: {
-    title: string;
     source: string;
     subject: ReturnType<typeof normalizeLogSubject>;
     subjectLabel: string | null;
     detailText: string;
 }) {
     return [
-        title,
         source ? `Source: ${source}` : null,
         subjectLabel ? `Subject: ${subjectLabel}` : null,
         subject ? JSON.stringify(subject, null, 4) : null,
@@ -87,7 +83,6 @@ function makeLogFileContent({
 function writeLogFileLater({
     makeLogFile,
     type,
-    title,
     source,
     subject,
     subjectLabel,
@@ -95,7 +90,6 @@ function writeLogFileLater({
 }: {
     makeLogFile?: (type: string, content: string) => Promise<string>;
     type: string;
-    title: string;
     source: string;
     subject: ReturnType<typeof normalizeLogSubject>;
     subjectLabel: string | null;
@@ -105,9 +99,14 @@ function writeLogFileLater({
 
     makeLogFile(
         normalizeLogSegment(type),
-        makeLogFileContent({ title, source, subject, subjectLabel, detailText })
+        makeLogFileContent({ source, subject, subjectLabel, detailText })
     ).catch(() => {});
 }
+
+export type ReportLog = (
+    payload: LogPayload | (LogPayload & { content: LogContent }),
+    processedDetail?: boolean
+) => LogEntry;
 
 export function createLogReporter({
     makeLogFile,
@@ -115,45 +114,42 @@ export function createLogReporter({
     getMainWindow,
     dialog
 }: LogReporterOptions): ReportLog {
-    return function reportLog({
-        level = "info",
-        title = "Application message",
-        detail = "",
-        error = null,
-        source = "app",
-        subject = null,
-        log = undefined,
-        dialogue = false,
-        type = null,
-        phase = null,
-        summary = null
-    }: LogPayload = {}) {
+    function reportLog(
+        {
+            level = "info",
+            content = null,
+            source = "app",
+            subject = null,
+            log = undefined,
+            dialogue = false,
+            type = null,
+            phase = null
+        }: LogPayload | (LogPayload & { content: LogContent }),
+        processedInput = false
+    ): LogEntry {
         const normalizedLevel = normalizeLogLevel(level);
         const normalizedSubject = normalizeLogSubject(subject);
         const normalizedSource = source ?? "app";
         const normalizedType = type ?? `${normalizedSource}-log`;
         const subjectLabel = getSubjectLabel(normalizedSubject);
-        const detailText = [stringifyLogValue(detail), stringifyLogValue(error)]
-            .filter(Boolean)
-            .join("\n\n");
+        const detailText = stringifyLogValue(content);
 
-        const entry = logStore.record({
-            type: normalizedType,
-            source: normalizedSource,
-            level: normalizedLevel,
-            subject: normalizedSubject,
-            phase,
-            title,
-            summary,
-            detail,
-            error
-        });
+        const entry = logStore.record(
+            {
+                type: normalizedType,
+                source: normalizedSource,
+                level: normalizedLevel,
+                subject: normalizedSubject,
+                phase,
+                content
+            },
+            processedInput
+        );
 
         if (log ?? shouldLogByDefault(normalizedLevel)) {
             writeLogFileLater({
                 makeLogFile,
                 type: normalizedType,
-                title,
                 source: normalizedSource,
                 subject: normalizedSubject,
                 subjectLabel,
@@ -163,10 +159,10 @@ export function createLogReporter({
 
         if (dialogue && dialog?.showMessageBox) {
             const parentWindow = getEditorWindow?.() ?? getMainWindow?.();
-            const messageBoxOptions = {
-                type: getDialogType(normalizedLevel),
-                title,
-                message: title,
+            const messageBoxOptions: MessageBoxOptions = {
+                type: getDialogType(entry.level),
+                title: "Repair2",
+                message: `${entry.level} at ${entry.source}`,
                 detail: detailText,
                 noLink: true
             };
@@ -175,5 +171,7 @@ export function createLogReporter({
         }
 
         return entry;
-    };
+    }
+
+    return reportLog;
 }

@@ -1,6 +1,5 @@
 import fs from "fs/promises";
 import { join } from "path";
-import { cli } from "../console";
 import { buildPlugin } from "./pluginBuild";
 import { getManifest, MANIFEST, normalizeManifest, watchManifest } from "./pluginManifest";
 import MainRuntimePluginEngine from "./runtimeMain";
@@ -10,6 +9,7 @@ import {
     createPluginDiagnostics,
     getPluginPhasePriority,
     pluginBuildErrorToSummary,
+    pluginErrorToFrom,
     type PluginDiagnostics
 } from "./pluginDiagnostics";
 import type {
@@ -24,6 +24,7 @@ import type { PluginErrorPayload, PluginRunningTarget } from "@shared/plugin.typ
 import { createSender, type UpdateHandler, type UpdateSender } from "./sendPluginUpdate";
 import type { RollupError, RollupWatcher } from "rollup";
 import type { ReportLog } from "../logs/reportLog";
+import { logger } from "../logs/logger";
 
 function closeViteWatchers(data: PluginData) {
     if (data.watchers && data.watchers.length)
@@ -70,7 +71,7 @@ export class PluginManager {
 
         await this.ensureDirectories();
         await this.updateAllPluginInfo({ forceBuild: this.devMode });
-        if (this.plugins.size > 0) cli.info("Plugins", [...this.plugins.keys()].join(", "));
+        if (this.plugins.size > 0) logger.info("Plugins", [...this.plugins.keys()].join(", "));
     }
     async setDevMode(isDev: boolean) {
         if (isDev === this.devMode) return;
@@ -384,9 +385,7 @@ export class PluginManager {
             if (!manifestResult.silent) {
                 await this.pluginDiagnostics.manifestInvalid({
                     dir,
-                    detail: manifestResult.detail,
-                    error: manifestResult.error,
-                    reason: manifestResult.reason
+                    content: [manifestResult]
                 });
             }
             return {
@@ -417,7 +416,7 @@ export class PluginManager {
     private checkExistingName(name: string) {
         if (!this.plugins.has(name)) return false;
 
-        this.pluginDiagnostics.duplicatedName(name);
+        this.pluginDiagnostics.duplicatedName({ name });
         return true;
     }
 
@@ -448,7 +447,7 @@ export class PluginManager {
                 );
                 if (replaceSucceed) newInfo.linked = await this.getPluginLinkedInfo(newInfo.name);
                 else {
-                    this.pluginDiagnostics.pluginLinksWarning("Failed to update plugin links");
+                    this.pluginDiagnostics.pluginLinksWarning(["Failed to update plugin links"]);
                     return { error: true, reason: "Failed to update pligin links", plugin: null };
                 }
             }
@@ -511,7 +510,7 @@ export class PluginManager {
         const { info, data } = plugin;
         await closeViteWatchers(data);
         if (!data.building) {
-            cli.status("PLUGIN BUILDING: " + info.name);
+            logger.info("PLUGIN BUILDING: " + info.name);
             data.building = (async () => {
                 plugin.error = {};
                 const buildResult = await buildPlugin(info, {
@@ -530,7 +529,7 @@ export class PluginManager {
                 this.mainRuntime.updatePlugin(info, true);
 
                 data.ready = true;
-                cli.status("PLUGIN BUILT: " + info.name);
+                logger.info("PLUGIN BUILT: " + info.name);
                 return true;
             })()
                 .catch(async (err) => {
@@ -539,10 +538,9 @@ export class PluginManager {
                         name: info.name,
                         type: info.type,
                         title: `"${info.name}" build error`,
+                        summary: pluginBuildErrorToSummary(err),
                         error: err,
-                        logOptions: {
-                            summary: pluginBuildErrorToSummary(err)
-                        }
+                        from: err ? pluginErrorToFrom(plugin, err) : undefined
                     });
 
                     return false;
@@ -577,7 +575,7 @@ export class PluginManager {
                                 errorInThisCycle = null;
                                 if (plugin.error[buildTarget]) delete plugin.error[buildTarget];
                                 plugin.data.ready = false;
-                                if (resolved) cli.status(`BUNDLE STARTED: ${plugin.info.name}`);
+                                if (resolved) logger.info(`BUNDLE STARTED: ${plugin.info.name}`);
                                 return;
                             }
                             if (evt.code === "ERROR") {
@@ -593,14 +591,13 @@ export class PluginManager {
                                     type: plugin.info.type,
                                     title: `"${plugin.info.name}" build error`,
                                     error: errorInThisCycle,
-                                    logOptions: {
-                                        summary: pluginBuildErrorToSummary(errorInThisCycle)
-                                    }
+                                    summary: pluginBuildErrorToSummary(errorInThisCycle),
+                                    from: pluginErrorToFrom(plugin, errorInThisCycle)
                                 });
                             }
 
                             plugin.data.ready = true;
-                            cli.info(`VITE HMR: ${plugin.info.name}`);
+                            logger.info(`VITE HMR: ${plugin.info.name}`);
                             if (i === 1 && !errorInThisCycle)
                                 await this.mainRuntime.updatePlugin(plugin.info, true);
                             callHmr();
@@ -615,15 +612,39 @@ export class PluginManager {
 
     reportPluginError(
         target: PluginRunningTarget,
-        phase: "runtime" | "build",
-        { name, type, title, error, logOptions = {} }: PluginErrorPayload
-    ) {
-        const log = this.pluginDiagnostics[phase === "build" ? "buildFailed" : "runtimeError"](
-            { name, type },
-            error,
+        pluginPhase: "runtime" | "build",
+        {
+            name,
+            type,
+            logType,
             title,
-            logOptions
+            summary,
+            error,
+            from,
+            phase,
+            activeError = true
+        }: PluginErrorPayload
+    ) {
+        const log = this.pluginDiagnostics[
+            pluginPhase === "build" ? "buildFailed" : "runtimeError"
+        ](
+            { name, type },
+            [title, error],
+            phase ?? pluginPhase,
+            logType,
+            from ??
+                (typeof error !== "string" &&
+                "fileName" in error &&
+                typeof error.fileName === "string"
+                    ? {
+                          filename: error.fileName,
+                          lineNumber: error.line ?? error.lineNumber ?? undefined,
+                          columnNumber: error.column ?? error.columnNumber ?? undefined
+                      }
+                    : undefined)
         );
+
+        if (!activeError) return;
 
         const plugin = this.plugins.get(name);
         if (!plugin) return;
@@ -636,13 +657,12 @@ export class PluginManager {
         )
             return;
         plugin.error[target] = {
-            phase,
-            title: log.title,
-            detail: error,
-            logId: log.id,
-            summary: log.summary
+            phase: phase ?? pluginPhase,
+            title,
+            summary,
+            logId: log.id
         };
-        if (phase === "runtime") {
+        if (pluginPhase === "runtime") {
             this.sendUpdate({
                 type: "runtime-error",
                 plugin

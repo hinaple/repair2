@@ -3,7 +3,7 @@ import { Bonjour } from "bonjour-service";
 let bonjour: Bonjour | null = null;
 let stopFinding: (() => void) | null = null;
 
-export function findService(type: string, name: string) {
+export function findService(type: string, name: string): Promise<string[]> {
     return new Promise((res, rej) => {
         if (!bonjour) bonjour = new Bonjour();
         if (stopFinding) stopFinding();

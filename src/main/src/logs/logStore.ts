@@ -1,7 +1,12 @@
-import { createLogEntry, createLogFingerprint, type LogEntryInput } from "./logEntry";
-import type { LogChange, LogEntry, LogListFilter } from "@shared/log.types";
-
-export type { LogChange, LogEntry, LogListFilter } from "@shared/log.types";
+import { logContent } from "@shared/logContent";
+import { createLogEntry, createLogFingerprint } from "./logEntry";
+import type {
+    LogChange,
+    LogEntry,
+    LogEntryInput,
+    LogEntryInputWithContent,
+    LogListFilter
+} from "@shared/log.types";
 
 type LogChangeListener = (change: LogChange) => void;
 
@@ -11,13 +16,16 @@ class LogStore {
     private lastFingerprint: string | null = null;
     private listeners = new Set<LogChangeListener>();
 
-    record(input: LogEntryInput) {
-        const fingerprint = createLogFingerprint(input);
+    record(input: LogEntryInput | LogEntryInputWithContent, processedDetail = false): LogEntry {
+        const newInput: LogEntryInputWithContent = processedDetail
+            ? (input as LogEntryInputWithContent)
+            : { ...input, content: logContent(input.content) };
+        const fingerprint = createLogFingerprint(newInput);
         const previous = this.lastEntryId ? (this.entries.get(this.lastEntryId) ?? null) : null;
 
         if (fingerprint && previous && this.lastFingerprint === fingerprint) {
             const entry = createLogEntry({
-                ...input,
+                ...newInput,
                 id: previous.id,
                 createdAt: previous.createdAt,
                 count: previous.count + 1
@@ -28,7 +36,7 @@ class LogStore {
             return entry;
         }
 
-        const entry = createLogEntry(input);
+        const entry = createLogEntry(newInput);
 
         this.entries.set(entry.id, entry);
         this.lastEntryId = entry.id;

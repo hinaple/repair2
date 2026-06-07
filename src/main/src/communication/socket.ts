@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io-client";
-import { cli } from "../console";
+import { logger } from "../logs/logger";
 
 type SocketIo = typeof import("socket.io-client").io;
 type SocketConnectResult =
@@ -73,7 +73,7 @@ export default class SocketConnector {
         if (!channel) return;
 
         if (!this.socket) {
-            cli.warning("Socket.id", "No socket connection");
+            logger.warning("Socket.id", "No socket connection");
             return;
         }
         this.socket.emit(channel, ...data);

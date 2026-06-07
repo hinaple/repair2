@@ -1,26 +1,14 @@
 import { randomUUID, createHash } from "node:crypto";
-import type { LogEntry, LogLevel, LogSource, LogSubject } from "@shared/log.types";
+
+import type {
+    LogEntry,
+    LogEntryInput,
+    LogEntryInputWithContent,
+    LogLevel,
+    LogSubject
+} from "@shared/log.types";
 
 export type { LogEntry, LogLevel, LogSource, LogSubject } from "@shared/log.types";
-
-type LogEntryBase = {
-    type?: string | null;
-    phase?: string | null;
-    title: string;
-};
-
-export type LogEntryInput = LogEntryBase & {
-    id?: string;
-    source?: LogSource | null;
-    level?: LogLevel | string | null;
-    subject?: LogSubject | string | null;
-    summary?: string | null;
-    detail?: any;
-    error?: any;
-    createdAt?: number;
-    updatedAt?: number;
-    count?: number | null;
-};
 
 const LEVELS = new Set(["debug", "info", "warning", "error"]);
 
@@ -28,12 +16,12 @@ export function normalizeLogLevel(level: LogEntryInput["level"]): LogLevel {
     return typeof level === "string" && LEVELS.has(level) ? (level as LogLevel) : "info";
 }
 
-export function stringifyLogValue(value: any) {
-    if (!value) return "";
+export function stringifyLogValue(value: any, spaces: number = 2) {
+    if (typeof value !== "number" && !value) return "";
     if (value instanceof Error) return value.stack || value.message;
     if (typeof value === "string") return value;
     try {
-        return JSON.stringify(value, null, 4);
+        return JSON.stringify(value, null, spaces);
     } catch {
         return String(value);
     }
@@ -65,20 +53,28 @@ function stableStringify(value: any): string {
         return `[${value.map(stableStringify).join(",")}]`;
     }
 
+    if (value instanceof Map) {
+        return `Map{${[
+            ...value.entries().map(([k, v]) => `${stableStringify(k)}=>${stableStringify(v)}`)
+        ].join(",")}}`;
+    }
+
+    if (value instanceof Set) {
+        return `Set{${[...value.values().map(stableStringify)].join(",")}`;
+    }
+
     return `{${Object.keys(value)
         .sort()
         .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
         .join(",")}}`;
 }
 
-export function createLogFingerprint(input: LogEntryInput): string {
+export function createLogFingerprint(input: LogEntryInputWithContent): string {
     const level = normalizeLogLevel(input.level);
     const source = input.source ?? "app";
     const subject = normalizeLogSubject(input.subject);
     const type = input.type ?? null;
     const phase = input.phase ?? inferLogPhase({ type, source });
-    const detail = stringifyLogValue(input.detail);
-    const error = stringifyLogValue(input.error);
 
     const normalized = {
         source,
@@ -86,24 +82,20 @@ export function createLogFingerprint(input: LogEntryInput): string {
         level,
         subject,
         phase,
-        title: input.title,
-        summary: input.summary ?? input.title,
-        detail,
-        error
+        content: input.content,
+        from: input.from
     };
 
     return createHash("sha1").update(stableStringify(normalized)).digest("hex");
 }
 
-export function createLogEntry(input: LogEntryInput): LogEntry {
+export function createLogEntry(input: LogEntryInputWithContent): LogEntry {
     const now = input.updatedAt ?? Date.now();
     const level = normalizeLogLevel(input.level);
     const source = input.source ?? "app";
     const subject = normalizeLogSubject(input.subject);
     const type = input.type ?? null;
     const phase = input.phase ?? inferLogPhase({ type, source });
-    const detail = stringifyLogValue(input.detail);
-    const error = stringifyLogValue(input.error);
     const createdAt = input.createdAt ?? now;
 
     return {
@@ -113,10 +105,8 @@ export function createLogEntry(input: LogEntryInput): LogEntry {
         level,
         subject,
         phase,
-        title: input.title,
-        summary: input.summary ?? input.title,
-        detail: detail || undefined,
-        error: error || undefined,
+        content: input.content,
+        from: input.from,
         createdAt,
         updatedAt: now,
         count: input.count ?? 1

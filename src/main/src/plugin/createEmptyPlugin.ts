@@ -1,10 +1,9 @@
-import { dialog, shell } from "electron";
 import fs from "fs/promises";
 import { join } from "path";
 import { pluginDir, sdkDir, templateDir } from "../dirs";
 import { pathExists } from "../pathExists";
-import { cli } from "../console";
 import { RawManifest } from "./type";
+import { logger } from "../logs/logger";
 
 declare const __SDK_VERSION__: string;
 declare const __SVELTE_VERSION__: string;
@@ -110,7 +109,7 @@ export async function createEmptyPlugin(
         fs.cp(join(pluginTemplateDir, "base"), targetDir, { recursive: true }),
         copyModule(targetDir, SDK_NAME)
     ]);
-    cli.info(`New ${entry} plugin created.`, targetDir);
+    logger.info(`"${entry}" plugin created at: `, targetDir);
     return { dir: targetDir };
 }
 

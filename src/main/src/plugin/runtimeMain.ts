@@ -1,8 +1,8 @@
 import { join } from "path";
 import { PluginInfo } from "./type";
 import { createRequire } from "module";
-import { createPluginDiagnostics, type PluginDiagnostics } from "./pluginDiagnostics";
-import { cli } from "../console";
+import { logger } from "../logs/logger";
+import type { PluginDiagnostics } from "./pluginDiagnostics";
 
 const require = createRequire(import.meta.url);
 
@@ -58,7 +58,7 @@ class RuntimePluginInstance {
         try {
             this.methods = typeof imported === "function" ? imported() : imported;
         } catch (err) {
-            this.pluginDiagnostics.runtimeMainFactoryFailed(this.pluginInfo, err);
+            this.pluginDiagnostics.runtimeMainFactoryFailed(this.pluginInfo, [err]);
             throw err;
         }
     }
@@ -109,7 +109,7 @@ class RuntimePluginInstance {
         try {
             return this.methods?.main?.[methodName]?.(...args);
         } catch (err) {
-            this.pluginDiagnostics.runtimeMainMethodFailed(this.pluginInfo, methodName, err);
+            this.pluginDiagnostics.runtimeMainMethodFailed(this.pluginInfo, methodName, [err]);
             throw err;
         }
     }
@@ -174,7 +174,7 @@ export default class MainRuntimePluginEngine {
             imported: null,
             instance: previous?.instance
         };
-        cli.info(
+        logger.info(
             `LOADING PLUGIN: ${pluginInfo.name}(${join(this.pluginDir, pluginInfo.mainDistFile as string)})`
         );
         tempData.importing = Promise.resolve()
@@ -184,7 +184,7 @@ export default class MainRuntimePluginEngine {
 
                 tempData.importing = null;
                 tempData.imported = p;
-                cli.status("PLUGIN LOADED: " + pluginInfo.name);
+                logger.info("PLUGIN LOADED: " + pluginInfo.name);
                 return p;
             })
             .catch((err) => {
@@ -262,7 +262,7 @@ export default class MainRuntimePluginEngine {
         try {
             instance.dispose();
         } catch (err) {
-            this.pluginDiagnostics.runtimeMainDisposeFailed(target.info, err);
+            this.pluginDiagnostics.runtimeMainDisposeFailed(target.info, [err]);
         } finally {
             if (target.instance === instance) delete target.instance;
         }
@@ -273,7 +273,7 @@ export default class MainRuntimePluginEngine {
             try {
                 if (p.instance) p.instance.dispose();
             } catch (err) {
-                this.pluginDiagnostics.runtimeMainDisposeFailed(p.info, err);
+                this.pluginDiagnostics.runtimeMainDisposeFailed(p.info, [err]);
             } finally {
                 delete p.instance;
             }
