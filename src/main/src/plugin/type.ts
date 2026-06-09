@@ -81,3 +81,10 @@ export type ManifestError = {
     watch?: ManifestWatcher;
     lastError: string;
 };
+
+export type WatchData = {
+    jsHash?: string;
+    cssHash?: string;
+    cssCode?: string;
+    updated?: "all" | "css" | "none";
+};

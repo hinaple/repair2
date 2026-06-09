@@ -25,7 +25,7 @@ function adjustPluginLiveCount(pluginKey, amount = 0) {
     record.style.remove();
 }
 
-function setStyle(pluginKey, styleCode, rootId) {
+function setStyle(pluginKey, styleCode) {
     const record = getRecord(pluginKey);
     if (record.style?.isConnected) record.style.remove();
 
@@ -46,4 +46,11 @@ export function pluginAppended(type, pluginName) {
 export function pluginDisposed(type, pluginName) {
     const key = `${type}:${pluginName}`;
     adjustPluginLiveCount(key, -1);
+}
+
+export function setStyleForce(pluginType, pluginName, cssCode) {
+    if (pluginType !== "frame" && pluginType !== "element") return;
+
+    const key = `${pluginType}:${pluginName}`;
+    setStyle(key, cssCode);
 }

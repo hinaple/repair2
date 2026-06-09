@@ -18,7 +18,8 @@ import type {
     PluginData,
     ManifestError,
     PluginInfoData,
-    ManifestWatcher
+    ManifestWatcher,
+    WatchData
 } from "./type";
 import type { PluginErrorPayload, PluginRunningTarget } from "@shared/plugin.types";
 import { createSender, type UpdateHandler, type UpdateSender } from "./sendPluginUpdate";
@@ -518,12 +519,12 @@ export class PluginManager {
                     watch
                 });
 
-                if (watch) {
-                    data.watchers = buildResult as RollupWatcher[];
-                    await this.registerWatchers(plugin);
+                if (watch && buildResult) {
+                    data.watchers = buildResult.watchers;
+                    await this.registerWatchers(plugin, buildResult.watchData);
                 }
                 if (this.destroyed || this.plugins.get(info.name)?.info !== info) {
-                    if (watch) (buildResult as RollupWatcher[]).forEach((w) => w.close());
+                    if (buildResult) buildResult.watchers.forEach((w) => w.close());
                     return false;
                 }
                 this.mainRuntime.updatePlugin(info, true);
@@ -550,11 +551,12 @@ export class PluginManager {
         }
         return data.building;
     }
-    private registerWatchers(plugin: PluginInfoData) {
-        const callHmr = () => {
+    private registerWatchers(plugin: PluginInfoData, watchData?: WatchData) {
+        const callHmr = (cssCode?: string | null) => {
             this.sendUpdate({
                 type: "hmr",
-                plugin
+                plugin,
+                cssCode: cssCode || undefined
             });
         };
         return Promise.all(
@@ -597,10 +599,16 @@ export class PluginManager {
                             }
 
                             plugin.data.ready = true;
+                            if (i === 0 && watchData?.updated === "none") return;
+
                             logger.info(`VITE HMR: ${plugin.info.name}`);
+
                             if (i === 1 && !errorInThisCycle)
                                 await this.mainRuntime.updatePlugin(plugin.info, true);
-                            callHmr();
+
+                            callHmr(
+                                i === 0 && watchData?.updated === "css" ? watchData.cssCode : null
+                            );
                         });
                         w.on("close", () => {
                             tryResolve(errorInThisCycle);

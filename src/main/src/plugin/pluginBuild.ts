@@ -1,11 +1,14 @@
-import type { Plugin } from "vite";
-import { PluginInfo } from "./type";
 import { is } from "@electron-toolkit/utils";
 import { dirname, posix, join } from "node:path";
 import { builtinModules } from "node:module";
 import childProcess from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+
+import type { Plugin } from "vite";
+import type { PluginInfo, WatchData } from "./type";
+import type { RollupWatcher } from "rollup";
 
 if (!is.dev) {
     // patch spawn() to fix esbuild EPIPE error
@@ -66,7 +69,15 @@ function getSvelteResolvePlugin(): null | Plugin | Promise<Plugin | null> {
     return creatingSvResolver;
 }
 
-function styleInjectPlugin(pluginInfo: PluginInfo): Plugin {
+function hashText(value: string) {
+    return createHash("sha256")
+        .update(String(value.length))
+        .update("\0")
+        .update(value, "utf8")
+        .digest("hex");
+}
+
+function styleInjectPlugin(pluginInfo: PluginInfo, data?: WatchData): Plugin {
     const styleKey = `${pluginInfo.type}:${pluginInfo.name}`;
 
     return {
@@ -82,13 +93,23 @@ function styleInjectPlugin(pluginInfo: PluginInfo): Plugin {
                 delete bundle[fileName];
             }
 
-            if (!css) return;
-
             const injectCode = `globalThis.__repairPluginRuntime?.setStyle?.(${JSON.stringify(styleKey)}, ${JSON.stringify(css)});`;
 
+            let jsCode = "";
             for (const chunk of Object.values(bundle)) {
                 if (chunk.type !== "chunk" || !chunk.isEntry) continue;
+                if (data) jsCode += chunk.code;
                 chunk.code = `${injectCode}\n${chunk.code}`;
+            }
+            if (data) {
+                const cssHash = hashText(css);
+                const jsHash = hashText(jsCode);
+                data.updated =
+                    jsHash !== data.jsHash ? "all" : cssHash !== data.cssHash ? "css" : "none";
+
+                data.cssHash = cssHash;
+                data.jsHash = jsHash;
+                data.cssCode = css;
             }
         }
     };
@@ -119,7 +140,7 @@ async function getBuild() {
 export async function buildPlugin(
     pluginInfo: PluginInfo,
     { pluginPath, watch = false }: { pluginPath: string; watch: boolean }
-) {
+): Promise<{ watchData?: WatchData; watchers: RollupWatcher[] } | void> {
     const rendererPlugins: Array<Plugin[] | Plugin> = [];
 
     const isFrameOrElement = pluginInfo.type === "element" || pluginInfo.type === "frame";
@@ -128,7 +149,11 @@ export async function buildPlugin(
         if (svResolver) rendererPlugins.push(svResolver);
         rendererPlugins.push((await getSveltePlugin())());
     }
-    if (isFrameOrElement) rendererPlugins.push(styleInjectPlugin(pluginInfo));
+    let watchData: WatchData | undefined;
+    if (isFrameOrElement) {
+        watchData = watch ? {} : undefined;
+        rendererPlugins.push(styleInjectPlugin(pluginInfo, watchData));
+    }
 
     const build = await getBuild();
 
@@ -154,7 +179,10 @@ export async function buildPlugin(
             assetsInlineLimit: Infinity
         }
     });
-    if (!pluginInfo.main) return [await rendererBuild];
+    if (!pluginInfo.main) {
+        const result = await rendererBuild;
+        return watch ? { watchers: [result as RollupWatcher], watchData } : undefined;
+    }
 
     const mainBuild = build({
         configFile: false,
@@ -180,5 +208,6 @@ export async function buildPlugin(
         }
     });
 
-    return Promise.all([rendererBuild, mainBuild]);
+    const result = await Promise.all([rendererBuild, mainBuild]);
+    return watch ? { watchers: result as RollupWatcher[] } : undefined;
 }

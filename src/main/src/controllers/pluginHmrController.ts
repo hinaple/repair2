@@ -114,8 +114,8 @@ export class PluginHmrController {
                     message.sendToEditor("plugin:list", updateData);
                     message.sendToMain("plugin:list", updateData);
                 } else if (type === "hmr") {
-                    message.sendToEditor("plugin:hmr", updateData.info);
-                    message.sendToMain("plugin:hmr", updateData.info);
+                    message.sendToEditor("plugin:hmr", updateData);
+                    message.sendToMain("plugin:hmr", updateData);
                 } else if (type === "runtime-error") {
                     message.sendToEditor("plugin:update", {
                         info: updateData.info,

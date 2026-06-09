@@ -43,7 +43,7 @@ export type UpdateHandlerParams =
       }
     | {
           type: "hmr";
-          updateData: { info: PluginRendererInfo };
+          updateData: { info: PluginRendererInfo; cssCode?: string };
       };
 
 export type UpdateHandler = (updateInfo: UpdateHandlerParams) => void;
@@ -82,7 +82,7 @@ export function createSender(pluginManager: PluginManager, onUpdate: UpdateHandl
                   previous: PreviousData | null;
                   buildChanged: boolean;
               }
-            | { type: "hmr" | "runtime-error"; plugin: PluginInfoData }
+            | { type: "hmr" | "runtime-error"; plugin: PluginInfoData; cssCode?: string }
             | { type: "removed"; pluginInfo: PluginInfo }
             | { type: "manifest-error" }
     ): void {
@@ -107,7 +107,15 @@ export function createSender(pluginManager: PluginManager, onUpdate: UpdateHandl
                     buildChanged: data.buildChanged
                 }
             };
-        } else if (data.type === "hmr" || data.type === "runtime-error") {
+        } else if (data.type === "hmr") {
+            payload = {
+                type: data.type,
+                updateData: {
+                    info: makeInfoForRenderer(data.plugin),
+                    cssCode: data.cssCode
+                }
+            };
+        } else if (data.type === "runtime-error") {
             payload = {
                 type: data.type,
                 updateData: {

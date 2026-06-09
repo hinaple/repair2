@@ -4,6 +4,7 @@ import { createPluginContext } from "./pluginContext";
 import { reportPluginException } from "./pluginReporter";
 import { dynamicImportPlugin } from "./pluginImport";
 import { PLUGIN_TYPES } from "@classes/utils";
+import { setStyleForce } from "./pluginStyles";
 
 /**
  * @typedef {import("@shared/plugin.types").PluginType} PluginType
@@ -229,7 +230,6 @@ export function subscribePluginHMR(type, pluginName, exportName = "default", cal
     };
 
     let unsubscribed = false;
-    console.log(type, pluginName);
     getPlugin(type, pluginName, exportName)
         .then((pluginApi) => {
             if (!unsubscribed && pluginApi)
@@ -275,13 +275,26 @@ async function callHmr(pluginInfo, plugin) {
     });
 }
 
-ipcRenderer.on("plugin:hmr", async (_, pluginInfo) => {
-    /** @type {PluginRendererInfo} */
-    const info = pluginInfo;
-    if (!getAppData().config.devMode) return;
-    console.log("Plugin HMR:", info.name);
-    updatePlugin(info, !info.error);
-});
+ipcRenderer.on(
+    "plugin:hmr",
+    /**
+     * @param {any} _
+     * @param {Object} hmrData
+     * @param {PluginRendererInfo} hmrData.info
+     * @param {string} [hmrData.cssCode]
+     */
+    async (_, { info, cssCode }) => {
+        /** @type {PluginRendererInfo} */
+        if (!getAppData().config.devMode) return;
+        if (cssCode && (info.type === "element" || info.type === "frame")) {
+            console.log("Plugin CSS HMR:", info.name);
+            setStyleForce(info.type, info.name, cssCode);
+            return;
+        }
+        console.log("Plugin HMR:", info.name);
+        updatePlugin(info, !info.error);
+    }
+);
 
 ipcRenderer.on(
     "plugin:list",
