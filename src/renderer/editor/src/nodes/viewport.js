@@ -179,7 +179,8 @@ export function getViewportCenter() {
 }
 
 ipcRenderer.on("zoom", (_, step) => {
-    const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const screenSize = get(viewport.screen);
+    const center = { x: screenSize.width / 2 + SIDEBAR_WIDTH, y: screenSize.height / 2 };
     resizeViewport(step, center);
 });
 
