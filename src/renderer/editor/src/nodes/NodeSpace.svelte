@@ -67,14 +67,13 @@
         } else if (evt.button === 0 && (!$grabbing || readyToGrab)) focusData("project");
     }
     function pointermove(evt) {
-        if (selectOrigin) {
+        if (selectOrigin && selectBoxEl) {
             if ($grabbing !== "select") $grabbing = "select";
 
             selectOrigin.x2 = evt.clientX;
             selectOrigin.y2 = evt.clientY;
             selectBoxEl.style.display = "block";
-            selectBoxEl.style.left = `${Math.min(selectOrigin.x1, selectOrigin.x2)}px`;
-            selectBoxEl.style.top = `${Math.min(selectOrigin.y1, selectOrigin.y2)}px`;
+            selectBoxEl.style.transform = `translate(${Math.min(selectOrigin.x1, selectOrigin.x2)}px, ${Math.min(selectOrigin.y1, selectOrigin.y2)}px)`;
             selectBoxEl.style.width = `${Math.abs(selectOrigin.x1 - selectOrigin.x2)}px`;
             selectBoxEl.style.height = `${Math.abs(selectOrigin.y1 - selectOrigin.y2)}px`;
             return;
@@ -257,12 +256,7 @@
     </div>
 </div>
 {#if selectOrigin}
-    <div
-        class="select-box"
-        bind:this={selectBoxEl}
-        style={`left: ${selectOrigin.x1}px; top: ${selectOrigin.y1}px;`}
-        out:fade={{ duration: 80 }}
-    ></div>
+    <div class="select-box" bind:this={selectBoxEl} out:fade={{ duration: 80 }}></div>
 {/if}
 
 <style>
@@ -300,6 +294,8 @@
     }
 
     .select-box {
+        left: 0;
+        top: 0;
         position: fixed;
         pointer-events: none;
         width: 0;

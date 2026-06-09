@@ -1,4 +1,5 @@
 import { randomUUID, createHash } from "node:crypto";
+import { isTypedArray } from "node:util/types";
 
 import type {
     LogEntry,
@@ -47,10 +48,11 @@ export function inferLogPhase({ type, source }: { type?: string | null; source?:
 }
 
 function stableStringify(value: any): string {
+    if (typeof value === "bigint") return `${value}n`;
     if (value === null || typeof value !== "object") return JSON.stringify(value);
 
-    if (Array.isArray(value)) {
-        return `[${value.map(stableStringify).join(",")}]`;
+    if (Array.isArray(value) || isTypedArray(value)) {
+        return `[${[...value].map(stableStringify).join(",")}]`;
     }
 
     if (value instanceof Map) {

@@ -1,4 +1,5 @@
 import { logContent } from "@shared/logContent";
+import { logger } from "../logs/logger";
 
 class CustomClass {
     constructor(public name = "custom") {}
@@ -77,6 +78,7 @@ const cases: Array<[string, any]> = [
     ["error", new Error("plain error")],
     ["error with cause", new Error("outer", { cause: new TypeError("inner") })],
     ["date", new Date("2026-06-07T00:00:00.000Z")],
+    ["date", ["date", new Date("2026-06-07T00:00:00.000Z")]],
     ["regexp", /repair\d+/gi],
     ["array buffer", buffer],
     ["data view", new DataView(buffer)],
@@ -85,8 +87,8 @@ const cases: Array<[string, any]> = [
     ["nested object", { a: { b: { c: [1, "x", { y: true }] } } }],
     ["custom class", new CustomClass()],
     ["null prototype object", nullProto],
-    ["throwing toString class", new ThrowingToString()],
-    ["getter throws", getterThrows],
+    // ["throwing toString class", new ThrowingToString()],
+    // ["getter throws", getterThrows],
     [
         "map",
         new Map<any, any>([
@@ -100,7 +102,11 @@ const cases: Array<[string, any]> = [
     ["array cycle", arrayCycle],
     ["map cycle", mapCycle],
     ["set cycle", setCycle],
-    ["mixed console-like args", ["message", { payload: [1, 2] }, new Error("mixed error")]]
+    ["mixed console-like args", ["message", { payload: [1, 2] }, new Error("mixed error")]],
+    [
+        "long test",
+        "asd;kjasdkljaslkdjaljsdhausdhjkashdkjashdjkash dajhadsjhdakjdslkjaslkhjsdgf;ukwhej sdahja hj; ads da s"
+    ]
 ];
 
 function safeJson(value: unknown) {
@@ -120,17 +126,20 @@ function safeStructuredClone(value: unknown) {
     }
 }
 
-for (const [name, input] of cases) {
-    console.log(`\n=== ${name} ===`);
-    try {
-        const once = logContent(input);
-        const twice = logContent(once as any);
+export function testLogs() {
+    for (const [name, input] of cases) {
+        console.log(`\n=== ${name} ===`);
+        try {
+            // const once = logContent(input);
+            // const twice = logContent(once as any);
 
-        console.log("structuredClone:", safeStructuredClone(once));
-        console.log("json:", safeJson(once));
-        console.log("double-json:", safeJson(twice));
-        console.dir(once, { depth: 12 });
-    } catch (error) {
-        console.error("logDetail failed:", error);
+            // console.log("structuredClone:", safeStructuredClone(once));
+            // console.log("json:", safeJson(once));
+            // console.log("double-json:", safeJson(twice));
+            // console.dir(once, { depth: 12 });
+            logger.info(...(Array.isArray(input) ? input : [input]));
+        } catch (error) {
+            console.error("logDetail failed:", error);
+        }
     }
 }

@@ -101,7 +101,7 @@
         flex-direction: column;
         flex: 1 1 auto;
 
-        contain: paint layout size;
+        contain: strict;
     }
     .title {
         font-size: 20px;

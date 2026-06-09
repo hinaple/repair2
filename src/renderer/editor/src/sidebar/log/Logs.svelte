@@ -1,9 +1,7 @@
 <script>
-    import { logInfo } from "../../lib/logs/logStore.svelte";
+    import logs from "./logs.ts";
+
+    import "./logs.scss";
 </script>
 
-<div class="logs">
-    {#each logInfo.logs.values() as log}
-        {log.content}
-    {/each}
-</div>
+<div class="logs" use:logs></div>

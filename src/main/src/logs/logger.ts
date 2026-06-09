@@ -11,19 +11,20 @@ export const logger = Object.fromEntries(
     LogLevels.map((l) => [l, (...args: ({} | null | undefined)[]) => baseLogger(l, args)])
 ) as Record<(typeof LogLevels)[number], Logger>;
 
-const LV_CLI_MAP: Record<(typeof LogLevels)[number], CliLogTypes> = {
-    debug: "status",
-    info: "info",
-    warning: "warning",
+const LV_CLI_MAP: Record<(typeof LogLevels)[number], "log" | "warn" | "error"> = {
+    debug: "log",
+    info: "log",
+    warning: "warn",
     error: "error",
     crash: "error"
-};
+} as const;
 
 function baseLogger(
     level: (typeof LogLevels)[number],
     args: ({} | null | undefined)[]
 ): LogEntry | undefined {
-    cli[LV_CLI_MAP[level]](args.map(String).join(" "));
+    // cli[LV_CLI_MAP[level]](args.map((a) => (a ? String(a) : a)).join(" "));
+    console[LV_CLI_MAP[level]](...args);
     if (!scopedLog) return;
 
     let dialogue = false;

@@ -50,8 +50,12 @@ ipcRenderer.on(
 );
 ipcRenderer.on(
     "plugin:hmr",
-    /** @param {PluginRendererInfo} info */
-    (_, info) => {
+    /**
+     * @param {any} _
+     * @param {Object} hmrData
+     * @param {PluginRendererInfo} hmrData.info
+     */
+    (_, { info }) => {
         plugins[info.type][info.name] = info;
         updatePluginErrors(info);
     }

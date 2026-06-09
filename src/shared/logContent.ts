@@ -21,7 +21,7 @@ const SupportedClasses = [
     "BigUint64Array"
 ];
 
-type DetailValue =
+export type SingleLogContent =
     | null
     | undefined
     | number
@@ -43,18 +43,21 @@ type DetailValue =
     | Float64Array
     | BigInt64Array
     | BigUint64Array
-    | Map<DetailValue, DetailValue>
-    | Array<DetailValue>
-    | Set<DetailValue>
-    | { [k: string]: DetailValue }
+    | Map<SingleLogContent, SingleLogContent>
+    | Array<SingleLogContent>
+    | Set<SingleLogContent>
+    | { [k: string]: SingleLogContent }
     | { _type: "function" | "symbol" | "bigint"; value: string }
     | { _type: "Error"; value: { name: string; message: string; stack?: string; cause?: string } }
     | { _type: string; value: string }
     | { _circularRef: true };
 
-export type LogContent = DetailValue[];
+export type LogContent = SingleLogContent[];
 
-function normalizeDetailValue(value: {} | null | undefined, _refs = new WeakSet()): DetailValue {
+function normalizeSingleLogContent(
+    value: {} | null | undefined,
+    _refs = new WeakSet()
+): SingleLogContent {
     const type = typeof value;
     if (value === null || value === undefined || !UnsupportedTypes.includes(type)) return value;
     const className = value?.constructor?.name;
@@ -76,27 +79,37 @@ function normalizeDetailValue(value: {} | null | undefined, _refs = new WeakSet(
     if (_refs.has(value)) return { _circularRef: true };
     _refs.add(value);
     if (className === "Array")
-        return (value as Array<any>).map((v) => normalizeDetailValue(v, _refs));
+        return (value as Array<any>).map((v) => normalizeSingleLogContent(v, _refs));
     if (className === "Object")
         return Object.fromEntries(
             Object.entries(value as Record<string, any>).map(([k, v]) => [
                 String(k),
-                normalizeDetailValue(v, _refs)
+                normalizeSingleLogContent(v, _refs)
             ])
         );
     if (className === "Map")
         return new Map(
             (value as Map<any, any>)
                 .entries()
-                .map(([k, v]) => [normalizeDetailValue(k, _refs), normalizeDetailValue(v, _refs)])
+                .map(([k, v]) => [
+                    normalizeSingleLogContent(k, _refs),
+                    normalizeSingleLogContent(v, _refs)
+                ])
         );
     if (className === "Set")
-        return new Set((value as Set<any>).values().map((v) => normalizeDetailValue(v, _refs)));
+        return new Set(
+            (value as Set<any>).values().map((v) => normalizeSingleLogContent(v, _refs))
+        );
 
     return { _type: className, value: String(value) };
 }
 export function logContent(detail?: null | {}[] | {}): LogContent {
     if (detail === null || detail === undefined) return [];
-    const result = (Array.isArray(detail) ? detail : [detail]).map((d) => normalizeDetailValue(d));
+    const result = (Array.isArray(detail) ? detail : [detail]).map((d) =>
+        normalizeSingleLogContent(d)
+    );
     return result;
 }
+
+export const ObjectContents = ["Array", "Object", "Map", "Set"] as const;
+export type ObjectContentType = (typeof ObjectContents)[number];
