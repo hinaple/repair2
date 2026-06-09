@@ -133,14 +133,11 @@ export default class ProjectFileManager {
             closeSplash();
             await this.#reportLog?.({
                 level: "error",
-                title: "프로젝트 불러오기",
-                detail: "프로젝트를 불러오는 중 오류가 발생했습니다.",
-                error,
+                content: ["프로젝트를 불러오는 중 오류가 발생했습니다.", ...(error ? [error] : [])],
                 source: "project",
                 dialogue: true,
                 type: "project-import-error",
                 phase: "import",
-                summary: "프로젝트 불러오기 실패",
                 subject: { kind: "project" }
             });
             app.quit();

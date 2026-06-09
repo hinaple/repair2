@@ -4,6 +4,6 @@
 
 <div class="logs">
     {#each logInfo.logs.values() as log}
-        {log.detail}
+        {log.content}
     {/each}
 </div>

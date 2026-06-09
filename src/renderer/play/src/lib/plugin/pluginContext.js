@@ -115,21 +115,19 @@ function createLifecycle(plugin) {
 
 function createLogger(plugin) {
     return {
-        debug: (...args) =>
-            sendPluginLog({ level: "debug", source: plugin, title: args.map(String).join(" ") }),
-        info: (...args) =>
-            sendPluginLog({ level: "info", source: plugin, title: args.map(String).join(" ") }),
+        debug: (...args) => sendPluginLog({ level: "debug", source: plugin, content: args }),
+        info: (...args) => sendPluginLog({ level: "info", source: plugin, content: args }),
         warn: (...args) =>
             sendPluginLog({
                 level: "warning",
                 source: plugin,
-                title: args.map(String).join(" ")
+                content: args
             }),
         error: (...args) =>
             sendPluginLog({
                 level: "error",
                 source: plugin,
-                title: args.map(String).join(" ")
+                content: args
             })
     };
 }

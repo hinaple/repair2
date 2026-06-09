@@ -123,7 +123,8 @@ export function createLogReporter({
             log = undefined,
             dialogue = false,
             type = null,
-            phase = null
+            phase = null,
+            from
         }: LogPayload | (LogPayload & { content: LogContent }),
         processedInput = false
     ): LogEntry {
@@ -132,7 +133,6 @@ export function createLogReporter({
         const normalizedSource = source ?? "app";
         const normalizedType = type ?? `${normalizedSource}-log`;
         const subjectLabel = getSubjectLabel(normalizedSubject);
-        const detailText = stringifyLogValue(content);
 
         const entry = logStore.record(
             {
@@ -141,10 +141,12 @@ export function createLogReporter({
                 level: normalizedLevel,
                 subject: normalizedSubject,
                 phase,
-                content
+                content,
+                from
             },
             processedInput
         );
+        const detailText = stringifyLogValue(entry.content);
 
         if (log ?? shouldLogByDefault(normalizedLevel)) {
             writeLogFileLater({

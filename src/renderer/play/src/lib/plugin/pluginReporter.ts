@@ -50,7 +50,9 @@ export function sendPluginLog({
         type: type ?? `plugin-${level}`,
         phase
     });
-    customLog(`PLUGIN: ${source?.id ?? "unknown"}\n${content.map(String).join(" ")}`);
+    customLog(
+        `PLUGIN: ${source?.id ?? "unknown"}\n${Array.isArray(content) ? content.map(String).join(" ") : content}`
+    );
 }
 
 export function reportPluginWarning(

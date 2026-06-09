@@ -5,7 +5,7 @@
     import BigIcons from "../assets/icons/BigIcons.svelte";
     import Edit from "./edits/Edit.svelte";
     import Logs from "./log/Logs.svelte";
-    import { tippy, tippySingleton } from "../lib/tippy";
+    import { tippySingleton } from "../lib/tippy";
 
     let currentTab = $state("edit");
 
