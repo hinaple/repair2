@@ -5,6 +5,7 @@
     import BigIcons from "../assets/icons/BigIcons.svelte";
     import Edit from "./edits/Edit.svelte";
     import Logs from "./log/Logs.svelte";
+    import { tippy, tippySingleton } from "../lib/tippy";
 
     let currentTab = $state("edit");
 
@@ -23,11 +24,12 @@
 </script>
 
 <div class="side-bar">
-    <div class="tabs">
-        {#each Object.keys(tabs) as id}
+    <div class="tabs" use:tippySingleton={{ duration: 100, delay: [400, 0], placement: "right" }}>
+        {#each Object.entries(tabs) as [id, label]}
             <button
                 class={["tab-wrapper", currentTab === id && "active"]}
                 onclick={() => (currentTab = id)}
+                data-tippy-content={label}
             >
                 <div class="tab">
                     <BigIcons icon={id} color="#fff" size={30} />
