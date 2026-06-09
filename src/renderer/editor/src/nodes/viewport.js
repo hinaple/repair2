@@ -29,7 +29,7 @@ export function setViewportEl(node) {
 
 const fu = new FrameUpdater(calcRatio);
 
-const SIDEBAR_WIDTH = 340;
+export const SIDEBAR_WIDTH = 340;
 const observer = new ResizeObserver((entries) => {
     if (!entries.length) return;
 
@@ -173,9 +173,9 @@ export function fitViewportToNodes(nodes) {
     viewport.pos.set({ x: centerX, y: centerY });
 }
 
-export function getViewportCenter(sideBarWidth) {
+export function getViewportCenter() {
     const vp = get(viewport.pos);
-    return { x: vp.x - sideBarWidth / 2 / rInfo.ratio, y: vp.y };
+    return { x: vp.x, y: vp.y };
 }
 
 ipcRenderer.on("zoom", (_, step) => {

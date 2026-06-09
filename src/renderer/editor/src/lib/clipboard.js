@@ -35,10 +35,11 @@ export function pasted(target = get(currentFocus), pos = null) {
         if (type === "nodes") {
             const posOffset = data[0].nodePos;
             const newIds = Array.from(data, () => genId());
+            const targetPos = pos ?? getViewportCenter();
             const newNodes = data.map((n, i) => {
                 const nodePos = {
-                    x: n.nodePos.x - posOffset.x + (pos ?? getViewportCenter(SIDEBAR_WIDTH)).x,
-                    y: n.nodePos.y - posOffset.y + (pos ?? getViewportCenter(SIDEBAR_WIDTH)).y
+                    x: n.nodePos.x - posOffset.x + targetPos.x,
+                    y: n.nodePos.y - posOffset.y + targetPos.y
                 };
                 if (n.type in NodeClasses)
                     return new NodeClasses[n.type](
@@ -50,7 +51,7 @@ export function pasted(target = get(currentFocus), pos = null) {
             selectManyNodes(newNodes);
         } else if (type in NodeClasses) {
             appData.addNode(
-                new NodeClasses[type]({ ...data, nodePos: pos ?? getViewportCenter(SIDEBAR_WIDTH) })
+                new NodeClasses[type]({ ...data, nodePos: pos ?? getViewportCenter() })
             );
         } else if (target.type === "sequence" && type === "step")
             target.obj.steps.addWithHistory(addHistory, {
@@ -73,8 +74,8 @@ export function pasted(target = get(currentFocus), pos = null) {
                 afterChange: () => reload("nodeMoved")
             });
         else return;
-    } catch {
-        return null;
+    } catch (err) {
+        console.error("An error occurred while pasting.", err);
     }
 }
 
