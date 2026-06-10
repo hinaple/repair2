@@ -56,15 +56,13 @@ class LogStore {
               ? new Set([filter.level])
               : null;
 
-        return [...this.entries.values()]
-            .filter((entry) => {
-                if (filter.source && entry.source !== filter.source) return false;
-                if (levels && !levels.has(entry.level)) return false;
-                if (filter.subjectId && entry.subject?.id !== filter.subjectId) return false;
-                if (filter.subjectKind && entry.subject?.kind !== filter.subjectKind) return false;
-                return true;
-            })
-            .reverse();
+        return [...this.entries.values()].filter((entry) => {
+            if (filter.source && entry.source !== filter.source) return false;
+            if (levels && !levels.has(entry.level)) return false;
+            if (filter.subjectId && entry.subject?.id !== filter.subjectId) return false;
+            if (filter.subjectKind && entry.subject?.kind !== filter.subjectKind) return false;
+            return true;
+        });
     }
 
     subscribe(listener: LogChangeListener) {

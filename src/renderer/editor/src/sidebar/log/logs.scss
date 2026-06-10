@@ -6,15 +6,28 @@
     height: 100%;
     padding-bottom: 30px;
 
+    .log-wrapper {
+        border-bottom: solid #fff5 1px;
+        padding: 3px;
+    }
     .log {
+        &.error,
+        &.warning {
+            border-radius: 5px;
+        }
+        &.error {
+            background-color: #f427;
+        }
+        &.warning {
+            background-color: #dbc50088;
+        }
         flex: 0 0 auto;
         font-family: consolas;
         line-height: 1.1em;
         font-size: 14px;
-        border-bottom: solid #fff5 1px;
         box-sizing: border-box;
         min-height: 15px;
-        padding: 5px 3px;
+        padding: 2px;
         white-space: pre-wrap;
         word-break: break-all;
         display: flex;
@@ -38,8 +51,8 @@
 
         .collapsable {
             display: flex;
-            flex-direction: row;
-            gap: 1px;
+            flex-direction: column;
+            gap: 2px;
 
             .head {
                 display: flex;
@@ -51,9 +64,15 @@
                     all: inherit;
                     flex: 0 0 auto;
                     font-size: 9px;
+                    width: 7px;
                     margin-right: 3px;
                     background: none;
                     user-select: none;
+                    transition: transform 100ms linear;
+
+                    &.expanded {
+                        transform: rotate(90deg);
+                    }
                 }
                 .preview {
                     font-style: italic;
@@ -66,6 +85,23 @@
 
                 &:hover {
                     background-color: #fff2;
+                }
+            }
+            .expanded-list {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                padding-bottom: 2px;
+                padding-left: calc(var(--indent-lv) * 5px);
+
+                & > .expanded-line {
+                    padding-left: 13px;
+                }
+                .expanded-line {
+                    .key {
+                        color: #7cacf8;
+                        font-weight: 900;
+                    }
                 }
             }
         }

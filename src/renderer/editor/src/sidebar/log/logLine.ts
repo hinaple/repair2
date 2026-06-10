@@ -2,7 +2,7 @@ import type { LogEntry } from "@shared/log.types";
 import type { SingleLogContent } from "@shared/logContent";
 
 function newEl(
-    tag: string | (string | null | false)[],
+    tag: string | (string | null | false | undefined)[],
     child?: string | HTMLElement | (HTMLElement | string)[]
 ) {
     const arr = Array.isArray(tag) ? (tag.filter(Boolean) as string[]) : tag.split(".");
@@ -18,29 +18,45 @@ function newEl(
 
 export function createLogElement(log: LogEntry) {
     const container = newEl(
-        ".log",
-        log.content.map((c) => createLogContent(c))
+        ".log-wrapper",
+        newEl(
+            ["div", "log", log.level],
+            log.content.map((c) => {
+                const createResult = createLogContent(c);
+                if (createResult.collapsable)
+                    return collapsable(createResult.el, (indentLv: number) =>
+                        collapsableFullList(createResult.type, c as CollapsableContent, indentLv)
+                    );
+                return createResult.el;
+            })
+        )
     );
 
     return container;
 }
 
-function createLogContent(content: SingleLogContent, inline = false, collapse = collapsable) {
+function createLogContent(
+    content: SingleLogContent,
+    inlineLv: number = 0
+): { el: HTMLElement; type: string; collapsable?: boolean } {
     const [type, cc] = getContentType(content);
 
-    const tag = ["span", "log-content", type.toLowerCase(), inline && "inline"];
+    const tag = ["span", "log-content", type.toLowerCase(), inlineLv > 0 && "inline"];
     if (SpanContentTypes.includes(type)) {
-        return newEl(tag, spanContent(type, cc as SpanContent, inline));
+        return { el: newEl(tag, spanContent(type, cc as SpanContent, inlineLv)), type };
     }
-    if (inline) {
-        return newEl(tag, collapsableInlineText(type, cc as CollapsableContent));
+    if (inlineLv > 1) {
+        return { el: newEl(tag, collapsableInlineText(type, cc as CollapsableContent)), type };
     }
     const cpv = collapsablePreview(type, cc as CollapsableContent);
     if (!cpv) {
-        return newEl([...tag, "unknown"], `${type}?<${cc}>`);
+        return { el: newEl([...tag, "unknown"], `${type}?<${cc}>`), type };
     }
-    return cpv;
-    // return collapse(cpv, () => collapsableFullList(type, cc as CollapsableContent));
+    return {
+        collapsable: true,
+        type,
+        el: cpv
+    };
 }
 
 type PureContent =
@@ -83,9 +99,9 @@ type SpanContent = Extract<
 function spanContent(
     type: (typeof SpanContentTypes)[number],
     content: SpanContent,
-    inline: boolean
+    inlineLv: number
 ) {
-    if (type === "string") return inline ? `'${content}'` : (content as string);
+    if (type === "string") return inlineLv ? `'${content}'` : (content as string);
     if (type === "null" || type === "undefined" || type === "number" || type === "boolean")
         return String(content);
     if (typeof content === "bigint") return String(content) + "n";
@@ -100,7 +116,7 @@ function spanContent(
         return `${type}(${content.byteLength})`;
     const sv = String(content);
     if (type === "function") {
-        if (inline) return "ƒ";
+        if (inlineLv) return "ƒ";
 
         const prefixLen = sv.startsWith("function")
             ? 0
@@ -118,9 +134,27 @@ function spanContent(
 
 function collapsable(
     head: string | HTMLElement,
-    getList: () => (SingleLogContent | { k: string; v: SingleLogContent })[]
+    getList: (indentLv: number) => HTMLElement[],
+    indentLv: number = 1
 ) {
-    const el = newEl(`.collapsable`, newEl(".head", [newEl("button.collapse-btn", "▶"), head]));
+    const btn = newEl("button.collapse-btn", "▶");
+    const headEl = newEl(".head", [btn, head]);
+    const el = newEl(`.collapsable`, headEl);
+    let collapsed = true;
+    let listEl: HTMLElement | null = null;
+    headEl.addEventListener("click", () => {
+        collapsed = !collapsed;
+        if (collapsed) {
+            btn.classList.remove("expanded");
+            listEl?.remove();
+        } else {
+            btn.classList.add("expanded");
+            listEl?.remove();
+            listEl = newEl(".expanded-list", getList(indentLv + 1));
+            listEl.style.setProperty("--indent-lv", String(indentLv + 1));
+            el.append(listEl);
+        }
+    });
     return el;
 }
 
@@ -137,7 +171,7 @@ function collapsablePreview(type: string, content: CollapsableContent) {
             "{",
             ...joinComma(
                 Object.entries(content as Record<string, SingleLogContent>).map(([k, c]) =>
-                    newEl("span.pair", [newEl("span.key", k), ": ", createLogContent(c, true)])
+                    newEl("span.pair", [newEl("span.key", k), ": ", createLogContent(c, 2).el])
                 )
             ),
             "}"
@@ -145,7 +179,7 @@ function collapsablePreview(type: string, content: CollapsableContent) {
     } else if (Array.isArray(content)) {
         preview.append(
             `(${content.length}) [`,
-            ...joinComma(content.map((c) => createLogContent(c, true))),
+            ...joinComma(content.map((c) => createLogContent(c, 2).el)),
             "]"
         );
     } else if (content instanceof Map) {
@@ -154,9 +188,9 @@ function collapsablePreview(type: string, content: CollapsableContent) {
             ...joinComma(
                 [...content.entries()].map(([k, c]) =>
                     newEl("span.pair", [
-                        createLogContent(k, true),
+                        createLogContent(k, 2).el,
                         " => ",
-                        createLogContent(c, true)
+                        createLogContent(c, 2).el
                     ])
                 )
             ),
@@ -165,26 +199,78 @@ function collapsablePreview(type: string, content: CollapsableContent) {
     } else if (content instanceof Set) {
         preview.append(
             `${type}(${content.size}) {`,
-            ...joinComma([...content.values()].map((c) => createLogContent(c, true))),
+            ...joinComma([...content.values()].map((c) => createLogContent(c, 2).el)),
             "}"
         );
     } else if (content instanceof TypedArray) {
         preview.append(
             `${type}(${(content as Int16Array).length}) [`,
-            ...joinComma([...(content as Int16Array)].map((c) => createLogContent(c, true))),
+            ...joinComma([...(content as Int16Array)].map((c) => createLogContent(c, 2).el)),
             "]"
         );
     } else return false;
 
     return preview;
 }
-// function collapsableFullList(type: string, content: CollapsableContent): HTMLElement[] {
-//     let arr;
-//     if (Array.isArray(content)) arr = content;
-//     else if (content instanceof TypedArray) arr = [...(content as Uint16Array)];
-//     else if (content instanceof Set) arr = [...content.values()];
-//     newEl(".full-content");
-// }
+function collapsableFullList(
+    type: string,
+    content: CollapsableContent,
+    indentLv: number
+): HTMLElement[] {
+    const newCollapsable = (
+        head: string | HTMLElement,
+        getList: (indentLv: number) => HTMLElement[]
+    ) => collapsable(head, getList, indentLv);
+
+    let lineArr: {
+        key: string | number;
+        el: HTMLElement;
+        type: string;
+        collapsable?: boolean;
+        content: SingleLogContent;
+    }[];
+    if (Array.isArray(content))
+        lineArr = content.map((c, i) => ({ key: i, ...createLogContent(c, 1), content: c }));
+    else if (content instanceof TypedArray)
+        lineArr = [...(content as Uint16Array)].map((c, i) => ({
+            key: i,
+            ...createLogContent(c, 1),
+            content: c
+        }));
+    else if (content instanceof Set)
+        lineArr = [...content.values()].map((c, i) => ({
+            key: i,
+            ...createLogContent(c, 1),
+            content: c
+        }));
+    else if (content instanceof Map)
+        lineArr = [...content.entries()].map(([k, v], i) => ({
+            key: i,
+            el: newEl("span.pair", [createLogContent(k, 2).el, " => ", createLogContent(v, 2).el]),
+            collapsable: true,
+            type: "Object",
+            content: { key: k, value: v }
+        }));
+    else if (type === "Object")
+        lineArr = Object.entries(content).map(([k, v]) => ({
+            key: k,
+            ...createLogContent(v, 1),
+            content: v
+        }));
+    else lineArr = [{ key: "Unknown", ...createLogContent(content, 2), content }];
+
+    return lineArr.map((l) => {
+        const lineEl = newEl(
+            ["div", "expanded-line"],
+            [newEl("span.key", String(l.key)), ": ", l.el]
+        );
+        return l.collapsable
+            ? newCollapsable(lineEl, (ii: number) =>
+                  collapsableFullList(l.type, l.content as CollapsableContent, ii)
+              )
+            : lineEl;
+    });
+}
 
 function joinComma(arr: any[]): any[] {
     const result = [];

@@ -137,7 +137,8 @@ export function testLogs() {
             // console.log("json:", safeJson(once));
             // console.log("double-json:", safeJson(twice));
             // console.dir(once, { depth: 12 });
-            logger.info(...(Array.isArray(input) ? input : [input]));
+            if (name.includes("error")) logger.error(...(Array.isArray(input) ? input : [input]));
+            else logger.info(...(Array.isArray(input) ? input : [input]));
         } catch (error) {
             console.error("logDetail failed:", error);
         }
