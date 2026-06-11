@@ -34,7 +34,12 @@ export function subscribePluginMount({
                                 ctx,
                                 "Plugin unmounting failed.",
                                 unmountCb,
-                                onUnmountError
+                                onUnmountError,
+                                {
+                                    type: "plugin-unmount-error",
+                                    phase: "mount",
+                                    summary: `${name} unmounting failed`
+                                }
                             );
                         plugin.unmount = null;
                     };
@@ -43,6 +48,11 @@ export function subscribePluginMount({
                 (err) => {
                     disposePluginContext(ctx);
                     onMountError?.(err);
+                },
+                {
+                    type: "plugin-mount-error",
+                    phase: "mount",
+                    summary: `${name} mounting failed`
                 }
             );
         const plugin = { ctx, mount, info };

@@ -5,17 +5,16 @@
     import { grabbing, reload, sequenceMovedReloader } from "../lib/stores";
     import FoldArrow from "../lib/FoldArrow.svelte";
     import { addHistory } from "../lib/workHistory";
-    import { get } from "svelte/store";
     import { rightclick } from "../lib/contextMenu/contextUtils";
     import outputNode from "./lines/output";
     import FrameUpdater from "../lib/frameUpdater";
     import { currentFocus as CurrentFocus, focusData } from "../sidebar/editUtils";
     import { appData } from "../lib/syncData.svelte";
-    import { ipcRenderer } from "electron";
+    import { ipc } from "../lib/ipc";
 
     let {
-        node,
-        type,
+        node: n,
+        type: t,
         outputs,
         innerOutputs = null,
         title,
@@ -32,6 +31,9 @@
         reload("nodeMoved");
     });
 
+    // svelte-ignore state_referenced_locally
+    const node = n,
+        type = t;
     const clipboardFn = node.clipboardFn;
 
     let nodeEl, handleEl;
@@ -126,7 +128,7 @@
     });
 
     function onpointerdown(evt) {
-        if (evt.button || get(grabbing) === "viewport") return;
+        if (evt.button || $grabbing === "viewport" || $grabbing === "viewportReady") return;
         focusData(type, node, { clipboardFn });
         bubbleMouseDown(evt);
     }
@@ -135,14 +137,14 @@
         type === "entry" && {
             label: "실행",
             click: () => {
-                ipcRenderer.send("request-execute", { type: "entry", id: node.id });
+                ipc.send("request-execute", { type: "entry", id: node.id });
                 return true;
             }
         },
         (type !== "entry" || node.standbyMode) && {
             label: type === "entry" ? "활성화" : "실행",
             click: () => {
-                ipcRenderer.send("request-execute", { type: "node", id: node.id });
+                ipc.send("request-execute", { type: "node", id: node.id });
                 return true;
             }
         },
@@ -195,7 +197,11 @@
     use:rightclick={contextmenu}
 >
     <div class="node-wrapper" style={`--node-color: ${color};`}>
-        <div class={["node", isFocused && "focus"]} style={`min-width: ${minWidth}px;`}>
+        <div
+            class={["node", isFocused && "focus"]}
+            id={node.id}
+            style={`min-width: ${minWidth}px;`}
+        >
             <div
                 class="head"
                 class:folded={folded && !innerOutputs?.length}

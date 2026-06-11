@@ -9,7 +9,7 @@
     /** @type {CanvasRenderingContext2D} */
     let ctx;
 
-    let WIDTH, HEIGHT;
+    let WIDTH, HEIGHT, PW, PH;
     let vpPos;
 
     function drawBezierLine(lineWidth, ...args) {
@@ -65,17 +65,21 @@
     function setCanvas() {
         if (!canvas) return;
 
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
+        canvas.width = PW;
+        canvas.height = PH;
+
+        ctx?.setTransform(PW / WIDTH, 0, 0, PH / HEIGHT, 0, 0);
 
         frameUpdater.draw();
     }
 
     let lineArr = [];
     const unsubs = [
-        viewport.screen.subscribe(({ width, height }) => {
+        viewport.screen.subscribe(({ width, height, pixelWidth, pixelHeight }) => {
             WIDTH = width;
             HEIGHT = height;
+            PW = pixelWidth;
+            PH = pixelHeight;
             setCanvas();
         }),
         viewport.pos.subscribe((pos) => {

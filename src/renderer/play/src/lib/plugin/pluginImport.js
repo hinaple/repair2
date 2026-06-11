@@ -1,5 +1,5 @@
 import { join } from "path";
-import { pluginDir } from "@classes/utils";
+import { pluginDir } from "@renderer/utils";
 
 export function dynamicImportPlugin(dir) {
     return import(

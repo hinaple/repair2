@@ -1,22 +1,22 @@
-import { ipcRenderer } from "electron";
 import { genElement } from "./resources";
 import { getAppData } from "./appdata";
-import Coord from "@classes/coord";
+import Coord from "@renderer/classes/coord";
+import { ipc } from "./ipc";
 
 const previewComponent = document.getElementById("preview-component");
 
 let currentPreview = null;
 let els = [];
-ipcRenderer.on("layout-preview", (event, { compData }) => {
+ipc.on("layout-preview", (event, { compData }) => {
     currentPreview = compData;
     render();
 });
-ipcRenderer.on("stop-preview", () => {
+ipc.on("stop-preview", () => {
     currentPreview = null;
     previewComponent.classList.remove("show-content");
     render();
 });
-ipcRenderer.on("preview-content-visible", (event, visible) => {
+ipc.on("preview-content-visible", (event, visible) => {
     previewComponent.classList.toggle("show-content", visible);
 });
 

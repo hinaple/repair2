@@ -1,11 +1,12 @@
 import { writable } from "svelte/store";
 
+/** @type {import("svelte/store").Writable<any>} */
 export const grabbing = writable(null);
 grabbing.subscribe((g) => {
     if (g === "select") {
         document.body.classList.add("selecting");
         document.body.classList.remove("grabbing");
-    } else if (g) {
+    } else if (g && g !== "viewportReady") {
         document.body.classList.add("grabbing");
         document.body.classList.remove("selecting");
     } else {

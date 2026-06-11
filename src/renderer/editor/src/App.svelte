@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script>
-    import ToastDisplay from "./lib/ToastDisplay.svelte";
+    import ToastDisplay from "./lib/toast/ToastDisplay.svelte";
     import ContextMenu from "./lib/contextMenu/ContextMenu.svelte";
     import { appData } from "./lib/syncData.svelte";
     import { redo, undo } from "./lib/workHistory";
@@ -9,9 +9,9 @@
     import { focusData } from "./sidebar/editUtils";
     import SideBar from "./sidebar/SideBar.svelte";
     import { onMount } from "svelte";
-    import { ipcRenderer } from "electron";
     import { reload } from "./lib/stores";
     import Modal from "./lib/modal/ModalDisplay.svelte";
+    import { ipc } from "./lib/ipc";
 
     focusData("project");
 
@@ -31,7 +31,7 @@
     $inspect(appData);
 
     onMount(() => {
-        ipcRenderer.send("monitor-event", "start");
+        ipc.send("monitor-evnt", "start");
     });
 
     document.fonts.ready.then(() => {
@@ -45,18 +45,27 @@
 <ContextMenu />
 <ToastDisplay />
 <Modal />
-<SideBar />
-<NodeSpace />
+<div class="screen">
+    <SideBar />
+    <NodeSpace />
+</div>
 
 <style>
     .info {
         position: fixed;
         right: 5px;
-        bottom: 5px;
-        color: #fff;
+        top: 5px;
+        color: #000;
         font-size: 12px;
         opacity: 0.8;
         pointer-events: none;
         z-index: var(--info-z);
+    }
+    .screen {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
     }
 </style>

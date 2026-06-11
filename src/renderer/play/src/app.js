@@ -1,22 +1,22 @@
-import Output from "@classes/output";
-import Step from "@classes/step.svelte";
-import Branch from "@classes/nodes/branch.svelte";
-import VariableSet from "@classes/nodes/variableSet.svelte";
-import ValueProcess from "@classes/value/valueProcess";
+import Output from "@renderer/classes/output";
+import Step from "@renderer/classes/step.svelte";
+import Branch from "@renderer/classes/nodes/branch.svelte";
+import VariableSet from "@renderer/classes/nodes/variableSet.svelte";
+import ValueProcess from "@renderer/classes/value/valueProcess";
 
 import { enToKo, koToEn } from "./lib/enKoConvert";
 import { getAppData, updateData } from "./lib/appdata";
 import { stepExecute } from "./lib/stepActions";
-import { ipcRenderer } from "electron";
 import { setVar } from "./lib/variables";
 import "./lib/communication";
 import "./lib/editorOpen";
 import "./lib/store";
-import Entry from "@classes/nodes/entry.svelte";
+import Entry from "@renderer/classes/nodes/entry.svelte";
 import { sendChanges } from "./lib/runtimeMonitor";
 import { afterPluginImported } from "./lib/plugin/pluginManager";
 
 import "./webcomponents/repairAsset";
+import { ipc } from "./lib/ipc";
 
 const disabledNodes = [];
 Output.prototype.goto = function () {
@@ -84,12 +84,12 @@ Entry.prototype.onDisabled = function () {
 window.addEventListener("load", () => {
     afterPluginImported().then(() => {
         updateData();
-        ipcRenderer.send("play-win-ready");
+        ipc.send("play-win-ready");
         getAppData().enterEntry("startup");
     });
 });
 
-ipcRenderer.on("request-execute", (event, { type, id }) => {
+ipc.on("request-execute", (event, { type, id }) => {
     if (type === "node") {
         const outputNode = getAppData().findNodeById(id);
         if (outputNode) outputNode.execute();

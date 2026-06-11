@@ -1,0 +1,93 @@
+import Output from "../output";
+import Value from "../value/value.svelte";
+import Node from "./node.svelte";
+
+export default class Branch extends Node {
+    operator = $state();
+    scriptData = $state();
+    disableAfterTrue = $state();
+    disableAfterFalse = $state();
+    constructor(
+        {
+            valueA = {},
+            valueB = {},
+            operator = "equals",
+            scriptData = null,
+            trueOutput = {},
+            falseOutput = {},
+            disableAfterTrue = false,
+            disableAfterFalse = false,
+            ...nodeData
+        },
+        creatingOpt = null
+    ) {
+        super("branch", nodeData);
+        this.valueA = new Value(valueA);
+        this.valueB = new Value(valueB);
+        this.trueOutput = new Output(trueOutput, creatingOpt);
+        this.falseOutput = new Output(falseOutput, creatingOpt);
+
+        this.operator = operator;
+        this.scriptData = scriptData;
+        this.disableAfterTrue = disableAfterTrue;
+        this.disableAfterFalse = disableAfterFalse;
+    }
+    //#only play
+    compare(a, b) {
+        if (this.operator === "equals") return a == b;
+        if (this.operator === "includes") return a.includes(b);
+        if (this.operator === "gt") return +a > +b;
+        if (this.operator === "lt") return +a < +b;
+        if (this.operator === "gte") return +a >= +b;
+        if (this.operator === "lte") return +a <= +b;
+        if (this.operator === "jsFunction") {
+            try {
+                return new Function("valueA", "valueB", this.scriptData)(a, b);
+            } catch (e) {
+                return false;
+            }
+        }
+        return false;
+    }
+    get isTrue() {
+        return this.compare(this.valueA.value, this.valueB.value);
+    }
+    execute() {
+        if (this.isTrue) this.trueOutput.goto();
+        else this.falseOutput.goto();
+    }
+    //#endonly
+
+    //#only editor
+    get storeData() {
+        return {
+            ...super.storeData,
+            valueA: this.valueA.storeData,
+            valueB: this.valueB.storeData,
+            operator: this.operator,
+            disableAfterTrue: this.disableAfterTrue,
+            disableAfterFalse: this.disableAfterFalse,
+            scriptData: this.scriptData,
+            trueOutput: this.trueOutput,
+            falseOutput: this.falseOutput
+        };
+    }
+    copyData(availableOuputIds = null) {
+        return {
+            ...super.copyData(),
+            valueA: this.valueA.copyData(),
+            valueB: this.valueB.copyData(),
+            operator: this.operator,
+            disableAfterTrue: this.disableAfterTrue,
+            disableAfterFalse: this.disableAfterFalse,
+            scriptData: this.scriptData,
+            trueOutput: this.trueOutput.copyData(availableOuputIds),
+            falseOutput: this.falseOutput.copyData(availableOuputIds)
+        };
+    }
+
+    get outputs() {
+        return [this.trueOutput, this.falseOutput];
+    }
+    //#endonly
+}

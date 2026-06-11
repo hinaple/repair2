@@ -13,8 +13,11 @@
         "allowSyntheticDefaultImports": true,
         "strict": true,
         "skipLibCheck": true,
-        "noEmit": true
+        "noEmit": true,
+        "paths": {
+            "@shared/*": ["../shared/*"]
+        }
     },
-    "include": ["./**/*.ts", "./**/*.js", "./**/*.json"],
+    "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.json", "src/**/*.d.ts"],
     "exclude": ["../../node_modules", "../../out", "../../dist"]
 }

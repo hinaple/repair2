@@ -1,5 +1,5 @@
-import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
+import { ipc } from "./ipc";
 
 const passwordEl = document.getElementById("repair-editor-password");
 
@@ -25,7 +25,7 @@ window.addEventListener(
                     : "E")
         ) {
             if (!getAppData().config.editorPassword?.trim?.()?.length) {
-                ipcRenderer.send("editor-on");
+                ipc.send("editor-on");
                 return;
             }
             inputtingPassword = true;
@@ -46,7 +46,7 @@ window.addEventListener(
         passwordEl.innerText = currentPassword;
 
         if (currentPassword.length < PW.length) return;
-        ipcRenderer.send("editor-on");
+        ipc.send("editor-on");
         setTimeout(stopInputting, 500);
     },
     true

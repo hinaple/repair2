@@ -1,4 +1,4 @@
-import { ipcRenderer } from "electron";
+import { ipc } from "./ipc";
 
 let receivedTotal = false;
 const RuntimeData = {
@@ -9,7 +9,7 @@ const RuntimeData = {
     components: new Set()
 };
 
-ipcRenderer.addListener("monitor-info", (evt, channel, data) => {
+ipc.on("monitor-info", (evt, channel, data) => {
     if (channel === "total") handleTotalInfo(data);
     else if (channel === "update") {
         for (const singleUpdate of data) {

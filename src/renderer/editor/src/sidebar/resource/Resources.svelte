@@ -1,10 +1,10 @@
 <script>
     import { appData } from "../../lib/syncData.svelte";
-    import ResourceClass from "@classes/resource.svelte";
+    import ResourceClass from "@renderer/classes/resource.svelte";
     import { addHistory } from "../../lib/workHistory";
     import Resource from "./Resource.svelte";
     import { AssetDir, selectMany, splitPath } from "./selectResourceFile";
-    import { ipcRenderer } from "electron";
+    import { ipc } from "../../lib/ipc";
 
     async function addResource(evt) {
         evt.stopPropagation();
@@ -18,7 +18,7 @@
         );
         let doCopy = false;
         if (outAssets.length) {
-            const result = await ipcRenderer.invoke("dialogue", {
+            const result = await ipc.invoke("dialog", {
                 type: "question",
                 title: "다른 폴더의 파일이 있습니다.",
                 message: `${outAssets.join("\n")}\n\n위 파일들을 자원 폴더에 복사하시겠습니까?`,
@@ -27,7 +27,7 @@
             });
             doCopy = result.response === 0;
         }
-        if (doCopy) outAssets = await ipcRenderer.invoke("copyInfoAsset", outAssets);
+        if (doCopy) outAssets = await ipc.invoke("copyInfoAsset", outAssets);
         const resourceArr = [...inAssets, ...(doCopy ? outAssets : [])].map(
             (s) => new ResourceClass({ src: s, folded: false })
         );

@@ -1,4 +1,4 @@
-import AppData from "@classes/appData.svelte";
+import AppData from "@renderer/classes/appData.svelte";
 import { addHistory } from "../lib/workHistory";
 import { getAllConnectedLines, setAllOutput } from "../nodes/lines/line";
 import { SvelteMap } from "svelte/reactivity";
@@ -67,5 +67,20 @@ export default class EditableAppData extends AppData {
             doData: { nodes, connectedLines },
             undoData: { nodes, connectedLines }
         });
+    }
+    get nodeConnects() {
+        const connects = new Map(
+            this.nodes.values().map((n) => [
+                n.id,
+                {
+                    ins: new Set(),
+                    outs: new Set((n.outputs ?? [n.output])?.map((o) => o.to).filter(Boolean) ?? [])
+                }
+            ])
+        );
+        connects.forEach((c, id) => {
+            c.outs.forEach((o) => connects.get(o).ins.add(id));
+        });
+        return connects;
     }
 }

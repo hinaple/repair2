@@ -1,6 +1,6 @@
 <script>
-    import { autofocus } from "../../lib/autofocus";
-    import Checkbox from "../../sidebar/Checkbox.svelte";
+    import { autofocus } from "../actions/autofocus";
+    import Checkbox from "../../sidebar/input/Checkbox.svelte";
     import { closeModal, modal } from "./modal.svelte.js";
 
     let values = $state(null);

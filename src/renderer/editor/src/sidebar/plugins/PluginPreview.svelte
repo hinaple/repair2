@@ -2,22 +2,44 @@
     import { hoverHighlight } from "../../lib/highlight";
     import Icon from "../../assets/icons/Icon.svelte";
     import { getVscode, openVscode } from "../../lib/vscode";
+    import { tippy } from "../../lib/tippy";
 
+    /** @typedef {import("@shared/plugin.types").PluginRendererInfo} Plugin */
+
+    /** @type {{info: Plugin}} */
     let { info } = $props();
 
     let moreBtn = $state(null);
     let showOpt = $state(false);
+
+    let color = $derived(info.error ? "#ff3636" : "#fff");
 </script>
 
-<div class="plugin" use:hoverHighlight={{ type: "plugin", data: info.name }}>
+<div
+    use:tippy={{
+        maxWidth: 250,
+        placement: "bottom",
+        animation: "fade",
+        theme: info.error && "error",
+        content: info.error
+            ? info.error.map((e) => e[1].summary ?? e[1].title).join("<hr/>")
+            : `${info.linked?.sourcePath ?? info.path}`,
+        delay: [200, null],
+        hideOnClick: false,
+        duration: 200,
+        allowHTML: true
+    }}
+    class="plugin"
+    use:hoverHighlight={{ type: "plugin", data: info.name }}
+>
     {#if info.svelte}
-        <Icon icon="svelte" color={!info.ready ? "#ff3636" : "#fff"} size={16} />
+        <Icon icon="svelte" {color} size={16} />
     {/if}
-    <span class={["name", (!info.ready || info.error) && "error"]}>
+    <span class={["name", info.error && "error"]}>
         {info.name}
     </span>
-    {#if !info.ready || info.error}
-        <Icon icon="warn" color="#ff3636" size={16} />
+    {#if info.error}
+        <Icon icon="warn" {color} size={16} />
     {/if}
     {#if info.linked}
         <Icon
@@ -27,7 +49,11 @@
         />
     {/if}
     {#if getVscode()}
-        <button bind:this={moreBtn} class="more" onclick={() => openVscode(info.path)}>
+        <button
+            bind:this={moreBtn}
+            class="more"
+            onclick={() => openVscode(info.linked?.sourcePath ?? info.path)}
+        >
             <Icon icon="vscode" color="#fff" size={18} />
         </button>
     {/if}

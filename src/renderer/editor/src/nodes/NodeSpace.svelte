@@ -7,19 +7,19 @@
         resizeViewport,
         moveViewport,
         posFromViewport,
-        getOriginalPos
+        getOriginalPos,
+        setViewportEl
     } from "./viewport";
     import Sequence from "./Sequence.svelte";
     import { grabbing } from "../lib/stores";
-    import { get } from "svelte/store";
     import Lines from "./lines/Lines.svelte";
     import { appData } from "../lib/syncData.svelte";
     import { focusData, selectManyNodes } from "../sidebar/editUtils";
     import { rightclick } from "../lib/contextMenu/contextUtils";
-    import SequenceClass from "@classes/nodes/sequence.svelte";
-    import BranchClass from "@classes/nodes/branch.svelte";
-    import EntryClass from "@classes/nodes/entry.svelte";
-    import VariableSetClass from "@classes/nodes/variableSet.svelte";
+    import SequenceClass from "@renderer/classes/nodes/sequence.svelte";
+    import BranchClass from "@renderer/classes/nodes/branch.svelte";
+    import EntryClass from "@renderer/classes/nodes/entry.svelte";
+    import VariableSetClass from "@renderer/classes/nodes/variableSet.svelte";
     import Branch from "./Branch.svelte";
     import Entry from "./Entry.svelte";
     import { pasted } from "../lib/clipboard";
@@ -27,49 +27,53 @@
     import FrameUpdater from "../lib/frameUpdater";
     import VariableSet from "./VariableSet.svelte";
     import LinesOld from "./lines/LinesOld.svelte";
+    import event from "../lib/actions/eventAction";
 
     let readyToGrab = $state(false);
     function keydown(evt) {
         if (evt.target.tagName === "INPUT" || evt.target.tagName === "TEXTAREA") return;
-        if (evt.key === " " && !get(grabbing)) {
+        if (evt.key === " " && !$grabbing) {
             readyToGrab = true;
+            $grabbing = myReadyGrab;
         }
     }
     function keyup(evt) {
         if (evt.key === " ") {
             readyToGrab = false;
-            if (get(grabbing) === myGrab) grabbing.set(null);
+            if ($grabbing === myGrab || $grabbing === myReadyGrab) $grabbing = null;
         }
         if (evt.key === "Alt") evt.preventDefault();
     }
 
+    const myReadyGrab = "viewportReady";
     const myGrab = "viewport";
     let realGrabbing = $state(false);
     let prvMouse = null;
     let selectOrigin = $state(null);
     let selectBoxEl = $state(null);
     function pointerdown(evt) {
-        if (evt.button === 0 && !readyToGrab && !get(grabbing)) {
+        if (evt.button === 0 && !$grabbing) {
             selectOrigin = { x1: evt.clientX, y1: evt.clientY };
         }
 
-        if (!((evt.button === 0 && readyToGrab) || (evt.button === 1 && !get(grabbing)))) {
-            if (!evt.button && !get(grabbing)) focusData("project");
-            return;
-        }
-        grabbing.set(myGrab);
-        realGrabbing = true;
-        prvMouse = { x: evt.screenX, y: evt.screenY };
+        if (
+            (evt.button === 0 && readyToGrab) ||
+            (evt.button === 1 && (readyToGrab || !$grabbing))
+        ) {
+            $grabbing = myGrab;
+            realGrabbing = true;
+            prvMouse = { x: evt.screenX, y: evt.screenY };
+            evt.preventDefault();
+        } else if (evt.button === 0 && (!$grabbing || readyToGrab)) focusData("project");
     }
     function pointermove(evt) {
-        if (selectOrigin) {
-            if (get(grabbing) !== "select") grabbing.set("select");
+        if (selectOrigin && selectBoxEl) {
+            if ($grabbing !== "select") $grabbing = "select";
 
             selectOrigin.x2 = evt.clientX;
             selectOrigin.y2 = evt.clientY;
             selectBoxEl.style.display = "block";
-            selectBoxEl.style.left = `${Math.min(selectOrigin.x1, selectOrigin.x2)}px`;
-            selectBoxEl.style.top = `${Math.min(selectOrigin.y1, selectOrigin.y2)}px`;
+            selectBoxEl.style.transform = `translate(${Math.min(selectOrigin.x1, selectOrigin.x2)}px, ${Math.min(selectOrigin.y1, selectOrigin.y2)}px)`;
             selectBoxEl.style.width = `${Math.abs(selectOrigin.x1 - selectOrigin.x2)}px`;
             selectBoxEl.style.height = `${Math.abs(selectOrigin.y1 - selectOrigin.y2)}px`;
             return;
@@ -106,16 +110,16 @@
                 );
             }
             selectOrigin = null;
-            grabbing.set(null);
+            $grabbing = null;
             return;
         }
         if (!realGrabbing || evt.button === 2) return;
-        if (!readyToGrab) grabbing.set(null);
+        $grabbing = readyToGrab ? myReadyGrab : null;
         realGrabbing = false;
     }
 
     function wheel(evt) {
-        if (get(grabbing)) return;
+        if (!readyToGrab && $grabbing) return;
         const dir = Math.abs(evt.deltaY) / evt.deltaY;
         if (isNaN(dir)) return;
         if (evt.ctrlKey || evt.shiftKey)
@@ -211,10 +215,16 @@
     class:grabbing={realGrabbing}
     class:ready-to-grab={readyToGrab}
     onpointerdown={pointerdown}
-    onwheel={wheel}
+    use:event={["wheel", wheel, { passive: true }]}
     use:rightclick={contextmenu}
+    use:setViewportEl
 >
     <Background />
+    {#if renderWithWebGL}
+        <Lines {unsupported} />
+    {:else}
+        <LinesOld />
+    {/if}
     <div class="viewport" bind:this={viewportEl}>
         {#each appData.nodes.values() as node (node.id)}
             {#if node.type === "sequence"}
@@ -244,28 +254,19 @@
             {/if}
         {/each}
     </div>
-    {#if renderWithWebGL}
-        <Lines {unsupported} />
-    {:else}
-        <LinesOld />
-    {/if}
 </div>
 {#if selectOrigin}
-    <div
-        class="select-box"
-        bind:this={selectBoxEl}
-        style={`left: ${selectOrigin.x1}px; top: ${selectOrigin.y1}px;`}
-        out:fade={{ duration: 80 }}
-    ></div>
+    <div class="select-box" bind:this={selectBoxEl} out:fade={{ duration: 80 }}></div>
 {/if}
 
 <style>
     .node-space {
-        width: 100%;
         height: 100%;
+        right: 0;
         position: absolute;
-        left: 0;
-        top: 0;
+        background-color: #eeeff0;
+        overflow: hidden;
+        contain: strict style;
     }
     .node-space :global(*) {
         user-select: none;
@@ -278,7 +279,12 @@
     .node-space.grabbing :global(*) {
         cursor: grabbing !important;
     }
+    .node-space.grabbing > .viewport {
+        will-change: transform;
+    }
     .viewport {
+        width: 100%;
+        height: 100%;
         position: absolute;
         left: 0;
         top: 0;
@@ -287,6 +293,8 @@
     }
 
     .select-box {
+        left: 0;
+        top: 0;
         position: fixed;
         pointer-events: none;
         width: 0;

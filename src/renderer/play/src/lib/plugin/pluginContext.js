@@ -1,4 +1,4 @@
-import { genId } from "@classes/utils";
+import { genId } from "@renderer/classes/genId";
 import { emitPluginEvent, addPluginEventListener } from "./pluginEventBus";
 import { emitRepairEvent, addRepairEventListener } from "../event";
 import {
@@ -11,7 +11,6 @@ import {
     clearComponents,
     getAllComponentHandles,
     getAllComponents,
-    getComponent,
     subscribeComponentHandles
 } from "../components";
 import { getVariableIdByName, getVarByName, setVarByName, subscribeVarByName } from "../variables";
@@ -26,7 +25,7 @@ import {
     listResources,
     removePreloadByTitle
 } from "../resources";
-import { reportPluginIssue, reportPluginException, sendPluginLog } from "./pluginReporter";
+import { reportPluginWarning, reportPluginException, sendPluginLog } from "./pluginReporter";
 import { serialSend, socketSend } from "../communication";
 import { pluginDisposed } from "./pluginStyles";
 
@@ -116,23 +115,19 @@ function createLifecycle(plugin) {
 
 function createLogger(plugin) {
     return {
-        debug: (...args) =>
-            sendPluginLog({ level: "debug", source: plugin, title: args.map(String).join(" ") }),
-        info: (...args) =>
-            sendPluginLog({ level: "info", source: plugin, title: args.map(String).join(" ") }),
+        debug: (...args) => sendPluginLog({ level: "debug", source: plugin, content: args }),
+        info: (...args) => sendPluginLog({ level: "info", source: plugin, content: args }),
         warn: (...args) =>
             sendPluginLog({
                 level: "warning",
                 source: plugin,
-                title: args.map(String).join(" "),
-                dialogue: true
+                content: args
             }),
         error: (...args) =>
             sendPluginLog({
                 level: "error",
                 source: plugin,
-                title: args.map(String).join(" "),
-                dialogue: true
+                content: args
             })
     };
 }
@@ -145,13 +140,13 @@ function createEvents(plugin, lifecycle) {
         const normalizedScope = scope ?? "repair";
         if (validScopes.has(normalizedScope)) return normalizedScope;
 
-        reportPluginIssue(plugin, `Invalid event scope: ${normalizedScope}`);
+        reportPluginWarning(plugin, `Invalid event scope: ${normalizedScope}`);
         return "repair";
     }
 
     function hasChannel(channel) {
         if (channel) return true;
-        reportPluginIssue(plugin, "Event channel is required.");
+        reportPluginWarning(plugin, "Event channel is required.");
         return false;
     }
 
@@ -193,7 +188,7 @@ function createEvents(plugin, lifecycle) {
         on(channel, listener, options = {}) {
             if (!hasChannel(channel)) return () => {};
             if (typeof listener !== "function") {
-                reportPluginIssue(plugin, `Event listener must be a function: ${channel}`);
+                reportPluginWarning(plugin, `Event listener must be a function: ${channel}`);
                 return () => {};
             }
             const scope = normalizeScope(options.scope);
@@ -254,7 +249,7 @@ function createComponents(plugin, lifecycle, myComponentId = null) {
 function createVariables(plugin, lifecycle) {
     function hasVariable(variableName) {
         if (getVariableIdByName(variableName)) return true;
-        reportPluginIssue(plugin, `Variable does not exist: ${variableName}`);
+        reportPluginWarning(plugin, `Variable does not exist: ${variableName}`);
         return false;
     }
 
@@ -296,7 +291,7 @@ function createResources(plugin) {
         const resource = getResourceByTitle(resourceTitle);
         if (resource) return resource;
 
-        reportPluginIssue(plugin, `Resource does not exist: ${resourceTitle}`);
+        reportPluginWarning(plugin, `Resource does not exist: ${resourceTitle}`);
         return null;
     }
 

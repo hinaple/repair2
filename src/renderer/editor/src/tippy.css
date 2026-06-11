@@ -1,0 +1,24 @@
+.tippy-box {
+    opacity: 0.9;
+    --tippy-color: #3b3b3b;
+    background-color: var(--tippy-color);
+}
+.tippy-arrow {
+    color: var(--tippy-color);
+}
+
+.tippy-content {
+    font-size: 14px;
+    text-align: center;
+    line-break: anywhere;
+}
+
+.tippy-box[data-theme~="error"] {
+    color: #ff4e4e;
+    font-weight: 600;
+    hr {
+        opacity: 0.7;
+        border-width: 1px 0 0 0;
+        margin-block: 8px;
+    }
+}

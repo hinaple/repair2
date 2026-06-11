@@ -9,7 +9,9 @@
 
     let vpPos = { x: 0, y: 0 },
         WIDTH,
-        HEIGHT;
+        HEIGHT,
+        PW,
+        PH;
 
     const CENTER_CROSS_LEN = 20;
     const frameUpdater = new FrameUpdater(() => {
@@ -56,19 +58,24 @@
     function setCanvas() {
         if (!canvas) return;
 
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
-        ctx.fillStyle = "var(--b-o4)";
-        ctx.strokeStyle = "var(--b-o4)";
+        canvas.width = PW;
+        canvas.height = PH;
+
+        ctx?.setTransform(PW / WIDTH, 0, 0, PH / HEIGHT, 0, 0);
+
+        ctx.fillStyle = "#0007";
+        ctx.strokeStyle = "#0007";
         ctx.lineWidth = 2;
 
         frameUpdater.draw();
     }
 
     const unsubs = [
-        viewport.screen.subscribe(({ width, height }) => {
+        viewport.screen.subscribe(({ width, height, pixelWidth, pixelHeight }) => {
             WIDTH = width;
             HEIGHT = height;
+            PW = pixelWidth;
+            PH = pixelHeight;
             setCanvas();
         }),
         viewport.pos.subscribe(({ x, y }) => {

@@ -80,7 +80,7 @@
     class={["step", $currentFocus.obj === step && "focus", activated && "activated"]}
     bind:this={el}
     onpointerdown={(evt) => {
-        if (evt.button || get(grabbing)) return;
+        if (evt.button || $grabbing) return;
         evt.stopPropagation();
         focusData("step", step, { clipboardFn });
         outClicked();

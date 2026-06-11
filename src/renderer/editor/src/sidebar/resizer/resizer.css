@@ -1,0 +1,17 @@
+.resizable > .resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--width);
+    height: 100%;
+    transform: translateX(calc(var(--width) / 2));
+    cursor: ew-resize;
+    z-index: 2;
+    background-color: #4e86ff;
+    opacity: 0;
+}
+.resizer.grabbing,
+.resizer:hover {
+    opacity: 0.8;
+    transition: opacity 500ms ease-out;
+}

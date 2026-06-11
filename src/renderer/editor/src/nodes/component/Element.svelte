@@ -55,7 +55,7 @@
     ];
 
     function addListener(evt) {
-        if (get(grabbing)) return;
+        if (evt.button || $grabbing) return;
         evt.stopPropagation();
         focusData(
             "listener",
@@ -83,7 +83,7 @@
     class={["element", $currentFocus.obj === element && "focus"]}
     bind:this={el}
     onpointerdown={(evt) => {
-        if (evt.button || get(grabbing)) return;
+        if (evt.button || $grabbing) return;
         evt.stopPropagation();
         focusData("element", element, { preview: parent, clipboardFn });
         outClicked();

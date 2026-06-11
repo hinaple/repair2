@@ -6,11 +6,12 @@ import { currentFocus, selectManyNodes } from "../sidebar/editUtils";
 import { clipboard } from "electron";
 import { unpack, pack } from "msgpackr";
 
-import Step from "@classes/step.svelte";
-import Element from "@classes/element.svelte";
-import Listener from "@classes/listener.svelte";
-import ValueProcess from "@classes/value/valueProcess";
-import { NodeClasses, genId } from "@classes/utils";
+import Step from "@renderer/classes/step.svelte";
+import Element from "@renderer/classes/element.svelte";
+import Listener from "@renderer/classes/listener.svelte";
+import ValueProcess from "@renderer/classes/value/valueProcess";
+import { NodeClasses } from "@renderer/utils";
+import { genId } from "@renderer/classes/genId";
 import { reload } from "./stores";
 
 const ClipboardFormat = "application/x-repair2-clipboard-binary";
@@ -35,10 +36,11 @@ export function pasted(target = get(currentFocus), pos = null) {
         if (type === "nodes") {
             const posOffset = data[0].nodePos;
             const newIds = Array.from(data, () => genId());
+            const targetPos = pos ?? getViewportCenter();
             const newNodes = data.map((n, i) => {
                 const nodePos = {
-                    x: n.nodePos.x - posOffset.x + (pos ?? getViewportCenter()).x,
-                    y: n.nodePos.y - posOffset.y + (pos ?? getViewportCenter()).y
+                    x: n.nodePos.x - posOffset.x + targetPos.x,
+                    y: n.nodePos.y - posOffset.y + targetPos.y
                 };
                 if (n.type in NodeClasses)
                     return new NodeClasses[n.type](
@@ -73,8 +75,8 @@ export function pasted(target = get(currentFocus), pos = null) {
                 afterChange: () => reload("nodeMoved")
             });
         else return;
-    } catch {
-        return null;
+    } catch (err) {
+        console.error("An error occurred while pasting.", err);
     }
 }
 

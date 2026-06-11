@@ -1,5 +1,5 @@
 <script>
-    import { getAssetDir } from "@classes/utils";
+    import { getAssetDir } from "@renderer/utils";
     import { onDestroy } from "svelte";
 
     let { resource, controls = true, small = false } = $props();

@@ -2,9 +2,9 @@
     import { onDestroy, onMount, tick } from "svelte";
     import Grabber from "./grabber";
     import { rInfo } from "../nodes/viewport";
-    import { flip } from "svelte/animate";
     import { addHistory } from "./workHistory";
     import FrameUpdater from "./frameUpdater";
+    import { cubicOut } from "svelte/easing";
 
     let {
         sortable,
@@ -31,34 +31,103 @@
     let container = $state(null);
     let containerInfo = $state({ top: 0, height: 0 });
 
-    let originalGrabIdx = $state(-1);
+    let finalGrabIdx = -1;
     let grabItemIdx = $state(-1);
-    let floatingItemInfo = $state({
-        el: null,
-        top: 0,
-        size: { width: 0, height: 0 },
-        original: null
-    });
-
-    const frameUpdater = new FrameUpdater(() => {
+    const frameUpdater = new FrameUpdater((now) => {
         if (grabItemIdx === -1) return;
-        if (floatingItemInfo.top < 0) floatingItemInfo.el.style.top = "0px";
-        else if (floatingItemInfo.top + floatingItemInfo.size.height >= containerInfo.height)
-            floatingItemInfo.el.style.top = `${(containerInfo.height - floatingItemInfo.size.height) / rInfo.ratio}px`;
-        else floatingItemInfo.el.style.top = `${floatingItemInfo.top / rInfo.ratio}px`;
+
+        if (mouseMoved) {
+            reorderWhileGrabbing(now);
+            mouseMoved = false;
+        }
+
+        let stillMoving = false;
+        listArr.forEach((l, i) => {
+            if (i === grabItemIdx)
+                l.top = Math.max(
+                    0,
+                    Math.min(containerInfo.height - l.rect.height / rInfo.ratio, l.grabTop)
+                );
+            else if (l.flip) {
+                const t = cubicOut(Math.min(1, (now - l.flip.startedAt) / FLIP_DURATION));
+                l.top = l.flip.from + (l.flip.to - l.flip.from) * t;
+                if (t < 1) stillMoving = true;
+                else l.flip = null;
+            }
+            l.el.style.transform = `translateY(${l.top}px)`;
+        });
+        onmoved?.();
+        return stillMoving;
     });
 
-    let moveFrameUpdater;
-    if (onmoved) {
-        moveFrameUpdater = new FrameUpdater(() => {
-            onmoved();
-            return flipMoving;
-        });
+    function reorderWhileGrabbing(now) {
+        const grabbing = listArr[grabItemIdx];
+
+        let targetIdx = grabItemIdx;
+        if (grabbing.grabTop < grabbing.realTop) {
+            for (let prevLine = grabbing.realTop; targetIdx > 0; targetIdx--) {
+                const nextLine = prevLine - listArr[targetIdx - 1].rect.height / rInfo.ratio - gap;
+
+                if (grabbing.grabTop > (nextLine + prevLine) / 2) break;
+                prevLine = nextLine;
+            }
+        } else {
+            for (let prevLine = grabbing.realTop; targetIdx < listArr.length - 1; targetIdx++) {
+                const nextLine = prevLine + listArr[targetIdx + 1].rect.height / rInfo.ratio + gap;
+
+                if (grabbing.grabTop < (nextLine + prevLine) / 2) break;
+                prevLine = nextLine;
+            }
+        }
+
+        if (targetIdx !== finalGrabIdx) {
+            finalGrabIdx = targetIdx;
+            calcFlipTop(now);
+        }
     }
 
-    let mounted = false;
+    function calcRealTop() {
+        let currentTop = 0;
+        for (let i = 0; i < listArr.length; i++) {
+            listArr[i].realTop = currentTop;
+            listArr[i].top = currentTop;
 
-    let lastZone;
+            currentTop += listArr[i].rect.height / rInfo.ratio + gap;
+        }
+        return currentTop - gap;
+    }
+
+    const FLIP_DURATION = 200;
+    function calcFlipTop(now) {
+        let currentTop = 0;
+        for (let i = 0; i < listArr.length; i++) {
+            const ii =
+                grabItemIdx === -1
+                    ? i
+                    : i === finalGrabIdx
+                      ? grabItemIdx
+                      : i > finalGrabIdx && i <= grabItemIdx
+                        ? i - 1
+                        : i < finalGrabIdx && i >= grabItemIdx
+                          ? i + 1
+                          : i;
+            if (
+                ii !== grabItemIdx &&
+                (listArr[ii].idx ?? ii) !== i &&
+                typeof listArr[ii].top === "number"
+            ) {
+                listArr[ii].idx = i;
+                listArr[ii].flip = {
+                    from: listArr[ii].top,
+                    to: currentTop,
+                    startedAt: now
+                };
+            }
+            currentTop += listArr[ii].rect.height / rInfo.ratio + gap;
+        }
+    }
+
+    let mouseMoved = false;
     async function update() {
         if (!mounted) return;
         clearGrabbers();
@@ -79,63 +148,29 @@
                         l.rect = l.el.getBoundingClientRect();
                     });
                     grabItemIdx = i;
-                    originalGrabIdx = i;
-                    floatingItemInfo.original = listArr[grabItemIdx].itemData;
+                    finalGrabIdx = i;
                     const containerRect = container.getBoundingClientRect();
                     containerInfo.top = containerRect.top;
-                    containerInfo.height = containerRect.height;
-                    floatingItemInfo.top = listArr[i].rect.top - containerInfo.top;
-                    floatingItemInfo.size.width = listArr[i].rect.width;
-                    floatingItemInfo.size.height = listArr[i].rect.height;
+                    containerInfo.height = calcRealTop();
+                    listArr[i].grabTop = (listArr[i].rect.top - containerInfo.top) / rInfo.ratio;
 
                     frameUpdater.draw();
                 },
                 onMoved: ({ dy }) => {
-                    if (onmoved) moveFrameUpdater.draw();
+                    listArr[grabItemIdx].grabTop += dy;
 
-                    floatingItemInfo.top += dy * rInfo.ratio;
+                    mouseMoved = true;
                     frameUpdater.draw();
-
-                    const floatingCenter = floatingItemInfo.top + floatingItemInfo.size.height / 2;
-
-                    if (lastZone && floatingCenter > lastZone[0] && floatingCenter < lastZone[1])
-                        return;
-                    lastZone = null;
-
-                    let checkingHeight = 0,
-                        targetIdx;
-                    for (targetIdx = 0; targetIdx < listArr.length; targetIdx++) {
-                        checkingHeight += listArr[targetIdx].rect.height;
-                        if (floatingCenter < checkingHeight || targetIdx === listArr.length - 1)
-                            break;
-                        checkingHeight += gap;
-                    }
-
-                    if (targetIdx !== grabItemIdx) {
-                        lastZone = [
-                            checkingHeight - listArr[targetIdx].rect.height - gap,
-                            checkingHeight
-                        ];
-
-                        listArr = listArr.toSpliced(
-                            targetIdx,
-                            0,
-                            listArr.splice(grabItemIdx, 1)[0]
-                        );
-                        grabItemIdx = targetIdx;
-                        flipStart();
-                    }
                 },
                 onMoveEnd: () => {
-                    if (grabItemIdx !== originalGrabIdx) {
+                    if (grabItemIdx !== finalGrabIdx) {
                         sortable.reorderWithHistory(addHistory, {
-                            from: originalGrabIdx,
-                            to: grabItemIdx
+                            from: grabItemIdx,
+                            to: finalGrabIdx
                         });
                     } else update();
                     grabItemIdx = -1;
-                    originalGrabIdx = -1;
-                    lastZone = null;
+                    finalGrabIdx = -1;
                 }
             });
         });
@@ -148,6 +183,7 @@
         });
     }
 
+    let mounted = false;
     onMount(() => {
         mounted = true;
         update();
@@ -160,61 +196,28 @@
             if (onremoved) onremoved();
         });
     }
-
-    let endTimeout;
-    let flipMoving = false;
-    function flipStart() {
-        if (endTimeout) clearTimeout(endTimeout);
-        flipMoving = true;
-        endTimeout = setTimeout(flipEnd, 200);
-    }
-    function flipEnd() {
-        flipMoving = false;
-    }
 </script>
 
 <div
-    class={["sortable-list", style, grabItemIdx !== -1 && "unclickable"]}
-    style:gap={`${gap}px`}
+    class={["sortable-list", style, grabItemIdx !== -1 && "sorting"]}
+    style={`gap: ${gap}px;` +
+        (grabItemIdx !== -1 && containerInfo.height && `height: ${containerInfo.height}px;`)}
     bind:this={container}
 >
-    {#if grabItemIdx !== -1}
-        <div
-            class="floating"
-            bind:this={floatingItemInfo.el}
-            style={`width: ${floatingItemInfo.size.width / rInfo.ratio}px;` +
-                `height: ${floatingItemInfo.size.height / rInfo.ratio}px;`}
-        >
-            {#if style === "waterfall"}
-                <div class="triangle"></div>
-            {/if}
-            <Component item={floatingItemInfo.original} noGrab />
-        </div>
-    {/if}
     {#if style === "waterfall" && listArr.length}
         <div class="triangle top"></div>
     {/if}
     {#each listArr as item, i (item.key)}
-        <div
-            class={["item-wrapper", grabItemIdx === i && "dummy"]}
-            animate:flip={{ duration: 200 }}
-        >
-            {#if grabItemIdx === i}
-                <div
-                    style={`width: ${floatingItemInfo.size.width / rInfo.ratio}px;` +
-                        `height: ${floatingItemInfo.size.height / rInfo.ratio}px;`}
-                ></div>
-            {:else if i !== listArr.length - 1 && style === "waterfall"}
+        <div bind:this={item.el} class={["item-wrapper", grabItemIdx === i && "floating"]}>
+            {#if i !== listArr.length - 1 && style === "waterfall"}
                 <div class="triangle"></div>
             {/if}
             <div class="item">
                 <Component
                     item={item.itemData}
                     {sortable}
-                    bind:el={item.el}
                     bind:handle={item.handle}
                     remove={() => remove(i)}
-                    hidden={grabItemIdx === i}
                     {...props}
                 />
             </div>
@@ -229,23 +232,22 @@
         width: 100%;
         position: relative;
     }
-    .floating {
-        position: absolute;
-        z-index: 2;
-        opacity: 0.6;
-    }
-    .unclickable {
+    .sorting {
         pointer-events: none;
+        /* contain: layout size style; */
+    }
+    .sorting > .item-wrapper {
+        position: absolute;
+        top: 0;
+        width: 100%;
     }
     .item-wrapper {
         box-sizing: border-box;
         position: relative;
     }
-    .item-wrapper.dummy {
-        opacity: 0;
-    }
-    .dummy .item {
-        display: none;
+    .item-wrapper.floating {
+        opacity: 0.5;
+        width: 100%;
     }
     .triangle {
         position: absolute;
@@ -262,22 +264,11 @@
         top: 0;
     }
 
-    .waterfall > .floating {
-        transform: translateY(-2px);
-        border-block: solid #000 2px;
-    }
     .waterfall > .item-wrapper {
         border-bottom: solid #000 2px;
     }
 
-    .enum > .floating {
-        background-color: var(--b-o3);
-    }
     .enum > .item-wrapper {
         background-color: var(--b-o1);
-    }
-
-    .listener > .floating {
-        opacity: 0.4;
     }
 </style>

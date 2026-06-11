@@ -21,7 +21,7 @@
         });
 
     function addProcess(evt) {
-        if (get(grabbing)) return;
+        if ($grabbing) return;
         evt.stopPropagation();
         const newProcess = value.process.addWithHistory(addHistory, {
             afterChange: () => reload("nodeMoved")
@@ -33,7 +33,7 @@
     }
 
     function clickBase(evt) {
-        if (evt.button || get(grabbing)) return;
+        if (evt.button || $grabbing) return;
         evt.stopPropagation();
         focusData("value", value);
         outClicked();

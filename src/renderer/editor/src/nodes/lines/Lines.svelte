@@ -21,7 +21,7 @@
     let bufferInfo;
     let pointBuffer;
 
-    let WIDTH, HEIGHT;
+    let WIDTH, HEIGHT, PW, PH;
     const FLOAT_SIZE = 4;
     const POINTS_PER_LINE = 4;
     const COMPONENTS_PER_POINT = 2;
@@ -195,18 +195,23 @@
     function setCanvas() {
         if (!canvas || !gl) return;
 
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
-        gl.viewport(0, 0, WIDTH, HEIGHT);
+        canvas.width = PW;
+        canvas.height = PH;
+        gl.viewport(0, 0, PW, PH);
 
         frameUpdater.draw();
     }
 
     let lineArr = [];
     const unsubs = [
-        viewport.screen.subscribe(({ width, height }) => {
+        viewport.screen.subscribe(({ width, height, pixelWidth, pixelHeight }) => {
+            if (!width || !height) return;
+
             WIDTH = width;
             HEIGHT = height;
+            PW = pixelWidth;
+            PH = pixelHeight;
+            changeLineSegments();
             setCanvas();
         }),
         viewport.pos.subscribe(() => {

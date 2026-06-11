@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "ignoreDeprecations": "6.0",
+        "paths": {
+            "@renderer/*": ["../common/*"],
+            "@shared/*": ["../../shared/*"]
+        }
+    },
+    "include": ["./**/*"],
+    "exclude": ["node_modules", "dist"]
+}

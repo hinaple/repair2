@@ -1,7 +1,7 @@
 <script>
     import Icon from "../../assets/icons/Icon.svelte";
-    import InputField from "../InputField.svelte";
-    import outClickAction from "../../lib/outclickaction";
+    import InputField from "../input/InputField.svelte";
+    import outClickAction from "../../lib/actions/outclickaction";
     import { hoverHighlight } from "../../lib/highlight";
     import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
     import { onDestroy } from "svelte";
