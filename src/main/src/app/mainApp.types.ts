@@ -1,7 +1,7 @@
 import type { BrowserWindow } from "electron";
 import type { ProjectData } from "@shared/projectData.types";
 import type { PluginManager } from "../plugin/pluginManager";
-import type { SetHmrActive } from "../hmrs";
+import type { SetHmrActive } from "../system/hmrs";
 import type { ReportLog } from "../logs/reportLog";
 import type { PluginHmrController } from "../controllers/pluginHmrController";
 import type { ProjectController } from "../controllers/projectController";
@@ -87,12 +87,4 @@ export type MainSystem = {
     app: typeof import("electron").app;
     dialog: NewDialogs;
     shell: typeof import("electron").shell;
-};
-
-export type MainStore = {
-    getStore: () => Promise<{
-        get: (key: string) => unknown;
-        set: (key: string, value: unknown) => void;
-    }>;
-    clearStore: () => Promise<unknown> | unknown;
 };

@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
-import { logger } from "./logs/logger";
+import { logger } from "../logs/logger";
 
 function normalizeKey(key: string) {
     return key

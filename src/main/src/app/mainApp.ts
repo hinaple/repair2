@@ -5,7 +5,7 @@ import { registerLogger } from "../logs/logger";
 import { testLogs } from "../test/logContent.test";
 import { MainAppEditorSave } from "./mainAppEditorSave";
 import { GlobalKey } from "../system/globalKey";
-import { createReporter } from "./mainAppLog";
+import { createReporter } from "./createReporter";
 import { MainAppMessage } from "./mainAppMessage";
 import { MainAppServices } from "./mainAppServices";
 import { MainAppStartup } from "../windows/splash";
@@ -14,10 +14,9 @@ import { createControllers } from "./mainAppControllers";
 import { createSystem } from "./mainAppSystem";
 import { paths } from "./mainAppPaths";
 import { LogStore } from "../logs/logStore";
-import { Store } from "../store";
+import { Store } from "../system/store";
 
 declare const __APP_VERSION__: string;
-
 export class MainApp {
     readonly version = __APP_VERSION__;
     readonly isDev = is.dev;
@@ -37,7 +36,7 @@ export class MainApp {
 
     start() {
         registerLogger(this.reportLog);
-        testLogs();
+        if (import.meta.env.DEV) testLogs();
 
         this.service.initialize(this);
         this.#registerAppLifecycle();

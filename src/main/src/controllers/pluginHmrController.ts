@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { join } from "path";
 import { PluginManager } from "../plugin/pluginManager";
-import { createHmr } from "../hmrs";
+import { createHmr } from "../system/hmrs";
 import type { MainApp } from "../app/mainApp";
 import { logger } from "../logs/logger";
 

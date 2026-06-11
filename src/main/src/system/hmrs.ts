@@ -1,6 +1,6 @@
 import type { FSWatcher } from "chokidar";
 import { join } from "path";
-import { logger } from "./logs/logger";
+import { logger } from "../logs/logger";
 
 const HMR_PENDING_MS = 100;
 
