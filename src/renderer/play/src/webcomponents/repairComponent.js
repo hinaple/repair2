@@ -5,7 +5,7 @@ import { removeComponent } from "../lib/components";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
 import { getPlugin } from "../lib/plugin/pluginManager";
 
-import Coord from "@classes/coord";
+import Coord from "@renderer/classes/coord";
 
 function getComponentIdentity(componentData) {
     return {
@@ -25,7 +25,7 @@ function getFrameIdentity(framePlugin) {
 
 export default class RepairComponent extends HTMLElement {
     /**
-     * @param {import("@classes/component.svelte").default} componentData
+     * @param {import("@renderer/classes/component.svelte").default} componentData
      * @param {boolean} showIntro
      */
     constructor(componentData, showIntro = true) {
@@ -154,7 +154,7 @@ export default class RepairComponent extends HTMLElement {
     }
 
     /**
-     * @param {import("@classes/transition.svelte").default} transition
+     * @param {import("@renderer/classes/transition.svelte").default} transition
      * @param {boolean} isOutro
      * */
     startTransition(transition, isOutro = false) {

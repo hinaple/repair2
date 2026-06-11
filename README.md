@@ -74,7 +74,7 @@ src/main/communication/   serial, socket, bonjour 통신
 src/main/plugin/          플러그인 로딩/빌드/런타임
 src/renderer/editor/      에디터 화면
 src/renderer/play/        플레이어 화면
-src/renderer/classes/     프로젝트 데이터 모델
+src/renderer/common/      프로젝트 데이터 모델
 templates/                프로젝트/플러그인 템플릿
 docs/plugin-sdk/          플러그인 SDK 문서
 packages/plugin-sdk/      플러그인 SDK 패키지

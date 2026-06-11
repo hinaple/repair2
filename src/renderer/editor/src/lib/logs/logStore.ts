@@ -1,10 +1,10 @@
-import { ipcRenderer } from "electron";
 import type { LogChange, LogEntry, LogListFilter } from "@shared/log.types";
+import { ipc } from "../ipc";
 
 export const Logs: Map<string, LogEntry> = new Map();
 
 async function updateLogs(filter: LogListFilter = {}) {
-    const logs = (await ipcRenderer.invoke("log:list", filter)) as LogEntry[];
+    const logs = (await ipc.invoke("log:list", filter)) as LogEntry[];
     // logInfo.keys = [];
     Logs.clear();
     logs.forEach(appendLog);
@@ -24,7 +24,7 @@ export function subscribeLog(update: UpdateCallback): () => void {
     return () => subscribers.delete(update);
 }
 
-ipcRenderer.on("log:changed", (_, change: LogChange) => {
+ipc.on("log:changed", (_, change: LogChange) => {
     if (change.type === "append") {
         appendLog(change.entry);
     } else {

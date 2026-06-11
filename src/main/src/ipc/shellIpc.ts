@@ -1,7 +1,8 @@
-import { ipcMain, shell } from "electron";
+import { shell } from "electron";
+import { ipc } from "./ipcMethods";
 
 export function setupShellIpc() {
-    ipcMain.on("open-dir", (evt, dir: string) => {
+    ipc.on("open-dir", (evt, dir: string) => {
         shell.openPath(dir);
     });
 }

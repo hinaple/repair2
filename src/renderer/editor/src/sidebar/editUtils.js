@@ -1,8 +1,8 @@
 import { get, writable } from "svelte/store";
 import { appData } from "../lib/syncData.svelte";
-import { ipcRenderer } from "electron";
-import { NodeClasses } from "@classes/utils";
+import { NodeClasses } from "@renderer/utils";
 import { getAllChainedNodes } from "../nodes/connects";
+import { ipc } from "../lib/ipc";
 
 const NodeTypes = Object.keys(NodeClasses);
 
@@ -50,10 +50,10 @@ export function focusData(type, obj = appData.config, data = null) {
     ) {
         currentFocus.set({ type, [type === "nodes" ? "arr" : "obj"]: obj, data });
         if (type === "component" || type === "element") {
-            ipcRenderer.send("layout-preview", { compData: data.preview.storeData });
+            ipc.send("layout-preview", { compData: data.preview.storeData });
             previewing = data.preview;
         } else if (previewing) {
-            ipcRenderer.send("stop-preview");
+            ipc.send("stop-preview");
             previewing = null;
         }
 
@@ -77,12 +77,12 @@ export function focusData(type, obj = appData.config, data = null) {
 
 export function reloadPreview(showContents = false) {
     if (!previewing) return;
-    ipcRenderer.send("layout-preview", { compData: previewing.storeData, showContents });
+    ipc.send("layout-preview", { compData: previewing.storeData, showContents });
 }
 
 export function setPreviewContentVisible(visible) {
     if (!previewing) return;
-    ipcRenderer.send("preview-content-visible", visible);
+    ipc.send("preview-content-visible", visible);
 }
 
 let isShiftPressed = false;

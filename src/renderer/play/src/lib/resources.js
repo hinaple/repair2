@@ -1,4 +1,4 @@
-import { getAssetDir } from "@classes/utils";
+import { getAssetDir } from "@renderer/utils";
 import { getAppData } from "./appdata";
 import { registerUtils } from "./repairUtils";
 import { sendChanges } from "./runtimeMonitor";

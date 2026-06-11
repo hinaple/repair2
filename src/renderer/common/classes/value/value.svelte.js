@@ -1,4 +1,4 @@
-import Sortable from "@classes/sortable.svelte";
+import Sortable from "../sortable.svelte";
 import ValueProcess from "./valueProcess";
 
 export default class Value {

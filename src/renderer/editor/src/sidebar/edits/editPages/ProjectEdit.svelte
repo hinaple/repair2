@@ -1,5 +1,5 @@
 <script>
-    import PluginPointer from "@classes/pluginPointer.svelte";
+    import PluginPointer from "@renderer/classes/pluginPointer.svelte";
     import { screenConfigTypes } from "../../../lib/translate";
     import InputField from "../../input/InputField.svelte";
 

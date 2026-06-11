@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { ipc } from "./ipcMethods";
 
 type StoreLike = {
     get: (key: string) => unknown;
@@ -10,10 +10,10 @@ type StoreIpcOptions = {
 };
 
 export function setupStoreIpc({ getStore }: StoreIpcOptions) {
-    ipcMain.handle("get-store", async (evt, key: string) => {
+    ipc.handle("get-store", async (evt, key: string) => {
         return (await getStore()).get(key);
     });
-    ipcMain.on("set-store", async (evt, key: string, value: unknown) => {
+    ipc.on("set-store", async (evt, key: string, value: unknown) => {
         (await getStore()).set(key, value);
     });
 }

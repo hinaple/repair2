@@ -1,6 +1,6 @@
 <script>
     import { appData } from "../../lib/syncData.svelte";
-    import VariableClass from "@classes/variable.svelte";
+    import VariableClass from "@renderer/classes/variable.svelte";
     import { addHistory } from "../../lib/workHistory";
     import Variable from "./Variable.svelte";
 

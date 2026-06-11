@@ -1,8 +1,8 @@
 import { get, writable } from "svelte/store";
 import { outClicked } from "../lib/contextMenu/contextUtils";
-import { ipcRenderer } from "electron";
 import { appData } from "../lib/syncData.svelte";
 import FrameUpdater from "../lib/frameUpdater";
+import { ipc } from "../lib/ipc";
 
 export const rInfo = {
     ratio: 0,
@@ -207,13 +207,13 @@ export function getViewportCenter() {
     return { x: vp.x, y: vp.y };
 }
 
-ipcRenderer.on("zoom", (_, step) => {
+ipc.on("zoom", (_, step) => {
     const screenSize = get(viewport.screen);
     const center = { x: screenSize.width / 2 + SIDEBAR_WIDTH, y: screenSize.height / 2 };
     resizeViewport(step, center);
 });
 
-ipcRenderer.on("zoom-fit", () => {
+ipc.on("zoom-fit", () => {
     if (appData) {
         fitViewportToNodes(appData.nodes);
     }

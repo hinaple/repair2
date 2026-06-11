@@ -1,7 +1,6 @@
 <script>
-    import Coord from "@classes/coord";
+    import Coord from "@renderer/classes/coord";
     import InputField from "./InputField.svelte";
-    import { addHistory } from "../../lib/workHistory";
     import * as Easings from "easing-utils";
 
     let { dragOption, previewer = false } = $props();

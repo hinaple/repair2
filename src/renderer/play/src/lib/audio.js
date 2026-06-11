@@ -1,5 +1,5 @@
 import { getAppData } from "./appdata";
-import { getAssetDir } from "@classes/utils";
+import { getAssetDir } from "@renderer/utils";
 
 const audioChannels = {};
 

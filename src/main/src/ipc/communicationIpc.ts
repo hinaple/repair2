@@ -1,5 +1,5 @@
-import { ipcMain } from "electron";
 import type { SerialService, SocketService } from "../app/mainContext.types";
+import { ipc } from "./ipcMethods";
 
 type CommunicationIpcOptions = {
     socket: SocketService;
@@ -8,7 +8,7 @@ type CommunicationIpcOptions = {
 };
 
 export function setupCommunicationIpc({ socket, serial, sendToEditor }: CommunicationIpcOptions) {
-    ipcMain.on("socket-connect", (event, urls: string | string[]) => {
+    ipc.on("socket-connect", (event, urls: string | string[]) => {
         socket
             .connect(typeof urls === "string" ? urls.trim().split("\n") : urls)
             .then((connected) => {
@@ -16,7 +16,7 @@ export function setupCommunicationIpc({ socket, serial, sendToEditor }: Communic
             });
     });
 
-    ipcMain.on("socket-connect-service", (event, type: string, name: string) => {
+    ipc.on("socket-connect-service", (event, type: string, name: string) => {
         if (socket.connected) return;
         import("../communication/bonjour.js")
             .then(({ findService }) => findService(type, name))
@@ -28,20 +28,20 @@ export function setupCommunicationIpc({ socket, serial, sendToEditor }: Communic
             .catch(() => {});
     });
 
-    ipcMain.on("socket-send", (event, channel: string, ...data: unknown[]) => {
+    ipc.on("socket-send", (event, channel: string, ...data: unknown[]) => {
         socket.send(channel, ...data);
     });
-    ipcMain.on("socket-disconnect", () => {
+    ipc.on("socket-disconnect", () => {
         socket.disconnect();
     });
 
-    ipcMain.on("serial-open", (event, alias?: string, port?: string, baudRate?: number) => {
+    ipc.on("serial-open", (event, alias?: string, port?: string, baudRate?: number) => {
         serial.open(alias, port, baudRate);
     });
-    ipcMain.on("serial-send", (event, data: unknown) => {
+    ipc.on("serial-send", (event, data: unknown) => {
         serial.send(data);
     });
-    ipcMain.on("serial-close", () => {
+    ipc.on("serial-close", () => {
         serial.close();
     });
 }

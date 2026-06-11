@@ -1,6 +1,6 @@
 import Resource from "./resource.svelte";
 import Variable from "./variable.svelte";
-import { NodeClasses } from "./utils";
+import { NodeClasses } from "../utils";
 import Config from "./config.svelte";
 
 export default class AppData {

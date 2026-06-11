@@ -1,5 +1,4 @@
 import {
-    ipcMain,
     dialog,
     type BrowserWindow,
     type OpenDialogOptions,
@@ -8,6 +7,7 @@ import {
 import fs from "fs/promises";
 import { basename, extname, join } from "path";
 import { pathExists } from "../pathExists";
+import { ipc } from "./ipcMethods";
 
 type AssetIpcOptions = {
     assetDir: string;
@@ -16,17 +16,17 @@ type AssetIpcOptions = {
 };
 
 export function setupAssetIpc({ assetDir, dataDir, getDialogOwnerWindow }: AssetIpcOptions) {
-    ipcMain.on("getDataDir", (evt) => {
+    ipc.on("getDataDir", (evt) => {
         evt.returnValue = dataDir;
     });
 
-    ipcMain.handle("selectFile", (event, opt: OpenDialogOptions) => {
+    ipc.handle("selectFile", (event, opt: OpenDialogOptions) => {
         const ownerWindow = getDialogOwnerWindow();
         if (ownerWindow) return dialog.showOpenDialog(ownerWindow, opt);
         return dialog.showOpenDialog(opt);
     });
 
-    ipcMain.handle("dialogue", (event, opt: MessageBoxOptions) => {
+    ipc.handle("dialogue", (event, opt: MessageBoxOptions) => {
         const options = {
             ...opt,
             noLink: true
@@ -36,7 +36,7 @@ export function setupAssetIpc({ assetDir, dataDir, getDialogOwnerWindow }: Asset
         return dialog.showMessageBox(options);
     });
 
-    ipcMain.handle("copyInfoAsset", (event, srcs: string[]) => {
+    ipc.handle("copyInfoAsset", (event, srcs: string[]) => {
         return Promise.all(
             srcs.map(async (src) => {
                 const ext = extname(src);

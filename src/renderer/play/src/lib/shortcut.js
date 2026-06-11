@@ -1,4 +1,4 @@
-import { ipcRenderer } from "electron";
+import { ipc } from "./ipc";
 
 let shortcuts = {};
 export default function initShortcuts(entryArr) {
@@ -22,7 +22,7 @@ export default function initShortcuts(entryArr) {
     });
 }
 
-ipcRenderer.addListener("global-key-event", (_, type, evt) => {
+ipc.on("global-key-event", (_, type, evt) => {
     if (type === "keydown") keydownHandler(evt);
     else if (type === "keyup") keyupHandler(evt);
 });

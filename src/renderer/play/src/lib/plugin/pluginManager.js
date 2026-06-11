@@ -1,10 +1,10 @@
-import { ipcRenderer } from "electron";
 import { getAppData } from "../appdata";
 import { createPluginContext } from "./pluginContext";
 import { reportPluginException } from "./pluginReporter";
 import { dynamicImportPlugin } from "./pluginImport";
-import { PLUGIN_TYPES } from "@classes/utils";
+import { PLUGIN_TYPES } from "@renderer/utils";
 import { setStyleForce } from "./pluginStyles";
+import { ipc } from "../ipc";
 
 /**
  * @typedef {import("@shared/plugin.types").PluginType} PluginType
@@ -20,7 +20,7 @@ import { setStyleForce } from "./pluginStyles";
 const plugins = Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}]));
 
 async function requestUpdatePluginList() {
-    await ipcRenderer.invoke("plugin:get-list").then(updateAllPlugin);
+    await ipc.invoke("plugin:get-list").then(updateAllPlugin);
 }
 
 /**
@@ -64,7 +64,7 @@ function importPlugin(pluginData) {
             pluginData.importing = null;
             pluginData.imported = p;
             console.log("PLUGIN LOADED: ", pluginData.info.name);
-            if (getAppData()?.config.devMode ?? ipcRenderer.sendSync("config:is-dev")) {
+            if (getAppData()?.config.devMode ?? ipc.sendSync("config:is-dev")) {
                 const unexported = Object.keys(pluginData.info.exports).filter((e) => !(e in p));
                 if (unexported.length)
                     reportPluginException(
@@ -275,7 +275,7 @@ async function callHmr(pluginInfo, plugin) {
     });
 }
 
-ipcRenderer.on(
+ipc.on(
     "plugin:hmr",
     /**
      * @param {any} _
@@ -296,7 +296,7 @@ ipcRenderer.on(
     }
 );
 
-ipcRenderer.on(
+ipc.on(
     "plugin:list",
     /**
      * @param {{
@@ -309,7 +309,7 @@ ipcRenderer.on(
     }
 );
 
-ipcRenderer.on("plugin:update", (_, update) => {
+ipc.on("plugin:update", (_, update) => {
     /** @type {PluginSingleUpdate} */
     const { info, previous, buildChanged } = update;
     if (previous && (info.name !== previous.name || info.type !== previous.type)) {

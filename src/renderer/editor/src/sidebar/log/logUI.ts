@@ -286,6 +286,5 @@ function collapsableInlineText(type: string, content: CollapsableContent) {
     if (Array.isArray(content)) return `Array(${content.length})`;
     if (type === "Map" || type === "Set")
         return `${type}(${(content as Map<any, any> | Set<any>).size})`;
-    console.log(type);
     return `${type}(${(content as Uint16Array).length})`;
 }

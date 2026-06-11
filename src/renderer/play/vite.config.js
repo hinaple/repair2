@@ -4,18 +4,14 @@ import renderer from "vite-plugin-electron-renderer";
 import vanillizer from "../../vitePlugins/vanillizer";
 import onlyBlockPlugin from "../../vitePlugins/only-block-plugin.mjs";
 
-const classPath = join(__dirname, "../classes");
+const classPath = join(__dirname, "../common");
 const sharedPath = join(__dirname, "../../shared");
 const outDir = join(__dirname, "../../../out/play");
 
 export default defineConfig({
     root: __dirname,
     cacheDir: join(__dirname, "../../../node_modules/.vite-play"),
-    plugins: [
-        onlyBlockPlugin({ target: "play", dir: "renderer/classes/" }),
-        renderer(),
-        vanillizer
-    ],
+    plugins: [onlyBlockPlugin({ target: "play", dir: "renderer/common" }), renderer(), vanillizer],
     server: {
         port: 3100
     },
@@ -30,7 +26,7 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            "@classes": classPath,
+            "@renderer": classPath,
             "@shared": sharedPath
         }
     },

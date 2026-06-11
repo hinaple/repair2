@@ -1,13 +1,12 @@
-import { ipcRenderer } from "electron";
 import { showModalPromise } from "./modal/modal.svelte";
 import { showToast } from "./toast/toast.svelte";
-import { PLUGIN_TYPES } from "@classes/utils";
+import { PLUGIN_TYPES } from "@renderer/utils";
+import { ipc } from "./ipc";
 
 /**
  * @typedef {import("@shared/plugin.types").PluginType} PluginType
  * @typedef {import("@shared/plugin.types").PluginList} PluginList
  * @typedef {import("@shared/plugin.types").PluginRendererInfo} PluginRendererInfo
- * @typedef {import("@shared/plugin.types").PluginSingleUpdate} PluginSingleUpdate
  * @typedef {import("@shared/plugin.types").ManifestErrorForRenderer} ManifestErrorForRenderer
  * @typedef {import("./toast/toast.svelte").Toast} Toast
  */
@@ -17,60 +16,34 @@ export const plugins = $state(Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}]
 
 export function requestUpdatePlugins() {
     return Promise.all([
-        ipcRenderer.invoke("plugin:get-list").then(updatePlugins),
-        ipcRenderer.invoke("plugin:get-manifest-errors").then(updateManifestErrors)
+        ipc.invoke("plugin:get-list").then(updatePlugins),
+        ipc.invoke("plugin:get-manifest-errors").then(updateManifestErrors)
     ]);
 }
 requestUpdatePlugins();
 
-ipcRenderer.on(
-    "plugin:list",
-    /**
-     * @param {{
-     *     plugins: PluginList,
-     *     buildChanges: strings[],
-     *     manifestErrors: ManifestErrorForRenderer[]
-     * }} updateData
-     * */
-    (_, updateData) => {
-        updatePlugins(updateData.plugins);
-        updateManifestErrors(updateData.manifestErrors);
-    }
-);
-ipcRenderer.on(
-    "plugin:update",
-    /** @param {PluginSingleUpdate} update */
-    (_, update) => {
-        const { info, previous } = update;
-        if (previous) delete plugins[previous.type][previous.name];
+ipc.on("plugin:list", (_, updateData) => {
+    updatePlugins(updateData.plugins);
+    updateManifestErrors(updateData.manifestErrors);
+});
+ipc.on("plugin:update", (_, update) => {
+    const { info, previous } = update;
+    if (previous) delete plugins[previous.type][previous.name];
 
-        plugins[info.type][info.name] = info;
-        updatePluginErrors(info);
-    }
-);
-ipcRenderer.on(
-    "plugin:hmr",
-    /**
-     * @param {any} _
-     * @param {Object} hmrData
-     * @param {PluginRendererInfo} hmrData.info
-     */
-    (_, { info }) => {
-        plugins[info.type][info.name] = info;
-        updatePluginErrors(info);
-    }
-);
-ipcRenderer.on("plugin:removed", (_, info) => {
+    plugins[info.type][info.name] = info;
+    updatePluginErrors(info);
+});
+ipc.on("plugin:hmr", (_, { info }) => {
+    plugins[info.type][info.name] = info;
+    updatePluginErrors(info);
+});
+ipc.on("plugin:removed", (_, info) => {
     console.log("PLUGIN REMOVED: ", info);
     errorToasts.get(info.name)?.forEach((t) => t.destroy());
     errorToasts.delete(info.name);
     delete plugins[info.type]?.[info.name];
 });
-ipcRenderer.on(
-    "plugin:manifest-error",
-    /** @param {ManifestErrorForRenderer[]} manifestErrors */
-    (_, manifestErrors) => updateManifestErrors(manifestErrors)
-);
+ipc.on("plugin:manifest-error", (_, manifestErrors) => updateManifestErrors(manifestErrors));
 
 /** @param {PluginList} p */
 function updatePlugins(p) {
@@ -137,7 +110,7 @@ function updateManifestErrors(manifestErrors) {
     });
 }
 
-ipcRenderer.on("plugin:show-create-modal", async () => {
+ipc.on("plugin:show-create-modal", async () => {
     const modalResult = await showModalPromise({
         title: "새로운 플러그인 생성",
         fields: [
@@ -185,7 +158,7 @@ ipcRenderer.on("plugin:show-create-modal", async () => {
         duration: 0,
         closable: false
     });
-    const createResult = await ipcRenderer.invoke("plugin:create", { name, type, isExternal });
+    const createResult = await ipc.invoke("plugin:create", { name, type, isExternal });
     if (createResult.error) {
         showToast({
             id: "pluginCreate",

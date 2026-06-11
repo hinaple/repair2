@@ -5,13 +5,12 @@
     import { grabbing, reload, sequenceMovedReloader } from "../lib/stores";
     import FoldArrow from "../lib/FoldArrow.svelte";
     import { addHistory } from "../lib/workHistory";
-    import { get } from "svelte/store";
     import { rightclick } from "../lib/contextMenu/contextUtils";
     import outputNode from "./lines/output";
     import FrameUpdater from "../lib/frameUpdater";
     import { currentFocus as CurrentFocus, focusData } from "../sidebar/editUtils";
     import { appData } from "../lib/syncData.svelte";
-    import { ipcRenderer } from "electron";
+    import { ipc } from "../lib/ipc";
 
     let {
         node,
@@ -135,14 +134,14 @@
         type === "entry" && {
             label: "실행",
             click: () => {
-                ipcRenderer.send("request-execute", { type: "entry", id: node.id });
+                ipc.send("request-execute", { type: "entry", id: node.id });
                 return true;
             }
         },
         (type !== "entry" || node.standbyMode) && {
             label: type === "entry" ? "활성화" : "실행",
             click: () => {
-                ipcRenderer.send("request-execute", { type: "node", id: node.id });
+                ipc.send("request-execute", { type: "node", id: node.id });
                 return true;
             }
         },

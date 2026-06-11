@@ -1,9 +1,9 @@
-import { ipcRenderer } from "electron";
 import { reportLog } from "../logClient";
 import { customLog } from "../logger";
 
 import type { LogLevel, LogSubject } from "@shared/log.types";
 import type { PluginErrorPayload, PluginType } from "@shared/plugin.types";
+import { ipc } from "../ipc";
 
 type PluginSource = { id: string; type: PluginType; instanceId: string };
 
@@ -85,5 +85,5 @@ export function reportPluginException(
         phase,
         activeError
     };
-    ipcRenderer.invoke("plugin:runtime-error", payload);
+    ipc.invoke("plugin:runtime-error", payload);
 }

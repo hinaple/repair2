@@ -1,15 +1,15 @@
-import { ipcRenderer } from "electron";
 import { addHistory } from "../../lib/workHistory";
 import { join } from "path";
+import { ipc } from "../../lib/ipc";
 
-export const AssetDir = join(ipcRenderer.sendSync("getDataDir"), "assets");
+export const AssetDir = join(ipc.sendSync("getDataDir"), "assets");
 
 export function splitPath(path) {
     return path.replace(AssetDir, "").replace(/^\\/, "").replace(/\\/g, "/");
 }
 
 export async function changeResourceFile(resource) {
-    const result = await ipcRenderer.invoke("selectFile", {
+    const result = await ipc.invoke("selectFile", {
         title: "변경할 자원 파일 선택",
         properties: ["openFile"]
     });
@@ -19,7 +19,7 @@ export async function changeResourceFile(resource) {
     if (!target.includes(AssetDir)) {
         if (
             (
-                await ipcRenderer.invoke("dialogue", {
+                await ipc.invoke("dialogue", {
                     type: "question",
                     title: "다른 폴더의 파일입니다.",
                     message: `${target}\n\n위 파일을 자원 폴더에 복사하시겠습니까?`,
@@ -30,7 +30,7 @@ export async function changeResourceFile(resource) {
         )
             return;
 
-        target = (await ipcRenderer.invoke("copyInfoAsset", [target]))[0];
+        target = (await ipc.invoke("copyInfoAsset", [target]))[0];
     }
 
     const src = splitPath(target);
@@ -45,7 +45,7 @@ export async function changeResourceFile(resource) {
 }
 
 export async function selectMany() {
-    const result = await ipcRenderer.invoke("selectFile", {
+    const result = await ipc.invoke("selectFile", {
         title: "추가할 자원 파일 선택(다중 선택 가능)",
         properties: ["openFile", "multiSelections"]
     });

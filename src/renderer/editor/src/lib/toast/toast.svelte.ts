@@ -1,4 +1,4 @@
-import { ipcRenderer } from "electron";
+import { ipc } from "../ipc";
 
 type EditFn = (editOpt: { title: string | null; content: string | null }) => boolean;
 
@@ -120,7 +120,7 @@ function getDiagnosticSubjectLabel(
         .join("\n");
 }
 
-ipcRenderer.on("exporting", (evt, process) => {
+ipc.on("exporting", (evt, process) => {
     showToast({
         id: "exporting",
         title: "프로젝트 파일을 내보내고 있습니다.",
@@ -129,7 +129,7 @@ ipcRenderer.on("exporting", (evt, process) => {
         closable: false
     });
 });
-ipcRenderer.on("exported", (evt, filepath) => {
+ipc.on("exported", (evt, filepath) => {
     showToast({
         id: "exporting",
         title: "프로젝트 파일을 내보냈습니다.",
@@ -138,14 +138,14 @@ ipcRenderer.on("exported", (evt, filepath) => {
     });
 });
 
-ipcRenderer.on("serial-connected", (evt, port) => {
+ipc.on("serial-connected", (evt, port) => {
     showToast({
         title: "시리얼 통신이 시작되었습니다.",
         content: `포트: <${port}>`,
         duration: 5000
     });
 });
-ipcRenderer.on("serial-income", (evt, data) => {
+ipc.on("serial-income", (evt, data) => {
     showToast({
         title: "시리얼 통신 데이터를 수신했습니다.",
         content: data,
@@ -153,11 +153,11 @@ ipcRenderer.on("serial-income", (evt, data) => {
     });
 });
 
-ipcRenderer.on("socket-failed", () => {
+ipc.on("socket-failed", () => {
     showToast({ title: "소켓 통신 연결에 실패했습니다.", duration: 5000 });
 });
 
-ipcRenderer.on("socket-income", (evt, channel, data, url) => {
+ipc.on("socket-income", (evt, channel, data, url) => {
     if (channel === "connect")
         showToast({
             title: "소켓 통신이 시작되었습니다.",
@@ -178,11 +178,11 @@ ipcRenderer.on("socket-income", (evt, channel, data, url) => {
         });
 });
 
-// ipcRenderer.on("custom-log", (evt, content) => {
+// ipc.on("custom-log", (evt, content) => {
 //     showToast({ title: content, duration: 5000 });
 // });
 
-// ipcRenderer.on("diagnostic-log", (evt, { level, title, detail, source, subject }) => {
+// ipc.on("diagnostic-log", (evt, { level, title, detail, source, subject }) => {
 //     const subjectLabel = getDiagnosticSubjectLabel(source, subject);
 //     showToast({
 //         title,

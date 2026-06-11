@@ -18,12 +18,12 @@ import {
 import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
 import { delay } from "./delay";
-import { ipcRenderer } from "electron";
 import { getAppData } from "./appdata";
 import { sendChanges, sendTotalInfo } from "./runtimeMonitor";
 import { callRuntimePluginStep, restartRuntimePlugins } from "./plugin/runtimePlugins";
 import { customLog } from "./logger";
 import { callFunctionPlugin } from "./plugin/pluginManager";
+import { ipc } from "./ipc";
 
 let resetAbort = new AbortController();
 
@@ -130,7 +130,7 @@ const actions = {
             }
         },
         log: (s) => {
-            ipcRenderer.send("custom-log", s.payload.content);
+            ipc.send("custom-log", s.payload.content);
             customLog(s.payload.content);
         }
     }

@@ -1,9 +1,9 @@
-import { ipcRenderer } from "electron";
 import { getVariables } from "../variables";
 import { preloads } from "../resources";
 import { WaitingSteps } from "../stepActions";
 import { getAppData } from "../appdata";
 import { getAllComponents } from "../components";
+import { ipc } from "../ipc";
 
 let changesBuffer: Array<Array<string | string[]>> = [];
 
@@ -55,7 +55,7 @@ function readyToFlush() {
 }
 
 function flush() {
-    ipcRenderer.send("monitor-info", "update", changesBuffer);
+    ipc.send("monitor-info", "update", changesBuffer);
     clear();
 }
 function clear() {
@@ -84,7 +84,7 @@ export function sendTotalInfo() {
         .map((node: any) => node.id)
         .toArray();
     const components = getAllComponents().map((c) => c.realId);
-    ipcRenderer.send("monitor-info", "total", {
+    ipc.send("monitor-info", "total", {
         variables,
         preloads: preloadedArr,
         steps,
@@ -94,7 +94,7 @@ export function sendTotalInfo() {
 }
 
 let monitoring: boolean = false;
-ipcRenderer.addListener("monitor-event", (evt, channel: string) => {
+ipc.on("monitor-event", (evt, channel: string) => {
     if (channel === "start") {
         monitoring = true;
         sendTotalInfo();

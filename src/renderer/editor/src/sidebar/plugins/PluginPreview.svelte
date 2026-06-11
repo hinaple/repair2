@@ -23,7 +23,7 @@
         theme: info.error && "error",
         content: info.error
             ? info.error.map((e) => e[1].summary ?? e[1].title).join("<hr/>")
-            : `${info.linked?.sourcePath ?? info.dir}`,
+            : `${info.linked?.sourcePath ?? info.path}`,
         delay: [200, null],
         hideOnClick: false,
         duration: 200,

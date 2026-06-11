@@ -1,6 +1,6 @@
 import TypePayload from "./typePayload.svelte";
 import Component from "./component.svelte";
-import { genId } from "./utils";
+import { genId } from "./genId";
 import PluginPointer from "./pluginPointer.svelte";
 
 class executePlugin {

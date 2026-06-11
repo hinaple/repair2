@@ -1,4 +1,4 @@
-import { genId } from "./utils";
+import { genId } from "./genId";
 import { basename } from "path";
 
 const FileTypes = {

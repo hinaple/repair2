@@ -6,11 +6,12 @@ import { currentFocus, selectManyNodes } from "../sidebar/editUtils";
 import { clipboard } from "electron";
 import { unpack, pack } from "msgpackr";
 
-import Step from "@classes/step.svelte";
-import Element from "@classes/element.svelte";
-import Listener from "@classes/listener.svelte";
-import ValueProcess from "@classes/value/valueProcess";
-import { NodeClasses, genId } from "@classes/utils";
+import Step from "@renderer/classes/step.svelte";
+import Element from "@renderer/classes/element.svelte";
+import Listener from "@renderer/classes/listener.svelte";
+import ValueProcess from "@renderer/classes/value/valueProcess";
+import { NodeClasses } from "@renderer/utils";
+import { genId } from "@renderer/classes/genId";
 import { reload } from "./stores";
 
 const ClipboardFormat = "application/x-repair2-clipboard-binary";

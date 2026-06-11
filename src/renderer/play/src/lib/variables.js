@@ -1,4 +1,4 @@
-import Value from "@classes/value/value.svelte";
+import Value from "@renderer/classes/value/value.svelte";
 import { registerUtils } from "./repairUtils";
 import { sendChanges } from "./runtimeMonitor";
 
@@ -24,7 +24,10 @@ export function getVar(id) {
 }
 
 export function getVariableIdByName(variableName) {
-    return Object.entries(variables).find(([, variable]) => variable.name === variableName)?.[0] ?? null;
+    return (
+        Object.entries(variables).find(([, variable]) => variable.name === variableName)?.[0] ??
+        null
+    );
 }
 
 export function getVarByName(variableName) {

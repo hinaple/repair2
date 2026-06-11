@@ -72,7 +72,7 @@ export class PluginManager {
 
         await this.ensureDirectories();
         await this.updateAllPluginInfo({ forceBuild: this.devMode });
-        if (this.plugins.size > 0) logger.info("Plugins", [...this.plugins.keys()].join(", "));
+        if (this.plugins.size > 0) logger.info("Plugins: ", [...this.plugins.keys()].join(", "));
     }
     async setDevMode(isDev: boolean) {
         if (isDev === this.devMode) return;

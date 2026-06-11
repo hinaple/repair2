@@ -1,4 +1,4 @@
-import { genId } from "./utils";
+import { genId } from "./genId";
 
 export default class Variable {
     name = $state();

@@ -1,4 +1,4 @@
-import { ipcRenderer } from "electron";
+import { ipc } from "./ipc";
 
 const MaxHistoryLen = 50;
 
@@ -7,7 +7,7 @@ let saveIdx = 0;
 let currentCursor = 0;
 function setCurrentCursor(v) {
     currentCursor = v;
-    ipcRenderer.send(currentCursor !== saveIdx ? "unsaved" : "saved");
+    ipc.send(currentCursor !== saveIdx ? "unsaved" : "saved");
 }
 
 export function addHistory({ doFn, undoFn = null, doData = null, undoData = null }) {
@@ -44,8 +44,8 @@ export function clearHistory() {
 }
 export function updateSaveIdx() {
     saveIdx = currentCursor;
-    ipcRenderer.send("saved");
+    ipc.send("saved");
 }
 
-ipcRenderer.on("undo", undo);
-ipcRenderer.on("redo", redo);
+ipc.on("undo", undo);
+ipc.on("redo", redo);

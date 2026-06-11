@@ -16,10 +16,10 @@
     import { appData } from "../lib/syncData.svelte";
     import { focusData, selectManyNodes } from "../sidebar/editUtils";
     import { rightclick } from "../lib/contextMenu/contextUtils";
-    import SequenceClass from "@classes/nodes/sequence.svelte";
-    import BranchClass from "@classes/nodes/branch.svelte";
-    import EntryClass from "@classes/nodes/entry.svelte";
-    import VariableSetClass from "@classes/nodes/variableSet.svelte";
+    import SequenceClass from "@renderer/classes/nodes/sequence.svelte";
+    import BranchClass from "@renderer/classes/nodes/branch.svelte";
+    import EntryClass from "@renderer/classes/nodes/entry.svelte";
+    import VariableSetClass from "@renderer/classes/nodes/variableSet.svelte";
     import Branch from "./Branch.svelte";
     import Entry from "./Entry.svelte";
     import { pasted } from "../lib/clipboard";

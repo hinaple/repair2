@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { ipc } from "./ipcMethods";
 
 type MonitorIpcOptions = {
     sendToMain: (channel: string, ...params: unknown[]) => void;
@@ -11,14 +11,14 @@ export function setupMonitorIpc({
     sendToEditor,
     reportProjectCustomLog
 }: MonitorIpcOptions) {
-    ipcMain.on("monitor-event", (event, ...data: unknown[]) => {
+    ipc.on("monitor-event", (event, ...data: unknown[]) => {
         sendToMain("monitor-event", ...data);
     });
-    ipcMain.on("monitor-info", (event, ...data: unknown[]) => {
+    ipc.on("monitor-info", (event, ...data: unknown[]) => {
         sendToEditor("monitor-info", ...data);
     });
 
-    ipcMain.on("custom-log", (evt, content: unknown) => {
+    ipc.on("custom-log", (evt, content: unknown) => {
         reportProjectCustomLog(content);
     });
 }

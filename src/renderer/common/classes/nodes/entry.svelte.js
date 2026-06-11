@@ -1,6 +1,6 @@
 import Node from "./node.svelte";
 import Output from "../output";
-import TypePayload from "@classes/typePayload.svelte";
+import TypePayload from "../typePayload.svelte";
 
 const EntryTemplate = {
     startup: null,

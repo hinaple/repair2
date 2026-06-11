@@ -1,5 +1,5 @@
-import { ipcMain } from "electron";
 import type { EditorInitialData, ProjectData } from "@shared/projectData.types";
+import { ipc } from "./ipcMethods";
 
 type ProjectIpcOptions = {
     getData: () => ProjectData | null;
@@ -14,15 +14,15 @@ export function setupProjectIpc({
     saveData,
     sendToMain
 }: ProjectIpcOptions) {
-    ipcMain.on("config:is-dev", (evt) => {
+    ipc.on("config:is-dev", (evt) => {
         evt.returnValue = !!getData()?.config?.devMode;
     });
 
-    ipcMain.on("request-data", (evt) => {
+    ipc.on("request-data", (evt) => {
         evt.returnValue = { ...getData(), globalStyles: getGlobalCss() } as EditorInitialData;
     });
 
-    ipcMain.handle("update-data", (evt, tempData: ProjectData) => {
+    ipc.handle("update-data", (evt, tempData: ProjectData) => {
         sendToMain("data", { ...tempData, globalStyles: getGlobalCss() });
         return saveData(tempData);
     });

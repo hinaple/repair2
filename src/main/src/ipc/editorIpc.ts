@@ -1,5 +1,6 @@
-import { ipcMain, type BrowserWindow } from "electron";
+import type { BrowserWindow } from "electron";
 import { checkVscodeInstalled, openVsCode } from "../vscodeUtils";
+import { ipc } from "./ipcMethods";
 
 type EditorIpcOptions = {
     getEditorWindow: () => BrowserWindow | null;
@@ -7,27 +8,27 @@ type EditorIpcOptions = {
 };
 
 export function setupEditorIpc({ getEditorWindow, createEditorWindow }: EditorIpcOptions) {
-    ipcMain.on("editor-on", () => {
+    ipc.on("editor-on", () => {
         const editorWindow = getEditorWindow();
         if (!editorWindow) createEditorWindow();
         else editorWindow.focus();
     });
 
-    ipcMain.on("unsaved", () => {
+    ipc.on("unsaved", () => {
         const editorWindow = getEditorWindow();
         if (!editorWindow) return;
         editorWindow.setTitle("Editor ●");
     });
 
-    ipcMain.on("saved", () => {
+    ipc.on("saved", () => {
         const editorWindow = getEditorWindow();
         if (!editorWindow) return;
         editorWindow.setTitle("Editor");
     });
 
-    ipcMain.handle("vscode:is-installed", () => checkVscodeInstalled());
+    ipc.handle("vscode:is-installed", () => checkVscodeInstalled());
 
-    ipcMain.on("vscode:open", (_, src: string) => {
+    ipc.on("vscode:open", (_, src: string) => {
         openVsCode(src);
     });
 }

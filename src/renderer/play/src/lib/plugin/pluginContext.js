@@ -1,4 +1,4 @@
-import { genId } from "@classes/utils";
+import { genId } from "@renderer/classes/genId";
 import { emitPluginEvent, addPluginEventListener } from "./pluginEventBus";
 import { emitRepairEvent, addRepairEventListener } from "../event";
 import {

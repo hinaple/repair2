@@ -1,4 +1,4 @@
-import AppData from "@classes/appData.svelte";
+import AppData from "@renderer/classes/appData.svelte";
 import { addHistory } from "../lib/workHistory";
 import { getAllConnectedLines, setAllOutput } from "../nodes/lines/line";
 import { SvelteMap } from "svelte/reactivity";

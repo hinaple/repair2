@@ -1,4 +1,4 @@
-import { genId } from "./utils";
+import { genId } from "./genId";
 import Coord from "./coord";
 import Element from "./element.svelte";
 import Sortable from "./sortable.svelte";

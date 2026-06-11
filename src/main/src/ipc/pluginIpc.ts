@@ -1,9 +1,10 @@
-import { ipcMain, dialog, shell, type BrowserWindow, type OpenDialogOptions } from "electron";
+import { dialog, shell, type BrowserWindow, type OpenDialogOptions } from "electron";
 import { createEmptyPlugin, PLUGIN_ENTRY_TYPE } from "../plugin/createEmptyPlugin";
 import type { PluginManager } from "../plugin/pluginManager";
 import { PluginErrorPayload } from "@shared/plugin.types";
 import { makeManifestErrorsForRenderer, makeSimplePluginList } from "../plugin/sendPluginUpdate";
 import { logger } from "../logs/logger";
+import { ipc } from "./ipcMethods";
 
 type PluginRuntimeDeactivatePayload = {
     pluginName: string;
@@ -29,18 +30,18 @@ export function setupPluginIpc({
     getPluginManager: () => PluginManager | null;
     getDialogOwnerWindow: () => BrowserWindow | null;
 }) {
-    ipcMain.handle("plugin:get-list", () => {
+    ipc.handle("plugin:get-list", () => {
         const pluginMap = requirePluginManager(getPluginManager)?.plugins;
         if (!pluginMap) return {};
         return makeSimplePluginList(pluginMap);
     });
-    ipcMain.handle("plugin:get-manifest-errors", () => {
+    ipc.handle("plugin:get-manifest-errors", () => {
         const pluginManager = requirePluginManager(getPluginManager);
         if (!pluginManager) return [];
         return makeManifestErrorsForRenderer(pluginManager);
     });
 
-    ipcMain.handle(
+    ipc.handle(
         "plugin:runtime:activate",
         async (
             evt,
@@ -69,18 +70,18 @@ export function setupPluginIpc({
         }
     );
 
-    ipcMain.handle("plugin:runtime:deactivate", (evt, payload: PluginRuntimeDeactivatePayload) => {
+    ipc.handle("plugin:runtime:deactivate", (evt, payload: PluginRuntimeDeactivatePayload) => {
         return requirePluginManager(getPluginManager, true)?.mainRuntime.disposeInstance(
             payload.pluginName,
             payload.activationId
         );
     });
 
-    ipcMain.on("plugin:runtime:deactivate-all", (evt) => {
+    ipc.on("plugin:runtime:deactivate-all", (evt) => {
         requirePluginManager(getPluginManager, true)?.mainRuntime.disposeAll();
     });
 
-    ipcMain.handle(
+    ipc.handle(
         "plugin:runtime:to-main",
         (
             evt,
@@ -99,7 +100,7 @@ export function setupPluginIpc({
         }
     );
 
-    ipcMain.handle(
+    ipc.handle(
         "plugin:create",
         async (
             evt,
@@ -123,19 +124,20 @@ export function setupPluginIpc({
                 const selected = ownerWindow
                     ? await dialog.showOpenDialog(ownerWindow, openOptions)
                     : await dialog.showOpenDialog(openOptions);
-                if (selected.canceled) return { canceled: true };
+                if (selected.canceled) return { canceled: true as const };
                 path = selected.filePaths[0] as string;
             }
             const createResult = await createEmptyPlugin(name, type, {
                 root: path,
                 skipNameValidation: false
             });
-            if ("error" in createResult) return { canceled: true, error: createResult.error };
+            if ("error" in createResult)
+                return { canceled: true as const, error: createResult.error };
             if (isExternal) {
                 const linkResult = await requirePluginManager(
                     getPluginManager
                 ).pluginLinkService.addPluginLink(createResult.dir, false);
-                if (!linkResult) return { canceled: true };
+                if (!linkResult) return { canceled: true as const };
             }
             shell.openPath(createResult.dir);
             await requirePluginManager(getPluginManager).updateAllPluginInfo();
@@ -143,7 +145,7 @@ export function setupPluginIpc({
         }
     );
 
-    ipcMain.handle("plugin:runtime-error", (_, payload: PluginErrorPayload) => {
+    ipc.handle("plugin:runtime-error", (_, payload: PluginErrorPayload) => {
         requirePluginManager(getPluginManager).reportPluginError("renderer", "runtime", payload);
     });
 }

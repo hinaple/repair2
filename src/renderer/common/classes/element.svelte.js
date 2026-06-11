@@ -3,7 +3,7 @@ import Listener from "./listener.svelte";
 import Sortable from "./sortable.svelte";
 import TypePayload from "./typePayload.svelte";
 import PluginPointer from "./pluginPointer.svelte";
-import { genId } from "./utils";
+import { genId } from "./genId";
 import DragOption from "./dragOption.svelte";
 
 const PayloadTemplates = {

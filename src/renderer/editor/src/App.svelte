@@ -9,9 +9,9 @@
     import { focusData } from "./sidebar/editUtils";
     import SideBar from "./sidebar/SideBar.svelte";
     import { onMount } from "svelte";
-    import { ipcRenderer } from "electron";
     import { reload } from "./lib/stores";
     import Modal from "./lib/modal/ModalDisplay.svelte";
+    import { ipc } from "./lib/ipc";
 
     focusData("project");
 
@@ -31,7 +31,7 @@
     $inspect(appData);
 
     onMount(() => {
-        ipcRenderer.send("monitor-event", "start");
+        ipc.send("monitor-evnt", "start");
     });
 
     document.fonts.ready.then(() => {

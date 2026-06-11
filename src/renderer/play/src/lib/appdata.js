@@ -1,12 +1,12 @@
 import "./plugin/pluginManager";
-import { ipcRenderer } from "electron";
-import AppDataClass from "@classes/appData.svelte";
+import AppDataClass from "@renderer/classes/appData.svelte";
 import { registerVariables } from "./variables";
 import { registerUtils } from "./repairUtils";
 import initShortcuts from "./shortcut";
 import { sendTotalInfo } from "./runtimeMonitor";
 import { activateRuntimePlugins, deactivateAll } from "./plugin/runtimePlugins";
 import { registerPluginContextApi } from "./plugin/pluginContext";
+import { ipc } from "./ipc";
 
 let appdata;
 const gamezone = document.getElementById("gamezone");
@@ -14,7 +14,7 @@ const globalStyles = document.createElement("style");
 globalStyles.id = "global-styles";
 document.head.append(globalStyles);
 
-export function updateData(data = ipcRenderer.sendSync("request-data")) {
+export function updateData(data = ipc.sendSync("request-data")) {
     appdata = new AppDataClass(data);
     registerVariables(appdata.variables);
     initShortcuts(appdata.findAllEntry("shortcut"));
@@ -34,12 +34,12 @@ export function updateData(data = ipcRenderer.sendSync("request-data")) {
     globalStyles.textContent = data.globalStyles;
 }
 
-ipcRenderer.on("data", (event, data) => {
+ipc.on("data", (event, data) => {
     console.log(data);
     updateData(data);
 });
 
-ipcRenderer.on("global-css", (event, css) => {
+ipc.on("global-css", (event, css) => {
     globalStyles.textContent = css;
 });
 
