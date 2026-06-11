@@ -58,7 +58,7 @@
         display: flex;
         flex-direction: column-reverse;
 
-        contain: paint layout size style;
+        contain: strict style;
     }
     .wrapper::-webkit-scrollbar {
         display: none;

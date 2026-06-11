@@ -6,6 +6,8 @@
     import Edit from "./edits/Edit.svelte";
     import Logs from "./log/Logs.svelte";
     import { tippySingleton } from "../lib/tippy";
+    import { sidebar } from "./resizer/sidebarSize";
+    import { getSidebarWidth, setActualSidebarWidth, SIDEBAR_WIDTH_MIN } from "../nodes/viewport";
 
     let currentTab = $state("edit");
 
@@ -21,9 +23,20 @@
         plugins: "Plugins",
         logs: "Logs"
     };
+
+    let tempWidth = $state(getSidebarWidth());
 </script>
 
-<div class="side-bar">
+<div
+    class="side-bar"
+    use:sidebar={{
+        actualSetter: (w) => setActualSidebarWidth(w),
+        movingSetter: (w) => (tempWidth = Math.max(SIDEBAR_WIDTH_MIN, w)),
+        onMoveEnd: () => (tempWidth = getSidebarWidth()),
+        currentWidth: getSidebarWidth
+    }}
+    style={`width: ${tempWidth}px;`}
+>
     <div class="tabs" use:tippySingleton={{ duration: 100, delay: [400, 0], placement: "right" }}>
         {#each Object.entries(tabs) as [id, label]}
             <button
@@ -55,7 +68,6 @@
 
 <style>
     .side-bar {
-        width: 340px;
         height: 100%;
         z-index: var(--sidebar-z);
         color: #fff;
@@ -67,6 +79,9 @@
         flex-direction: row;
         background-color: var(--darkgray);
         flex: 0 0 auto;
+        position: absolute;
+        left: 0;
+        top: 0;
     }
     .tabs {
         display: flex;
@@ -101,7 +116,7 @@
         flex-direction: column;
         flex: 1 1 auto;
 
-        contain: strict;
+        contain: strict style;
     }
     .title {
         font-size: 20px;

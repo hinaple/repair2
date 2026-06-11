@@ -2,20 +2,37 @@ import { get } from "svelte/store";
 import { grabbing } from "./stores";
 import { rInfo } from "../nodes/viewport";
 
+type MoveHandler = (moveData: { dx: number; dy: number; px: number; py: number }) => void;
+type MoveStartHandler = (moveData: { px: number; py: number }) => void;
+type MoveEndHandler = (actuallyMoved: boolean) => void;
+
 export default class Grabber {
+    private container: HTMLElement;
+    private handle: HTMLElement;
+    private pointerdown: (evt: PointerEvent) => void;
+    private pointermove: (evt: PointerEvent) => void;
+    private pointerup: (evt?: PointerEvent) => void;
+
     constructor({
         container,
-        handle = null,
+        handle,
         onMoved,
-        onMoveStart = null,
-        onMoveEnd = null,
+        onMoveStart,
+        onMoveEnd,
         inNodeSpace = true
+    }: {
+        container: HTMLElement;
+        handle?: HTMLElement;
+        onMoved: MoveHandler;
+        onMoveStart?: MoveStartHandler;
+        onMoveEnd?: MoveEndHandler;
+        inNodeSpace?: boolean;
     }) {
         this.container = container;
         this.handle = handle ?? container;
         const myGrab = Symbol();
 
-        let prvMouse;
+        let prvMouse: { x: number; y: number };
         let actuallyMoved = false;
 
         this.pointerdown = (evt) => {

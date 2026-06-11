@@ -261,12 +261,12 @@
 
 <style>
     .node-space {
-        width: 100%;
         height: 100%;
-        position: relative;
-        flex: 1 1 auto;
+        right: 0;
+        position: absolute;
         background-color: #eeeff0;
         overflow: hidden;
+        contain: strict style;
     }
     .node-space :global(*) {
         user-select: none;
@@ -290,7 +290,6 @@
         top: 0;
         pointer-events: none;
         transform-origin: left top;
-        contain: layout size style;
     }
 
     .select-box {

@@ -234,7 +234,7 @@
     }
     .sorting {
         pointer-events: none;
-        contain: layout size style;
+        /* contain: layout size style; */
     }
     .sorting > .item-wrapper {
         position: absolute;

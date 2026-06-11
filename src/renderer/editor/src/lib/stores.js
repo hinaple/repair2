@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 
+/** @type {import("svelte/store").Writable<any>} */
 export const grabbing = writable(null);
 grabbing.subscribe((g) => {
     if (g === "select") {

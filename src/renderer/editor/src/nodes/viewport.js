@@ -17,45 +17,71 @@ export const viewport = {
     pos: writable({ x: 0, y: 0 })
 };
 
+let viewportEl;
 export function setViewportEl(node) {
-    observer.observe(node, { box: "device-pixel-content-box" });
-
-    return {
-        destroy() {
-            observer.unobserve(node);
-        }
-    };
+    viewportEl = node;
+    applyViewportWidth();
+}
+function applyViewportWidth() {
+    const screen = get(viewport.screen);
+    if (!viewportEl || !screen) return;
+    viewportEl.style.width = `${screen.width}px`;
 }
 
 const fu = new FrameUpdater(calcRatio);
 
-export const SIDEBAR_WIDTH = 340;
+export const SIDEBAR_WIDTH_MIN = 310;
+let SIDEBAR_WIDTH = 340;
+export function getSidebarWidth() {
+    return SIDEBAR_WIDTH;
+}
+export function setActualSidebarWidth(sidebarWidth = 0) {
+    const prev = SIDEBAR_WIDTH;
+    SIDEBAR_WIDTH = Math.min(Math.max(SIDEBAR_WIDTH_MIN, sidebarWidth), screenRect.width - 90);
+    const dw = SIDEBAR_WIDTH - prev;
+    moveViewport(dw / 2, 0);
+    fu.draw();
+}
+
 const observer = new ResizeObserver((entries) => {
     if (!entries.length) return;
 
     const rect = entries[0].contentRect;
     const deviceRect = entries[0].devicePixelContentBoxSize?.[0];
+
     screenRect = {
         width: rect.width,
         height: rect.height,
-        x: SIDEBAR_WIDTH,
-        y: 0,
         pixelWidth: deviceRect?.inlineSize ?? rect.width,
         pixelHeight: deviceRect?.blockSize ?? rect.height
     };
 
     fu.draw();
 });
+observer.observe(document.body);
 
 function calcRatio() {
     if (!screenRect) return;
 
+    const viewportWidth = screenRect.width - SIDEBAR_WIDTH;
+    const pw = screenRect.pixelWidth;
+    const pwr = pw / screenRect.width;
+    const screenObj = {
+        width: viewportWidth,
+        height: screenRect.height,
+        x: SIDEBAR_WIDTH,
+        y: 0,
+        pixelWidth: viewportWidth * pwr,
+        pixelHeight: screenRect.pixelHeight
+    };
+
     rInfo.ratio = Math.pow(10, get(viewport.size));
-    rInfo.RW = screenRect.width / rInfo.ratio;
-    rInfo.RH = screenRect.height / rInfo.ratio;
-    viewport.screen.set(screenRect);
+    rInfo.RW = screenObj.width / rInfo.ratio;
+    rInfo.RH = screenObj.height / rInfo.ratio;
+    viewport.screen.set(screenObj);
 
     document.body.style.setProperty("--viewport-ratio", rInfo.ratio);
+    applyViewportWidth();
 }
 
 function posFromAnchor(len, anchor, pos) {
@@ -73,9 +99,10 @@ export function posFromViewport(x, y, vpPos = get(viewport.pos)) {
 }
 export function getOriginalPos(x, y) {
     const vpPos = get(viewport.pos);
+    const screen = get(viewport.screen);
     return {
-        x: removeAnchor(rInfo.RW, vpPos.x, (x - screenRect?.x ?? 0) / rInfo.ratio),
-        y: removeAnchor(rInfo.RH, vpPos.y, (y - screenRect?.y ?? 0) / rInfo.ratio)
+        x: removeAnchor(rInfo.RW, vpPos.x, (x - screen?.x ?? 0) / rInfo.ratio),
+        y: removeAnchor(rInfo.RH, vpPos.y, (y - screen?.y ?? 0) / rInfo.ratio)
     };
 }
 
@@ -98,9 +125,11 @@ export function setViewportSize(size, considerLimit = true) {
 }
 
 export function isBoundOutViewport(x1, y1, x2, y2) {
-    return screenRect
-        ? ((x1 < 0 && x2 < 0) || (x1 > screenRect.width && x2 > screenRect.width)) &&
-              ((y1 < 0 && y2 < 0) || (y1 > screenRect.height && y2 > screenRect.height))
+    const screen = get(viewport.screen);
+
+    return screen
+        ? ((x1 < 0 && x2 < 0) || (x1 > screen.width && x2 > screen.width)) &&
+              ((y1 < 0 && y2 < 0) || (y1 > screen.height && y2 > screen.height))
         : true;
 }
 
