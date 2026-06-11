@@ -1,9 +1,9 @@
 import { join } from "path";
 import fs from "fs/promises";
-import { dataDir, pluginDir } from "../dirs";
+import { dataDir, pluginDir } from "../system/dirs";
 import { getManifest, MANIFEST, normalizeManifest } from "./pluginManifest";
-import { pathExists } from "../pathExists";
-import { createPluginDiagnostics, type PluginDiagnostics } from "./pluginDiagnostics";
+import { pathExists } from "../system/pathExists";
+import type { PluginDiagnostics } from "./pluginDiagnostics";
 import type { PluginType } from "./type";
 
 export type PluginLinks = Record<string, { sourcePath: string; linked: boolean }>;

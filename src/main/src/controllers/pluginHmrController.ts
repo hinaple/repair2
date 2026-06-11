@@ -2,62 +2,44 @@ import fs from "fs/promises";
 import { join } from "path";
 import { PluginManager } from "../plugin/pluginManager";
 import { createHmr } from "../hmrs";
-import type { ReportLog } from "../logs/reportLog";
-import type { MainContext } from "../app/mainContext.types";
-
-type PluginHmrControllerOptions = {
-    context: MainContext;
-    dirs: {
-        dataDir: string;
-        pluginDir: string;
-        styleDir: string;
-    };
-    reportLog: ReportLog;
-};
+import type { MainApp } from "../app/mainApp";
+import { logger } from "../logs/logger";
 
 export class PluginHmrController {
-    #context: MainContext;
-    #dataDir: string;
-    #pluginDir: string;
-    #reportLog: ReportLog;
-    #styleDir: string;
+    #app: MainApp;
 
-    constructor({ context, dirs, reportLog }: PluginHmrControllerOptions) {
-        this.#context = context;
-        this.#dataDir = dirs.dataDir;
-        this.#pluginDir = dirs.pluginDir;
-        this.#reportLog = reportLog;
-        this.#styleDir = dirs.styleDir;
+    constructor(app: MainApp) {
+        this.#app = app;
     }
 
     #requirePluginManager() {
-        const { service } = this.#context;
+        const { service } = this.#app;
         if (!service.pluginManager) throw new Error("PluginManager is not initialized.");
         return service.pluginManager;
     }
 
     async updateCss() {
-        const { state } = this.#context;
+        const { paths, state } = this.#app;
         try {
             state.project.cssCode = String(
-                await fs.readFile(join(this.#styleDir, "global.css"))
-            ).replace(/%FONTS%/g, join(this.#styleDir, "fonts").replace(/\\/g, "/"));
+                await fs.readFile(join(paths.styleDir, "global.css"))
+            ).replace(/%FONTS%/g, join(paths.styleDir, "fonts").replace(/\\/g, "/"));
         } catch (err) {
-            this.#reportLog({
-                level: "error",
-                content: ["global.css 파일 로드 중 오류가 발생했습니다:", err],
-                source: "project",
-                dialogue: false,
-                type: "global-css",
-                phase: "load",
-                subject: { kind: "project", id: "global.css", type: "style" }
-            });
+            logger
+                .with({
+                    source: "project",
+                    dialog: false,
+                    type: "global-css",
+                    phase: "load",
+                    subject: { kind: "project", id: "global.css", type: "style" }
+                })
+                .error("global.css 파일 로드 중 오류가 발생했습니다:", err as any);
         }
         return state.project.cssCode;
     }
 
     async setHmrActive(active: boolean) {
-        const { state, message } = this.#context;
+        const { message, paths, state } = this.#app;
         if (state.hmr.isActive === active) return;
         state.hmr.isActive = active;
 
@@ -68,15 +50,15 @@ export class PluginHmrController {
                 state.hmr.setter = createHmr({
                     onHmr: (type) => {
                         if (type === "css") {
-                            this.updateCss().then((css) => message.sendToMain("global-css", css));
+                            this.updateCss().then((css) => message.sendToPlay("global-css", css));
                             return;
                         }
 
                         this.#requirePluginManager().updateAllPluginInfo({});
                     },
-                    styleDir: this.#styleDir,
-                    pluginDir: this.#pluginDir,
-                    dataDir: this.#dataDir
+                    styleDir: paths.styleDir,
+                    pluginDir: paths.pluginDir,
+                    dataDir: paths.dataDir
                 });
                 return state.hmr.setter(state.hmr.isActive);
             })();
@@ -94,28 +76,27 @@ export class PluginHmrController {
     }
 
     async setDevMode(devMode: boolean) {
-        const { service } = this.#context;
+        const { service } = this.#app;
         const pluginManager = service.pluginManager;
         if (pluginManager) await pluginManager.setDevMode(devMode);
         return this.setHmrActive(devMode);
     }
 
     async setPluginManager(devMode = false) {
-        const { service, message } = this.#context;
+        const { service, message } = this.#app;
         if (service.pluginManager) await this.destroyPluginManager();
-        const pluginManager = new PluginManager({
+        const pluginManager = new PluginManager(message, {
             devMode,
-            reportLog: this.#reportLog,
             onupdate: ({ type, updateData }) => {
                 if (type === "single") {
                     message.sendToEditor("plugin:update", updateData);
-                    message.sendToMain("plugin:update", updateData);
+                    message.sendToPlay("plugin:update", updateData);
                 } else if (type === "all") {
                     message.sendToEditor("plugin:list", updateData);
-                    message.sendToMain("plugin:list", updateData);
+                    message.sendToPlay("plugin:list", updateData);
                 } else if (type === "hmr") {
                     message.sendToEditor("plugin:hmr", updateData);
-                    message.sendToMain("plugin:hmr", updateData);
+                    message.sendToPlay("plugin:hmr", updateData);
                 } else if (type === "runtime-error") {
                     message.sendToEditor("plugin:update", {
                         info: updateData.info,
@@ -124,7 +105,7 @@ export class PluginHmrController {
                     });
                 } else if (type === "removed") {
                     message.sendToEditor("plugin:removed", updateData.info);
-                    message.sendToMain("plugin:removed", updateData.info);
+                    message.sendToPlay("plugin:removed", updateData.info);
                 } else if (type === "manifest-error") {
                     message.sendToEditor("plugin:manifest-error", updateData.manifestErrors);
                 }
@@ -135,7 +116,7 @@ export class PluginHmrController {
     }
 
     async destroyPluginManager() {
-        const { service } = this.#context;
+        const { service } = this.#app;
         if (!service.pluginManager) return;
 
         const tempPM = service.pluginManager;

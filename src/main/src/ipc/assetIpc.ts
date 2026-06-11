@@ -1,39 +1,23 @@
-import {
-    dialog,
-    type BrowserWindow,
-    type OpenDialogOptions,
-    type MessageBoxOptions
-} from "electron";
 import fs from "fs/promises";
 import { basename, extname, join } from "path";
-import { pathExists } from "../pathExists";
+import { pathExists } from "../system/pathExists";
+import type { MainApp } from "../app/mainApp";
 import { ipc } from "./ipcMethods";
 
-type AssetIpcOptions = {
-    assetDir: string;
-    dataDir: string;
-    getDialogOwnerWindow: () => BrowserWindow | null;
-};
-
-export function setupAssetIpc({ assetDir, dataDir, getDialogOwnerWindow }: AssetIpcOptions) {
+export function setupAssetIpc(app: MainApp) {
     ipc.on("getDataDir", (evt) => {
-        evt.returnValue = dataDir;
+        evt.returnValue = app.paths.dataDir;
     });
 
-    ipc.handle("selectFile", (event, opt: OpenDialogOptions) => {
-        const ownerWindow = getDialogOwnerWindow();
-        if (ownerWindow) return dialog.showOpenDialog(ownerWindow, opt);
-        return dialog.showOpenDialog(opt);
+    ipc.handle("selectFile", (event, opt) => {
+        return app.system.dialog.showOpenDialog(opt);
     });
 
-    ipc.handle("dialogue", (event, opt: MessageBoxOptions) => {
-        const options = {
+    ipc.handle("dialog", (event, opt) => {
+        return app.system.dialog.showMessageBox({
             ...opt,
             noLink: true
-        };
-        const ownerWindow = getDialogOwnerWindow();
-        if (ownerWindow) return dialog.showMessageBox(ownerWindow, options);
-        return dialog.showMessageBox(options);
+        });
     });
 
     ipc.handle("copyInfoAsset", (event, srcs: string[]) => {
@@ -43,10 +27,10 @@ export function setupAssetIpc({ assetDir, dataDir, getDialogOwnerWindow }: Asset
                 const baseName = basename(src, ext);
                 let filename = basename(src);
                 for (let duplicatedCount = 2; ; duplicatedCount++) {
-                    if (!(await pathExists(join(assetDir, filename)))) break;
+                    if (!(await pathExists(join(app.paths.assetDir, filename)))) break;
                     filename = `${baseName}(${duplicatedCount})${ext}`;
                 }
-                await fs.copyFile(src, join(assetDir, filename));
+                await fs.copyFile(src, join(app.paths.assetDir, filename));
                 return filename;
             })
         );

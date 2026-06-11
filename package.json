@@ -47,7 +47,6 @@
         "electron": "^34.2.0",
         "electron-builder": "^25.1.8",
         "electron-prompt": "^1.7.0",
-        "electron-store": "^11.0.2",
         "electron-vite": "^5.0.0",
         "esbuild": "^0.28.0",
         "fs-extra": "^11.3.0",

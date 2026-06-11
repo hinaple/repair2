@@ -10,7 +10,7 @@ import type {
 
 type LogChangeListener = (change: LogChange) => void;
 
-class LogStore {
+export class LogStore {
     private entries = new Map<string, LogEntry>();
     private lastEntryId: string | null = null;
     private lastFingerprint: string | null = null;
@@ -74,5 +74,3 @@ class LogStore {
         this.listeners.forEach((listener) => listener(change));
     }
 }
-
-export const logStore = new LogStore();

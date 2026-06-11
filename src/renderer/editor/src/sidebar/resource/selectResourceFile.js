@@ -19,7 +19,7 @@ export async function changeResourceFile(resource) {
     if (!target.includes(AssetDir)) {
         if (
             (
-                await ipc.invoke("dialogue", {
+                await ipc.invoke("dialog", {
                     type: "question",
                     title: "다른 폴더의 파일입니다.",
                     message: `${target}\n\n위 파일을 자원 폴더에 복사하시겠습니까?`,

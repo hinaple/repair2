@@ -1,41 +1,19 @@
 import { BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { createEditorMenu } from "./editorMenu";
-import { checkVscodeInstalled } from "../vscodeUtils";
-import type { MainContext } from "../app/mainContext.types";
+import { checkVscodeInstalled } from "../system/vscodeUtils";
+import type { MainApp } from "../app/mainApp";
 import { logger } from "../logs/logger";
 
-type WindowControllerOptions = {
-    context: MainContext;
-    isDev: boolean;
-    closeSplash: () => void;
-    startSuppress: () => void;
-    stopSuppress: () => void;
-};
-
 export class WindowController {
-    #closeSplash: () => void;
-    #context: MainContext;
-    #isDev: boolean;
-    #startSuppress: () => void;
-    #stopSuppress: () => void;
+    #app: MainApp;
 
-    constructor({
-        context,
-        isDev,
-        closeSplash,
-        startSuppress,
-        stopSuppress
-    }: WindowControllerOptions) {
-        this.#closeSplash = closeSplash;
-        this.#context = context;
-        this.#isDev = isDev;
-        this.#startSuppress = startSuppress;
-        this.#stopSuppress = stopSuppress;
+    constructor(app: MainApp) {
+        this.#app = app;
     }
 
     createMainWindow() {
-        const { state, service, controllers, system } = this.#context;
+        const { controllers, globalKey, service, startup, state, system } = this.#app;
         const mainWindow = new BrowserWindow({
             show: false,
             webPreferences: {
@@ -57,13 +35,13 @@ export class WindowController {
         mainWindow.setMenu(null);
 
         ipcMain.once("play-win-ready", () => {
-            this.#closeSplash();
+            startup.closeSplash();
             state.window.main?.show();
 
             controllers.project.applyDataConfig();
         });
 
-        if (this.#isDev) {
+        if (this.#app.isDev) {
             mainWindow.loadURL("http://localhost:3100");
         } else {
             mainWindow.loadFile(join(__dirname, "../play/index.html"));
@@ -71,17 +49,17 @@ export class WindowController {
 
         mainWindow.on("closed", () => {
             state.window.main = null;
-            this.#stopSuppress();
+            globalKey.stopSuppress();
             if (!service.projectFileManager.importing) {
-                this.#closeSplash();
+                startup.closeSplash();
                 system.app.quit();
             }
         });
         mainWindow.on("focus", () => {
-            if (state.project.data?.config?.suppressGlobalKeys) this.#startSuppress();
+            if (state.project.data?.config?.suppressGlobalKeys) globalKey.startSuppress();
         });
         mainWindow.on("blur", () => {
-            this.#stopSuppress();
+            globalKey.stopSuppress();
         });
 
         mainWindow.webContents.on("render-process-gone", (evt, details) => {
@@ -111,7 +89,7 @@ export class WindowController {
     }
 
     createEditorWindow() {
-        const { state, editorSave, message, system } = this.#context;
+        const { state, editorSave, message, system } = this.#app;
         if (state.window.editor) return;
 
         if (state.device.isVscodeInstalled === null) {
@@ -131,7 +109,7 @@ export class WindowController {
         });
         state.window.editor = editorWindow;
 
-        editorWindow.setMenu(createEditorMenu(this.#context));
+        editorWindow.setMenu(createEditorMenu(this.#app));
 
         editorWindow.on("ready-to-show", () => {
             editorWindow.show();
@@ -149,23 +127,23 @@ export class WindowController {
             return { action: "deny" };
         });
 
-        if (this.#isDev) {
+        if (this.#app.isDev) {
             editorWindow.loadURL("http://localhost:3101");
         } else {
             editorWindow.loadFile(join(__dirname, "../editor/index.html"));
         }
 
         editorWindow.on("close", () => {
-            if (state.editorSave.pending) {
-                editorSave.resolveEditorSaveRequest(state.editorSave.pending.requestId, false);
+            if (editorSave.pending) {
+                editorSave.resolveEditorSaveRequest(editorSave.pending.requestId, false);
             }
             state.window.editor = null;
-            message.sendToMain("monitor-event", "end");
+            message.sendToPlay("monitor-event", "end");
         });
     }
 
     closeProjectWindows() {
-        const { state } = this.#context;
+        const { state } = this.#app;
         if (state.window.editor) {
             state.window.editor.close();
             state.window.editor = null;

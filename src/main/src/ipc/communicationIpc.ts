@@ -1,47 +1,41 @@
-import type { SerialService, SocketService } from "../app/mainContext.types";
+import type { MainApp } from "../app/mainApp";
 import { ipc } from "./ipcMethods";
 
-type CommunicationIpcOptions = {
-    socket: SocketService;
-    serial: SerialService;
-    sendToEditor: (channel: string, ...params: unknown[]) => void;
-};
-
-export function setupCommunicationIpc({ socket, serial, sendToEditor }: CommunicationIpcOptions) {
-    ipc.on("socket-connect", (event, urls: string | string[]) => {
-        socket
+export function setupCommunicationIpc(app: MainApp) {
+    ipc.on("socket-connect", (event, urls) => {
+        app.service.socket
             .connect(typeof urls === "string" ? urls.trim().split("\n") : urls)
             .then((connected) => {
-                if (!connected) sendToEditor("socket-failed");
+                if (!connected) app.message.sendToEditor("socket-failed");
             });
     });
 
-    ipc.on("socket-connect-service", (event, type: string, name: string) => {
-        if (socket.connected) return;
+    ipc.on("socket-connect-service", (event, type, name) => {
+        if (app.service.socket.connected) return;
         import("../communication/bonjour.js")
             .then(({ findService }) => findService(type, name))
             .then((urls) => {
-                socket.connect(urls).then((connected) => {
-                    if (!connected) sendToEditor("socket-failed");
+                app.service.socket.connect(urls).then((connected) => {
+                    if (!connected) app.message.sendToEditor("socket-failed");
                 });
             })
             .catch(() => {});
     });
 
-    ipc.on("socket-send", (event, channel: string, ...data: unknown[]) => {
-        socket.send(channel, ...data);
+    ipc.on("socket-send", (event, channel, ...data) => {
+        app.service.socket.send(channel, ...data);
     });
     ipc.on("socket-disconnect", () => {
-        socket.disconnect();
+        app.service.socket.disconnect();
     });
 
-    ipc.on("serial-open", (event, alias?: string, port?: string, baudRate?: number) => {
-        serial.open(alias, port, baudRate);
+    ipc.on("serial-open", (event, alias, port, baudRate) => {
+        app.service.serial.open(alias, port, baudRate);
     });
-    ipc.on("serial-send", (event, data: unknown) => {
-        serial.send(data);
+    ipc.on("serial-send", (event, data) => {
+        app.service.serial.send(data);
     });
     ipc.on("serial-close", () => {
-        serial.close();
+        app.service.serial.close();
     });
 }

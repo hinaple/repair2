@@ -18,7 +18,7 @@
         );
         let doCopy = false;
         if (outAssets.length) {
-            const result = await ipc.invoke("dialogue", {
+            const result = await ipc.invoke("dialog", {
                 type: "question",
                 title: "다른 폴더의 파일이 있습니다.",
                 message: `${outAssets.join("\n")}\n\n위 파일들을 자원 폴더에 복사하시겠습니까?`,

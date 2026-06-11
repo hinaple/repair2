@@ -1,20 +1,7 @@
 import { Menu, type MenuItemConstructorOptions } from "electron";
-import type { MainContext } from "../app/mainContext.types";
+import type { MainApp } from "../app/mainApp";
 
-export function createEditorMenu({
-    state,
-    service,
-    controllers,
-    editorSave,
-    message,
-    paths,
-    system
-}: MainContext) {
-    const { app, dialog, shell } = system;
-    const { dataDir, emptyProjectFile } = paths;
-    const { requestEditorSave } = editorSave;
-    const { sendToEditor } = message;
-
+export function createEditorMenu(app: MainApp) {
     const template: MenuItemConstructorOptions[] = [
         {
             label: "파일",
@@ -22,7 +9,7 @@ export function createEditorMenu({
                 {
                     label: "새 프로젝트",
                     click: async () => {
-                        const { response } = await dialog.showMessageBox(state.window.editor!, {
+                        const { response } = await app.system.dialog.showMessageBox({
                             type: "info",
                             title: "프로젝트 내보내기",
                             message: "현재 편집 중인 프로젝트 정보가 삭제됩니다.",
@@ -35,13 +22,15 @@ export function createEditorMenu({
                         if (response === 2) return;
                         if (
                             response === 0 &&
-                            !(await service.projectFileManager.exportProject(
-                                controllers.project.getProjectExportName()
+                            !(await app.service.projectFileManager.exportProject(
+                                app.controllers.project.getProjectExportName()
                             ))
                         )
                             return;
 
-                        await service.projectFileManager.importProject(emptyProjectFile);
+                        await app.service.projectFileManager.importProject(
+                            app.paths.emptyProjectFile
+                        );
                     },
                     accelerator: "CommandOrControl+N"
                 },
@@ -49,7 +38,7 @@ export function createEditorMenu({
                 {
                     label: "저장",
                     click: async () => {
-                        await requestEditorSave();
+                        await app.editorSave.requestEditorSave();
                     },
                     accelerator: "CommandOrControl+S"
                 },
@@ -57,17 +46,17 @@ export function createEditorMenu({
                 {
                     label: "프로젝트 불러오기",
                     click: async () => {
-                        if (!(await service.projectFileManager.selectImportProject())) return;
-                        controllers.window.createEditorWindow();
+                        if (!(await app.service.projectFileManager.selectImportProject())) return;
+                        app.controllers.window.createEditorWindow();
                     },
                     accelerator: "CommandOrControl+Shift+O"
                 },
                 {
                     label: "프로젝트 내보내기",
                     click: async () => {
-                        if (!(await requestEditorSave())) return;
-                        await service.projectFileManager.exportProject(
-                            controllers.project.getProjectExportName()
+                        if (!(await app.editorSave.requestEditorSave())) return;
+                        await app.service.projectFileManager.exportProject(
+                            app.controllers.project.getProjectExportName()
                         );
                     },
                     accelerator: "CommandOrControl+Shift+S"
@@ -76,14 +65,14 @@ export function createEditorMenu({
                 {
                     label: "데이터 폴더 열기",
                     click: () => {
-                        shell.openPath(dataDir);
+                        app.system.shell.openPath(app.paths.dataDir);
                     }
                 },
                 { type: "separator" },
                 {
                     label: "RepairV2 종료",
                     click: () => {
-                        app.quit();
+                        app.system.app.quit();
                     },
                     accelerator: "CommandOrControl+Q"
                 }
@@ -95,14 +84,14 @@ export function createEditorMenu({
                 {
                     label: "취소",
                     click: () => {
-                        sendToEditor("undo");
+                        app.message.sendToEditor("undo");
                     },
                     accelerator: "CommandOrControl+Z"
                 },
                 {
                     label: "재실행",
                     click: () => {
-                        sendToEditor("redo");
+                        app.message.sendToEditor("redo");
                     },
                     accelerator: "CommandOrControl+Shift+Z"
                 }
@@ -114,14 +103,14 @@ export function createEditorMenu({
                 {
                     label: "편집기 콘솔",
                     click: () => {
-                        state.window.editor?.webContents.toggleDevTools();
+                        app.state.window.editor?.webContents.toggleDevTools();
                     },
                     accelerator: "CommandOrControl+Shift+I"
                 },
                 {
                     label: "플레이 콘솔",
                     click: () => {
-                        state.window.main?.webContents.toggleDevTools();
+                        app.state.window.main?.webContents.toggleDevTools();
                     }
                 }
             ]
@@ -131,13 +120,13 @@ export function createEditorMenu({
             submenu: [
                 {
                     label: "새 플러그인 생성",
-                    click: () => sendToEditor("plugin:show-create-modal")
+                    click: () => app.message.sendToEditor("plugin:show-create-modal")
                 },
                 {
                     label: "플러그인 전체 다시 빌드",
                     click: async () => {
-                        if (!service.pluginManager) return;
-                        await service.pluginManager.updateAllPluginInfo({ forceBuild: true });
+                        if (!app.service.pluginManager) return;
+                        await app.service.pluginManager.updateAllPluginInfo({ forceBuild: true });
                     }
                 }
             ]
@@ -148,21 +137,21 @@ export function createEditorMenu({
                 {
                     label: "확대",
                     click: () => {
-                        sendToEditor("zoom", 1);
+                        app.message.sendToEditor("zoom", 1);
                     },
                     accelerator: "CommandOrControl+="
                 },
                 {
                     label: "축소",
                     click: () => {
-                        sendToEditor("zoom", -1);
+                        app.message.sendToEditor("zoom", -1);
                     },
                     accelerator: "CommandOrControl+-"
                 },
                 {
                     label: "화면에 맞추기",
                     click: () => {
-                        sendToEditor("zoom-fit");
+                        app.message.sendToEditor("zoom-fit");
                     },
                     accelerator: "CommandOrControl+0"
                 },
@@ -170,7 +159,7 @@ export function createEditorMenu({
                 {
                     label: "편집기 새로고침",
                     click: () => {
-                        state.window.editor?.webContents.reloadIgnoringCache();
+                        app.state.window.editor?.webContents.reloadIgnoringCache();
                     },
                     accelerator: "CommandOrControl+R"
                 }

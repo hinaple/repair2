@@ -1,46 +1,70 @@
-import type { LogEntry } from "@shared/log.types";
-import type { ReportLog } from "./reportLog";
-import { cli, CliLogTypes } from "./console";
+import type { LogEntry, LogFrom, LogSource, LogSubject } from "@shared/log.types";
+import type { LogPayload, ReportLog } from "./reportLog";
 
-const LogLevels = ["debug", "info", "warning", "error", "crash"] as const;
-type Logger = (...args: {}[]) => LogEntry | undefined;
+const LogLevels = ["debug", "info", "warning", "error"] as const;
+type LoggerMethod = (...args: {}[]) => LogEntry | undefined;
+type LoggerOption = Omit<LogPayload, "content" | "level" | "log">;
+type LoggerMethods = Record<(typeof LogLevels)[number], LoggerMethod>;
+type Logger = {
+    source: (source: LogSource) => Logger;
+    dialog: (showDialog?: boolean) => Logger;
+    phase: (phase: string) => Logger;
+    type: (type: string) => Logger;
+    subject: (subject: LogSubject) => Logger;
+    from: (from: LogFrom) => Logger;
+    with: (payload: LoggerOption) => Logger;
+} & LoggerMethods;
 
 let scopedLog: ReportLog;
 
-export const logger = Object.fromEntries(
-    LogLevels.map((l) => [l, (...args: ({} | null | undefined)[]) => baseLogger(l, args)])
-) as Record<(typeof LogLevels)[number], Logger>;
+function createLogger(payload: LoggerOption): Logger {
+    const methods = Object.fromEntries(
+        LogLevels.map((l) => [
+            l,
+            (...args: ({} | null | undefined)[]) => baseLogger(l, payload, args)
+        ])
+    ) as LoggerMethods;
+    const currentCreateLogger = (p: LoggerOption) => createLogger({ ...payload, ...p });
+    return {
+        source: (source) => currentCreateLogger({ source }),
+        dialog: (dialog = true) => currentCreateLogger({ dialog }),
+        phase: (phase) => currentCreateLogger({ phase }),
+        type: (type) => currentCreateLogger({ type }),
+        subject: (subject) => currentCreateLogger({ subject }),
+        from: (from) => currentCreateLogger({ from }),
+        with: currentCreateLogger,
+        ...methods
+    };
+}
 
 const LV_CLI_MAP: Record<(typeof LogLevels)[number], "log" | "warn" | "error"> = {
     debug: "log",
     info: "log",
     warning: "warn",
-    error: "error",
-    crash: "error"
+    error: "error"
 } as const;
 
 function baseLogger(
     level: (typeof LogLevels)[number],
+    payload: LoggerOption,
     args: ({} | null | undefined)[]
 ): LogEntry | undefined {
-    // cli[LV_CLI_MAP[level]](args.map((a) => (a ? String(a) : a)).join(" "));
     console[LV_CLI_MAP[level]](...args);
     if (!scopedLog) return;
 
-    let dialogue = false;
-    if (level === "crash") {
-        level = "error";
-        dialogue = true;
-    }
+    let dialog = false;
     return scopedLog({
-        level,
         type: `main-log:${level}`,
+        dialog,
         source: "app",
+        ...payload,
         content: args,
-        dialogue
+        level
     });
 }
 
 export function registerLogger(reportLog: ReportLog) {
     scopedLog = reportLog;
 }
+
+export const logger = createLogger({});

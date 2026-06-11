@@ -1,7 +1,7 @@
 // import semver from "semver";
 import fs from "fs/promises";
 import { join } from "path";
-import { isDirEmpty } from "../pathExists";
+import { isDirEmpty } from "../system/pathExists";
 import { ProjectData } from "@shared/projectData.types";
 import { logger } from "../logs/logger";
 
@@ -17,7 +17,7 @@ export async function migrateProject({
     pluginDir: string;
 }) {
     if (!data) {
-        logger.crash("Project data is empty.");
+        logger.dialog().error("Project data is empty.");
         return;
     }
     const DataVer = data.VERSION;

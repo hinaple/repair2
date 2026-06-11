@@ -13,8 +13,8 @@
     import { ipc } from "../lib/ipc";
 
     let {
-        node,
-        type,
+        node: n,
+        type: t,
         outputs,
         innerOutputs = null,
         title,
@@ -31,6 +31,9 @@
         reload("nodeMoved");
     });
 
+    // svelte-ignore state_referenced_locally
+    const node = n,
+        type = t;
     const clipboardFn = node.clipboardFn;
 
     let nodeEl, handleEl;

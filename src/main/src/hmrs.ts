@@ -1,4 +1,4 @@
-import { type FSWatcher } from "chokidar";
+import type { FSWatcher } from "chokidar";
 import { join } from "path";
 import { logger } from "./logs/logger";
 

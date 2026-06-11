@@ -3,7 +3,7 @@ import { join } from "path";
 import { buildPlugin } from "./pluginBuild";
 import { getManifest, MANIFEST, normalizeManifest, watchManifest } from "./pluginManifest";
 import MainRuntimePluginEngine from "./runtimeMain";
-import { pluginDir } from "../dirs";
+import { pluginDir } from "../system/dirs";
 import { createPluginLinkService, type PluginLinkService } from "./pluginLinks";
 import {
     createPluginDiagnostics,
@@ -12,6 +12,8 @@ import {
     pluginErrorToFrom,
     type PluginDiagnostics
 } from "./pluginDiagnostics";
+import { createSender, type UpdateHandler, type UpdateSender } from "./sendPluginUpdate";
+import { logger } from "../logs/logger";
 import type {
     RawManifest,
     PluginInfo,
@@ -22,10 +24,8 @@ import type {
     WatchData
 } from "./type";
 import type { PluginErrorPayload, PluginRunningTarget } from "@shared/plugin.types";
-import { createSender, type UpdateHandler, type UpdateSender } from "./sendPluginUpdate";
-import type { RollupError, RollupWatcher } from "rollup";
-import type { ReportLog } from "../logs/reportLog";
-import { logger } from "../logs/logger";
+import type { RollupError } from "rollup";
+import type { MainMessage } from "../app/mainApp.types";
 
 function closeViteWatchers(data: PluginData) {
     if (data.watchers && data.watchers.length)
@@ -45,24 +45,19 @@ export class PluginManager {
 
     plugins: Map<string, PluginInfoData>;
     manifestErrors: Map<string, ManifestError> = new Map();
-    constructor({
-        devMode = false,
-        reportLog,
-        onupdate
-    }: {
-        devMode: boolean;
-        reportLog: ReportLog;
-        onupdate: UpdateHandler;
-    }) {
+    constructor(
+        message: MainMessage,
+        { devMode = false, onupdate }: { devMode: boolean; onupdate: UpdateHandler }
+    ) {
         this.sendUpdate = createSender(this, onupdate);
         this.plugins = new Map();
         this.devMode = devMode;
         this.updated = false;
-        this.pluginDiagnostics = createPluginDiagnostics(reportLog);
+        this.pluginDiagnostics = createPluginDiagnostics();
         this.pluginLinkService = createPluginLinkService({
             pluginDiagnostics: this.pluginDiagnostics
         });
-        this.mainRuntime = new MainRuntimePluginEngine({
+        this.mainRuntime = new MainRuntimePluginEngine(message, {
             pluginDir,
             pluginDiagnostics: this.pluginDiagnostics
         });
@@ -659,9 +654,10 @@ export class PluginManager {
 
         const prevError = plugin.error[target];
         if (
-            prevError &&
-            (!log.phase ||
-                getPluginPhasePriority(prevError.phase) < getPluginPhasePriority(log.phase))
+            !log ||
+            (prevError &&
+                (!log.phase ||
+                    getPluginPhasePriority(prevError.phase) < getPluginPhasePriority(log.phase)))
         )
             return;
         plugin.error[target] = {

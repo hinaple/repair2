@@ -1,23 +1,20 @@
+import type { MainApp } from "../app/mainApp";
 import { ipc } from "./ipcMethods";
 
-type PreviewIpcOptions = {
-    sendToMain: (channel: string, ...params: unknown[]) => void;
-};
-
-export function setupPreviewIpc({ sendToMain }: PreviewIpcOptions) {
-    ipc.on("request-execute", (event, { type, id }: { type: string; id: string }) => {
-        sendToMain("request-execute", { type, id });
+export function setupPreviewIpc(app: MainApp) {
+    ipc.on("request-execute", (event, { type, id }) => {
+        app.message.sendToPlay("request-execute", { type, id });
     });
 
-    ipc.on("layout-preview", (event, { compData }: { compData: unknown }) => {
-        sendToMain("layout-preview", { compData });
+    ipc.on("layout-preview", (event, payload) => {
+        app.message.sendToPlay("layout-preview", payload);
     });
 
-    ipc.on("preview-content-visible", (event, visible: boolean) => {
-        sendToMain("preview-content-visible", visible);
+    ipc.on("preview-content-visible", (event, visible) => {
+        app.message.sendToPlay("preview-content-visible", visible);
     });
 
     ipc.on("stop-preview", () => {
-        sendToMain("stop-preview");
+        app.message.sendToPlay("stop-preview");
     });
 }

@@ -1,4 +1,3 @@
-import { logStore } from "./logStore";
 import {
     normalizeLogLevel,
     normalizeLogSubject,
@@ -7,21 +6,19 @@ import {
     type LogLevel
 } from "./logEntry";
 import type { LogContent } from "@shared/logContent";
-import type { MessageBoxOptions } from "electron";
 import type { LogEntryInput } from "@shared/log.types";
+import type { NewDialogs } from "../system/dialog";
+import type { LogStore } from "./logStore";
 
 export type LogPayload = Omit<LogEntryInput, "createdAt" | "updatedAt" | "count"> & {
     log?: boolean;
-    dialogue?: boolean;
+    dialog?: boolean;
 };
 
 type LogReporterOptions = {
     makeLogFile?: (type: string, content: string) => Promise<string>;
-    getEditorWindow?: () => any;
-    getMainWindow?: () => any;
-    dialog?: {
-        showMessageBox?: (browserWindowOrOptions: any, options?: MessageBoxOptions) => Promise<any>;
-    };
+    dialog: NewDialogs;
+    logStore: LogStore;
 };
 
 const LOG_SEGMENT_MAX_LENGTH = 16;
@@ -110,9 +107,8 @@ export type ReportLog = (
 
 export function createLogReporter({
     makeLogFile,
-    getEditorWindow,
-    getMainWindow,
-    dialog
+    dialog: { showMessageBox },
+    logStore
 }: LogReporterOptions): ReportLog {
     function reportLog(
         {
@@ -121,7 +117,7 @@ export function createLogReporter({
             source = "app",
             subject = null,
             log = undefined,
-            dialogue = false,
+            dialog = false,
             type = null,
             phase = null,
             from
@@ -159,17 +155,14 @@ export function createLogReporter({
             });
         }
 
-        if (dialogue && dialog?.showMessageBox) {
-            const parentWindow = getEditorWindow?.() ?? getMainWindow?.();
-            const messageBoxOptions: MessageBoxOptions = {
+        if (dialog) {
+            showMessageBox({
                 type: getDialogType(entry.level),
                 title: "Repair2",
                 message: `${entry.level} at ${entry.source}`,
                 detail: detailText,
                 noLink: true
-            };
-            if (parentWindow) dialog.showMessageBox(parentWindow, messageBoxOptions);
-            else dialog.showMessageBox(messageBoxOptions);
+            });
         }
 
         return entry;

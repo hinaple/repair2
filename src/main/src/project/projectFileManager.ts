@@ -1,17 +1,14 @@
-import { app, dialog, shell, type BrowserWindow } from "electron";
 import { emptyDir } from "fs-extra";
 import { createWriteStream } from "fs";
-import { closeSplash } from "../splash";
-import type { ReportLog } from "../logs/reportLog";
+import { logger } from "../logs/logger";
+import type { MainApp } from "../app/mainApp";
 
 type ProjectFileManagerOptions = {
-    getDialogOwnerWindow?: (() => BrowserWindow | null) | null;
     beforeImport?: (() => Promise<unknown> | unknown) | null;
     importProgress?: ((message: string) => void) | null;
     afterImport?: (() => Promise<unknown> | unknown) | null;
     exportProgress?: ((progress: number | null) => void) | null;
     afterExport?: ((filePath: string) => void) | null;
-    reportLog?: ReportLog | null;
 };
 
 type ZipEntry = {
@@ -23,53 +20,40 @@ type ZipWithErrorEvent = {
 };
 
 export default class ProjectFileManager {
-    dataDir: string;
     exporting = false;
     importing = false;
 
+    #app: MainApp;
     #afterExport: ((filePath: string) => void) | null;
     #afterImport: (() => Promise<unknown> | unknown) | null;
     #beforeImport: (() => Promise<unknown> | unknown) | null;
     #exportProgress: ((progress: number | null) => void) | null;
-    #getDialogOwnerWindow: (() => BrowserWindow | null) | null;
     #importProgress: ((message: string) => void) | null;
-    #reportLog: ReportLog | null;
 
     constructor(
-        dataDir: string,
+        app: MainApp,
         {
-            getDialogOwnerWindow = null,
             beforeImport = null,
             importProgress = null,
             afterImport = null,
             exportProgress = null,
-            afterExport = null,
-            reportLog = null
+            afterExport = null
         }: ProjectFileManagerOptions
     ) {
-        this.#getDialogOwnerWindow = getDialogOwnerWindow;
-        this.dataDir = dataDir;
+        this.#app = app;
         this.#beforeImport = beforeImport;
         this.#importProgress = importProgress;
         this.#afterImport = afterImport;
         this.#exportProgress = exportProgress;
         this.#afterExport = afterExport;
-        this.#reportLog = reportLog;
     }
 
     async exportProject(projectName: string) {
-        const ownerWindow = this.#getDialogOwnerWindow?.() ?? null;
-        const result = ownerWindow
-            ? await dialog.showSaveDialog(ownerWindow, {
-                  title: "프로젝트 내보내기",
-                  defaultPath: `${projectName}.repair`,
-                  filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
-              })
-            : await dialog.showSaveDialog({
-                  title: "프로젝트 내보내기",
-                  defaultPath: `${projectName}.repair`,
-                  filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
-              });
+        const result = await this.#app.system.dialog.showSaveDialog({
+            title: "프로젝트 내보내기",
+            defaultPath: `${projectName}.repair`,
+            filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
+        });
         if (!result || result.canceled || !result.filePath) return false;
 
         this.importing = true;
@@ -79,7 +63,7 @@ export default class ProjectFileManager {
             const output = createWriteStream(result.filePath!);
             output.on("close", () => {
                 resolve(true);
-                shell.showItemInFolder(result.filePath!);
+                this.#app.system.shell.showItemInFolder(result.filePath!);
                 this.importing = false;
                 this.#afterExport?.(result.filePath!);
             });
@@ -88,7 +72,7 @@ export default class ProjectFileManager {
                 this.importing = false;
             });
 
-            zip(this.dataDir, output, (progress) =>
+            zip(this.#app.paths.dataDir, output, (progress) =>
                 this.#exportProgress?.(Math.floor(progress * 100))
             );
         });
@@ -99,7 +83,7 @@ export default class ProjectFileManager {
             this.importing = true;
             await this.#beforeImport?.();
 
-            await emptyDir(this.dataDir);
+            await emptyDir(this.#app.paths.dataDir);
 
             const zip = new (await import("node-stream-zip")).async({
                 file: filePath,
@@ -122,7 +106,7 @@ export default class ProjectFileManager {
                     this.importing = false;
                     reject(err);
                 });
-                zip.extract(null, this.dataDir).then(() => resolve(), reject);
+                zip.extract(null, this.#app.paths.dataDir).then(() => resolve(), reject);
             });
             await zip.close();
 
@@ -130,57 +114,39 @@ export default class ProjectFileManager {
             this.importing = false;
         } catch (error) {
             this.importing = false;
-            closeSplash();
-            await this.#reportLog?.({
-                level: "error",
-                content: ["프로젝트를 불러오는 중 오류가 발생했습니다.", ...(error ? [error] : [])],
-                source: "project",
-                dialogue: true,
-                type: "project-import-error",
-                phase: "import",
-                subject: { kind: "project" }
-            });
-            app.quit();
+            this.#app.startup.closeSplash();
+            logger
+                .with({
+                    source: "project",
+                    type: "project-import-error",
+                    phase: "import",
+                    subject: { kind: "project" },
+                    dialog: true
+                })
+                .error("프로젝트를 불러오는 중 오류가 발생했습니다.", ...(error ? [error] : []));
+            this.#app.system.app.quit();
             throw error;
         }
     }
 
     async selectImportProject() {
-        const ownerWindow = this.#getDialogOwnerWindow?.() ?? null;
-        const confirm = ownerWindow
-            ? await dialog.showMessageBox(ownerWindow, {
-                  type: "info",
-                  title: "프로젝트 불러오기",
-                  message: "프로젝트 파일을 불러올까요?",
-                  detail: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
-                  buttons: ["확인", "취소"],
-                  cancelId: 1,
-                  defaultId: 0,
-                  noLink: true
-              })
-            : await dialog.showMessageBox({
-                  type: "info",
-                  title: "프로젝트 불러오기",
-                  message: "프로젝트 파일을 불러올까요?",
-                  detail: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
-                  buttons: ["확인", "취소"],
-                  cancelId: 1,
-                  defaultId: 0,
-                  noLink: true
-              });
+        const confirm = await this.#app.system.dialog.showMessageBox({
+            type: "info",
+            title: "프로젝트 불러오기",
+            message: "프로젝트 파일을 불러올까요?",
+            detail: "편집 중이던 프로젝트의 정보가 삭제됩니다.",
+            buttons: ["확인", "취소"],
+            cancelId: 1,
+            defaultId: 0,
+            noLink: true
+        });
         if (confirm.response !== 0) return false;
 
-        const result = ownerWindow
-            ? await dialog.showOpenDialog(ownerWindow, {
-                  title: "프로젝트 불러오기",
-                  properties: ["openFile"],
-                  filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
-              })
-            : await dialog.showOpenDialog({
-                  title: "프로젝트 불러오기",
-                  properties: ["openFile"],
-                  filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
-              });
+        const result = await await this.#app.system.dialog.showOpenDialog({
+            title: "프로젝트 불러오기",
+            properties: ["openFile"],
+            filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
+        });
         if (!result || result.canceled) return false;
 
         await this.importProject(result.filePaths[0]);

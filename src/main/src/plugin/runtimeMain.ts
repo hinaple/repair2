@@ -3,21 +3,9 @@ import { PluginInfo } from "./type";
 import { createRequire } from "module";
 import { logger } from "../logs/logger";
 import type { PluginDiagnostics } from "./pluginDiagnostics";
+import type { MainMessage } from "../app/mainApp.types";
 
 const require = createRequire(import.meta.url);
-
-let sendToRendererCB: ((channel: string, ...args: any[]) => void) | null;
-export function setSendToWin(stm: typeof sendToRendererCB) {
-    sendToRendererCB = stm;
-}
-
-function sendToRenderer(channel: string, ...args: any[]) {
-    if (!sendToRendererCB) {
-        console.error("CANNOT SEND TO RENDERER");
-        return;
-    }
-    return sendToRendererCB(channel, ...args);
-}
 
 type PluginMethods = Record<string, any>;
 type ImportedPlugin = PluginMethods | (() => PluginMethods);
@@ -42,16 +30,21 @@ class RuntimePluginInstance {
     pluginInfo: PluginInfo;
     methods: PluginMethods;
     ctx?: Record<string, any>;
-    private pluginDiagnostics: PluginDiagnostics;
     disposers: Set<() => any> = new Set();
     active: boolean = false;
     disposed: boolean = false;
+
+    private pluginDiagnostics: PluginDiagnostics;
+    private message: MainMessage;
+
     constructor(
+        message: MainMessage,
         pluginInfo: PluginInfo,
         imported: ImportedPlugin,
         activationId: string,
         pluginDiagnostics: PluginDiagnostics
     ) {
+        this.message = message;
         this.activationId = activationId;
         this.pluginInfo = pluginInfo;
         this.pluginDiagnostics = pluginDiagnostics;
@@ -73,7 +66,7 @@ class RuntimePluginInstance {
             rendererMethods.map((methodName) => [
                 methodName,
                 (...args) =>
-                    sendToRenderer("plugin:runtime:to-renderer", {
+                    this.message.sendToPlay("plugin:runtime:to-renderer", {
                         pluginName: this.pluginInfo.name,
                         activationId: this.activationId,
                         methodName,
@@ -150,14 +143,19 @@ export default class MainRuntimePluginEngine {
     private pluginDir: string;
     private plugins: Map<string, RuntimePluginData> = new Map();
     private pluginDiagnostics: PluginDiagnostics;
+    private message: MainMessage;
 
-    constructor({
-        pluginDir,
-        pluginDiagnostics
-    }: {
-        pluginDir: string;
-        pluginDiagnostics: PluginDiagnostics;
-    }) {
+    constructor(
+        message: MainMessage,
+        {
+            pluginDir,
+            pluginDiagnostics
+        }: {
+            pluginDir: string;
+            pluginDiagnostics: PluginDiagnostics;
+        }
+    ) {
+        this.message = message;
         this.pluginDir = pluginDir;
         this.pluginDiagnostics = pluginDiagnostics;
     }
@@ -233,6 +231,7 @@ export default class MainRuntimePluginEngine {
             if (target.instance === previous) delete target.instance;
         }
         const instance = new RuntimePluginInstance(
+            this.message,
             target.info,
             plugin,
             activationId,

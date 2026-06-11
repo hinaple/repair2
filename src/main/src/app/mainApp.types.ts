@@ -5,8 +5,9 @@ import type { SetHmrActive } from "../hmrs";
 import type { ReportLog } from "../logs/reportLog";
 import type { PluginHmrController } from "../controllers/pluginHmrController";
 import type { ProjectController } from "../controllers/projectController";
-import type { ServiceInitializer } from "./serviceInitializer";
-import type { WindowController } from "../windows/windows";
+import type { WindowController } from "../windows/windowController";
+import type { MainToEditorSendMap, MainToPlaySendMap } from "@shared/ipc.types";
+import type { NewDialogs } from "../system/dialog";
 
 export type ProjectFileManagerService = {
     importing: boolean;
@@ -46,15 +47,6 @@ export type MainState = {
     device: {
         isVscodeInstalled: boolean | null;
     };
-    editorSave: {
-        nextRequestId: number;
-        pending: {
-            requestId: number;
-            promise: Promise<boolean>;
-            resolve: (saved: boolean) => void;
-            timeoutId: NodeJS.Timeout;
-        } | null;
-    };
 };
 
 export type MainService = {
@@ -67,7 +59,6 @@ export type MainService = {
 export type MainControllers = {
     pluginHmr: PluginHmrController;
     project: ProjectController;
-    serviceInitializer: ServiceInitializer;
     window: WindowController;
 };
 
@@ -77,24 +68,24 @@ export type MainEditorSave = {
 };
 
 export type MainMessage = {
-    sendToMain: (channel: string, ...params: unknown[]) => void;
-    sendToEditor: (channel: string, ...params: unknown[]) => void;
+    sendToPlay: <K extends keyof MainToPlaySendMap>(
+        channel: K,
+        ...params: MainToPlaySendMap[K]
+    ) => void;
+
+    sendToEditor: <K extends keyof MainToEditorSendMap>(
+        channel: K,
+        ...params: MainToEditorSendMap[K]
+    ) => void;
 };
 
 export type MainLog = {
     reportLog: ReportLog;
 };
 
-export type MainPaths = {
-    assetDir: string;
-    dataDir: string;
-    defaultProjectFile: string;
-    emptyProjectFile: string;
-};
-
 export type MainSystem = {
     app: typeof import("electron").app;
-    dialog: typeof import("electron").dialog;
+    dialog: NewDialogs;
     shell: typeof import("electron").shell;
 };
 
@@ -103,16 +94,5 @@ export type MainStore = {
         get: (key: string) => unknown;
         set: (key: string, value: unknown) => void;
     }>;
-};
-
-export type MainContext = {
-    state: MainState;
-    service: MainService;
-    controllers: MainControllers;
-    editorSave: MainEditorSave;
-    message: MainMessage;
-    log: MainLog;
-    paths: MainPaths;
-    store: MainStore;
-    system: MainSystem;
+    clearStore: () => Promise<unknown> | unknown;
 };

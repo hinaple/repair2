@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { join } from "path";
-import { pluginDir, sdkDir, templateDir } from "../dirs";
-import { pathExists } from "../pathExists";
+import { pluginDir, sdkDir, templateDir } from "../system/dirs";
+import { pathExists } from "../system/pathExists";
 import { RawManifest } from "./type";
 import { logger } from "../logs/logger";
 

@@ -1,14 +1,14 @@
 import fs from "fs/promises";
 import { join } from "path";
 import {
-    ManifestCloser,
-    ManifestHandler,
-    ManifestWatcher,
-    PLUGIN_TYPES,
-    PluginManifest,
-    RawManifest
+    type ManifestCloser,
+    type ManifestHandler,
+    type ManifestWatcher,
+    type PluginManifest,
+    type RawManifest,
+    PLUGIN_TYPES
 } from "./type";
-import type { ChokidarOptions, FSWatcher } from "chokidar";
+import type { ChokidarOptions } from "chokidar";
 import { logger } from "../logs/logger";
 
 export const MANIFEST = "manifest.json";

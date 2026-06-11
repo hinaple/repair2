@@ -5,12 +5,7 @@ import type {
     OpenDialogReturnValue
 } from "electron";
 import type { EditorInitialData, ProjectData } from "./projectData.types";
-import type {
-    LogChange,
-    LogEntry,
-    LogEntryInput,
-    LogListFilter
-} from "./log.types";
+import type { LogChange, LogEntry, LogEntryInput, LogListFilter } from "./log.types";
 import type {
     ManifestErrorForRenderer,
     PluginErrorPayload,
@@ -60,7 +55,7 @@ export type RendererToMainInvokeMap = {
         args: [options: OpenDialogOptions];
         result: OpenDialogReturnValue;
     };
-    dialogue: {
+    dialog: {
         args: [options: MessageBoxOptions];
         result: MessageBoxReturnValue;
     };
@@ -157,7 +152,7 @@ export type RendererToMainSendMap = {
     "log:report": [
         payload: Omit<LogEntryInput, "createdAt" | "updatedAt" | "count"> & {
             log?: boolean;
-            dialogue?: boolean;
+            dialog?: boolean;
         }
     ];
     "socket-connect": [urls: string | string[]];
@@ -175,7 +170,7 @@ export type RendererToMainSendMap = {
     "open-dir": [dir: string];
     "monitor-event": [channel: string, ...data: unknown[]];
     "monitor-info": IpcRuntimeMonitorInfoArgs;
-    "custom-log": [content: unknown];
+    "custom-log": [content: any];
     "request-execute": [payload: { type: string; id: string }];
     "layout-preview": [payload: { compData: unknown; showContents?: unknown }];
     "preview-content-visible": [visible: boolean];
@@ -246,9 +241,7 @@ export interface MainToSplashSendMap {
     "startup-info": [message: string];
 }
 
-export type MainToRendererSendMap = MainToEditorSendMap &
-    MainToPlaySendMap &
-    MainToSplashSendMap;
+export type MainToRendererSendMap = MainToEditorSendMap & MainToPlaySendMap & MainToSplashSendMap;
 
 export type IpcInvokeChannel = keyof RendererToMainInvokeMap;
 export type IpcSendChannel = keyof RendererToMainSendMap;
