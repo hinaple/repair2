@@ -26,6 +26,7 @@ import {
     stopSuppress
 } from "./globalKey.js";
 import makeLog from "./logger.js";
+import { lockForegroundChange, unlockForegroundChange } from "./foreground.js";
 
 /**
  * @type {BrowserWindow | null}
@@ -183,6 +184,9 @@ function applyDataConfig(forceUpdate = false) {
 
     mainWindow.setAlwaysOnTop(!!data.config?.alwaysOnTop, "screen-saver");
     if (editorWindow) editorWindow.setAlwaysOnTop(!!data.config?.alwaysOnTop, "screen-saver");
+    if (data.config?.alwaysOnTop) lockForegroundChange();
+    else unlockForegroundChange();
+
     mainWindow.setTitle?.(data.config?.title ?? "REPAIR v2.4.9");
 
     if (!data.config.screenConfig && data.config.multiScreen !== undefined) {
@@ -248,6 +252,7 @@ function createMainWindow() {
     });
     mainWindow.on("focus", () => {
         if (data?.config?.suppressGlobalKeys) startSuppress();
+        if (data?.config?.alwaysOnTop) lockForegroundChange();
     });
     mainWindow.on("blur", () => {
         stopSuppress();
