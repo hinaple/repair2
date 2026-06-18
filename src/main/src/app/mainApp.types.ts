@@ -1,5 +1,5 @@
 import type { BrowserWindow } from "electron";
-import type { ProjectData } from "@shared/projectData.types";
+import type { ProjectData } from "@shared/projectData/types";
 import type { PluginManager } from "../plugin/pluginManager";
 import type { SetHmrActive } from "../system/hmrs";
 import type { ReportLog } from "../logs/reportLog";

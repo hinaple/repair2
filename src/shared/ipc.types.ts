@@ -4,7 +4,7 @@ import type {
     OpenDialogOptions,
     OpenDialogReturnValue
 } from "electron";
-import type { EditorInitialData, ProjectData } from "./projectData.types";
+import type { EditorInitialData, ProjectData } from "./projectData/types";
 import type { LogChange, LogEntry, LogEntryInput, LogListFilter } from "./log.types";
 import type {
     ManifestErrorForRenderer,

@@ -1,4 +1,4 @@
-import { genId } from "./genId";
+import { genId } from "@shared/genId";
 import { basename } from "path";
 
 const FileTypes = {

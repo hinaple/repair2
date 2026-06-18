@@ -1,5 +1,5 @@
 import { screen } from "electron";
-import type { ConfigStoreData } from "@shared/projectData.types";
+import type { ProjectConfig } from "@shared/projectData/types";
 
 export function getFullScreenArea() {
     const screens = screen.getAllDisplays().map((d) => d.bounds);
@@ -24,16 +24,16 @@ export function getPrimaryScreenArea() {
     return screen.getPrimaryDisplay().bounds;
 }
 
-function getSizeRatio(config: ConfigStoreData) {
+function getSizeRatio(config: ProjectConfig) {
     const ratio = (config.sizeRatio || "1").toString().split(",").map(Number);
     return ratio.length === 2 ? ratio : [ratio[0], ratio[0]];
 }
 
-export function getWindowArea(config: ConfigStoreData) {
+export function getWindowArea(config: ProjectConfig) {
     if (!config.screenConfig) return;
 
-    if (config.screenConfig.type[0] === "fullscreen") return getPrimaryScreenArea();
-    if (config.screenConfig.type[0] === "fullMultiScreen") return getFullScreenArea();
+    if (config.screenConfig.type === "fullscreen") return getPrimaryScreenArea();
+    if (config.screenConfig.type === "fullMultiScreen") return getFullScreenArea();
     const primaryScreenArea = getPrimaryScreenArea();
     const sizeRatio = getSizeRatio(config);
     return {

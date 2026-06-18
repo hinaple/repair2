@@ -1,7 +1,5 @@
-import { genId } from "./genId";
+import { genId } from "@shared/genId";
 import Coord from "./coord";
-import Element from "./element.svelte";
-import Sortable from "./sortable.svelte";
 import PluginPointer from "./pluginPointer.svelte";
 import Transition from "./transition.svelte";
 
@@ -11,6 +9,7 @@ export default class Component {
     visible = $state();
     unbreakable = $state();
     style = $state();
+    elements = $state();
     constructor(
         {
             id = genId(),
@@ -29,7 +28,7 @@ export default class Component {
     ) {
         this.id = id;
         this.alias = alias;
-        this.elements = new Sortable(elements, Element, creatingOpt);
+        this.elements = elements;
         this.pos = new Coord(pos);
         this.zIndex = zIndex;
         this.unbreakable = unbreakable;
@@ -59,7 +58,7 @@ export default class Component {
             unbreakable: this.unbreakable,
             visible: this.visible,
             style: this.style,
-            elements: this.elements.storeData,
+            elements: $state.snapshot(this.elements),
             frame: this.frame.storeData,
             introTransition: this.introTransition.storeData,
             outroTransition: this.outroTransition.storeData
@@ -73,7 +72,7 @@ export default class Component {
             unbreakable: this.unbreakable,
             visible: this.visible,
             style: this.style,
-            elements: this.elements.copyData(availableOuputIds),
+            elements: $state.snapshot(this.elements),
             frame: this.frame.storeData,
             introTransition: this.introTransition.storeData,
             outroTransition: this.outroTransition.storeData

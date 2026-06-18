@@ -1,23 +1,11 @@
+import { genId } from "@shared/genId";
 import TypePayload from "../typePayload.svelte";
 
-const PayloadTemplate = {
-    trim: null,
-    replaceAll: { from: "", to: "" },
-    removeAll: { removing: "" },
-    replaceAllRegex: { regex: "", to: "" },
-    toLowerCase: null,
-    toUpperCase: null,
-    length: null,
-    koToEn: null,
-    enToKo: null,
-    jsFunction: { scriptData: null }
-};
-
 export default class ValueProcess extends TypePayload {
-    constructor({ type = null, payload = {} } = {}) {
-        super({ type, payload, template: PayloadTemplate });
-        this.id = Symbol();
-    }
+    constructor({ id = genId(), type = null, payload = {} } = {}) {
+        this.id = id;
+        super("valueProcess", { type, payload });
+    } //need migration about id
     //#only editor
     copyData(availableOuputIds = null) {
         const sd = this.storeData;

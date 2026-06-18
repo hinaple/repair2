@@ -1,4 +1,4 @@
-import { genId } from "../genId";
+import { genId } from "@shared/genId";
 
 export default class Node {
     alias = $state();

@@ -13,8 +13,8 @@ export default class Branch extends Node {
             valueB = {},
             operator = "equals",
             scriptData = null,
-            trueOutput = {},
-            falseOutput = {},
+            trueOutput = null,
+            falseOutput = null,
             disableAfterTrue = false,
             disableAfterFalse = false,
             ...nodeData

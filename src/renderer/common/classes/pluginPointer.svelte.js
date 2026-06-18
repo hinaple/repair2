@@ -15,7 +15,7 @@ export default class PluginPointer {
         this.name = name;
     }
 
-    //#only editor
+    //#only editor //need migration
     get storeData() {
         return {
             name: this.name || null,

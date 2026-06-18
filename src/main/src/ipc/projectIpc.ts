@@ -1,4 +1,3 @@
-import type { EditorInitialData } from "@shared/projectData.types";
 import type { MainApp } from "../app/mainApp";
 import { ipc } from "./ipcMethods";
 
@@ -11,7 +10,7 @@ export function setupProjectIpc(app: MainApp) {
         evt.returnValue = {
             ...app.state.project.data,
             globalStyles: app.state.project.cssCode
-        } as EditorInitialData;
+        };
     });
 
     ipc.handle("update-data", (evt, tempData) => {

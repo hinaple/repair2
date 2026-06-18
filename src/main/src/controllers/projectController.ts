@@ -1,8 +1,8 @@
 import fs from "fs/promises";
 import { join } from "path";
 import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "../system/screenManager";
-import { migrateProject } from "../project/migrateProject";
-import type { ProjectData } from "@shared/projectData.types";
+import { migratePlugins, migrateProject } from "../project/migrate";
+import type { ProjectData } from "@shared/projectData/types";
 import type { MainApp } from "../app/mainApp";
 import { logger } from "../logs/logger";
 
@@ -46,15 +46,18 @@ export class ProjectController {
         try {
             await fs.access(paths.dataDir);
             const tempData = (await fs.readFile(join(paths.dataDir, "data.json"))).toString();
-            state.project.data = JSON.parse(tempData);
+            state.project.data = migrateProject({
+                appVersion: this.#app.version,
+                data: JSON.parse(tempData)
+            });
         } catch (err) {
             return await this.importDefaultProject();
         }
 
         startup.sendStartupInfo("프로젝트 버전 처리 중...");
         if (
-            await migrateProject({
-                currentVersion: this.#app.version,
+            await migratePlugins({
+                appVersion: this.#app.version,
                 data: state.project.data,
                 dataDir: paths.dataDir,
                 pluginDir: paths.pluginDir

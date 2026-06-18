@@ -1,12 +1,11 @@
-import Step from "../step.svelte";
 import Output from "../output";
-import Sortable from "../sortable.svelte";
 import AdvancedNode from "./advancedNode";
 
 export default class Sequence extends AdvancedNode {
+    steps = $state();
     constructor({ steps = [], output = {}, ...nodeData } = {}, creatingOpt = null) {
         super("sequence", nodeData);
-        this.steps = new Sortable(steps, Step, creatingOpt);
+        this.steps = steps;
         this.output = new Output(output, creatingOpt);
     }
     //#only play
@@ -20,17 +19,21 @@ export default class Sequence extends AdvancedNode {
 
     //#only editor
     get storeData() {
-        return { ...super.storeData, steps: this.steps.storeData, output: this.output };
+        return {
+            ...super.storeData,
+            steps: $state.snapshot(this.steps),
+            output: this.output
+        };
     }
     copyData(availableOuputIds = null) {
         return {
             ...super.copyData(),
-            steps: this.steps.copyData(availableOuputIds),
+            steps: $state.snapshot(this.steps),
             output: this.output.copyData(availableOuputIds)
         };
     }
-    get outputs() {
-        return [this.output, ...this.steps.outputs];
-    }
+    // get outputs() {
+    //     return [this.output, ...this.steps.outputs];
+    // } //need migration
     //#endonly
 }

@@ -60,7 +60,9 @@
         "sass": "^1.100.0",
         "semver": "^7.7.4",
         "tippy.js": "^6.3.7",
+        "tsx": "^4.22.4",
         "twgl.js": "^7.0.0",
+        "typescript": "^6.0.3",
         "vite-plugin-electron-renderer": "^0.14.6",
         "yazl": "^3.3.1"
     },

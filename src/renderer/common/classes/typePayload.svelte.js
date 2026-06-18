@@ -1,10 +1,15 @@
+import { PayloadTemplates } from "@shared/projectData/typePayloadTemplate";
+
 export default class TypePayload {
     types = $state([]);
     type = $derived(this.types.join("."));
     payload = $state(null);
     #template = {};
-    constructor({ type = [], payload, template }, creatingOpt = null) {
-        this.#template = template;
+    /**
+     * @param {keyof typeof PayloadTemplates} name
+     */
+    constructor(name, { type = "", payload }, creatingOpt = null) {
+        this.#template = PayloadTemplates[name];
         this.changeType(type, payload, false, creatingOpt);
     }
     getTemplateWithTypes(steps = this.types) {
@@ -21,13 +26,12 @@ export default class TypePayload {
         if (currentTemplate?.isTypeObj) return;
 
         if (!currentTemplate) return payload;
-        else if (currentTemplate.isClass)
-            return new currentTemplate.class(payload, currentTemplate.argument ?? creatingOpt);
+        // else if (currentTemplate.isClass)
+        //     return new currentTemplate.class(payload, currentTemplate.argument ?? creatingOpt);
         return { ...currentTemplate, ...payload };
     }
     changeType(types = [], payload = {}, raw = false, creatingOpt = null) {
-        if (!Array.isArray(types)) this.types = [types];
-        else this.types = [...types];
+        this.types = [...types];
 
         if (raw) {
             this.payload = payload;
@@ -78,21 +82,18 @@ export default class TypePayload {
     }
     get storeData() {
         return {
-            type: this.types.map((t) => t),
-            payload: this.payload?.storeData ?? $state.snapshot(this.payload)
+            type: this.type,
+            payload: $state.snapshot(this.payload)
         };
     }
     copyData(availableOuputIds = null) {
         return {
-            type: this.types.map((t) => t),
-            payload:
-                this.payload?.copyData?.(availableOuputIds) ??
-                this.payload?.storeData ??
-                $state.snapshot(this.payload)
+            type: this.type,
+            payload: $state.snapshot(this.payload)
         };
     }
-    get outputs() {
-        return this.payload?.outputs ?? this.payload?.output;
-    }
+    // get outputs() {
+    //     return this.payload?.outputs ?? this.payload?.output;
+    // } //need migration
     //#endonly
 }

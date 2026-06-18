@@ -1,32 +1,8 @@
 import Coord from "./coord";
-import Listener from "./listener.svelte";
-import Sortable from "./sortable.svelte";
 import TypePayload from "./typePayload.svelte";
 import PluginPointer from "./pluginPointer.svelte";
-import { genId } from "./genId";
+import { genId } from "@shared/genId";
 import DragOption from "./dragOption.svelte";
-
-const PayloadTemplates = {
-    empty: { content: null, isHtml: false },
-    image: { resourceId: null, removePreload: true },
-    video: { resourceId: null, removePreload: true, loop: false, volume: 100 },
-    input: {
-        variableId: null,
-        placeholder: null,
-        autofocus: false,
-        maxLength: null,
-        allowedType: "any",
-        allowedRegex: null,
-        valueFunction: null,
-        isTextarea: false
-    },
-    advancedInput: {
-        variableId: null,
-        maxLength: null,
-        securityText: null
-    },
-    plugin: { isClass: true, class: PluginPointer, argument: "element" }
-};
 
 export default class Element extends TypePayload {
     alias = $state();
@@ -37,6 +13,7 @@ export default class Element extends TypePayload {
     childStyle = $state();
     className = $state();
     absolute = $state();
+    listeners = $state();
     constructor(
         {
             id = genId(),
@@ -56,7 +33,7 @@ export default class Element extends TypePayload {
         } = {},
         creatingOpt = null
     ) {
-        super({ type, payload, template: PayloadTemplates });
+        super("element", { type, payload });
         this.id = id;
         this.alias = alias;
         this.pos = new Coord(pos);
@@ -67,7 +44,7 @@ export default class Element extends TypePayload {
         this.style = style;
         this.childStyle = childStyle;
         this.className = className;
-        this.listeners = new Sortable(listeners, Listener, creatingOpt);
+        this.listeners = listeners;
         this.dragOption = new DragOption(dragOption);
     }
     //#only play
@@ -99,7 +76,7 @@ export default class Element extends TypePayload {
             pos: this.pos.storeData,
             absolute: this.absolute,
             fullscreen: this.fullscreen,
-            listeners: this.listeners.storeData,
+            listeners: $state.snapshot(this.listeners),
             dragOption: this.dragOption.storeData
         };
     }
@@ -115,12 +92,12 @@ export default class Element extends TypePayload {
             pos: this.pos.storeData,
             absolute: this.absolute,
             fullscreen: this.fullscreen,
-            listeners: this.listeners.copyData(availableOuputIds),
+            listeners: $state.snapshot(this.listeners),
             dragOption: this.dragOption.storeData
         };
     }
-    get outputs() {
-        return this.listeners.outputs;
-    }
+    // get outputs() {
+    //     return this.listeners.outputs;
+    // } //need migration
     //#endonly
 }
