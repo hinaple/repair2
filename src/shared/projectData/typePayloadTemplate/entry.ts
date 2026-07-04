@@ -1,4 +1,4 @@
-import type { TypePayloadUnion } from "./union.types";
+import { nullDefault, type TypePayloadUnion } from "./union.types";
 
 export const EntryPayloadTemplate = {
     startup: null,
@@ -6,10 +6,13 @@ export const EntryPayloadTemplate = {
         isTypeObj: true,
         Socket: {
             isTypeObj: true,
-            ondata: { channel: null, data: null },
+            ondata: {
+                channel: nullDefault<string>(),
+                data: nullDefault<string>()
+            },
             connect: null
         },
-        serialData: { whenDataIs: null }
+        serialData: { whenDataIs: nullDefault<string>() }
     },
     shortcut: {
         ctrlKey: true,
@@ -17,9 +20,9 @@ export const EntryPayloadTemplate = {
         altKey: false,
         metaKey: false,
         pressingTime: 0,
-        key: null
+        key: nullDefault<string>()
     },
-    event: { channel: null }
+    event: { channel: nullDefault<string>() }
 } as const;
 
 export type EntryTypePayload = TypePayloadUnion<typeof EntryPayloadTemplate, "entryType">;

@@ -2,9 +2,10 @@ import fs from "fs/promises";
 import { join } from "path";
 import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "../system/screenManager";
 import { migratePlugins, migrateProject } from "../project/migrate";
-import type { ProjectData } from "@shared/projectData/types";
+import type { PossibleStoredData, RuntimeProjectData } from "@shared/projectData/types";
 import type { MainApp } from "../app/mainApp";
 import { logger } from "../logs/logger";
+import { convertToRuntime, convertToStored } from "../project/dataConvert/convertStoreData";
 
 export class ProjectController {
     #app: MainApp;
@@ -13,12 +14,15 @@ export class ProjectController {
         this.#app = app;
     }
 
-    saveData(tempData: ProjectData) {
+    saveData(tempData: RuntimeProjectData) {
         const { state, paths } = this.#app;
-        state.project.data = { ...tempData, updatedAt: new Date().getTime() };
+        state.project.data = { ...tempData, updatedAt: Date.now() };
         this.applyDataConfig();
         return fs
-            .writeFile(join(paths.dataDir, "data.json"), JSON.stringify(state.project.data))
+            .writeFile(
+                join(paths.dataDir, "data.json"),
+                JSON.stringify(convertToStored(state.project.data))
+            )
             .then(() => true)
             .catch((e) => {
                 logger
@@ -36,6 +40,8 @@ export class ProjectController {
 
     importDefaultProject() {
         const { service, paths, startup } = this.#app;
+
+        logger.info("Importing default project");
         startup.sendStartupInfo("기본 프로젝트 로드 중...");
         return service.projectFileManager.importProject(paths.defaultProjectFile);
     }
@@ -43,22 +49,29 @@ export class ProjectController {
     async loadData() {
         const { state, controllers, paths, system, startup } = this.#app;
         startup.sendStartupInfo("데이터 파일 로드 중...");
+        let rawData: PossibleStoredData;
         try {
-            await fs.access(paths.dataDir);
+            // await fs.access(paths.dataDir);
             const tempData = (await fs.readFile(join(paths.dataDir, "data.json"))).toString();
-            state.project.data = migrateProject({
-                appVersion: this.#app.version,
-                data: JSON.parse(tempData)
-            });
-        } catch (err) {
+            rawData = JSON.parse(tempData);
+            state.project.data = convertToRuntime(
+                migrateProject({
+                    appVersion: this.#app.version,
+                    data: rawData
+                })
+            );
+        } catch (err: any) {
+            logger.warning("An error occurred while loading data: ", err);
             return await this.importDefaultProject();
         }
 
         startup.sendStartupInfo("프로젝트 버전 처리 중...");
+        const storedAppVer =
+            (rawData && ("appVersion" in rawData ? rawData.appVersion : rawData.VERSION)) || null;
         if (
             await migratePlugins({
                 appVersion: this.#app.version,
-                data: state.project.data,
+                projectAppVer: storedAppVer,
                 dataDir: paths.dataDir,
                 pluginDir: paths.pluginDir
             })
@@ -99,18 +112,6 @@ export class ProjectController {
             );
         }
         state.window.main.setTitle?.(state.project.data.config?.title ?? "REPAIRv2");
-
-        if (
-            !state.project.data.config.screenConfig &&
-            state.project.data.config.multiScreen !== undefined
-        ) {
-            const isMultiScreen = state.project.data.config.multiScreen;
-
-            const area = isMultiScreen ? getFullScreenArea() : getPrimaryScreenArea();
-
-            state.window.main.setBounds?.(area);
-            return;
-        }
 
         if (!state.project.data.config.screenConfig) return;
 

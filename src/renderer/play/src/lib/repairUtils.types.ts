@@ -19,7 +19,7 @@ export interface RepairResourceUtils {
     getElement(resourceTitle: string): HTMLImageElement | HTMLVideoElement | null;
     addPreload(resourceTitle: string): void;
     removePreload(resourceTitle: string): void;
-    getResourcePath(resourceTitle: string): string;
+    getResourcePath(resourceTitle: string): string | null;
 }
 
 export interface RepairStoreUtils {
@@ -28,13 +28,13 @@ export interface RepairStoreUtils {
 }
 
 export interface RepairVariableUtils {
-    get<T = unknown>(variableName: string): T;
+    get(variableName: string): string | null;
 
-    set(variableName: string, value: unknown): void;
+    set(variableName: string, value: string | null): void;
 
-    subscribe<T = unknown>(
+    subscribe(
         variableName: string,
-        callback: (value: T) => void
+        callback: (value: string | null) => void
     ): RepairEventUnsubscribe | undefined;
 }
 

@@ -49,14 +49,16 @@ export default class ProjectFileManager {
     }
 
     async exportProject(projectName: string) {
+        if (this.importing || this.exporting) return false;
         const result = await this.#app.system.dialog.showSaveDialog({
             title: "프로젝트 내보내기",
             defaultPath: `${projectName}.repair`,
             filters: [{ name: "REPAIRv2 Project", extensions: ["repair"] }]
         });
-        if (!result || result.canceled || !result.filePath) return false;
+        if (!result || result.canceled || !result.filePath || this.importing || this.exporting)
+            return false;
 
-        this.importing = true;
+        this.exporting = true;
 
         const { zip } = await import("./projectZip");
         return new Promise<boolean>((resolve, reject) => {
@@ -64,12 +66,12 @@ export default class ProjectFileManager {
             output.on("close", () => {
                 resolve(true);
                 this.#app.system.shell.showItemInFolder(result.filePath!);
-                this.importing = false;
+                this.exporting = false;
                 this.#afterExport?.(result.filePath!);
             });
             output.on("error", (err) => {
                 reject(err);
-                this.importing = false;
+                this.exporting = false;
             });
 
             zip(this.#app.paths.dataDir, output, (progress) =>
@@ -79,6 +81,7 @@ export default class ProjectFileManager {
     }
 
     async importProject(filePath: string) {
+        if (this.importing || this.exporting) return false;
         try {
             this.importing = true;
             await this.#beforeImport?.();
@@ -112,6 +115,8 @@ export default class ProjectFileManager {
 
             await this.#afterImport?.();
             this.importing = false;
+
+            return true;
         } catch (error) {
             this.importing = false;
             this.#app.startup.closeSplash();
@@ -126,6 +131,7 @@ export default class ProjectFileManager {
                 .error("프로젝트를 불러오는 중 오류가 발생했습니다.", ...(error ? [error] : []));
             this.#app.system.app.quit();
             throw error;
+            return false;
         }
     }
 

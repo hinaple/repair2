@@ -4,7 +4,7 @@ import type {
     OpenDialogOptions,
     OpenDialogReturnValue
 } from "electron";
-import type { EditorInitialData, ProjectData } from "./projectData/types";
+import type { EditorInitialData, RuntimeProjectData, Types } from "./projectData/types";
 import type { LogChange, LogEntry, LogEntryInput, LogListFilter } from "./log.types";
 import type {
     ManifestErrorForRenderer,
@@ -14,6 +14,7 @@ import type {
     PluginSingleUpdate,
     PluginType
 } from "./plugin.types";
+import type { GlobalKeyEvent } from "./globalKeyEvent.types";
 
 export type IpcNoArgs = [];
 
@@ -24,7 +25,7 @@ export type IpcRuntimeMonitorChange =
     | [type: "preload", status: "added" | "released", target: string]
     | [type: "variable", status: "changed", target: string, value: string]
     | [type: "entry", status: "entered" | "disabled" | "activated", target: string]
-    | [type: "component", status: "set" | "removed" | "cleared", target?: string | string[]];
+    | [type: "component", status: "created" | "removed" | "cleared", target?: string | string[]];
 
 export type IpcRuntimeMonitorTotal = {
     variables: Map<string, unknown>;
@@ -68,7 +69,7 @@ export type RendererToMainInvokeMap = {
         result: unknown;
     };
     "update-data": {
-        args: [data: ProjectData];
+        args: [data: RuntimeProjectData];
         result: boolean;
     };
     "log:list": {
@@ -172,7 +173,13 @@ export type RendererToMainSendMap = {
     "monitor-info": IpcRuntimeMonitorInfoArgs;
     "custom-log": [content: any];
     "request-execute": [payload: { type: string; id: string }];
-    "layout-preview": [payload: { compData: unknown; showContents?: unknown }];
+    "layout-preview": [
+        payload: {
+            component: Types.Component;
+            elements: Map<string, Types.Element>;
+            showContents?: unknown;
+        }
+    ];
     "preview-content-visible": [visible: boolean];
     "stop-preview": IpcNoArgs;
     "play-win-ready": IpcNoArgs;
@@ -229,11 +236,17 @@ export interface MainToPlaySendMap extends MainToRendererSharedSendMap {
     data: [data: EditorInitialData];
     "global-css": [css: string];
     "request-execute": [payload: { type: string; id: string }];
-    "layout-preview": [payload: { compData: unknown; showContents?: unknown }];
+    "layout-preview": [
+        payload: {
+            component: Types.Component;
+            elements: Map<string, Types.Element>;
+            showContents?: unknown;
+        }
+    ];
     "preview-content-visible": [visible: boolean];
     "stop-preview": IpcNoArgs;
     "monitor-event": [channel: string, ...data: unknown[]];
-    "global-key-event": [type: string, event: unknown];
+    "global-key-event": [type: "keydown" | "keyup", event: GlobalKeyEvent];
     "plugin:runtime:to-renderer": [payload: IpcPluginRuntimeCallPayload];
 }
 

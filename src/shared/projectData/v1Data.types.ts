@@ -1,26 +1,32 @@
 import type { ScreenConfigStoreData } from "./projectConfig.types";
 
 type ProjectConfig = {
-    title?: string;
-    width?: number | null;
-    height?: number | null;
-    sizeRatio?: string | number | null;
-    filter?: string | null;
-    style?: string | null;
-    editorShortcut?: string | null;
-    editorPassword?: string | null;
-    screenConfig?: ScreenConfigStoreData;
-    multiScreen?: boolean;
-    transparent?: boolean;
-    alwaysOnTop?: boolean;
-    devMode?: boolean;
-    suppressGlobalKeys?: boolean;
-    runtimePlugins?: PluginPointer[];
-};
+    title: string;
+    width: number | null;
+    height: number | null;
+    sizeRatio: string | number | null;
+    filter: string | null;
+    style: string | null;
+    editorShortcut: string | null;
+    editorPassword: string | null;
+    transparent: boolean;
+    alwaysOnTop: boolean;
+    devMode: boolean;
+    suppressGlobalKeys: boolean;
+    runtimePlugins: PluginPointer[];
+} & (
+    | {
+          multiScreen: boolean;
+      }
+    | {
+          screenConfig: ScreenConfigStoreData;
+      }
+);
 
 interface Node {
+    type: string;
     id: string;
-    alias: null | string;
+    alias: string | null;
     nodePos: { x: number; y: number };
 }
 
@@ -35,6 +41,10 @@ interface Branch extends Node {
     falseOutput: Output;
     valueA: Value;
     valueB: Value;
+    operator: "equals" | "includes" | "gt" | "lt" | "gte" | "lte" | "jsFunction";
+    scriptData: string | null;
+    disableAfterTrue: boolean;
+    disableAfterFalse: boolean;
 }
 
 interface Entry extends Node {
@@ -42,7 +52,7 @@ interface Entry extends Node {
     output: Output;
     entryType: string[] | string;
     payload: any;
-    [key: string]: any;
+    standbyMode: boolean;
 }
 
 interface Sequence extends AdvancedNode {
@@ -53,6 +63,7 @@ interface Sequence extends AdvancedNode {
 
 interface VariableSet extends AdvancedNode {
     type: "variableSet";
+    variable: string | null;
     value: Value;
     output: Output;
 }
@@ -61,7 +72,7 @@ type AllNode = Entry | Sequence | Branch | VariableSet;
 
 type Step = {
     id: string;
-    title: null | string;
+    title: string | null;
 } & (
     | {
           type: ["Component", "create"];
@@ -77,13 +88,29 @@ type Step = {
       }
 );
 
+interface Position {
+    distance: number | null;
+    origin: "start" | "center" | "end";
+    relative: boolean;
+}
+
+interface Coord {
+    x: Position;
+    y: Position;
+}
+
 interface Component {
     id: string;
+    alias: string | null;
+    zIndex: number | null;
+    pos: Coord;
+    unbreakable: boolean;
+    visible: boolean;
+    style: string | null;
     elements: Element[];
     frame: PluginPointer;
     introTransition: Transition;
     outroTransition: Transition;
-    [key: string]: any;
 }
 
 interface Transition {
@@ -93,10 +120,32 @@ interface Transition {
     plugin: PluginPointer;
 }
 
+interface EnabledDragOption {
+    use: true;
+    returnOnRelease: boolean;
+    returnDuration: number;
+    hotspots: Coord[];
+    threshold: number;
+    snapOn: "never" | "drag" | "release";
+    snapDuration: number;
+    moveEasing: string;
+}
+
+type DragOption = EnabledDragOption | { use?: false };
+
 type Element = {
     id: string;
+    alias: string | null;
+    width: number | null;
+    height: number | null;
+    style: string | null;
+    childStyle: string | null;
+    className: string | null;
+    pos: Coord;
+    absolute: boolean;
+    fullscreen: boolean;
     listeners: Listener[];
-    [key: string]: any;
+    dragOption: DragOption;
 } & (
     | {
           type: ["plugin"];
@@ -109,8 +158,13 @@ type Element = {
 );
 
 type Listener = {
+    id: string;
     output: Output;
-    [key: string]: any;
+    repeatCount: number;
+    repeatInterval: number;
+    once: boolean;
+    global: boolean;
+    useCapture: boolean;
 } & (
     | {
           type: ["plugin"];
@@ -138,7 +192,7 @@ interface Output {
 
 interface Resource {
     id: string;
-    src: string;
+    src: string | null;
     alias: string | null;
 }
 
@@ -155,7 +209,7 @@ type PluginPointer = {
 };
 
 interface Data {
-    VERSION: string;
+    VERSION?: string;
     config: ProjectConfig;
     resources: Resource[];
     variables: Variable[];
@@ -174,7 +228,10 @@ export type {
     VariableSet,
     AllNode as Node,
     Step,
+    Position,
+    Coord,
     Component,
+    DragOption,
     Element,
     Listener,
     Value,

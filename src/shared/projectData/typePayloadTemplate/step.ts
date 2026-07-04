@@ -1,12 +1,16 @@
-import type { TypePayloadUnion } from "./union.types";
+import { nullDefault, type TypePayloadUnion } from "./union.types";
 
 export const StepPayloadTemplate = {
     Component: {
         isTypeObj: true,
-        create: { componentId: null },
-        remove: { componentAlias: null, ignoreUnbreakable: true },
+        create: { componentId: nullDefault<string>() },
+        remove: { componentAlias: nullDefault<string>(), ignoreUnbreakable: true },
         clear: { ignoreUnbreakable: false },
-        modify: { componentAlias: null, modifyKey: null, modifyValue: null }
+        modify: {
+            componentAlias: nullDefault<string>(),
+            modifyKey: nullDefault<string>(),
+            modifyValue: null
+        }
     },
     Preload: {
         isTypeObj: true,
@@ -16,7 +20,12 @@ export const StepPayloadTemplate = {
     },
     Audio: {
         isTypeObj: true,
-        play: { resourceId: null, channel: "default", volume: 100, loop: false },
+        play: {
+            resourceId: nullDefault<string>(),
+            channel: "default",
+            volume: 100,
+            loop: false
+        },
         pause: { channel: "default" },
         resume: { channel: "default" },
         changeVolume: { channel: "default", volume: 100, duration: 0 },
@@ -26,15 +35,19 @@ export const StepPayloadTemplate = {
         isTypeObj: true,
         Serial: {
             isTypeObj: true,
-            open: { portAlias: null, port: null, baudRate: 9600 },
-            send: { data: null },
+            open: {
+                portAlias: nullDefault<string>(),
+                port: nullDefault<string>(),
+                baudRate: 9600
+            },
+            send: { data: nullDefault<string>() },
             close: null
         },
         Socket: {
             isTypeObj: true,
-            connect: { url: null },
-            connectService: { type: null, name: null },
-            send: { channel: null, data: [null] },
+            connect: { url: nullDefault<string>() },
+            connectService: { type: nullDefault<string>(), name: nullDefault<string>() },
+            send: { channel: nullDefault<string>(), data: [null] },
             disconnect: null
         }
     },
@@ -50,13 +63,21 @@ export const StepPayloadTemplate = {
             entries: true,
             runtimePlugins: true
         },
-        setVariable: { variableId: null, value: null },
+        setVariable: { variableId: nullDefault<string>(), value: null },
         resetAllVariables: null,
-        executePlugin: { plugin: null, waitTillEnd: false },
-        runtimePluginStep: { pluginName: null, step: null, payloads: {}, waitTillEnd: false },
-        eventEmit: { channel: null, data: null },
-        script: { code: null },
-        log: { content: null }
+        executePlugin: { plugin: nullDefault<string>(), waitTillEnd: false },
+        runtimePluginStep: {
+            pluginName: nullDefault<string>(),
+            step: nullDefault<string>(),
+            payloads: {},
+            waitTillEnd: false
+        },
+        eventEmit: {
+            channel: nullDefault<string>(),
+            data: null
+        },
+        script: { code: nullDefault<string>() },
+        log: { content: nullDefault<string>() }
     }
 } as const;
 

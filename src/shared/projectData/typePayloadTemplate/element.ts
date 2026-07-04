@@ -1,25 +1,25 @@
-import type { TypePayloadUnion } from "./union.types";
+import { nullDefault, type TypePayloadUnion } from "./union.types";
 
 export const ElementPayloadTemplate = {
-    empty: { content: null, isHtml: false },
-    image: { resourceId: null, removePreload: true },
-    video: { resourceId: null, removePreload: true, loop: false, volume: 100 },
+    empty: { content: nullDefault<string>(), isHtml: false },
+    image: { resourceId: nullDefault<string>(), removePreload: true },
+    video: { resourceId: nullDefault<string>(), removePreload: true, loop: false, volume: 100 },
     input: {
-        variableId: null,
-        placeholder: null,
+        variableId: nullDefault<string>(),
+        placeholder: nullDefault<string>(),
         autofocus: false,
-        maxLength: null,
+        maxLength: nullDefault<number>(),
         allowedType: "any",
-        allowedRegex: null,
-        valueFunction: null,
+        allowedRegex: nullDefault<string>(),
+        valueFunction: nullDefault<string>(),
         isTextarea: false
     },
     advancedInput: {
-        variableId: null,
-        maxLength: null,
-        securityText: null
+        variableId: nullDefault<string>(),
+        maxLength: nullDefault<number>(),
+        securityText: nullDefault<string>()
     },
-    plugin: { plugin: null }
+    plugin: { plugin: nullDefault<string>() }
 } as const;
 
 export type ElementTypePayload = TypePayloadUnion<typeof ElementPayloadTemplate>;

@@ -1,3 +1,4 @@
+import type { ScreenConfigStoreData } from "./projectConfig.types";
 import type {
     ElementTypePayload,
     EntryTypePayload,
@@ -5,87 +6,108 @@ import type {
     StepTypePayload,
     ValueProcessTypePayload
 } from "./typePayloadTemplate/types";
+import type { Override } from "./utils.types";
 import type * as V1 from "./v1Data.types";
 
-type ProjectConfig = Omit<V1.ProjectConfig, "runtimePlugins"> & {
-    runtimePlugins?: string[];
-};
+type ProjectConfig = Override<
+    Omit<V1.ProjectConfig, "multiScreen">,
+    {
+        screenConfig: ScreenConfigStoreData;
+        runtimePlugins?: string[];
+    }
+>;
 
 type Output = string | null;
 
-type Branch = Omit<V1.Branch, "trueOutput" | "falseOutput" | "valueA" | "valueB"> & {
-    trueOutput: Output;
-    falseOutput: Output;
-    valueA: string;
-    valueB: string;
-};
+type Branch = Override<
+    V1.Branch,
+    {
+        trueOutput: Output;
+        falseOutput: Output;
+        valueA: string;
+        valueB: string;
+    }
+>;
 
-type Entry = V1.NodeBase & {
-    type: "entry";
-    output: Output;
-} & EntryTypePayload;
+type Entry = Override<
+    V1.Entry,
+    {
+        output: Output;
+    } & EntryTypePayload
+>;
 
-type Sequence = Omit<V1.Sequence, "steps" | "output"> & {
-    steps: string[];
-    output: Output;
-};
+type Sequence = Override<
+    V1.Sequence,
+    {
+        steps: string[];
+        output: Output;
+    }
+>;
 
-type VariableSet = Omit<V1.VariableSet, "value" | "output"> & {
-    value: string;
-    output: Output;
-};
+type VariableSet = Override<
+    V1.VariableSet,
+    {
+        value: string;
+        output: Output;
+    }
+>;
 
 type AllNode = Entry | Sequence | Branch | VariableSet;
 
-type Step = {
-    id: string;
-    title: null | string;
-} & StepTypePayload;
+type Step = Override<V1.Step, StepTypePayload>;
 
-type Component = {
-    id: string;
-    elements: string[];
-    frame: string | null;
-    introTransition: Transition;
-    outroTransition: Transition;
-    [key: string]: any;
-};
+type Component = Override<
+    V1.Component,
+    {
+        elements: string[];
+        frame: string | null;
+        introTransition: Transition;
+        outroTransition: Transition;
+    }
+>;
 
-type Transition = {
-    duration: number;
-    delay: number;
-    easing: string;
-    plugin: string | null;
-};
+type Transition = Override<
+    V1.Transition,
+    {
+        plugin: string | null;
+    }
+>;
 
-type Element = {
-    id: string;
-    listeners: string[];
-    [key: string]: any;
-} & ElementTypePayload;
+type Element = Override<
+    V1.Element,
+    {
+        listeners: string[];
+    } & ElementTypePayload
+>;
 
-type Listener = {
-    id: string;
-    output: Output;
-    [key: string]: any;
-} & ListenerTypePayload;
+type Listener = Override<
+    V1.Listener,
+    {
+        output: Output;
+    } & ListenerTypePayload
+>;
 
-type Value = Omit<V1.Value, "process"> & {
-    process: string[];
-};
+type Value = Override<
+    V1.Value,
+    {
+        process: string[];
+    }
+>;
 
 type ValueProcess = {
     id: string;
 } & ValueProcessTypePayload;
 
 type PluginPointer = V1.PluginPointer;
+type Resource = V1.Resource;
+type Variable = V1.Variable;
 
 interface Data {
     version: 2;
     appVersion: string;
     config: ProjectConfig;
-    resources: Record<string, V1.Resource>;
-    variables: Record<string, V1.Variable>;
+    resources: Record<string, Resource>;
+    variables: Record<string, Variable>;
     nodes: Record<string, AllNode>;
     steps: Record<string, Step>;
     components: Record<string, Component>;
@@ -94,9 +116,10 @@ interface Data {
     valueProcesses: Record<string, ValueProcess>;
     pluginPointers: Record<string, PluginPointer>;
     values: Record<string, Value>;
-    updatedAt?: number;
+    updatedAt: number;
 }
 
+export * from "./v1Data.types";
 export type {
     ProjectConfig,
     Data,
@@ -111,5 +134,8 @@ export type {
     Listener,
     Value,
     ValueProcess,
-    PluginPointer
+    PluginPointer,
+    Resource,
+    Variable,
+    Transition
 };

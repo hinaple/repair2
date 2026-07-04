@@ -1,11 +1,11 @@
 import { reportLog } from "../logClient";
 import { customLog } from "../logger";
+import { ipc } from "../ipc";
 
 import type { LogLevel, LogSubject } from "@shared/log.types";
 import type { PluginErrorPayload, PluginType } from "@shared/plugin.types";
-import { ipc } from "../ipc";
 
-type PluginSource = { id: string; type: PluginType; instanceId: string };
+type PluginSource = { id: string; type: PluginType; instanceId?: string };
 
 function stringify(value: any) {
     if (value instanceof Error) return value.stack || value.message;
@@ -57,7 +57,7 @@ export function sendPluginLog({
 
 export function reportPluginWarning(
     pluginSource: PluginSource,
-    content: any[],
+    content: any,
     options: Partial<PluginLogPayload> = {}
 ) {
     sendPluginLog({

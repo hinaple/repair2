@@ -1,5 +1,5 @@
 import type { BrowserWindow } from "electron";
-import type { ProjectData } from "@shared/projectData/types";
+import type { RuntimeProjectData } from "@shared/projectData/types";
 import type { PluginManager } from "../plugin/pluginManager";
 import type { SetHmrActive } from "../system/hmrs";
 import type { ReportLog } from "../logs/reportLog";
@@ -8,14 +8,7 @@ import type { ProjectController } from "../controllers/projectController";
 import type { WindowController } from "../windows/windowController";
 import type { MainToEditorSendMap, MainToPlaySendMap } from "@shared/ipc.types";
 import type { NewDialogs } from "../system/dialog";
-
-export type ProjectFileManagerService = {
-    importing: boolean;
-    exporting: boolean;
-    importProject: (filePath: string) => Promise<unknown>;
-    exportProject: (projectName: string) => Promise<boolean>;
-    selectImportProject: () => Promise<boolean>;
-};
+import type ProjectFileManager from "../project/projectFileManager";
 
 export type SocketService = {
     connected: boolean;
@@ -32,7 +25,7 @@ export type SerialService = {
 
 export type MainState = {
     project: {
-        data: ProjectData | null;
+        data: RuntimeProjectData | null;
         cssCode: string;
     };
     window: {
@@ -51,7 +44,7 @@ export type MainState = {
 
 export type MainService = {
     pluginManager: PluginManager | null;
-    projectFileManager: ProjectFileManagerService;
+    projectFileManager: ProjectFileManager | null;
     socket: SocketService;
     serial: SerialService;
 };

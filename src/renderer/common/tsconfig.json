@@ -1,22 +1,23 @@
 {
     "compilerOptions": {
-        "target": "esnext",
+        "target": "ESNext",
         "module": "ESNext",
         "moduleResolution": "Bundler",
-        "lib": ["ESNext"],
-        "types": ["node", "electron"],
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "types": ["vite/client", "electron"],
         "allowJs": true,
         "checkJs": false,
-        "resolveJsonModule": true,
+        "strict": true,
+        "noEmit": true,
         "isolatedModules": true,
+        "resolveJsonModule": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
-        "strict": true,
         "skipLibCheck": true,
-        "noEmit": true,
         "paths": {
             "@shared/*": ["../../shared/*"]
         }
     },
-    "include": ["./**/*.ts", "./**/*.js"],
+    "include": ["./**/*.ts", "./**/*.js", "./**/*.d.ts"],
+    "exclude": ["./classes/deprecated/**/*"]
 }

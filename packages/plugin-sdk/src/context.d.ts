@@ -21,8 +21,6 @@ export interface ElementIdentity {
 
 export interface FrameIdentity {
     id: string;
-    realId: string;
-    alias: string | null;
 }
 
 export type EventScope = "repair" | "plugin" | "local";
@@ -161,7 +159,7 @@ export interface ResourceApi {
 
 export interface ResourceHandle {
     id: string;
-    title: string;
+    title: string | null;
     alias: string | null;
     type: string | null;
     /** Stored project resource source value. */

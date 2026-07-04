@@ -1,7 +1,8 @@
+import { genId } from "@shared/genId";
 import type * as V1 from "@shared/projectData/v1Data.types";
 import type * as V2 from "@shared/projectData/v2Data.types";
 import type { TypePayloads } from "@shared/projectData/typePayloadTemplate/types";
-import { genId } from "@shared/genId";
+import type { ScreenConfigStoreData } from "@shared/projectData/projectConfig.types";
 
 function resolveOutput<K extends string, T extends { [k in K]: V1.Output }>(
     object: T,
@@ -69,10 +70,28 @@ function stringifyType<P extends TypePayloads>(obj: { type: string[]; [k: string
 }
 
 export function migrateToV2(appVersion: string, data: V1.Data) {
+    const tempPluginPointers: Record<string, V2.PluginPointer> = {};
+    const runtimePlugins = (
+        data.config.runtimePlugins?.map((p) => movePluginPointer(p, tempPluginPointers)) ?? []
+    ).filter((id): id is string => id !== null);
+    const screenConfig: ScreenConfigStoreData =
+        "screenConfig" in data.config
+            ? data.config.screenConfig
+            : {
+                  type: data.config.multiScreen ? "fullMultiScreen" : "fullscreen",
+                  payload: null
+              };
+
+    const config: V2.ProjectConfig = {
+        ...data.config,
+        screenConfig,
+        runtimePlugins
+    };
+
     const v2: V2.Data = {
         version: 2,
         appVersion,
-        config: {},
+        config,
         resources: IdArr2Object(data.resources),
         variables: IdArr2Object(data.variables),
         nodes: {},
@@ -82,16 +101,8 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
         listeners: {},
         values: {},
         valueProcesses: {},
-        pluginPointers: {},
-        updatedAt: data.updatedAt
-    };
-
-    const runtimePlugins = (
-        data.config.runtimePlugins?.map((p) => movePluginPointer(p, v2.pluginPointers)) ?? []
-    ).filter((id): id is string => id !== null);
-    v2.config = {
-        ...data.config,
-        runtimePlugins
+        pluginPointers: tempPluginPointers,
+        updatedAt: data.updatedAt ?? Date.now()
     };
 
     const tempSteps: Record<string, V1.Step> = {};
@@ -129,15 +140,29 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
         const joinedType = joinType(step.type);
         if (joinedType === "Component.create") {
             const componentId = moveToRecord(step.payload as V1.Component, tempComponents);
-            v2.steps[step.id] = { ...step, type: "Component.create", payload: { componentId } };
+            v2.steps[step.id] = { ...step, type: joinedType, payload: { componentId } };
             return;
         }
         if (joinedType === "Others.executePlugin") {
             const pluginPointerId = movePluginPointer(step.payload.plugin, v2.pluginPointers);
             v2.steps[step.id] = {
                 ...step,
-                type: "Others.executePlugin",
+                type: joinedType,
                 payload: { plugin: pluginPointerId, waitTillEnd: step.payload.waitTillEnd }
+            };
+            return;
+        }
+        if (joinedType === "Communication.Socket.send" && typeof step.payload.data === "string") {
+            v2.steps[step.id] = {
+                ...step,
+                type: joinedType,
+                payload: {
+                    channel: step.payload.channel,
+                    data:
+                        typeof step.payload.splitStr === "string"
+                            ? step.payload.data.split(step.payload.splitStr)
+                            : [step.payload.data]
+                }
             };
             return;
         }

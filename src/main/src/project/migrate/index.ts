@@ -5,15 +5,15 @@ import { isDirEmpty } from "../../system/pathExists";
 import { makeEmptyProjectData } from "./emptyProjectData";
 import { logger } from "../../logs/logger";
 import { migrateToV2 } from "./v2";
-import type { ProjectData, V1Data } from "@shared/projectData/types";
+import type { PossibleStoredData, StoredProjectData } from "@shared/projectData/types";
 
 export function migrateProject({
     appVersion,
     data
 }: {
     appVersion: string;
-    data: V1Data | ProjectData | null;
-}): ProjectData {
+    data: PossibleStoredData;
+}): StoredProjectData {
     if (!data) {
         logger.dialog().warning("Project data is empty.");
         data = makeEmptyProjectData(appVersion);
@@ -27,17 +27,16 @@ export function migrateProject({
 
 export async function migratePlugins({
     appVersion,
-    data,
+    projectAppVer,
     dataDir,
     pluginDir
 }: {
     appVersion: string;
-    data: ProjectData;
+    projectAppVer: string | null;
     dataDir: string;
     pluginDir: string;
 }) {
-    const AppDataVer = data.appVersion;
-    if (!AppDataVer) {
+    if (!projectAppVer) {
         if (await isDirEmpty(pluginDir)) return false;
 
         const OLD_PATH = join(dataDir, "plugins_old");

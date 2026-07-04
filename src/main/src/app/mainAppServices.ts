@@ -2,18 +2,13 @@ import ProjectFileManager from "../project/projectFileManager";
 import SocketConnector from "../communication/socket";
 import SerialConnector from "../communication/serial";
 import { logger } from "../logs/logger";
-import type {
-    MainService,
-    ProjectFileManagerService,
-    SerialService,
-    SocketService
-} from "./mainApp.types";
+import type { MainService, SerialService, SocketService } from "./mainApp.types";
 import type { PluginManager } from "../plugin/pluginManager";
 import type { MainApp } from "./mainApp";
 
 export class MainAppServices implements MainService {
     #pluginManager: PluginManager | null = null;
-    #projectFileManager: ProjectFileManagerService | null = null;
+    #projectFileManager: ProjectFileManager | null = null;
     #socket: SocketService | null = null;
     #serial: SerialService | null = null;
 

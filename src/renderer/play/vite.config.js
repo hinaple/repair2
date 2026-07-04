@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import { join } from "path";
 import renderer from "vite-plugin-electron-renderer";
-import vanillizer from "../../vitePlugins/vanillizer";
 import onlyBlockPlugin from "../../vitePlugins/only-block-plugin.mjs";
 
 const classPath = join(__dirname, "../common");
@@ -11,7 +10,7 @@ const outDir = join(__dirname, "../../../out/play");
 export default defineConfig({
     root: __dirname,
     cacheDir: join(__dirname, "../../../node_modules/.vite-play"),
-    plugins: [onlyBlockPlugin({ target: "play", dir: "renderer/common" }), renderer(), vanillizer],
+    plugins: [renderer()],
     server: {
         port: 3100
     },

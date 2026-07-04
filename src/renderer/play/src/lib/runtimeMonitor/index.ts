@@ -1,9 +1,10 @@
 import { getVariables } from "../variables";
-import { preloads } from "../resources";
-import { WaitingSteps } from "../stepActions";
-import { getAppData } from "../appdata";
+import { getPreloads } from "../resources";
+import { WaitingSteps } from "../../project/step";
+import { getProject } from "../../project";
 import { getAllComponents } from "../components";
 import { ipc } from "../ipc";
+import type { StandbyEntry } from "../../project/nodes/standbyEntry";
 
 let changesBuffer: Array<Array<string | string[]>> = [];
 
@@ -18,7 +19,7 @@ export function sendChanges(
     type: "variable",
     status: "changed",
     target: string,
-    value: string
+    value: string | null
 ): void;
 export function sendChanges(
     type: "entry",
@@ -27,14 +28,14 @@ export function sendChanges(
 ): void;
 export function sendChanges(
     type: "component",
-    status: "set" | "removed" | "cleared",
+    status: "set" | "removed" | "created",
     target?: string | string[]
 ): void;
 export function sendChanges(
     type: ChangeType,
     status: string,
     target?: string | string[],
-    data?: string
+    data?: string | null
 ): void {
     if (!monitoring) return;
 
@@ -72,21 +73,23 @@ export function sendTotalInfo() {
     if (!monitoring) return;
     discard();
 
-    const variables = new Map(Object.entries(getVariables()).map(([k, v]) => [k, v.value]));
-    const preloadedArr = Object.keys(preloads);
+    const variables = new Map(
+        getVariables()
+            .values()
+            .map((v) => [v.id, v.value])
+    );
+    const preloads = [...getPreloads().keys()];
     const steps = WaitingSteps.values().reduce(
         (map: Map<string, number>, { id }) => map.set(id, (map.get(id) ?? 0) + 1),
         new Map()
     );
-    const entries = getAppData()
-        .nodes.values()
-        .filter((node: any) => node.type === "entry" && node.standbyMode && node.activated)
-        .map((node: any) => node.id)
-        .toArray();
+    const entries = getProject()
+        .n.entry.filter((node) => node.d.standbyMode && (node as StandbyEntry).activated)
+        .map((node: any) => node.id);
     const components = getAllComponents().map((c) => c.realId);
     ipc.send("monitor-info", "total", {
         variables,
-        preloads: preloadedArr,
+        preloads,
         steps,
         entries,
         components

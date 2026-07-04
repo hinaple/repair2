@@ -1,11 +1,13 @@
 import {
     uIOhook,
     UiohookKey,
-    UiohookKeyboardSuppressShortcut
+    type UiohookKeyboardEvent,
+    type UiohookKeyboardSuppressShortcut
 } from "@fainthit/uiohook-napi-suppress";
+import type { GlobalKeyEvent, GlobalKey as GlobalKeyString } from "@shared/globalKeyEvent.types";
 
 type KeyEventName = "keydown" | "keyup";
-type GlobalKeyListener = (type: KeyEventName, evt: any) => void;
+type GlobalKeyListener = (type: KeyEventName, evt: GlobalKeyEvent) => void;
 
 const SuppressingKeys: UiohookKeyboardSuppressShortcut[] = [
     { metaKey: true },
@@ -18,7 +20,9 @@ const SuppressingKeys: UiohookKeyboardSuppressShortcut[] = [
 ];
 
 export class GlobalKey {
-    #globalKeycodeMap = new Map(Object.entries(UiohookKey).map((_) => [_[1], _[0]]));
+    #globalKeycodeMap: Map<number, GlobalKeyString> = new Map(
+        Object.entries(UiohookKey).map((_) => [_[1], _[0] as GlobalKeyString])
+    );
     #suppressId = uIOhook.registerSuppress(SuppressingKeys);
     #globalKeyListener: GlobalKeyListener | null = null;
 
@@ -27,8 +31,12 @@ export class GlobalKey {
     constructor() {
         uIOhook.toggleSuppress(this.#suppressId, this.isSuppressing);
 
-        uIOhook.addListener("keydown", (evt) => this.callGlobalKeyListener("keydown", evt));
-        uIOhook.addListener("keyup", (evt) => this.callGlobalKeyListener("keyup", evt));
+        uIOhook.addListener("keydown", (evt: UiohookKeyboardEvent) =>
+            this.callGlobalKeyListener("keydown", evt)
+        );
+        uIOhook.addListener("keyup", (evt: UiohookKeyboardEvent) =>
+            this.callGlobalKeyListener("keyup", evt)
+        );
 
         uIOhook.start();
     }
@@ -48,10 +56,13 @@ export class GlobalKey {
     setGlobalKeyListener(callback: GlobalKeyListener) {
         this.#globalKeyListener = callback;
     }
-    callGlobalKeyListener(type: KeyEventName, evt: any) {
+    callGlobalKeyListener(type: KeyEventName, evt: UiohookKeyboardEvent) {
         if (!this.#globalKeyListener) return;
 
-        evt.key = this.#globalKeycodeMap.get(evt.keycode);
-        this.#globalKeyListener(type, evt);
+        const e: GlobalKeyEvent = {
+            ...evt,
+            key: this.#globalKeycodeMap.get(evt.keycode)
+        };
+        this.#globalKeyListener(type, e);
     }
 }
