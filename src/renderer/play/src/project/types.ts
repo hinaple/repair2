@@ -1,5 +1,5 @@
 interface NodeController {
-    execute(): void;
+  execute(): void;
 }
 
 export type { NodeController };

@@ -8,28 +8,28 @@ const sharedPath = join(__dirname, "../../shared");
 const outDir = join(__dirname, "../../../out/play");
 
 export default defineConfig({
-    root: __dirname,
-    cacheDir: join(__dirname, "../../../node_modules/.vite-play"),
-    plugins: [renderer()],
-    server: {
-        port: 3100
-    },
-    optimizeDeps: {
-        force: true,
-        exclude: ["lit"]
-    },
-    base: "./",
-    build: {
-        emptyOutDir: true,
-        outDir: outDir
-    },
-    resolve: {
-        alias: {
-            "@renderer": classPath,
-            "@shared": sharedPath
-        }
-    },
-    define: {
-        __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+  root: __dirname,
+  cacheDir: join(__dirname, "../../../node_modules/.vite-play"),
+  plugins: [renderer()],
+  server: {
+    port: 3100
+  },
+  optimizeDeps: {
+    force: true,
+    exclude: ["lit"]
+  },
+  base: "./",
+  build: {
+    emptyOutDir: true,
+    outDir: outDir
+  },
+  resolve: {
+    alias: {
+      "@renderer": classPath,
+      "@shared": sharedPath
     }
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+  }
 });

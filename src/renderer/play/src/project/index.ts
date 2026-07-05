@@ -16,38 +16,38 @@ globalStyles.id = "global-styles";
 document.head.append(globalStyles);
 
 export function updateData(data = ipc.sendSync("request-data")): Project {
-    project = new Project(data);
-    initShortcuts(project.findAllEntries("shortcut"));
-    activateRuntimePlugins(
-        project.data.config.runtimePlugins
-            ?.map((p) => project.data.pluginPointers.get(p))
-            .filter((p): p is Types.PluginPointer => !!p) ?? []
-    );
+  project = new Project(data);
+  initShortcuts(project.findAllEntries("shortcut"));
+  activateRuntimePlugins(
+    project.data.config.runtimePlugins
+      ?.map((p) => project.data.pluginPointers.get(p))
+      .filter((p): p is Types.PluginPointer => !!p) ?? []
+  );
 
-    sendTotalInfo();
+  sendTotalInfo();
 
-    applyStyle(document.body, gamezone, data.config);
-    globalStyles.textContent = data.globalStyles;
+  applyStyle(document.body, gamezone, data.config);
+  globalStyles.textContent = data.globalStyles;
 
-    return project;
+  return project;
 }
 
 ipc.on("data", (event, data) => {
-    console.log(data);
-    updateData(data);
+  console.log(data);
+  updateData(data);
 });
 
 ipc.on("global-css", (event, css) => {
-    globalStyles.textContent = css;
+  globalStyles.textContent = css;
 });
 
 export function getProject() {
-    return project;
+  return project;
 }
 
 export function getSizeRatio(): [number, number] {
-    const ratio = (project.data.config.sizeRatio || "1").toString().split(",").map(Number);
-    return [ratio[0], ratio[ratio.length === 2 ? 1 : 0]];
+  const ratio = (project.data.config.sizeRatio || "1").toString().split(",").map(Number);
+  return [ratio[0], ratio[ratio.length === 2 ? 1 : 0]];
 }
 
 registerUtils("getAppData", getProject);

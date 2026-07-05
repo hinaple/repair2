@@ -19,16 +19,16 @@ This is useful for custom controls, visual widgets, media views, and small inter
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").ElementExport} */
 export default function mount({ attributes, ctx }, { target, dispatchEvent }) {
-    target.textContent = attributes.label ?? ctx.plugin.id;
+  target.textContent = attributes.label ?? ctx.plugin.id;
 
-    const onClick = () => {
-        dispatchEvent("click");
-    };
-    target.addEventListener("click", onClick);
+  const onClick = () => {
+    dispatchEvent("click");
+  };
+  target.addEventListener("click", onClick);
 
-    return () => {
-        target.removeEventListener("click", onClick);
-    };
+  return () => {
+    target.removeEventListener("click", onClick);
+  };
 }
 ```
 
@@ -43,12 +43,12 @@ If the manifest declares multiple `exports`, each export is a separate mount fun
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").ElementExport} */
 export function compact({ attributes, ctx }, { target }) {
-    target.textContent = attributes.label ?? ctx.plugin.id;
+  target.textContent = attributes.label ?? ctx.plugin.id;
 }
 
 /** @type {import("@fainthit/repair2-plugin-sdk").ElementExport} */
 export function detailed({ attributes, ctx }, { target }) {
-    target.textContent = `${attributes.label ?? ctx.plugin.id}: detailed`;
+  target.textContent = `${attributes.label ?? ctx.plugin.id}: detailed`;
 }
 ```
 
@@ -63,16 +63,16 @@ Frame plugins also export a mount function. They receive a `FrameContext`, inclu
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FrameExport} */
 export default function mount({ ctx }, { target, children, showIntro }) {
-    target.classList.toggle("intro", showIntro);
+  target.classList.toggle("intro", showIntro);
 
-    const body = document.createElement("div");
-    body.className = "frame-body";
-    body.append(children);
-    target.append(body);
+  const body = document.createElement("div");
+  body.className = "frame-body";
+  body.append(children);
+  target.append(body);
 
-    return () => {
-        body.remove();
-    };
+  return () => {
+    body.remove();
+  };
 }
 ```
 
@@ -121,13 +121,13 @@ By default, the internal asset uses its original size.
 
 Use `sizing` when the asset should size against one or both axes of `<repair-asset>`.
 
-| `sizing` | Behavior |
-| -------- | -------- |
-| unset    | Uses the original asset size. |
-| `none`   | Uses the original asset size. |
+| `sizing` | Behavior                                                                                     |
+| -------- | -------------------------------------------------------------------------------------------- |
+| unset    | Uses the original asset size.                                                                |
+| `none`   | Uses the original asset size.                                                                |
 | `width`  | Uses the width of `<repair-asset>` and automatically calculates height from the asset ratio. |
 | `height` | Uses the height of `<repair-asset>` and automatically calculates width from the asset ratio. |
-| `both`   | Stretches the internal asset to both the width and height of `<repair-asset>`. |
+| `both`   | Stretches the internal asset to both the width and height of `<repair-asset>`.               |
 
 ```html
 <repair-asset src="logo"></repair-asset>
@@ -148,9 +148,9 @@ Function plugins export a function:
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default function run({ attributes, ctx, signal }) {
-    if (signal?.aborted) return false;
-    ctx.logger.info("running", attributes);
-    return true;
+  if (signal?.aborted) return false;
+  ctx.logger.info("running", attributes);
+  return true;
 }
 ```
 
@@ -164,11 +164,11 @@ With manifest `exports`, each named export should be a separate function:
 
 ```js
 export function check({ attributes }) {
-    return !!attributes.value;
+  return !!attributes.value;
 }
 
 export function run({ ctx }) {
-    ctx.logger.info("run");
+  ctx.logger.info("run");
 }
 ```
 
@@ -186,7 +186,7 @@ You can also export a function that returns keyframes:
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
 export function slide({ component }) {
-    return [{ transform: "translateX(20px)" }, { transform: "translateX(0)" }];
+  return [{ transform: "translateX(20px)" }, { transform: "translateX(0)" }];
 }
 ```
 
@@ -205,11 +205,11 @@ Runtime plugins may export an object or a factory:
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").RuntimeExport} */
 export default {
-    activate({ ctx }) {
-        return ctx.components.subscribe((components) => {
-            ctx.logger.info("components", components.length);
-        });
-    }
+  activate({ ctx }) {
+    return ctx.components.subscribe((components) => {
+      ctx.logger.info("components", components.length);
+    });
+  }
 };
 ```
 
@@ -233,11 +233,11 @@ See [Runtime main](./runtime-main.md) for bridge typing and activation details.
 
 ## Export shapes
 
-| Type                 | Export shape                                    |
-| -------------------- | ----------------------------------------------- |
-| `element`            | mount function for each declared export         |
-| `frame`              | mount function for each declared export         |
-| `function`           | function for each declared export               |
-| `transition`         | keyframes or a keyframe function per export     |
-| `runtime`            | default export object or factory                |
-| runtime `main` entry | object or factory                               |
+| Type                 | Export shape                                |
+| -------------------- | ------------------------------------------- |
+| `element`            | mount function for each declared export     |
+| `frame`              | mount function for each declared export     |
+| `function`           | function for each declared export           |
+| `transition`         | keyframes or a keyframe function per export |
+| `runtime`            | default export object or factory            |
+| runtime `main` entry | object or factory                           |

@@ -5,7 +5,7 @@
         "moduleResolution": "Bundler",
         "lib": ["ESNext"],
         "types": ["node", "electron"],
-        "allowJs": true,
+        "allowJs": false,
         "checkJs": false,
         "resolveJsonModule": true,
         "isolatedModules": true,

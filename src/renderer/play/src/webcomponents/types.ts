@@ -1,5 +1,5 @@
 export interface ComponentIdentity {
-    id: string;
-    realId: string;
-    alias: string | null;
+  id: string;
+  realId: string;
+  alias: string | null;
 }

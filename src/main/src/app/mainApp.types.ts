@@ -11,73 +11,73 @@ import type { NewDialogs } from "../system/dialog";
 import type ProjectFileManager from "../project/projectFileManager";
 
 export type SocketService = {
-    connected: boolean;
-    connect: (urls: string | string[]) => Promise<boolean>;
-    send: (channel: string, ...data: unknown[]) => void;
-    disconnect: () => void;
+  connected: boolean;
+  connect: (urls: string | string[]) => Promise<boolean>;
+  send: (channel: string, ...data: unknown[]) => void;
+  disconnect: () => void;
 };
 
 export type SerialService = {
-    open: (portAlias?: string, path?: string, baudRate?: number) => Promise<void>;
-    send: (data: unknown) => void;
-    close: () => void;
+  open: (portAlias?: string, path?: string, baudRate?: number) => Promise<void>;
+  send: (data: unknown) => void;
+  close: () => void;
 };
 
 export type MainState = {
-    project: {
-        data: RuntimeProjectData | null;
-        cssCode: string;
-    };
-    window: {
-        main: BrowserWindow | null;
-        editor: BrowserWindow | null;
-    };
-    hmr: {
-        setter: SetHmrActive | null;
-        importing: Promise<unknown> | null;
-        isActive: boolean;
-    };
-    device: {
-        isVscodeInstalled: boolean | null;
-    };
+  project: {
+    data: RuntimeProjectData | null;
+    cssCode: string;
+  };
+  window: {
+    main: BrowserWindow | null;
+    editor: BrowserWindow | null;
+  };
+  hmr: {
+    setter: SetHmrActive | null;
+    importing: Promise<unknown> | null;
+    isActive: boolean;
+  };
+  device: {
+    isVscodeInstalled: boolean | null;
+  };
 };
 
 export type MainService = {
-    pluginManager: PluginManager | null;
-    projectFileManager: ProjectFileManager | null;
-    socket: SocketService;
-    serial: SerialService;
+  pluginManager: PluginManager | null;
+  projectFileManager: ProjectFileManager | null;
+  socket: SocketService;
+  serial: SerialService;
 };
 
 export type MainControllers = {
-    pluginHmr: PluginHmrController;
-    project: ProjectController;
-    window: WindowController;
+  pluginHmr: PluginHmrController;
+  project: ProjectController;
+  window: WindowController;
 };
 
 export type MainEditorSave = {
-    requestEditorSave: () => Promise<boolean>;
-    resolveEditorSaveRequest: (requestId: number, saved: boolean) => void;
+  requestEditorSave: () => Promise<boolean>;
+  resolveEditorSaveRequest: (requestId: number, saved: boolean) => void;
 };
 
 export type MainMessage = {
-    sendToPlay: <K extends keyof MainToPlaySendMap>(
-        channel: K,
-        ...params: MainToPlaySendMap[K]
-    ) => void;
+  sendToPlay: <K extends keyof MainToPlaySendMap>(
+    channel: K,
+    ...params: MainToPlaySendMap[K]
+  ) => void;
 
-    sendToEditor: <K extends keyof MainToEditorSendMap>(
-        channel: K,
-        ...params: MainToEditorSendMap[K]
-    ) => void;
+  sendToEditor: <K extends keyof MainToEditorSendMap>(
+    channel: K,
+    ...params: MainToEditorSendMap[K]
+  ) => void;
 };
 
 export type MainLog = {
-    reportLog: ReportLog;
+  reportLog: ReportLog;
 };
 
 export type MainSystem = {
-    app: typeof import("electron").app;
-    dialog: NewDialogs;
-    shell: typeof import("electron").shell;
+  app: typeof import("electron").app;
+  dialog: NewDialogs;
+  shell: typeof import("electron").shell;
 };

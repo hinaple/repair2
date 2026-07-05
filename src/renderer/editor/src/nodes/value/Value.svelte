@@ -1,146 +1,146 @@
 <script>
-    import { get } from "svelte/store";
-    import Icon from "../../assets/icons/Icon.svelte";
-    import Sortable from "../../lib/Sortable.svelte";
-    import { BaseValueTypes } from "../../lib/translate";
-    import ValueProcess from "./ValueProcess.svelte";
-    import { grabbing, reload } from "../../lib/stores";
-    import { addHistory } from "../../lib/workHistory";
-    import { currentFocus, focusData } from "../../sidebar/editUtils";
-    import { outClicked } from "../../lib/contextMenu/contextUtils";
-    import { onDestroy } from "svelte";
-    import registerHighlight from "../../lib/highlight";
-    import { genClipboardFn } from "../../lib/clipboard";
+  import { get } from "svelte/store";
+  import Icon from "../../assets/icons/Icon.svelte";
+  import Sortable from "../../lib/Sortable.svelte";
+  import { BaseValueTypes } from "../../lib/translate";
+  import ValueProcess from "./ValueProcess.svelte";
+  import { grabbing, reload } from "../../lib/stores";
+  import { addHistory } from "../../lib/workHistory";
+  import { currentFocus, focusData } from "../../sidebar/editUtils";
+  import { outClicked } from "../../lib/contextMenu/contextUtils";
+  import { onDestroy } from "svelte";
+  import registerHighlight from "../../lib/highlight";
+  import { genClipboardFn } from "../../lib/clipboard";
 
-    let { value, pre, isFull = false, isValueA = false, inNodeSpace = true } = $props();
+  let { value, pre, isFull = false, isValueA = false, inNodeSpace = true } = $props();
 
-    if (inNodeSpace)
-        $effect(() => {
-            value.baseValue;
-            reload("nodeMoved");
-        });
-
-    function addProcess(evt) {
-        if ($grabbing) return;
-        evt.stopPropagation();
-        const newProcess = value.process.addWithHistory(addHistory, {
-            afterChange: () => reload("nodeMoved")
-        });
-        const newClipboardFn = genClipboardFn("valueProcess", newProcess, () =>
-            value.process.removeWithHistory(newProcess, addHistory, () => reload("nodeMoved"))
-        );
-        focusData("valueProcess", newProcess, { clipboardFn: newClipboardFn });
-    }
-
-    function clickBase(evt) {
-        if (evt.button || $grabbing) return;
-        evt.stopPropagation();
-        focusData("value", value);
-        outClicked();
-    }
-
-    onDestroy(() => {
-        if (get(currentFocus).obj === value) focusData("project");
+  if (inNodeSpace)
+    $effect(() => {
+      value.baseValue;
+      reload("nodeMoved");
     });
 
-    let hlActive = $derived(!!(value.baseType === "variable" && value.baseValue));
+  function addProcess(evt) {
+    if ($grabbing) return;
+    evt.stopPropagation();
+    const newProcess = value.process.addWithHistory(addHistory, {
+      afterChange: () => reload("nodeMoved")
+    });
+    const newClipboardFn = genClipboardFn("valueProcess", newProcess, () =>
+      value.process.removeWithHistory(newProcess, addHistory, () => reload("nodeMoved"))
+    );
+    focusData("valueProcess", newProcess, { clipboardFn: newClipboardFn });
+  }
+
+  function clickBase(evt) {
+    if (evt.button || $grabbing) return;
+    evt.stopPropagation();
+    focusData("value", value);
+    outClicked();
+  }
+
+  onDestroy(() => {
+    if (get(currentFocus).obj === value) focusData("project");
+  });
+
+  let hlActive = $derived(!!(value.baseType === "variable" && value.baseValue));
 </script>
 
 <div class={["value-wrapper", isFull && "full", isValueA && "right-border"]}>
-    <div
-        class={["value", $currentFocus.obj === value && "focus"]}
-        onpointerdown={clickBase}
-        use:registerHighlight={{ type: "variable", data: value.baseValue, active: hlActive }}
-    >
-        <div class="base-value">
-            <div class="text">
-                {pre}<b
-                    >{value.baseType === "string" && value.baseValue?.length
-                        ? value.baseValue
-                        : (BaseValueTypes[value.baseType] ?? "알 수 없는 값")}</b
-                >
-            </div>
-        </div>
-        <Sortable
-            Component={ValueProcess}
-            sortable={value.process}
-            pretty
-            resized={() => {
-                reload("nodeMoved");
-            }}
-        />
-        <div class="add" onpointerdown={addProcess}>
-            <Icon color="#000" lineWidth={2} />
-        </div>
-        <div class="empty-space"></div>
+  <div
+    class={["value", $currentFocus.obj === value && "focus"]}
+    onpointerdown={clickBase}
+    use:registerHighlight={{ type: "variable", data: value.baseValue, active: hlActive }}
+  >
+    <div class="base-value">
+      <div class="text">
+        {pre}<b
+          >{value.baseType === "string" && value.baseValue?.length
+            ? value.baseValue
+            : (BaseValueTypes[value.baseType] ?? "알 수 없는 값")}</b
+        >
+      </div>
     </div>
+    <Sortable
+      Component={ValueProcess}
+      sortable={value.process}
+      pretty
+      resized={() => {
+        reload("nodeMoved");
+      }}
+    />
+    <div class="add" onpointerdown={addProcess}>
+      <Icon color="#000" lineWidth={2} />
+    </div>
+    <div class="empty-space"></div>
+  </div>
 </div>
 
 <style>
-    .value-wrapper {
-        width: 50%;
-        flex: 1 1 auto;
-    }
-    .value-wrapper.full {
-        width: 100%;
-    }
-    .value-wrapper.right-border {
-        border-right: solid #000 2px;
-    }
-    .value {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-        background-color: rgba(238, 238, 238, 0.4);
-    }
-    .base-value {
-        height: 30px;
-        border-bottom: solid #000 2px;
-        padding-inline: 5px;
-        width: 100%;
-        font-weight: 600;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        box-sizing: border-box;
-        background-color: var(--b-o2);
-        flex: 0 0 auto;
-    }
-    .text {
-        width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        text-align: center;
-    }
-    .empty-space {
-        flex: 1 1 auto;
-        background: repeating-linear-gradient(
-            -45deg,
-            rgba(0, 0, 0, 0.6),
-            rgba(0, 0, 0, 0.6) 3px,
-            var(--b-o3) 3px,
-            var(--b-o3) 6px
-        );
-    }
-    .add {
-        width: 100%;
-        height: 20px;
-        background-color: var(--b-o2);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 20px;
-        cursor: pointer;
-        flex: 0 0 auto;
-        border-bottom: solid #000 2px;
-        box-sizing: border-box;
-        margin-bottom: -2px;
-    }
-    .add :global(svg) {
-        height: 10px;
-    }
+  .value-wrapper {
+    width: 50%;
+    flex: 1 1 auto;
+  }
+  .value-wrapper.full {
+    width: 100%;
+  }
+  .value-wrapper.right-border {
+    border-right: solid #000 2px;
+  }
+  .value {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background-color: rgba(238, 238, 238, 0.4);
+  }
+  .base-value {
+    height: 30px;
+    border-bottom: solid #000 2px;
+    padding-inline: 5px;
+    width: 100%;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+    background-color: var(--b-o2);
+    flex: 0 0 auto;
+  }
+  .text {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .empty-space {
+    flex: 1 1 auto;
+    background: repeating-linear-gradient(
+      -45deg,
+      rgba(0, 0, 0, 0.6),
+      rgba(0, 0, 0, 0.6) 3px,
+      var(--b-o3) 3px,
+      var(--b-o3) 6px
+    );
+  }
+  .add {
+    width: 100%;
+    height: 20px;
+    background-color: var(--b-o2);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 20px;
+    cursor: pointer;
+    flex: 0 0 auto;
+    border-bottom: solid #000 2px;
+    box-sizing: border-box;
+    margin-bottom: -2px;
+  }
+  .add :global(svg) {
+    height: 10px;
+  }
 </style>

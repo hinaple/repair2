@@ -10,97 +10,97 @@ import { updateRefProject } from "./refs";
 import { Resource } from "./resource";
 
 const NodeClasses = {
-    entry: Entry,
-    sequence: Sequence,
-    branch: Branch,
-    variableSet: VariableSet
+  entry: Entry,
+  sequence: Sequence,
+  branch: Branch,
+  variableSet: VariableSet
 } as const;
 type NodeInstance = InstanceType<(typeof NodeClasses)[keyof typeof NodeClasses]>;
 
 export class Project {
-    readonly nodes: Map<string, NodeInstance> = new Map();
-    readonly n: {
-        entry: (Entry | StandbyEntry)[];
-        sequence: Sequence[];
-        branch: Branch[];
-        variableSet: VariableSet[];
-    } = {
-        entry: [],
-        sequence: [],
-        branch: [],
-        variableSet: []
-    };
-    readonly values: Map<string, Value> = new Map();
-    readonly resources: Map<string, Resource> = new Map();
-    constructor(readonly data: RuntimeProjectData) {
-        data.nodes.forEach((nn) => {
-            const obj = new (
-                nn.type === "entry" && nn.standbyMode ? StandbyEntry : NodeClasses[nn.type]
-            )(nn as any);
-            this.n[nn.type].push(obj as any);
-            this.nodes.set(nn.id, obj);
-        });
-        this.values = new Map(data.values.entries().map(([id, v]) => [id, new Value(v)]));
-        this.resources = new Map(
-            data.resources.values().map((resource) => [resource.id, new Resource(resource)])
-        );
-        registerVariables(data.variables);
-        updateRefProject(this);
-    }
+  readonly nodes: Map<string, NodeInstance> = new Map();
+  readonly n: {
+    entry: (Entry | StandbyEntry)[];
+    sequence: Sequence[];
+    branch: Branch[];
+    variableSet: VariableSet[];
+  } = {
+    entry: [],
+    sequence: [],
+    branch: [],
+    variableSet: []
+  };
+  readonly values: Map<string, Value> = new Map();
+  readonly resources: Map<string, Resource> = new Map();
+  constructor(readonly data: RuntimeProjectData) {
+    data.nodes.forEach((nn) => {
+      const obj = new (nn.type === "entry" && nn.standbyMode ? StandbyEntry : NodeClasses[nn.type])(
+        nn as any
+      );
+      this.n[nn.type].push(obj as any);
+      this.nodes.set(nn.id, obj);
+    });
+    this.values = new Map(data.values.entries().map(([id, v]) => [id, new Value(v)]));
+    this.resources = new Map(
+      data.resources.values().map((resource) => [resource.id, new Resource(resource)])
+    );
+    registerVariables(data.variables);
+    updateRefProject(this);
+  }
 
-    goto(id: string) {
-        this.nodes.get(id)?.execute();
-    }
-    findAllEntries<
-        T extends Types.Entry["entryType"],
-        E extends Extract<Types.Entry, { entryType: T }>["payload"]
-    >(entryType: T, data?: Partial<E>): Entry[] {
-        return this.n.entry.filter(({ d: entryData }) => {
-            if (entryData.type !== "entry" || entryType !== entryData.entryType) return false;
-            if (typeof entryData.payload !== "object" || !entryData.payload || !data) return true;
+  goto(id: string) {
+    this.nodes.get(id)?.execute();
+  }
+  findAllEntries<
+    T extends Types.Entry["entryType"],
+    E extends Extract<Types.Entry, { entryType: T }>["payload"]
+  >(entryType: T, data?: Partial<E>): Entry[] {
+    return this.n.entry.filter(({ d: entryData }) => {
+      if (entryData.type !== "entry" || entryType !== entryData.entryType) return false;
+      if (typeof entryData.payload !== "object" || !entryData.payload || !data) return true;
 
-            if (
-                entryData.entryType === "Communication.serialData" &&
-                typeof entryData.payload.whenDataIs === "string" &&
-                entryData.payload.whenDataIs
-            )
-                return true;
+      if (
+        entryData.entryType === "Communication.serialData" &&
+        typeof entryData.payload.whenDataIs === "string" &&
+        entryData.payload.whenDataIs
+      )
+        return true;
 
-            if (
-                entryData.entryType === "Communication.Socket.ondata" &&
-                "channel" in data &&
-                entryData.payload.channel === data.channel &&
-                !entryData.payload.data
-            )
-                return true;
+      if (
+        entryData.entryType === "Communication.Socket.ondata" &&
+        "channel" in data &&
+        entryData.payload.channel === data.channel &&
+        !entryData.payload.data
+      )
+        return true;
 
-            return Object.entries(entryData.payload).every(([key, value]) => {
-                const expectedValue = data[key as keyof typeof data];
+      return Object.entries(entryData.payload).every(([key, value]) => {
+        const expectedValue = data[key as keyof typeof data];
 
-                if (typeof value === "string" && typeof expectedValue === "string") {
-                    return value.trim() === expectedValue.trim();
-                }
+        if (typeof value === "string" && typeof expectedValue === "string") {
+          return value.trim() === expectedValue.trim();
+        }
 
-                return Object.is(value, expectedValue);
-            });
-        });
-    }
-    enterEntries<
-        T extends Types.Entry["entryType"],
-        E extends Extract<Types.Entry, { entryType: T }>["payload"]
-    >(entryType: T, data?: Partial<E>) {
-        const entries = this.findAllEntries(entryType, data as any);
-        entries.forEach((entry) => {
-            entry.enter();
-        });
-    }
-    resetEntries() {
-        this.n.entry.forEach((e) => {
-            if (e.d.standbyMode) (e as StandbyEntry).disable();
-        });
-    }
+        return Object.is(value, expectedValue);
+      });
+    });
+  }
+  enterEntries<
+    T extends Types.Entry["entryType"],
+    E extends Extract<Types.Entry, { entryType: T }>["payload"]
+  >(entryType: T, data?: Partial<E>) {
+    const entries = this.findAllEntries(entryType, data as any);
+    entries.forEach((entry) => {
+      entry.enter();
+    });
+  }
+  resetEntries() {
+    this.n.entry.forEach((e) => {
+      if (e.d.standbyMode) (e as StandbyEntry).disable();
+    });
+  }
 
-    findResourceByTitle(resourceTitle: string) {
-        return this.resources.values().find((r) => r.title === resourceTitle);
-    }
+  findResourceByTitle(resourceTitle: string) {
+    return this.resources.values().find((r) => r.title === resourceTitle);
+  }
 }

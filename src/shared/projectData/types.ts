@@ -4,16 +4,16 @@ import type * as Types from "./v2Data.types";
 import type { RuntimeProjectData } from "./runtimeData/base.types";
 
 type EditorInitialData = RuntimeProjectData & {
-    globalStyles: string;
+  globalStyles: string;
 };
 type PossibleStoredData = V1Data | StoredProjectData | null;
 
 export type {
-    Types,
-    StoredProjectData,
-    RuntimeProjectData,
-    ProjectConfig,
-    EditorInitialData,
-    V1Data,
-    PossibleStoredData
+  Types,
+  StoredProjectData,
+  RuntimeProjectData,
+  ProjectConfig,
+  EditorInitialData,
+  V1Data,
+  PossibleStoredData
 };

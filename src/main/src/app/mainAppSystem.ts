@@ -4,9 +4,9 @@ import type { MainSystem } from "./mainApp.types";
 import type { MainApp } from "./mainApp";
 
 export function createSystem(_app: MainApp): MainSystem {
-    return {
-        app,
-        dialog: createDialogs(_app),
-        shell
-    };
+  return {
+    app,
+    dialog: createDialogs(_app),
+    shell
+  };
 }

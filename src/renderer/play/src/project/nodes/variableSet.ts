@@ -5,20 +5,20 @@ import { Base } from "../base";
 import { ref, Ref } from "../refs";
 
 export class VariableSet extends Base<Types.VariableSet> implements NodeController {
-    private valueRef?: Ref<"values">;
-    private variableRef?: Ref<"variables">;
-    private goto?: Goto;
-    init() {
-        this.valueRef = ref("values", this.d.value);
-        if (this.d.variable) this.variableRef = ref("variables", this.d.variable);
-        this.goto = getGoto(this.d.output);
+  private valueRef?: Ref<"values">;
+  private variableRef?: Ref<"variables">;
+  private goto?: Goto;
+  init() {
+    this.valueRef = ref("values", this.d.value);
+    if (this.d.variable) this.variableRef = ref("variables", this.d.variable);
+    this.goto = getGoto(this.d.output);
+  }
+  execute() {
+    const variable = this.variableRef?.();
+    const value = this.valueRef?.();
+    if (variable && value) {
+      variable.set(value.value);
     }
-    execute() {
-        const variable = this.variableRef?.();
-        const value = this.valueRef?.();
-        if (variable && value) {
-            variable.set(value.value);
-        }
-        this.goto?.();
-    }
+    this.goto?.();
+  }
 }

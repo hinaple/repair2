@@ -10,7 +10,7 @@ export const assetDir = join(dataDir, "assets");
 export const pluginDir = join(dataDir, "plugins");
 
 export function getAssetDir(dir: string): string {
-    return join(assetDir, dir);
+  return join(assetDir, dir);
 }
 
 // export const NodeClasses = {

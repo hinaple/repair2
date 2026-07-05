@@ -1,90 +1,90 @@
 <script>
-    import { onDestroy } from "svelte";
-    import Icon from "../../assets/icons/Icon.svelte";
-    import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
-    import { ValueProcessTypes } from "../../lib/translate";
-    import { currentFocus, focusData } from "../../sidebar/editUtils";
-    import { get } from "svelte/store";
-    import { grabbing } from "../../lib/stores";
-    import { genClipboardFn } from "../../lib/clipboard";
+  import { onDestroy } from "svelte";
+  import Icon from "../../assets/icons/Icon.svelte";
+  import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
+  import { ValueProcessTypes } from "../../lib/translate";
+  import { currentFocus, focusData } from "../../sidebar/editUtils";
+  import { get } from "svelte/store";
+  import { grabbing } from "../../lib/stores";
+  import { genClipboardFn } from "../../lib/clipboard";
 
-    let { item: valueProcess, handle = $bindable(null), el = $bindable(null), remove } = $props();
+  let { item: valueProcess, handle = $bindable(null), el = $bindable(null), remove } = $props();
 
-    onDestroy(() => {
-        if (get(currentFocus).obj === valueProcess) {
-            focusData("project");
-        }
-    });
+  onDestroy(() => {
+    if (get(currentFocus).obj === valueProcess) {
+      focusData("project");
+    }
+  });
 
-    const clipboardFn = genClipboardFn("valueProcess", valueProcess, () => remove());
+  const clipboardFn = genClipboardFn("valueProcess", valueProcess, () => remove());
 
-    const contextmenu = [
-        {
-            label: "잘라내기",
-            click: clipboardFn.cut
-        },
-        {
-            label: "복사",
-            click: clipboardFn.copy
-        },
-        {
-            label: "붙여넣기",
-            click: clipboardFn.paste
-        },
-        { type: "seperator" },
-        {
-            label: "삭제",
-            click: () => {
-                remove();
-                return true;
-            },
-            action: "remove"
-        }
-    ];
+  const contextmenu = [
+    {
+      label: "잘라내기",
+      click: clipboardFn.cut
+    },
+    {
+      label: "복사",
+      click: clipboardFn.copy
+    },
+    {
+      label: "붙여넣기",
+      click: clipboardFn.paste
+    },
+    { type: "seperator" },
+    {
+      label: "삭제",
+      click: () => {
+        remove();
+        return true;
+      },
+      action: "remove"
+    }
+  ];
 </script>
 
 <div
-    class={["value-process", $currentFocus.obj === valueProcess && "focus"]}
-    bind:this={el}
-    onpointerdown={(evt) => {
-        if (evt.button || $grabbing) return;
-        evt.stopPropagation();
-        focusData("valueProcess", valueProcess, { clipboardFn });
-        outClicked();
-    }}
-    use:rightclick={contextmenu}
+  class={["value-process", $currentFocus.obj === valueProcess && "focus"]}
+  bind:this={el}
+  onpointerdown={(evt) => {
+    if (evt.button || $grabbing) return;
+    evt.stopPropagation();
+    focusData("valueProcess", valueProcess, { clipboardFn });
+    outClicked();
+  }}
+  use:rightclick={contextmenu}
 >
-    <div class="info">
-        <div class="handle" bind:this={handle}>
-            <Icon icon="hamburger" color="rgba(0, 0, 0, 0.5)" size={8} />
-        </div>
-        <span>
-            {ValueProcessTypes[valueProcess.type] ?? "?"}
-        </span>
+  <div class="info">
+    <div class="handle" bind:this={handle}>
+      <Icon icon="hamburger" color="rgba(0, 0, 0, 0.5)" size={8} />
     </div>
+    <span>
+      {ValueProcessTypes[valueProcess.type] ?? "?"}
+    </span>
+  </div>
 </div>
 
 <style>
-    .value-process {
-        min-width: 100%;
-        font-weight: 600;
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-    }
-    .handle {
-        box-sizing: border-box;
-        padding-inline: 6px;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: grab;
-    }
-    .info {
-        height: 30px;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-    }
+  .value-process {
+    min-width: 100%;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+  .handle {
+    box-sizing: border-box;
+    padding-inline: 6px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+  }
+  .info {
+    height: 30px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
 </style>

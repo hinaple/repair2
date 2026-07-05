@@ -8,36 +8,36 @@ const classPath = join(__dirname, "../common");
 const sharedPath = join(__dirname, "../../shared");
 const outDir = join(__dirname, "../../../out/editor");
 export default defineConfig({
-    root: __dirname,
-    cacheDir: join(__dirname, "../../../node_modules/.vite-editor"),
-    plugins: [
-        onlyBlockPlugin({ target: "editor", dir: "renderer/common" }),
-        svelte({
-            onwarn: (warning, handler) => {
-                if (!warning.code.startsWith("a11y") && warning.code !== "state_referenced_locally")
-                    handler(warning);
-            }
-        }),
-        renderer()
-    ],
-    server: {
-        port: 3101
-    },
-    optimizeDeps: {
-        force: true
-    },
-    base: "./",
-    build: {
-        emptyOutDir: true,
-        outDir: outDir
-    },
-    resolve: {
-        alias: {
-            "@renderer": classPath,
-            "@shared": sharedPath
-        }
-    },
-    define: {
-        __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+  root: __dirname,
+  cacheDir: join(__dirname, "../../../node_modules/.vite-editor"),
+  plugins: [
+    onlyBlockPlugin({ target: "editor", dir: "renderer/common" }),
+    svelte({
+      onwarn: (warning, handler) => {
+        if (!warning.code.startsWith("a11y") && warning.code !== "state_referenced_locally")
+          handler(warning);
+      }
+    }),
+    renderer()
+  ],
+  server: {
+    port: 3101
+  },
+  optimizeDeps: {
+    force: true
+  },
+  base: "./",
+  build: {
+    emptyOutDir: true,
+    outDir: outDir
+  },
+  resolve: {
+    alias: {
+      "@renderer": classPath,
+      "@shared": sharedPath
     }
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+  }
 });

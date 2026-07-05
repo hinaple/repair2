@@ -10,9 +10,9 @@ REPAIR2 also reads the project `plugin-links.json` file. This file records exter
 
 ```json
 {
-    "my-plugin": {
-        "sourcePath": "D:/path/to/my-plugin"
-    }
+  "my-plugin": {
+    "sourcePath": "D:/path/to/my-plugin"
+  }
 }
 ```
 

@@ -10,9 +10,9 @@ Use the schema for editor completion and authoring-time validation:
 
 ```json
 {
-    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
-    "name": "my-plugin",
-    "type": "function"
+  "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+  "name": "my-plugin",
+  "type": "function"
 }
 ```
 
@@ -22,12 +22,12 @@ The schema describes the public manifest shape. Current runtime loading does not
 
 ```json
 {
-    "name": "my-plugin",
-    "description": "Adds a custom labeled element.",
-    "type": "element",
-    "entry": "src/index.js",
-    "outDir": "dist",
-    "attributes": ["label"]
+  "name": "my-plugin",
+  "description": "Adds a custom labeled element.",
+  "type": "element",
+  "entry": "src/index.js",
+  "outDir": "dist",
+  "attributes": ["label"]
 }
 ```
 
@@ -59,9 +59,9 @@ Element, frame, function, and transition plugins can expose more than one render
 
 ```json
 {
-    "name": "button-pack",
-    "type": "element",
-    "exports": ["primary", "secondary"]
+  "name": "button-pack",
+  "type": "element",
+  "exports": ["primary", "secondary"]
 }
 ```
 
@@ -76,12 +76,12 @@ Use the object form when each export needs its own editor attribute inputs:
 
 ```json
 {
-    "name": "button-pack",
-    "type": "element",
-    "exports": {
-        "primary": ["label", "color"],
-        "secondary": ["label"]
-    }
+  "name": "button-pack",
+  "type": "element",
+  "exports": {
+    "primary": ["label", "color"],
+    "secondary": ["label"]
+  }
 }
 ```
 
@@ -89,9 +89,9 @@ If `exports` is not present, REPAIR2 treats the plugin as if it declared:
 
 ```json
 {
-    "exports": {
-        "default": ["label"]
-    }
+  "exports": {
+    "default": ["label"]
+  }
 }
 ```
 
@@ -105,8 +105,8 @@ For plugins without a runtime main entry, the default paths are:
 
 ```json
 {
-    "entry": "src/index.js",
-    "outDir": "dist"
+  "entry": "src/index.js",
+  "outDir": "dist"
 }
 ```
 
@@ -114,8 +114,8 @@ For runtime plugins with `main`, the default renderer paths are:
 
 ```json
 {
-    "entry": "src/renderer/index.js",
-    "outDir": "dist/renderer"
+  "entry": "src/renderer/index.js",
+  "outDir": "dist/renderer"
 }
 ```
 
@@ -123,10 +123,10 @@ The default main paths are:
 
 ```json
 {
-    "main": {
-        "entry": "src/main/index.js",
-        "outDir": "dist/main"
-    }
+  "main": {
+    "entry": "src/main/index.js",
+    "outDir": "dist/main"
+  }
 }
 ```
 
@@ -138,12 +138,12 @@ Runtime plugins can declare callable step names with `steps`:
 
 ```json
 {
-    "name": "window-tools",
-    "type": "runtime",
-    "steps": {
-        "open": ["target"],
-        "close": null
-    }
+  "name": "window-tools",
+  "type": "runtime",
+  "steps": {
+    "open": ["target"],
+    "close": null
+  }
 }
 ```
 
@@ -153,8 +153,8 @@ The runtime plugin object should define methods with the same names:
 
 ```js
 export default {
-    open({ attributes }) {},
-    close() {}
+  open({ attributes }) {},
+  close() {}
 };
 ```
 
@@ -162,7 +162,7 @@ Array form is also allowed when you only need step names and no step-specific at
 
 ```json
 {
-    "steps": ["open", "close"]
+  "steps": ["open", "close"]
 }
 ```
 
@@ -172,12 +172,12 @@ A runtime plugin can add a main-process entry:
 
 ```json
 {
-    "name": "bridge-plugin",
-    "type": "runtime",
-    "main": {
-        "entry": "src/main/index.js",
-        "outDir": "dist/main"
-    }
+  "name": "bridge-plugin",
+  "type": "runtime",
+  "main": {
+    "entry": "src/main/index.js",
+    "outDir": "dist/main"
+  }
 }
 ```
 
@@ -191,9 +191,9 @@ Element and frame plugins can set `svelte: true`:
 
 ```json
 {
-    "name": "svelte-element",
-    "type": "element",
-    "svelte": true
+  "name": "svelte-element",
+  "type": "element",
+  "svelte": true
 }
 ```
 

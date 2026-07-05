@@ -6,10 +6,10 @@ import { StepPayloadTemplate } from "./step";
 import { ValueProcessPayloadTemplate } from "./valueProcess";
 
 export const PayloadTemplates = {
-    element: ElementPayloadTemplate,
-    entry: EntryPayloadTemplate,
-    listener: ListenerPayloadTemplate,
-    screenConfig: ScreenConfigPayloadTemplate,
-    step: StepPayloadTemplate,
-    valueProcess: ValueProcessPayloadTemplate
+  element: ElementPayloadTemplate,
+  entry: EntryPayloadTemplate,
+  listener: ListenerPayloadTemplate,
+  screenConfig: ScreenConfigPayloadTemplate,
+  step: StepPayloadTemplate,
+  valueProcess: ValueProcessPayloadTemplate
 } as const;

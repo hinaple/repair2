@@ -3,13 +3,13 @@ import { ipc } from "./ipc";
 let isVscodeInstalled = false;
 
 export function getVscode() {
-    return isVscodeInstalled;
+  return isVscodeInstalled;
 }
 
 (async () => {
-    isVscodeInstalled = await ipc.invoke("vscode:is-installed");
+  isVscodeInstalled = await ipc.invoke("vscode:is-installed");
 })();
 
 export function openVscode(src) {
-    ipc.send("vscode:open", src);
+  ipc.send("vscode:open", src);
 }

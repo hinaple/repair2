@@ -11,14 +11,14 @@ import { setupStoreIpc } from "./storeIpc";
 import type { MainApp } from "../app/mainApp";
 
 export function setupIpcHandlers(app: MainApp) {
-    setupShellIpc(app);
-    setupLogIpc(app);
-    setupPluginIpc(app);
-    setupProjectIpc(app);
-    setupEditorIpc(app);
-    setupAssetIpc(app);
-    setupPreviewIpc(app);
-    setupCommunicationIpc(app);
-    setupMonitorIpc(app);
-    setupStoreIpc(app);
+  setupShellIpc(app);
+  setupLogIpc(app);
+  setupPluginIpc(app);
+  setupProjectIpc(app);
+  setupEditorIpc(app);
+  setupAssetIpc(app);
+  setupPreviewIpc(app);
+  setupCommunicationIpc(app);
+  setupMonitorIpc(app);
+  setupStoreIpc(app);
 }
