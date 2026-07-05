@@ -20,7 +20,7 @@ export default class AppData {
     return this.nodes.get(id);
   }
 
-  //#only play
+  /*
   findResourceByTitle(title) {
     return this.resources.find((r) => r.title === title);
   }
@@ -66,5 +66,5 @@ export default class AppData {
   findBranch(id) {
     return this.nodes.values().find((node) => node.type === "branch" && node.id === id);
   }
-  //#endonly
+  */
 }

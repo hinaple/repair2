@@ -1,4 +1,4 @@
-import { Types } from "@shared/projectData/types";
+import type { Types } from "@shared/projectData/types";
 import { enToKo, koToEn } from "../lib/enKoConvert";
 
 export function process(vp: Types.ValueProcess | undefined, string: string = ""): string {

@@ -48,7 +48,7 @@ function genEl(element: Types.Element, registerUnsubscriber: (id: string, cb: ()
           ? regexMap[element.payload.allowedType as keyof typeof regexMap]
           : null;
 
-    let tempVariableId = element.payload.variableId;
+    const tempVariableId = element.payload.variableId;
     const variableId = tempVariableId && typeof tempVariableId === "string" ? tempVariableId : null;
     if (variableId) {
       const unsub = subscribe(

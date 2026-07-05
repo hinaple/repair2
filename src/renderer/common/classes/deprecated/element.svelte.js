@@ -47,7 +47,7 @@ export default class Element extends TypePayload {
     this.listeners = listeners;
     this.dragOption = new DragOption(dragOption);
   }
-  //#only play
+  /*
   getStyleString(absolute, pos) {
     if (this.fullscreen)
       return (
@@ -61,7 +61,7 @@ export default class Element extends TypePayload {
   get styleString() {
     return this.getStyleString(this.absolute, this.pos);
   }
-  //#endonly
+  */
   //#only editor
   get storeData() {
     return {

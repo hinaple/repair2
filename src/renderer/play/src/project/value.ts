@@ -1,6 +1,7 @@
-import { Types } from "@shared/projectData/types";
+import type { Types } from "@shared/projectData/types";
 import { Base } from "./base";
-import { Ref, ref } from "./refs";
+import type { Ref} from "./refs";
+import { ref } from "./refs";
 import { process } from "./valueProcess";
 
 export class Value extends Base<Types.Value> {

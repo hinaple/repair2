@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { join } from "path";
 import { pluginDir, sdkDir, templateDir } from "../system/dirs";
 import { pathExists } from "../system/pathExists";
-import { RawManifest } from "./type";
+import type { RawManifest } from "./type";
 import { logger } from "../logs/logger";
 
 declare const __SDK_VERSION__: string;

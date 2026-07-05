@@ -1,7 +1,7 @@
 import PluginPointer from "./pluginPointer.svelte";
 import ScreenConfig from "./screenConfig.svelte";
 
-//#only play
+/*
 const styleMap = {
   width: ["width: ", "px"],
   height: ["height: ", "px"],
@@ -9,7 +9,7 @@ const styleMap = {
   sizeRatio: ["transform: scale(", ")"],
   style: ["", ""]
 };
-//#endonly
+*/
 
 export default class Config {
   title = $state();
@@ -60,7 +60,7 @@ export default class Config {
     this.runtimePlugins = runtimePlugins.map((rp) => new PluginPointer(rp, "runtime"));
   }
 
-  //#only play
+  /*
   get styleString() {
     return (
       (this.transparent ? "background-color: transparent;" : "") +
@@ -75,7 +75,7 @@ export default class Config {
       ";"
     );
   }
-  //#endonly
+  */
 
   //#only editor
   get storeData() {

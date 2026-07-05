@@ -1,16 +1,22 @@
-<script>
+<script lang="ts">
   import { get } from "svelte/store";
   import { contextMenu, outClicked } from "./contextUtils";
 
-  let menuEl = $state();
+  let menuEl: HTMLElement | undefined = $state();
 
   $effect(() => {
     if (!menuEl || !$contextMenu) return;
     menuEl.style.left = `${$contextMenu.pos.x}px`;
     menuEl.style.top = `${$contextMenu.pos.y}px`;
   });
-  function onpointerdown(evt) {
-    if (get(contextMenu) && menuEl && !menuEl.contains(evt.target)) outClicked();
+  function onpointerdown(evt: PointerEvent) {
+    if (
+      evt.target instanceof HTMLElement &&
+      get(contextMenu) &&
+      menuEl &&
+      !menuEl.contains(evt.target)
+    )
+      outClicked();
   }
 </script>
 
@@ -18,17 +24,17 @@
 {#if $contextMenu}
   <div class="context-menu" bind:this={menuEl}>
     {#each $contextMenu.items as item}
-      {#if item.type === "seperator"}
-        <div class="seperator"></div>
+      {#if item.type === "separator"}
+        <div class="separator"></div>
       {:else}
         <div
           class="item"
           tabindex="0"
           onclick={() => {
-            if (item.click(get(contextMenu))) outClicked();
+            if (item.click(get(contextMenu)!)) outClicked();
           }}
           onkeydown={(evt) => {
-            if ((evt.key === " " || evt.key === "Enter") && item.click(get(contextMenu)))
+            if ((evt.key === " " || evt.key === "Enter") && item.click(get(contextMenu)!))
               outClicked();
           }}
         >
@@ -64,7 +70,7 @@
   .item:focus {
     background-color: var(--b-o1);
   }
-  .seperator {
+  .separator {
     width: 100%;
     height: 1px;
     margin-block: 5px;

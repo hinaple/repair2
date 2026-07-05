@@ -18,7 +18,7 @@ const shortcuts: Map<string, Set<ShortcutData>> = new Map();
 export default function initShortcutEntries(entryArr: Entry[]) {
   shortcuts.clear();
   entryArr.forEach((e) => {
-    const payload = e.d.payload as Extract<Types.Entry, { entryType: "shortcut" }>["payload"];
+    const payload = e.d.payload as Extract<Types.Entry, { type: "shortcut" }>["payload"];
     if (!payload.key) return;
 
     const data: ShortcutData = {

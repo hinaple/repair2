@@ -9,6 +9,8 @@ import { createHash } from "node:crypto";
 import type { Plugin } from "vite";
 import type { PluginInfo, WatchData } from "./type";
 import type { RollupWatcher } from "rollup";
+import type { svelte as Svelte } from "@sveltejs/vite-plugin-svelte";
+import type { build as Build } from "vite";
 
 if (!is.dev) {
   // patch spawn() to fix esbuild EPIPE error
@@ -119,17 +121,16 @@ function isExternalImport(id: string) {
   );
 }
 
-let cachedSveltePlugin: typeof import("@sveltejs/vite-plugin-svelte").svelte | null = null;
+let cachedSveltePlugin: typeof Svelte | null = null;
 async function getSveltePlugin() {
   if (!cachedSveltePlugin)
     cachedSveltePlugin = (await import("@sveltejs/vite-plugin-svelte")).svelte;
   return cachedSveltePlugin;
 }
 
-type Build = typeof import("vite").build;
-let _build: Build | null = null;
+let _build: typeof Build | null = null;
 async function getBuild() {
-  if (!_build) _build = (await import("vite")).build as Build;
+  if (!_build) _build = (await import("vite")).build;
   return _build;
 }
 export async function buildPlugin(

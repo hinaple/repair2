@@ -9,7 +9,7 @@ type ComponentData = Types.Component;
 
 const gamezone = document.getElementById("gamezone")!;
 
-let components: Set<RepairComponent> = new Set();
+const components: Set<RepairComponent> = new Set();
 
 const subscribers: Set<{
   listener: (comps: ComponentHandle[]) => unknown;

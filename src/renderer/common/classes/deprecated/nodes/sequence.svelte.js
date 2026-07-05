@@ -8,14 +8,14 @@ export default class Sequence extends AdvancedNode {
     this.steps = steps;
     this.output = new Output(output, creatingOpt);
   }
-  //#only play
+  /*
   async execute() {
     for (const step of this.steps.list) {
       if ((await step.execute()) === false) return;
     }
     this.output.goto();
   }
-  //#endonly
+  */
 
   //#only editor
   get storeData() {

@@ -10,7 +10,7 @@ export default class Value {
     this.baseType = type;
     this.baseValue = value;
   }
-  //#only play
+  /*
   get value() {
     return this.process.list.reduce(
       (result, process) => process.process(result), //need migration
@@ -20,7 +20,7 @@ export default class Value {
   getBase() {
     return this.baseValue;
   }
-  //#endonly
+  */
 
   //#only editor
   get storeData() {

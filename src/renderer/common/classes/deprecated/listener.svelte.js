@@ -63,13 +63,13 @@ export default class Listener extends TypePayload {
     this.useCapture = useCapture;
   }
 
-  //#only play
+  /*
   get realEventChannel() {
     return this.payload.channel?.length
       ? this.payload.channel
       : (TypeMap[this.shortType] ?? this.lastType);
   }
-  //#endonly
+  */
 
   //#only editor
   get storeData() {

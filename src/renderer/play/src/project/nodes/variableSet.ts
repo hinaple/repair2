@@ -2,7 +2,8 @@ import type { Types } from "@shared/projectData/types";
 import type { NodeController } from "../types";
 import { getGoto, type Goto } from "./output";
 import { Base } from "../base";
-import { ref, Ref } from "../refs";
+import type { Ref } from "../refs";
+import { ref } from "../refs";
 
 export class VariableSet extends Base<Types.VariableSet> implements NodeController {
   private valueRef?: Ref<"values">;

@@ -25,7 +25,7 @@ import { customLog } from "../../lib/logger";
 import { callFunctionPlugin } from "../../lib/plugin/pluginManager";
 import { ipc } from "../../lib/ipc";
 import type { StepAction } from "./types";
-import { Types } from "@shared/projectData/types";
+import type { Types } from "@shared/projectData/types";
 
 let resetAbort = new AbortController();
 
@@ -165,7 +165,7 @@ export function stepExecute(step: Types.Step) {
     ((step: Types.Step) => boolean | undefined | Promise<boolean | undefined>) | undefined;
   if (!action) return null;
 
-  let actionResult = action(step);
+  const actionResult = action(step);
   if (typeof actionResult !== "object" || !actionResult.then) {
     sendChanges("step", "executed", step.id);
     return actionResult;

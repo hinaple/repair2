@@ -38,6 +38,21 @@ function assertNoInlineOutputs(project: V2.Data) {
   values(project.listeners).forEach((listener) => assertOutputResolved(listener.output));
 }
 
+function assertNodeDiscriminatorsMigrated(project: V2.Data) {
+  values(project.nodes).forEach((node) => {
+    assertString(node.nodeType);
+    assert.ok(["entry", "sequence", "branch", "variableSet"].includes(node.nodeType));
+
+    if (node.nodeType === "entry") {
+      assertString(node.type);
+      assert.equal("entryType" in node, false);
+      return;
+    }
+
+    assert.equal("type" in node, false);
+  });
+}
+
 function assertNoEmptyPluginPointers(project: V2.Data) {
   values(project.pluginPointers).forEach((pointer) => {
     assertString(pointer.name);
@@ -74,13 +89,13 @@ function assertComponentGraphIsFlattened(project: V2.Data) {
 
 function assertValueGraphIsFlattened(project: V2.Data) {
   values(project.nodes).forEach((node) => {
-    if (node.type === "branch") {
+    if (node.nodeType === "branch") {
       assert.equal(typeof node.valueA, "string");
       assert.equal(typeof node.valueB, "string");
       assert.ok(project.values[node.valueA], `missing value ${node.valueA}`);
       assert.ok(project.values[node.valueB], `missing value ${node.valueB}`);
     }
-    if (node.type === "variableSet") {
+    if (node.nodeType === "variableSet") {
       assert.equal(typeof node.value, "string");
       assert.ok(project.values[node.value], `missing value ${node.value}`);
     }
@@ -323,10 +338,13 @@ function assertSyntheticMigration(project: V2.Data) {
   assert.equal(project.pluginPointers[runtimePluginId!].name, "runtime-plugin");
 
   const entry = project.nodes["entry-start"] as AnyRecord;
-  assert.equal(entry.entryType, "startup");
+  assert.equal(entry.nodeType, "entry");
+  assert.equal(entry.type, "startup");
+  assert.equal("entryType" in entry, false);
   assert.equal(entry.output, "seq-main");
 
   const seq = project.nodes["seq-main"] as AnyRecord;
+  assert.equal(seq.nodeType, "sequence");
   assert.deepEqual(seq.steps, ["step-create", "step-execute-plugin", "step-log"]);
   assert.equal(seq.output, "branch-main");
 
@@ -430,6 +448,7 @@ export function runV2MigrationTest() {
   runCase("synthetic fixture migrates normalized project graph", () => {
     const project = migrateToV2(TEST_APP_VERSION, makeSyntheticV1Project());
     assertNoInlineOutputs(project);
+    assertNodeDiscriminatorsMigrated(project);
     assertComponentGraphIsFlattened(project);
     assertValueGraphIsFlattened(project);
     assertNoEmptyPluginPointers(project);
@@ -441,6 +460,7 @@ export function runV2MigrationTest() {
 
     const project = migrateToV2(TEST_APP_VERSION, input);
     assertNoInlineOutputs(project);
+    assertNodeDiscriminatorsMigrated(project);
     assertComponentGraphIsFlattened(project);
     assertValueGraphIsFlattened(project);
     assertNoEmptyPluginPointers(project);

@@ -1,6 +1,7 @@
 import RepairElement from "./repairElement";
 import { disposePluginContext } from "../lib/plugin/pluginContext";
-import { PluginMountInfo, subscribePluginMount } from "../lib/plugin/pluginMount";
+import type { PluginMountInfo} from "../lib/plugin/pluginMount";
+import { subscribePluginMount } from "../lib/plugin/pluginMount";
 import { compId, removeComponent } from "../lib/components";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
 import { getPlugin } from "../lib/plugin/pluginManager";

@@ -1,4 +1,4 @@
-import { Types } from "@shared/projectData/types";
+import type { Types } from "@shared/projectData/types";
 
 function posToStyleString(pos: Types.Position, isX: boolean) {
   if (pos.origin === "center") return "";

@@ -15,7 +15,7 @@ export default class Entry extends Node {
     this.activated = false;
   }
 
-  //#only play
+  /*
   enter() {
     if (this.standbyMode && !this.activated) return;
     this.onEntered?.();
@@ -35,7 +35,7 @@ export default class Entry extends Node {
     this.activated = true;
     this.onActivated?.();
   }
-  //#endonly
+  */
 
   //#only editor
   get storeData() {

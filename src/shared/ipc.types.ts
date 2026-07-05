@@ -23,9 +23,9 @@ export type IpcSocketIncomeArgs = [channel: string, data: unknown, url?: string]
 export type IpcRuntimeMonitorChange =
   | [type: "step", status: "executed" | "started" | "ended", target: string]
   | [type: "preload", status: "added" | "released", target: string]
-  | [type: "variable", status: "changed", target: string, value: string]
+  | [type: "variable", status: "changed", target: string, value: string | null]
   | [type: "entry", status: "entered" | "disabled" | "activated", target: string]
-  | [type: "component", status: "created" | "removed" | "cleared", target?: string | string[]];
+  | [type: "component", status: "created" | "removed" | "set", target?: string | string[]];
 
 export type IpcRuntimeMonitorTotal = {
   variables: Map<string, unknown>;

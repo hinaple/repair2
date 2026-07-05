@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   let { icon = "plus", color = "#000", lineWidth = 3, size = 10 } = $props();
 </script>
 

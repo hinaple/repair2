@@ -32,7 +32,7 @@ export default class Branch extends Node {
     this.disableAfterTrue = disableAfterTrue;
     this.disableAfterFalse = disableAfterFalse;
   }
-  //#only play
+  /*
   compare(a, b) {
     if (this.operator === "equals") return a == b;
     if (this.operator === "includes") return a.includes(b);
@@ -56,7 +56,7 @@ export default class Branch extends Node {
     if (this.isTrue) this.trueOutput.goto();
     else this.falseOutput.goto();
   }
-  //#endonly
+  */
 
   //#only editor
   get storeData() {

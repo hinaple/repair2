@@ -4,11 +4,10 @@ export const ListenerPayloadTemplate = {
   custom: { channel: nullDefault<string>() },
   Mouse: {
     isTypeObj: true,
-    click: null, //{ doubleClick: false },
+    click: null,
     down: null,
     up: null
   },
-  // click: null,
   input: null,
   keyPress: { key: nullDefault<string>() },
   videoEnd: null,

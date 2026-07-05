@@ -1,7 +1,8 @@
+import type {
+  PluginErrorData,
+  PluginRunningTarget} from "@shared/plugin.types";
 import {
   PLUGIN_TYPES,
-  PluginErrorData,
-  PluginRunningTarget,
   type PluginAttributes,
   type PluginExports,
   type PluginLinkInfo,

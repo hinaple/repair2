@@ -14,6 +14,15 @@ export type {
   ValueProcessTypePayload
 };
 
+export type TypePayloadMap = {
+  element: ElementTypePayload;
+  entry: EntryTypePayload;
+  listener: ListenerTypePayload;
+  screenConfig: ScreenConfigTypePayload;
+  step: StepTypePayload;
+  valueProcess: ValueProcessTypePayload;
+};
+
 export type TypePayloads =
   | ElementTypePayload
   | EntryTypePayload

@@ -1,4 +1,6 @@
 {
+  "js/ts.preferences.preferTypeOnlyAutoImports": true,
+  "svelte.enable-ts-plugin": true,
   "svelte.plugin.svelte.compilerWarnings": {
     "a11y_aria_attributes": "ignore",
     "a11y_incorrect_aria_attribute_type": "ignore",
@@ -26,5 +28,6 @@
     "a11y_no_noninteractive_tabindex": "ignore",
     "a11y_missing_attribute": "ignore",
     "a11y_consider_explicit_label": "ignore"
-  }
+  },
+  "editor.indentSize": 2
 }

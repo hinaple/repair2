@@ -7,7 +7,7 @@ export default class Position {
     this.origin = origin;
     this.relative = relative;
   }
-  //#only play
+  /*
   get styleStringWhenX() {
     if (this.origin === "center") return "";
     return (
@@ -22,7 +22,7 @@ export default class Position {
       `${this.distance ?? 0}${this.relative ? "%;" : "px;"}`
     );
   }
-  //#endonly
+  */
   get storeData() {
     return { distance: this.distance, origin: this.origin, relative: this.relative };
   }

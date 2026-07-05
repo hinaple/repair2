@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { fly } from "svelte/transition";
   import { toasts } from "./toast.svelte";
   import { quadIn, quadInOut, quadOut } from "svelte/easing";
@@ -6,10 +6,10 @@
   import Icon from "../../assets/icons/Icon.svelte";
   import event from "../actions/eventAction";
 
-  let wrapper;
+  let wrapper: HTMLElement;
 
-  function scroll(evt) {
-    wrapper?.scrollBy({ y: evt.deltaY, behavior: "smooth" });
+  function scroll(evt: WheelEvent) {
+    wrapper?.scrollBy({ top: evt.deltaY, behavior: "smooth" });
   }
 </script>
 

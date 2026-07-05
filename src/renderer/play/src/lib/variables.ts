@@ -1,7 +1,7 @@
 import { registerPluginContextApi } from "./plugin/pluginContext";
 import { registerUtils } from "./repairUtils";
 import { sendChanges } from "./runtimeMonitor";
-import { Types } from "@shared/projectData/types";
+import type { Types } from "@shared/projectData/types";
 
 type VarSubscriber = (v: string | null) => void;
 

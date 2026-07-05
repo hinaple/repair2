@@ -16,7 +16,7 @@ let currentPreview: {
   component: Types.Component;
   elements: Map<string, Types.Element>;
 } | null = null;
-let els: Map<string, ElementPreview> = new Map();
+const els: Map<string, ElementPreview> = new Map();
 ipc.on("layout-preview", (event, { component, elements }) => {
   currentPreview = { component, elements };
   render();

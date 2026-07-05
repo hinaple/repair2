@@ -1,8 +1,9 @@
 import { genId } from "@shared/genId";
 import type * as V1 from "@shared/projectData/v1Data.types";
 import type * as V2 from "@shared/projectData/v2Data.types";
-import type { TypePayloads } from "@shared/projectData/typePayloadTemplate/types";
+import type { EntryTypePayload, TypePayloads } from "@shared/projectData/typePayload";
 import type { ScreenConfigStoreData } from "@shared/projectData/projectConfig.types";
+import type { Override } from "@shared/utils.types";
 
 function resolveOutput<K extends string, T extends { [k in K]: V1.Output }>(
   object: T,
@@ -62,6 +63,18 @@ function IdArr2Object<T extends { id: string }>(arr: T[]): Record<string, T> {
   return Object.fromEntries(arr.map((t) => [t.id, t]));
 }
 
+type NewTypeNode<N extends V1.Node> = N extends { type: infer T }
+  ? Omit<N, "type"> & { nodeType: T }
+  : never;
+function nodeType<N extends V1.Node>(node: N) {
+  const converted = { ...node, nodeType: node.type } as Omit<N, "type"> & {
+    type?: N["type"];
+    nodeType: N["type"];
+  };
+  delete converted.type;
+  return converted as NewTypeNode<N>;
+}
+
 function joinType(type: string[] | string) {
   return Array.isArray(type) ? type.join(".") : type;
 }
@@ -110,25 +123,29 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
   v2.nodes = IdArr2Object(
     data.nodes.map((node) => {
       if (node.type === "entry") {
-        const tempEntry = resolveOutput(node, "output");
-        if (Array.isArray(tempEntry.entryType)) tempEntry.entryType = tempEntry.entryType.join(".");
-        return tempEntry as V2.Entry;
+        const { entryType, ...entry } = nodeType(resolveOutput(node, "output"));
+        return {
+          ...entry,
+          type: joinType(entryType) as EntryTypePayload["type"]
+        };
       }
       if (node.type === "branch") {
-        return resolveOutput(
-          moveBulk(node, {
-            valueA: tempValues,
-            valueB: tempValues
-          }),
-          "trueOutput",
-          "falseOutput"
+        return nodeType(
+          resolveOutput(
+            moveBulk(node, {
+              valueA: tempValues,
+              valueB: tempValues
+            }),
+            "trueOutput",
+            "falseOutput"
+          )
         );
       }
       if (node.type === "sequence") {
-        return resolveOutput(removeAndMoveArr(node, tempSteps, "steps"), "output");
+        return nodeType(resolveOutput(removeAndMoveArr(node, tempSteps, "steps"), "output"));
       }
       if (node.type === "variableSet") {
-        return resolveOutput(removeAndMove(node, tempValues, "value"), "output");
+        return nodeType(resolveOutput(removeAndMove(node, tempValues, "value"), "output"));
       }
       throw new Error("Unknown node data.");
     })

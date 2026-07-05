@@ -31,7 +31,7 @@
       label: "붙여넣기",
       click: clipboardFn.paste
     },
-    { type: "seperator" },
+    { type: "separator" },
     {
       label: "삭제",
       click: () => {

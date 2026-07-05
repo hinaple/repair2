@@ -1,5 +1,5 @@
 import type { Types } from "@shared/projectData/types";
-import type { StepPayloadTemplate } from "@shared/projectData/typePayloadTemplate/step";
+import type { PayloadTemplates } from "@shared/projectData/typePayload";
 
 type Step = Types.Step;
 type TemplateKey<T> = Exclude<keyof T, "isTypeObj"> & string;
@@ -12,4 +12,4 @@ type StepActionTree<T, Prefix extends string = ""> = {
     : (step: Extract<Step, { type: JoinPath<Prefix, K> }>) => void | boolean | Promise<unknown>;
 };
 
-export type StepAction = StepActionTree<typeof StepPayloadTemplate>;
+export type StepAction = StepActionTree<typeof PayloadTemplates.step>;

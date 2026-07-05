@@ -21,6 +21,6 @@ ipc.on("request-execute", (event, { type, id }) => {
   const node = getProject().nodes.get(id);
   if (!node) return;
 
-  if (type === "entry" && node.d.type === "entry") (node as Entry).enter();
+  if (type === "entry" && node.d.nodeType === "entry") (node as Entry).enter();
   else node.execute();
 });

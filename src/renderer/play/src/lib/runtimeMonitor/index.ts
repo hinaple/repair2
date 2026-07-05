@@ -5,43 +5,14 @@ import { getProject } from "../../project";
 import { getAllComponents } from "../components";
 import { ipc } from "../ipc";
 import type { StandbyEntry } from "../../project/nodes/standbyEntry";
+import type { IpcRuntimeMonitorChange } from "@shared/ipc.types";
 
-let changesBuffer: Array<Array<string | string[]>> = [];
+let changesBuffer: Array<IpcRuntimeMonitorChange> = [];
 
-type ChangeType = "step" | "preload" | "variable" | "entry" | "component";
-export function sendChanges(
-  type: "step",
-  status: "executed" | "started" | "ended",
-  target: string
-): void;
-export function sendChanges(type: "preload", status: "added" | "released", target: string): void;
-export function sendChanges(
-  type: "variable",
-  status: "changed",
-  target: string,
-  value: string | null
-): void;
-export function sendChanges(
-  type: "entry",
-  status: "entered" | "disabled" | "activated",
-  target: string
-): void;
-export function sendChanges(
-  type: "component",
-  status: "set" | "removed" | "created",
-  target?: string | string[]
-): void;
-export function sendChanges(
-  type: ChangeType,
-  status: string,
-  target?: string | string[],
-  data?: string | null
-): void {
+export function sendChanges(...data: IpcRuntimeMonitorChange): void {
   if (!monitoring) return;
 
-  changesBuffer.push(
-    target ? (data ? [type, status, target, data] : [type, status, target]) : [type, status]
-  );
+  changesBuffer.push(data);
   readyToFlush();
 }
 

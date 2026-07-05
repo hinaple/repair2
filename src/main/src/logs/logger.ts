@@ -49,7 +49,7 @@ function baseLogger(
   console[LV_CLI_MAP[level]](...args);
   if (!scopedLog) return;
 
-  let dialog = false;
+  const dialog = false;
   return scopedLog({
     type: `main-log:${level}`,
     dialog,

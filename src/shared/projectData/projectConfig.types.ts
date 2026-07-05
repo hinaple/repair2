@@ -1,9 +1,9 @@
-import type { ScreenConfigTypePayload } from "./typePayloadTemplate/types";
+import type { ScreenConfigTypePayload } from "./typePayload";
 
-export type JsonValue =
+type JsonValue =
   string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue } | undefined;
 
-export type JsonRecord = {
+type JsonRecord = {
   [key: string]: JsonValue | undefined;
 };
 

@@ -25,4 +25,4 @@ export const EntryPayloadTemplate = {
   event: { channel: nullDefault<string>() }
 } as const;
 
-export type EntryTypePayload = TypePayloadUnion<typeof EntryPayloadTemplate, "entryType">;
+export type EntryTypePayload = TypePayloadUnion<typeof EntryPayloadTemplate>;

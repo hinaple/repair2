@@ -14,7 +14,7 @@ const CONFIG_KEY = "config";
 
 function keyAndPath(key: string | string[], safe: boolean = true): [string, string[]] {
   const arr = Array.isArray(key) ? key : key.split(".");
-  let k = normalizeKey(arr[0]);
+  const k = normalizeKey(arr[0]);
   return [k === CONFIG_KEY && safe ? `_${k}` : k, arr.toSpliced(0, 1)];
 }
 

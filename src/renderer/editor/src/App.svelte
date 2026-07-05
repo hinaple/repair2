@@ -1,6 +1,6 @@
 <svelte:options runes={true} />
 
-<script>
+<script lang="ts">
   import ToastDisplay from "./lib/toast/ToastDisplay.svelte";
   import ContextMenu from "./lib/contextMenu/ContextMenu.svelte";
   import { appData } from "./lib/syncData.svelte";

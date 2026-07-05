@@ -1,4 +1,4 @@
-import { RuntimeProjectData, Types } from "@shared/projectData/types";
+import type { RuntimeProjectData, Types } from "@shared/projectData/types";
 import { Entry } from "./nodes/entry";
 import { Sequence } from "./nodes/sequence";
 import { Branch } from "./nodes/branch";
@@ -34,10 +34,10 @@ export class Project {
   readonly resources: Map<string, Resource> = new Map();
   constructor(readonly data: RuntimeProjectData) {
     data.nodes.forEach((nn) => {
-      const obj = new (nn.type === "entry" && nn.standbyMode ? StandbyEntry : NodeClasses[nn.type])(
-        nn as any
-      );
-      this.n[nn.type].push(obj as any);
+      const obj = new (
+        nn.nodeType === "entry" && nn.standbyMode ? StandbyEntry : NodeClasses[nn.nodeType]
+      )(nn as any);
+      this.n[nn.nodeType].push(obj as any);
       this.nodes.set(nn.id, obj);
     });
     this.values = new Map(data.values.entries().map(([id, v]) => [id, new Value(v)]));
@@ -52,22 +52,22 @@ export class Project {
     this.nodes.get(id)?.execute();
   }
   findAllEntries<
-    T extends Types.Entry["entryType"],
-    E extends Extract<Types.Entry, { entryType: T }>["payload"]
+    T extends Types.Entry["type"],
+    E extends Extract<Types.Entry, { type: T }>["payload"]
   >(entryType: T, data?: Partial<E>): Entry[] {
     return this.n.entry.filter(({ d: entryData }) => {
-      if (entryData.type !== "entry" || entryType !== entryData.entryType) return false;
+      if (entryType !== entryData.type) return false;
       if (typeof entryData.payload !== "object" || !entryData.payload || !data) return true;
 
       if (
-        entryData.entryType === "Communication.serialData" &&
+        entryData.type === "Communication.serialData" &&
         typeof entryData.payload.whenDataIs === "string" &&
         entryData.payload.whenDataIs
       )
         return true;
 
       if (
-        entryData.entryType === "Communication.Socket.ondata" &&
+        entryData.type === "Communication.Socket.ondata" &&
         "channel" in data &&
         entryData.payload.channel === data.channel &&
         !entryData.payload.data
@@ -86,8 +86,8 @@ export class Project {
     });
   }
   enterEntries<
-    T extends Types.Entry["entryType"],
-    E extends Extract<Types.Entry, { entryType: T }>["payload"]
+    T extends Types.Entry["type"],
+    E extends Extract<Types.Entry, { type: T }>["payload"]
   >(entryType: T, data?: Partial<E>) {
     const entries = this.findAllEntries(entryType, data as any);
     entries.forEach((entry) => {

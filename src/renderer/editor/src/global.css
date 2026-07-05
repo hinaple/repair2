@@ -105,6 +105,9 @@ hr {
   outline-offset: 3px;
 }
 
+textarea.auto-resize {
+  field-sizing: content;
+}
 input,
 textarea,
 select {

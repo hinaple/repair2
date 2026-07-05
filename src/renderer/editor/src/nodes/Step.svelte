@@ -31,7 +31,7 @@
   const contextmenu = [
     // { label: "플로우 실행", click: () => {} },
     // { label: "단독 실행", click: () => {} },
-    // { type: "seperator" },
+    // { type: "separator" },
     {
       label: "잘라내기",
       click: clipboardFn.cut
@@ -44,7 +44,7 @@
       label: "붙여넣기",
       click: clipboardFn.paste
     },
-    { type: "seperator" },
+    { type: "separator" },
     {
       label: "삭제",
       click: () => {

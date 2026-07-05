@@ -48,13 +48,16 @@ let plugins = [];
 if (argv.report) {
   const suffix = typeof argv.report === "string" ? argv.report : Date.now();
   const reportFile = `report_${suffix}.html`;
-  const maxReporters = typeof argv["max-report"] === "string" ? +argv["max-report"] : 5;
+  const maxReporters = typeof argv["max-report"] === "string" ? +argv["max-report"] : -1;
   const reportersDir = join(__dirname, "../../reporters");
   const reporters = readdirSync(reportersDir);
-  const removingReporters = reporters
-    .filter((f) => f !== reportFile)
-    .sort((a, b) => b.localeCompare(a))
-    .toSpliced(0, maxReporters - 1);
+  const removingReporters =
+    maxReporters < 0
+      ? []
+      : reporters
+          .filter((f) => f !== reportFile)
+          .sort((a, b) => b.localeCompare(a))
+          .toSpliced(0, maxReporters - 1);
   for (const r of removingReporters) {
     rmSync(join(reportersDir, r), { force: true });
   }

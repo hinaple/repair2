@@ -1,4 +1,4 @@
-import { RuntimeProjectData, StoredProjectData } from "@shared/projectData/types";
+import type { RuntimeProjectData, StoredProjectData } from "@shared/projectData/types";
 
 const RecordKeys = [
   "resources",

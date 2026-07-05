@@ -185,7 +185,7 @@
         return true;
       }
     },
-    { type: "seperator" },
+    { type: "separator" },
     {
       label: "붙여넣기",
       click: ({ pos: { x, y } }) => {

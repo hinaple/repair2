@@ -1,7 +1,8 @@
-import type { Socket } from "socket.io-client";
 import { logger } from "../logs/logger";
+import type { Socket } from "socket.io-client";
+import type { io as IO } from "socket.io-client";
 
-type SocketIo = typeof import("socket.io-client").io;
+type SocketIo = typeof IO;
 type SocketConnectResult =
   | {
       succeed: true;

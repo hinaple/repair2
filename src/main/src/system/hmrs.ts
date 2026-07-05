@@ -27,7 +27,7 @@ export function createHmr({
   let watchers: FSWatcher[] | null = null;
   const cssPath = join(styleDir, "global.css");
 
-  let pendingTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  const pendingTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
   let active = false;
   let isOnlyCreated = true;

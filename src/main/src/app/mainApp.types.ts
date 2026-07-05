@@ -9,6 +9,7 @@ import type { WindowController } from "../windows/windowController";
 import type { MainToEditorSendMap, MainToPlaySendMap } from "@shared/ipc.types";
 import type { NewDialogs } from "../system/dialog";
 import type ProjectFileManager from "../project/projectFileManager";
+import type { app, shell } from "electron";
 
 export type SocketService = {
   connected: boolean;
@@ -77,7 +78,7 @@ export type MainLog = {
 };
 
 export type MainSystem = {
-  app: typeof import("electron").app;
+  app: typeof app;
   dialog: NewDialogs;
-  shell: typeof import("electron").shell;
+  shell: typeof shell;
 };

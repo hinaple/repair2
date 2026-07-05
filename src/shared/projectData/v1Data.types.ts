@@ -23,19 +23,19 @@ type ProjectConfig = {
     }
 );
 
-interface Node {
+type Node = {
   type: string;
   id: string;
   alias: string | null;
   nodePos: { x: number; y: number };
-}
+};
 
-interface AdvancedNode extends Node {
+type AdvancedNode = Node & {
   folded: boolean;
   inputColor: string;
-}
+};
 
-interface Branch extends Node {
+type Branch = Node & {
   type: "branch";
   trueOutput: Output;
   falseOutput: Output;
@@ -45,28 +45,28 @@ interface Branch extends Node {
   scriptData: string | null;
   disableAfterTrue: boolean;
   disableAfterFalse: boolean;
-}
+};
 
-interface Entry extends Node {
+type Entry = Node & {
   type: "entry";
   output: Output;
   entryType: string[] | string;
   payload: any;
   standbyMode: boolean;
-}
+};
 
-interface Sequence extends AdvancedNode {
+type Sequence = AdvancedNode & {
   type: "sequence";
   steps: Step[];
   output: Output;
-}
+};
 
-interface VariableSet extends AdvancedNode {
+type VariableSet = AdvancedNode & {
   type: "variableSet";
   variable: string | null;
   value: Value;
   output: Output;
-}
+};
 
 type AllNode = Entry | Sequence | Branch | VariableSet;
 
@@ -88,18 +88,18 @@ type Step = {
     }
 );
 
-interface Position {
+type Position = {
   distance: number | null;
   origin: "start" | "center" | "end";
   relative: boolean;
-}
+};
 
-interface Coord {
+type Coord = {
   x: Position;
   y: Position;
-}
+};
 
-interface Component {
+type Component = {
   id: string;
   alias: string | null;
   zIndex: number | null;
@@ -111,16 +111,16 @@ interface Component {
   frame: PluginPointer;
   introTransition: Transition;
   outroTransition: Transition;
-}
+};
 
-interface Transition {
+type Transition = {
   duration: number;
   delay: number;
   easing: string;
   plugin: PluginPointer;
-}
+};
 
-interface EnabledDragOption {
+type EnabledDragOption = {
   use: true;
   returnOnRelease: boolean;
   returnDuration: number;
@@ -129,7 +129,7 @@ interface EnabledDragOption {
   snapOn: "never" | "drag" | "release";
   snapDuration: number;
   moveEasing: string;
-}
+};
 
 type DragOption = EnabledDragOption | { use?: false };
 
@@ -176,31 +176,31 @@ type Listener = {
     }
 );
 
-interface Value {
+type Value = {
   baseType: string;
   baseValue: string | null;
   process: ValueProcess[];
-}
+};
 
-interface ValueProcess {
+type ValueProcess = {
   [key: string]: any;
-}
+};
 
-interface Output {
+type Output = {
   to: null | string;
-}
+};
 
-interface Resource {
+type Resource = {
   id: string;
   src: string | null;
   alias: string | null;
-}
+};
 
-interface Variable {
+type Variable = {
   id: string;
   name: string | null;
   defaultValue: string | null;
-}
+};
 
 type PluginPointer = {
   name: string | null;
@@ -208,14 +208,14 @@ type PluginPointer = {
   payloads: Record<string, string>;
 };
 
-interface Data {
+type Data = {
   VERSION?: string;
   config: ProjectConfig;
   resources: Resource[];
   variables: Variable[];
   nodes: AllNode[];
   updatedAt?: number;
-}
+};
 
 export type {
   Node as NodeBase,

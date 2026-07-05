@@ -1,5 +1,5 @@
 import { join } from "path";
-import { PluginInfo } from "./type";
+import type { PluginInfo } from "./type";
 import { createRequire } from "module";
 import { logger } from "../logs/logger";
 import type { PluginDiagnostics } from "./pluginDiagnostics";
@@ -217,7 +217,7 @@ export default class MainRuntimePluginEngine {
     return instance;
   }
   async createInstance(pluginName: string, activationId: string) {
-    let plugin = await this.getPlugin(pluginName);
+    const plugin = await this.getPlugin(pluginName);
     const target = this.plugins.get(pluginName);
     if (!target) return null;
     if (!plugin) {

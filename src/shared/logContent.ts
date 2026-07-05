@@ -64,7 +64,7 @@ function normalizeSingleLogContent(
   if (!className) return null;
   if (className && SupportedClasses.includes(className)) return value;
   if (type === "function" || type === "symbol" || type === "bigint")
-    return { _type: type, value: String(value as Function | Symbol | bigint) };
+    return { _type: type, value: String(value as Function | symbol | bigint) };
   if (value instanceof Error)
     return {
       _type: "Error",

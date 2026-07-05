@@ -39,14 +39,14 @@ export default class Component {
     this.outroTransition = new Transition(outroTransition);
   }
 
-  //#only play
+  /*
   get styleString() {
     return `${this.pos.styleString} z-index: ${this.zIndex ?? 0};`;
   }
   get aliasOrId() {
     return this.alias || this.id;
   }
-  //#endonly
+  */
 
   //#only editor
   get storeData() {

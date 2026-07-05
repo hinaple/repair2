@@ -1,14 +1,48 @@
-import AppData from "@renderer/classes/appData.svelte";
-import { addHistory } from "../lib/workHistory";
-import { getAllConnectedLines, setAllOutput } from "../nodes/lines/line";
+import { addHistory } from "../../lib/workHistory";
+import { getAllConnectedLines, setAllOutput } from "../../nodes/lines/line";
 import { SvelteMap } from "svelte/reactivity";
 
-export default class EditableAppData extends AppData {
-  constructor(...props) {
-    super(...props);
-    this.nodes = new SvelteMap(this.nodes);
+import Resource from "./resource.svelte";
+import Variable from "./variable.svelte";
+import { NodeClasses } from "../utils";
+import Config from "./config.svelte";
+import type { RuntimeProjectData, Types } from "@shared/projectData/types";
+import type { Entries } from "@shared/projectData/utils.types";
+
+type MapToSvelteMap<T> = {
+  [K in keyof T]: T[K] extends Map<infer MK, infer MV> ? SvelteMap<MK, MV> : T[K];
+};
+type SvelteProject = MapToSvelteMap<RuntimeProjectData>;
+
+function entriesOf<T extends object>(obj: T) {
+  return Object.entries(obj) as Entries<T>;
+}
+function assignProjectData(target: SvelteProject, data: RuntimeProjectData) {
+  for (const [key, value] of entriesOf(data)) {
+    //@ts-expect-error
+    target[key] = (
+      value instanceof Map
+        ? new SvelteMap(
+            //@ts-expect-error
+            value
+          )
+        : value
+    ) as SvelteProject[typeof key];
   }
-  addNode(node) {
+}
+
+export interface Project extends SvelteProject {}
+export class Project {
+  constructor(data: RuntimeProjectData) {
+    assignProjectData(this, data);
+  }
+  //   findVariableById(id) {
+  //     return this.variables.find((v) => v.id === id);
+  //   }
+  //   findNodeById(id) {
+  //     return this.nodes.get(id);
+  //   }
+  addNode(node: Types.Node) {
     addHistory({
       doFn: (d) => {
         this.nodes.set(d.id, d);
@@ -20,7 +54,7 @@ export default class EditableAppData extends AppData {
       undoData: node.id
     });
   }
-  addManyNodes(nodes) {
+  addManyNodes(nodes: Types.Node[]) {
     addHistory({
       doFn: (nodes) => {
         nodes.forEach((node) => {
@@ -34,7 +68,7 @@ export default class EditableAppData extends AppData {
       undoData: nodes
     });
   }
-  removeNode(node) {
+  removeNode(node: Types.Node) {
     const connectedLines = getAllConnectedLines(node.id);
     addHistory({
       doFn: ({ id, connectedLines }) => {

@@ -1,5 +1,5 @@
 import type { RollupError } from "rollup";
-import { LogFrom } from "./log.types";
+import type { LogFrom } from "./log.types";
 
 export const PLUGIN_TYPES = ["runtime", "element", "transition", "function", "frame"] as const;
 

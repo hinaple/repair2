@@ -1,11 +1,12 @@
 import fs from "fs/promises";
 import { join } from "path";
-import { getFullScreenArea, getPrimaryScreenArea, getWindowArea } from "../system/screenManager";
+import { getWindowArea } from "../system/screenManager";
 import { migratePlugins, migrateProject } from "../project/migrate";
-import type { PossibleStoredData, RuntimeProjectData } from "@shared/projectData/types";
-import type { MainApp } from "../app/mainApp";
+import { normalizeProjectData } from "@shared/projectData/normalize";
 import { logger } from "../logs/logger";
 import { convertToRuntime, convertToStored } from "../project/dataConvert/convertStoreData";
+import type { PossibleStoredData, RuntimeProjectData } from "@shared/projectData/types";
+import type { MainApp } from "../app/mainApp";
 
 export class ProjectController {
   #app: MainApp;
@@ -55,10 +56,12 @@ export class ProjectController {
       const tempData = (await fs.readFile(join(paths.dataDir, "data.json"))).toString();
       rawData = JSON.parse(tempData);
       state.project.data = convertToRuntime(
-        migrateProject({
-          appVersion: this.#app.version,
-          data: rawData
-        })
+        normalizeProjectData(
+          migrateProject({
+            appVersion: this.#app.version,
+            data: rawData
+          })
+        )
       );
     } catch (err: any) {
       logger.warning("An error occurred while loading data: ", err);

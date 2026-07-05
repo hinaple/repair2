@@ -5,22 +5,24 @@ import type {
   ListenerTypePayload,
   StepTypePayload,
   ValueProcessTypePayload
-} from "./typePayloadTemplate/types";
-import type { Override } from "./utils.types";
+} from "./typePayload";
+import type { Override } from "../utils.types";
 import type * as V1 from "./v1Data.types";
 
 type ProjectConfig = Override<
   Omit<V1.ProjectConfig, "multiScreen">,
   {
     screenConfig: ScreenConfigStoreData;
-    runtimePlugins?: string[];
+    runtimePlugins: string[];
   }
 >;
 
 type Output = string | null;
 
+type Node<N extends { type: V1.Node["type"] }> = Omit<N, "type"> & { nodeType: N["type"] };
+
 type Branch = Override<
-  V1.Branch,
+  Node<V1.Branch>,
   {
     trueOutput: Output;
     falseOutput: Output;
@@ -30,14 +32,14 @@ type Branch = Override<
 >;
 
 type Entry = Override<
-  V1.Entry,
+  Omit<Node<V1.Entry>, "entryType">,
   {
     output: Output;
   } & EntryTypePayload
 >;
 
 type Sequence = Override<
-  V1.Sequence,
+  Node<V1.Sequence>,
   {
     steps: string[];
     output: Output;
@@ -45,7 +47,7 @@ type Sequence = Override<
 >;
 
 type VariableSet = Override<
-  V1.VariableSet,
+  Node<V1.VariableSet>,
   {
     value: string;
     output: Output;
@@ -102,7 +104,7 @@ type PluginPointer = V1.PluginPointer;
 type Resource = V1.Resource;
 type Variable = V1.Variable;
 
-interface Data {
+type Data = {
   version: 2;
   appVersion: string;
   config: ProjectConfig;
@@ -117,11 +119,12 @@ interface Data {
   pluginPointers: Record<string, PluginPointer>;
   values: Record<string, Value>;
   updatedAt: number;
-}
+};
 
 export * from "./v1Data.types";
 export type {
   ProjectConfig,
+  ScreenConfigStoreData as ScreenConfig,
   Data,
   Branch,
   Entry,

@@ -1,3 +1,5 @@
+import type { Prettify } from "../../../utils.types";
+
 type TemplateKey<T> = Exclude<keyof T, "isTypeObj"> & string;
 
 type JoinPath<Prefix extends string, Key extends string> = Prefix extends ""
@@ -22,26 +24,23 @@ type PayloadFromTemplate<T> =
             : T extends readonly (infer U)[]
               ? PayloadFromTemplate<U>[]
               : T extends object
-                ? { [K in keyof T]: PayloadFromTemplate<T[K]> }
+                ? { -readonly [K in keyof T]: PayloadFromTemplate<T[K]> }
                 : T;
 
-type NextTemplate<T, TYPESTRING extends string, Prefix extends string> = {
-  [K in TemplateKey<T>]: TypePayloadUnion<T[K], TYPESTRING, JoinPath<Prefix, K>, false>;
+type NextTemplate<T, Prefix extends string> = {
+  [K in TemplateKey<T>]: TP<T[K], JoinPath<Prefix, K>, false>;
 }[TemplateKey<T>];
 
 export const nullDefault = <T>() => null as unknown as NullDefault<T>;
 
-export type TypePayloadUnion<
-  T,
-  TYPESTRING extends string = "type",
-  Prefix extends string = "",
-  IsRoot extends boolean = true
-> = IsRoot extends true
-  ? NextTemplate<T, TYPESTRING, Prefix>
+export type TP<T, Prefix extends string = "", IsRoot extends boolean = true> = IsRoot extends true
+  ? NextTemplate<T, Prefix>
   : T extends { isTypeObj: true }
-    ? NextTemplate<T, TYPESTRING, Prefix>
+    ? NextTemplate<T, Prefix>
     : {
-        [k in TYPESTRING]: Prefix;
+        type: Prefix;
       } & {
         payload: PayloadFromTemplate<T>;
       };
+
+export type TypePayloadUnion<T> = Prettify<TP<T> | { type: ""; payload: null }>;

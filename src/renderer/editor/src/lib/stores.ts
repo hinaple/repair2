@@ -1,7 +1,6 @@
-import { writable } from "svelte/store";
+import { writable, type Writable } from "svelte/store";
 
-/** @type {import("svelte/store").Writable<any>} */
-export const grabbing = writable(null);
+export const grabbing: Writable<any> = writable(null);
 grabbing.subscribe((g) => {
   if (g === "select") {
     document.body.classList.add("selecting");
@@ -15,13 +14,14 @@ grabbing.subscribe((g) => {
   }
 });
 
-export const sequenceMovedReloader = writable();
-export const nodeMovedReloader = writable();
-const reloaders = {
+type ReloaderKeys = `${"sequence" | "node"}Moved`;
+export const sequenceMovedReloader = writable(Symbol());
+export const nodeMovedReloader = writable(Symbol());
+const reloaders: Record<ReloaderKeys, Writable<Symbol>> = {
   sequenceMoved: sequenceMovedReloader,
   nodeMoved: nodeMovedReloader
 };
-export function reload(key) {
+export function reload(key: ReloaderKeys) {
   reloaders[key].set(Symbol());
   if (key === "sequenceMoved") reload("nodeMoved");
 }
