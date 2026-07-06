@@ -19,5 +19,3 @@ export function getAssetDir(dir: string): string {
 //     entry: Entry,
 //     variableSet: VariableSet
 // };
-
-export const PLUGIN_TYPES = ["runtime", "element", "transition", "function", "frame"] as const;

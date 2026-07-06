@@ -10,6 +10,6 @@ export function getVscode() {
   isVscodeInstalled = await ipc.invoke("vscode:is-installed");
 })();
 
-export function openVscode(src) {
+export function openVscode(src: string) {
   ipc.send("vscode:open", src);
 }

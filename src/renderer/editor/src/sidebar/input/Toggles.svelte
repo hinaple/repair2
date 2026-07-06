@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import ToggleIcon from "./ToggleIcon.svelte";
 
   let { toggles, style = "" } = $props();

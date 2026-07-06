@@ -1,8 +1,8 @@
 import type { Action } from "svelte/action";
-import type { CreateSingletonProps} from "tippy.js";
+import type { CreateSingletonProps } from "tippy.js";
 import tippyjs, { createSingleton, type Props } from "tippy.js";
 
-export const tippy: Action<HTMLElement, Props> = (node: HTMLElement, opt: Props) => {
+export const tippy: Action<HTMLElement, Partial<Props>> = (node, opt) => {
   const t = tippyjs(node, opt);
 
   return {
@@ -15,10 +15,7 @@ export const tippy: Action<HTMLElement, Props> = (node: HTMLElement, opt: Props)
   };
 };
 
-export const tippySingleton: Action<HTMLElement, CreateSingletonProps> = (
-  node: HTMLElement,
-  opt: CreateSingletonProps
-) => {
+export const tippySingleton: Action<HTMLElement, Partial<CreateSingletonProps>> = (node, opt) => {
   const ts = tippyjs(node.querySelectorAll("[data-tippy-content]"));
   const singleton = createSingleton(ts, opt);
 

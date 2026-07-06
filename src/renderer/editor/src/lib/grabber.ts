@@ -12,6 +12,7 @@ export default class Grabber {
   private pointerdown: (evt: PointerEvent) => void;
   private pointermove: (evt: PointerEvent) => void;
   private pointerup: (evt?: PointerEvent) => void;
+  private noHandle: boolean;
 
   constructor({
     container,
@@ -19,7 +20,8 @@ export default class Grabber {
     onMoved,
     onMoveStart,
     onMoveEnd,
-    inNodeSpace = true
+    inNodeSpace = true,
+    noHandle = false
   }: {
     container: HTMLElement;
     handle?: HTMLElement;
@@ -27,9 +29,11 @@ export default class Grabber {
     onMoveStart?: MoveStartHandler;
     onMoveEnd?: MoveEndHandler;
     inNodeSpace?: boolean;
+    noHandle?: boolean;
   }) {
     this.container = container;
     this.handle = handle ?? container;
+    this.noHandle = noHandle;
     const myGrab = Symbol();
 
     let prvMouse: { x: number; y: number };
@@ -45,7 +49,7 @@ export default class Grabber {
       prvMouse = { x: evt.clientX, y: evt.clientY };
       if (onMoveStart) onMoveStart({ px: prvMouse.x, py: prvMouse.y });
     };
-    this.handle.addEventListener("pointerdown", this.pointerdown, true);
+    if (!this.noHandle) this.handle.addEventListener("pointerdown", this.pointerdown, true);
 
     this.pointermove = (evt) => {
       if (get(grabbing) !== myGrab) {
@@ -74,9 +78,12 @@ export default class Grabber {
     document.body.addEventListener("pointermove", this.pointermove, true);
     document.body.addEventListener("pointerup", this.pointerup, true);
   }
+  onpointerdown(evt: PointerEvent) {
+    this.pointerdown(evt);
+  }
   destroy() {
     this.pointerup();
-    this.handle.removeEventListener("pointerdown", this.pointerdown, true);
+    if (!this.noHandle) this.handle.removeEventListener("pointerdown", this.pointerdown, true);
     document.body.removeEventListener("pointermove", this.pointermove, true);
     document.body.removeEventListener("pointerup", this.pointerup, true);
   }

@@ -3,6 +3,7 @@ import { outClicked } from "../lib/contextMenu/contextUtils";
 import { appData } from "../lib/syncData.svelte";
 import FrameUpdater from "../lib/frameUpdater";
 import { ipc } from "../lib/ipc";
+import type { Types } from "@shared/projectData/types";
 
 export const rInfo = {
   ratio: 0,
@@ -10,15 +11,29 @@ export const rInfo = {
   RH: 0
 };
 
-let screenRect;
+let screenRect: {
+  width: number;
+  height: number;
+  pixelWidth: number;
+  pixelHeight: number;
+};
+
+interface ScreenData {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  pixelWidth: number;
+  pixelHeight: number;
+}
 export const viewport = {
-  screen: writable({ width: 0, height: 0, pixelWidth: 0, pixelHeight: 0 }),
+  screen: writable({ width: 0, height: 0, x: 0, y: 0, pixelWidth: 0, pixelHeight: 0 }),
   size: writable(0),
   pos: writable({ x: 0, y: 0 })
 };
 
-let viewportEl;
-export function setViewportEl(node) {
+let viewportEl: HTMLElement;
+export function setViewportEl(node: HTMLElement) {
   viewportEl = node;
   applyViewportWidth();
 }
@@ -80,33 +95,33 @@ function calcRatio() {
   rInfo.RH = screenObj.height / rInfo.ratio;
   viewport.screen.set(screenObj);
 
-  document.body.style.setProperty("--viewport-ratio", rInfo.ratio);
+  document.body.style.setProperty("--viewport-ratio", `${rInfo.ratio}`);
   applyViewportWidth();
 }
 
-function posFromAnchor(len, anchor, pos) {
+function posFromAnchor(len: number, anchor: number, pos: number) {
   return pos - anchor + len / 2;
 }
-function removeAnchor(len, anchor, pos) {
+function removeAnchor(len: number, anchor: number, pos: number) {
   return pos + anchor - len / 2;
 }
 
-export function posFromViewport(x, y, vpPos = get(viewport.pos)) {
+export function posFromViewport(x: number, y: number, vpPos = get(viewport.pos)) {
   return {
     x: posFromAnchor(rInfo.RW, vpPos.x, x) * rInfo.ratio,
     y: posFromAnchor(rInfo.RH, vpPos.y, y) * rInfo.ratio
   };
 }
-export function getOriginalPos(x, y) {
+export function getOriginalPos(x: number, y: number) {
   const vpPos = get(viewport.pos);
   const screen = get(viewport.screen);
   return {
-    x: removeAnchor(rInfo.RW, vpPos.x, (x - screen?.x ?? 0) / rInfo.ratio),
-    y: removeAnchor(rInfo.RH, vpPos.y, (y - screen?.y ?? 0) / rInfo.ratio)
+    x: removeAnchor(rInfo.RW, vpPos.x, (x - screen.x) / rInfo.ratio),
+    y: removeAnchor(rInfo.RH, vpPos.y, (y - screen.y) / rInfo.ratio)
   };
 }
 
-export function moveViewport(dx, dy) {
+export function moveViewport(dx: number, dy: number) {
   if (Number.isNaN(dx) || Number.isNaN(dy)) return;
   viewport.pos.update((p) => ({
     x: (p.x += dx / rInfo.ratio),
@@ -115,7 +130,7 @@ export function moveViewport(dx, dy) {
 }
 
 const sizeLimit = [-0.7, 0.5];
-export function setViewportSize(size, considerLimit = true) {
+export function setViewportSize(size: number, considerLimit = true) {
   if (Number.isNaN(size)) return;
   const newSize = considerLimit ? Math.min(Math.max(size, sizeLimit[0]), sizeLimit[1]) : size;
 
@@ -124,7 +139,7 @@ export function setViewportSize(size, considerLimit = true) {
   calcRatio();
 }
 
-export function isBoundOutViewport(x1, y1, x2, y2) {
+export function isBoundOutViewport(x1: number, y1: number, x2: number, y2: number) {
   const screen = get(viewport.screen);
 
   return screen
@@ -133,7 +148,7 @@ export function isBoundOutViewport(x1, y1, x2, y2) {
     : true;
 }
 
-export function resizeViewport(step, mousePos = null) {
+export function resizeViewport(step: number, mousePos: { x: number; y: number } | null = null) {
   if (Number.isNaN(step)) return;
 
   const prevSize = get(viewport.size);
@@ -156,7 +171,7 @@ export function resizeViewport(step, mousePos = null) {
 }
 
 const padding = 100;
-export function fitViewportToNodes(nodes) {
+export function fitViewportToNodes(nodes: Map<string, Types.Node>) {
   if (!nodes || nodes.size === 0) {
     setViewportSize(0);
     viewport.pos.set({ x: 0, y: 0 });

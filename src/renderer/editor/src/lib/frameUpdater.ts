@@ -1,5 +1,5 @@
-const asyncBuffer = [];
-const promiseBuffer = Array.from({ length: 5 }, () => []);
+const asyncBuffer: FrameUpdater[] = [];
+const promiseBuffer: FrameUpdater[][] = Array.from({ length: 5 }, () => []);
 let isScheduled = false;
 
 function requestDraw() {
@@ -12,7 +12,7 @@ function requestDraw() {
     const reupdates = [];
     while (asyncBuffer.length) {
       const current = asyncBuffer.pop();
-      if (current.callback(ts)) reupdates.push(current);
+      if (current?.callback(ts)) reupdates.push(current);
     }
     for (const works of promiseBuffer) {
       const tempWorks = works.splice(0);
@@ -25,10 +25,13 @@ function requestDraw() {
 }
 
 export default class FrameUpdater {
-  constructor(callback, order = -1) {
-    this.callback = callback;
+  private localBuffer: FrameUpdater[];
+  destroyed = false;
+  constructor(
+    public callback: (ts: number) => unknown,
+    order: number = -1
+  ) {
     this.localBuffer = order === -1 ? asyncBuffer : promiseBuffer[order];
-    this.destroyed = false;
   }
   draw() {
     if (this.destroyed || this.localBuffer.includes(this)) return;

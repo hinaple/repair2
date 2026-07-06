@@ -1,5 +1,5 @@
-<script>
-  import logs from "./logs.ts";
+<script lang="ts">
+  import logs from "./logs";
 
   import "./logs.scss";
 </script>

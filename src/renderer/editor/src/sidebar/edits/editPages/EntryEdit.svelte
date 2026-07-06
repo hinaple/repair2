@@ -2,7 +2,7 @@
   import InputField from "../../input/InputField.svelte";
   import { EntryTypes } from "../../../lib/translate";
   import { addHistory } from "../../../lib/workHistory";
-  import { getAllConnectedLines, setAllOutput } from "../../../nodes/lines/line";
+  import { getConnectedLines, setAllOutput } from "../../../nodes/lines/line.deprecated";
 
   const { data } = $props();
 </script>
@@ -23,7 +23,7 @@
       });
       return;
     }
-    const connectedLines = getAllConnectedLines(data.id);
+    const connectedLines = getConnectedLines(data.id);
     addHistory({
       doFn: ({ value, lines }) => {
         data.standbyMode = value;

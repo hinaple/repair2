@@ -1,16 +1,14 @@
-<script>
+<script lang="ts">
   import { hoverHighlight } from "../../lib/highlight";
   import Icon from "../../assets/icons/Icon.svelte";
   import { getVscode, openVscode } from "../../lib/vscode";
   import { tippy } from "../../lib/tippy";
+  import type { PluginRendererInfo } from "@shared/plugin.types";
 
-  /** @typedef {import("@shared/plugin.types").PluginRendererInfo} Plugin */
+  let { info }: { info: PluginRendererInfo } = $props();
 
-  /** @type {{info: Plugin}} */
-  let { info } = $props();
-
-  let moreBtn = $state(null);
-  let showOpt = $state(false);
+  // let moreBtn = $state(null);
+  // let showOpt = $state(false);
 
   let color = $derived(info.error ? "#ff3636" : "#fff");
 </script>
@@ -20,7 +18,7 @@
     maxWidth: 250,
     placement: "bottom",
     animation: "fade",
-    theme: info.error && "error",
+    theme: (info.error && "error") || undefined,
     content: info.error
       ? info.error.map((e) => e[1].summary ?? e[1].title).join("<hr/>")
       : `${info.linked?.sourcePath ?? info.path}`,
@@ -49,11 +47,7 @@
     />
   {/if}
   {#if getVscode()}
-    <button
-      bind:this={moreBtn}
-      class="more"
-      onclick={() => openVscode(info.linked?.sourcePath ?? info.path)}
-    >
+    <button class="more" onclick={() => openVscode(info.linked?.sourcePath ?? info.path)}>
       <Icon icon="vscode" color="#fff" size={18} />
     </button>
   {/if}

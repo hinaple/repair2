@@ -1,11 +1,20 @@
+import type { Action } from "svelte/action";
 import FrameUpdater from "./frameUpdater";
 
-const highlights = [];
-const currentHighlights = {};
+export type HightlightType = "variable" | "plugin" | "resource";
+
+interface Highlight {
+  node: HTMLElement;
+  type: HightlightType;
+  data: string;
+  active: boolean;
+}
+const highlights: Set<Highlight> = new Set();
+const currentHighlights: Map<HightlightType, string> = new Map();
 
 const FU = new FrameUpdater(() => {
   highlights.forEach((h) => {
-    if (h.active && currentHighlights[h.type] === h.data) {
+    if (h.active && currentHighlights.get(h.type) === h.data) {
       h.node.classList.add("highlight");
       h.node.classList.add(`hl-${h.type}`);
     } else {
@@ -14,16 +23,19 @@ const FU = new FrameUpdater(() => {
     }
   });
 });
-function activeHighlight(type, data) {
-  currentHighlights[type] = data;
+function activeHighlight(type: HightlightType, data: string) {
+  currentHighlights.set(type, data);
   FU.draw();
 }
-function deactiveHighlight(type) {
-  delete currentHighlights[type];
+function deactiveHighlight(type: HightlightType) {
+  currentHighlights.delete(type);
   FU.draw();
 }
 
-export function hoverHighlight(node, { type, data }) {
+export const hoverHighlight: Action<HTMLElement, { type: HightlightType; data: string }> = (
+  node,
+  { type, data }
+) => {
   const mine = { type, data };
   let hovering = false;
   let mouseenter = () => {
@@ -51,26 +63,27 @@ export function hoverHighlight(node, { type, data }) {
       node.removeEventListener("mouseleave", mouseleave);
     }
   };
-}
+};
 
-export default function registerHighlight(node, { type, data, active = false }) {
-  const key = Symbol();
-  const mine = { node, type, data, key, active };
-  highlights.push(mine);
+const registerHighlight: Action<
+  HTMLElement,
+  { type: HightlightType; data: string; active?: boolean }
+> = (node, { type, data, active = false }) => {
+  const mine = { node, type, data, active };
+  highlights.add(mine);
   FU.draw();
   return {
     destroy() {
-      highlights.splice(
-        highlights.findIndex((h) => h.key === key),
-        1
-      );
+      highlights.delete(mine);
       FU.draw();
     },
     update({ type, data, active }) {
       mine.type = type;
       mine.data = data;
-      mine.active = active;
+      mine.active = !!active;
       FU.draw();
     }
   };
-}
+};
+
+export default registerHighlight;

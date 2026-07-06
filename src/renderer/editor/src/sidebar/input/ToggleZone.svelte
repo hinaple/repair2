@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import FoldArrow from "../../lib/FoldArrow.svelte";
 
   let { folded = $bindable(true), label = null, children } = $props();

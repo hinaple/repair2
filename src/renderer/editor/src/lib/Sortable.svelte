@@ -1,34 +1,70 @@
-<script>
-  import { onDestroy, onMount, tick } from "svelte";
+<script lang="ts" generics="T extends string">
+  import { onDestroy, onMount, tick, type Snippet } from "svelte";
   import Grabber from "./grabber";
   import { rInfo } from "../nodes/viewport";
   import { addHistory } from "./workHistory";
   import FrameUpdater from "./frameUpdater";
   import { cubicOut } from "svelte/easing";
+  import { SortableUtils } from "./editUtils/sortable";
+
+  type StyleType = "waterfall" | "enum" | "listener";
 
   let {
-    sortable,
-    Component,
+    key,
+    parent,
     resized,
-    onremoved = null,
-    onmoved = null,
+    onremoved,
+    onmoved,
     style = "waterfall",
-    ...props
+    noGrab = false,
+    children
+  }: {
+    key: T;
+    parent: { [k in T]: string[] };
+    resized(): unknown;
+    onremoved?(): unknown;
+    onmoved?(): unknown;
+    style?: StyleType;
+    noGrab?: boolean;
+    children: Snippet<
+      [{ id: string; remove(): unknown; onpointerdown(evt: PointerEvent): unknown }]
+    >;
   } = $props();
-  let listArr = $state([]);
+  let listArr: {
+    id: string;
+    idx?: number;
+    el: HTMLElement | null;
+    key: Symbol;
+    grabber?: Grabber;
+    rect?: DOMRect;
+    grabTop?: number;
+    top?: number;
+    realTop?: number;
+    flip?: {
+      from: number;
+      to: number;
+      startedAt: number;
+    } | null;
+  }[] = $state([]);
+
+  const getset = {
+    get: () => parent[key],
+    set: (arr: string[]) => (parent[key] = arr)
+  };
 
   const Gaps = {
     enum: 5,
-    listener: 5
-  };
+    listener: 5,
+    waterfall: 0
+  } as const;
   const gap = Gaps[style] ?? 0;
 
   $effect(() => {
-    sortable.list;
+    parent[key];
     update();
   });
 
-  let container = $state(null);
+  let container: HTMLElement | null = $state(null);
   let containerInfo = $state({ top: 0, height: 0 });
 
   let finalGrabIdx = -1;
@@ -46,7 +82,7 @@
       if (i === grabItemIdx)
         l.top = Math.max(
           0,
-          Math.min(containerInfo.height - l.rect.height / rInfo.ratio, l.grabTop)
+          Math.min(containerInfo.height - l.rect!.height / rInfo.ratio, l.grabTop!)
         );
       else if (l.flip) {
         const t = cubicOut(Math.min(1, (now - l.flip.startedAt) / FLIP_DURATION));
@@ -54,28 +90,28 @@
         if (t < 1) stillMoving = true;
         else l.flip = null;
       }
-      l.el.style.transform = `translateY(${l.top}px)`;
+      l.el!.style.transform = `translateY(${l.top}px)`;
     });
     onmoved?.();
     return stillMoving;
   });
 
-  function reorderWhileGrabbing(now) {
+  function reorderWhileGrabbing(now: number) {
     const grabbing = listArr[grabItemIdx];
 
     let targetIdx = grabItemIdx;
-    if (grabbing.grabTop < grabbing.realTop) {
-      for (let prevLine = grabbing.realTop; targetIdx > 0; targetIdx--) {
-        const nextLine = prevLine - listArr[targetIdx - 1].rect.height / rInfo.ratio - gap;
+    if (grabbing.grabTop! < grabbing.realTop!) {
+      for (let prevLine = grabbing.realTop!; targetIdx > 0; targetIdx--) {
+        const nextLine = prevLine - listArr[targetIdx - 1].rect!.height / rInfo.ratio - gap;
 
-        if (grabbing.grabTop > (nextLine + prevLine) / 2) break;
+        if (grabbing.grabTop! > (nextLine + prevLine) / 2) break;
         prevLine = nextLine;
       }
     } else {
-      for (let prevLine = grabbing.realTop; targetIdx < listArr.length - 1; targetIdx++) {
-        const nextLine = prevLine + listArr[targetIdx + 1].rect.height / rInfo.ratio + gap;
+      for (let prevLine = grabbing.realTop!; targetIdx < listArr.length - 1; targetIdx++) {
+        const nextLine = prevLine + listArr[targetIdx + 1].rect!.height / rInfo.ratio + gap;
 
-        if (grabbing.grabTop < (nextLine + prevLine) / 2) break;
+        if (grabbing.grabTop! < (nextLine + prevLine) / 2) break;
         prevLine = nextLine;
       }
     }
@@ -92,13 +128,13 @@
       listArr[i].realTop = currentTop;
       listArr[i].top = currentTop;
 
-      currentTop += listArr[i].rect.height / rInfo.ratio + gap;
+      currentTop += listArr[i].rect!.height / rInfo.ratio + gap;
     }
     return currentTop - gap;
   }
 
   const FLIP_DURATION = 200;
-  function calcFlipTop(now) {
+  function calcFlipTop(now: number) {
     let currentTop = 0;
     for (let i = 0; i < listArr.length; i++) {
       const ii =
@@ -123,7 +159,7 @@
           startedAt: now
         };
       }
-      currentTop += listArr[ii].rect.height / rInfo.ratio + gap;
+      currentTop += listArr[ii].rect!.height / rInfo.ratio + gap;
     }
   }
 
@@ -131,43 +167,44 @@
   async function update() {
     if (!mounted) return;
     clearGrabbers();
-    listArr = sortable.list.map((l) => ({
+    listArr = parent[key].map((id) => ({
+      id,
       el: null,
       handle: null,
-      itemData: l,
       key: Symbol()
     }));
-    if (props.noGrab) return;
+    if (noGrab) return;
     await tick();
     listArr.forEach((d, i) => {
       d.grabber = new Grabber({
-        container: d.el,
-        handle: d.handle,
+        container: d.el!,
+        noHandle: true,
         onMoveStart: () => {
           listArr.forEach((l) => {
-            l.rect = l.el.getBoundingClientRect();
+            l.rect = l.el!.getBoundingClientRect();
           });
           grabItemIdx = i;
           finalGrabIdx = i;
-          const containerRect = container.getBoundingClientRect();
+          const containerRect = container!.getBoundingClientRect();
           containerInfo.top = containerRect.top;
           containerInfo.height = calcRealTop();
-          listArr[i].grabTop = (listArr[i].rect.top - containerInfo.top) / rInfo.ratio;
+          listArr[i].grabTop = (listArr[i].rect!.top - containerInfo.top) / rInfo.ratio;
 
           frameUpdater.draw();
         },
         onMoved: ({ dy }) => {
-          listArr[grabItemIdx].grabTop += dy;
+          listArr[grabItemIdx].grabTop = (listArr[grabItemIdx].grabTop ?? 0) + dy;
 
           mouseMoved = true;
           frameUpdater.draw();
         },
         onMoveEnd: () => {
           if (grabItemIdx !== finalGrabIdx) {
-            sortable.reorderWithHistory(addHistory, {
-              from: grabItemIdx,
-              to: finalGrabIdx
-            });
+            // array.reorderWithHistory(addHistory, {
+            //   from: grabItemIdx,
+            //   to: finalGrabIdx
+            // });
+            SortableUtils.reorderWithHistory(getset, grabItemIdx, finalGrabIdx);
           } else update();
           grabItemIdx = -1;
           finalGrabIdx = -1;
@@ -190,10 +227,14 @@
   });
   onDestroy(clearGrabbers);
 
-  function remove(idx) {
-    sortable.removeWithHistory(sortable.list[idx], addHistory, () => {
+  function remove(idx: number) {
+    // sortable.removeWithHistory(sortable.list[idx], addHistory, () => {
+    //   resized();
+    //   if (onremoved) onremoved();
+    // });
+    SortableUtils.removeWithHistory(getset, idx, () => {
       resized();
-      if (onremoved) onremoved();
+      onremoved?.();
     });
   }
 </script>
@@ -213,12 +254,17 @@
         <div class="triangle"></div>
       {/if}
       <div class="item">
-        <Component
+        {@render children({
+          id: item.id,
+          remove: () => remove(i),
+          onpointerdown: (evt) => item.grabber?.onpointerdown(evt)
+        })}
+        <!-- <Component
           item={item.itemData}
           {sortable}
           bind:handle={item.handle}
           remove={() => remove(i)}
-          {...props}
+          {...props} -->
         />
       </div>
     </div>

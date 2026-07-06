@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
   import { addHistory } from "../../lib/workHistory";
 

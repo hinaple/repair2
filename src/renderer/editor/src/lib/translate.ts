@@ -67,14 +67,14 @@ export const StepTypes = {
   "Others.eventEmit": "이벤트 발생",
   "Others.script": "스크립트 실행",
   "Others.log": "로그 작성"
-};
+} as const;
 
 export const ComponentModifyTypes = {
   visible: "표시 여부",
   unbreakable: "보호",
   zIndex: "Z축 위치",
   style: "스타일"
-};
+} as const;
 export const ComponentModifyInputData = {
   visible: { label: "표시 여부", type: "checkbox" },
   unbreakable: { label: "보호", type: "checkbox" },
@@ -85,7 +85,7 @@ export const ComponentModifyInputData = {
     autoResizeOpt: { minHeight: 50 },
     placeholder: "inline CSS code"
   }
-};
+} as const;
 
 export const ValueProcessTypes = {
   replaceAll: "특정 문자열 변경",
@@ -98,12 +98,12 @@ export const ValueProcessTypes = {
   koToEn: "한->영 변환",
   enToKo: "영->한 변환",
   jsFunction: "함수"
-};
+} as const;
 
 export const BaseValueTypes = {
   string: "직접 입력",
   variable: "변수"
-};
+} as const;
 
 export const ComparisonOperatorTypes = {
   equals: "A와 B가 동일",
@@ -114,7 +114,7 @@ export const ComparisonOperatorTypes = {
   lte: "A <= B",
   jsFunction: "함수"
   // scriptFile: "스크립트 파일"
-};
+} as const;
 
 export const ElementTypes = {
   empty: "빈 요소",
@@ -123,7 +123,7 @@ export const ElementTypes = {
   input: "입력",
   advancedInput: "고급 입력",
   plugin: "플러그인"
-};
+} as const;
 
 export const ElementListenerTypes = {
   custom: "사용자 정의",
@@ -147,7 +147,7 @@ export const ElementListenerTypes = {
   "Drag.released": "드래그 종료",
   "Drag.return": "드래그 복귀",
   plugin: "플러그인"
-};
+} as const;
 
 export const EntryTypes = {
   startup: "프로그램 시작",
@@ -163,7 +163,7 @@ export const EntryTypes = {
   connect: "연결",
   "Communication.Socket.ondata": "소켓 데이터 수신",
   "Communication.Socket.connect": "소켓 통신 연결"
-};
+} as const;
 
 export const InputAllowedTypes = {
   any: "모든 문자",
@@ -171,10 +171,10 @@ export const InputAllowedTypes = {
   number: "숫자",
   korean: "한글",
   regex: "정규표현식 직접 입력"
-};
+} as const;
 
 export const screenConfigTypes = {
   fullscreen: "전체화면",
   fullMultiScreen: "다중 모니터 전체화면",
   windowMode: "창 모드"
-};
+} as const;

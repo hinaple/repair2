@@ -1,20 +1,13 @@
 import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
 import { logger } from "../logs/logger";
-
-function normalizeKey(key: string) {
-  return key
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+import { toKebabCase } from "@shared/stringUtils";
 
 const CONFIG_KEY = "config";
 
 function keyAndPath(key: string | string[], safe: boolean = true): [string, string[]] {
   const arr = Array.isArray(key) ? key : key.split(".");
-  const k = normalizeKey(arr[0]);
+  const k = toKebabCase(arr[0]);
   return [k === CONFIG_KEY && safe ? `_${k}` : k, arr.toSpliced(0, 1)];
 }
 

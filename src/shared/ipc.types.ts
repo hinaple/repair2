@@ -25,20 +25,22 @@ export type IpcRuntimeMonitorChange =
   | [type: "preload", status: "added" | "released", target: string]
   | [type: "variable", status: "changed", target: string, value: string | null]
   | [type: "entry", status: "entered" | "disabled" | "activated", target: string]
-  | [type: "component", status: "created" | "removed" | "set", target?: string | string[]];
+  // | [type: "component", status: "created" | "removed" | "set", target: string | string[]]
+  | [type: "component", status: "created" | "removed", target: string]
+  | [type: "component", status: "set", target: string[]];
 
 export type IpcRuntimeMonitorTotal = {
-  variables: Map<string, unknown>;
+  variables: Map<string, string>;
   preloads: string[];
   steps: Map<string, number>;
   entries: string[];
   components: string[];
 };
 
-export type IpcRuntimeMonitorInfoArgs =
-  | [channel: "update", data: IpcRuntimeMonitorChange[]]
-  | [channel: "total", data: IpcRuntimeMonitorTotal]
-  | [channel: string, data?: unknown];
+export type IpcRuntimeMonitorInfoArgs = [
+  | { channel: "update"; data: IpcRuntimeMonitorChange[] }
+  | { channel: "total"; data: IpcRuntimeMonitorTotal }
+];
 
 export type IpcPluginRuntimeCallPayload = {
   pluginName: string;

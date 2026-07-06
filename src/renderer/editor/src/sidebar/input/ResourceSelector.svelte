@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { appData } from "../../lib/syncData.svelte";
   import ResourcePreview from "../../lib/ResourcePreview.svelte";
   import outClickAction from "../../lib/actions/outclickaction";

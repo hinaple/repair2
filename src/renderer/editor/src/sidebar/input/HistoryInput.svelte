@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
   import { addHistory } from "../../lib/workHistory";
   import autoResizeTextarea from "../../lib/actions/autoResizeTextarea";

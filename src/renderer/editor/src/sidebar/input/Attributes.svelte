@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import InputField from "./InputField.svelte";
 
   let { attributes, plugin } = $props();

@@ -1,5 +1,5 @@
-<script>
-  import { PLUGIN_TYPES } from "@renderer/utils.js";
+<script lang="ts">
+  import { PLUGIN_TYPES } from "@shared/constants.js";
   import { plugins } from "../../lib/plugins.svelte.js";
   import PluginPreview from "./PluginPreview.svelte";
 </script>

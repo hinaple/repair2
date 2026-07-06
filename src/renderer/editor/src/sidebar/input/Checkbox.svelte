@@ -1,7 +1,9 @@
-<script>
+<script lang="ts">
+  import type { MouseEventHandler } from "svelte/elements";
   import { draw } from "svelte/transition";
 
-  let { value, onclick } = $props();
+  let { value, onclick }: { value: string | boolean; onclick?: MouseEventHandler<HTMLDivElement> } =
+    $props();
 </script>
 
 <div class="checkbox" {onclick}>

@@ -1,27 +1,24 @@
-<script>
+<script lang="ts">
   import { onDestroy, onMount } from "svelte";
+  import { get } from "svelte/store";
   import * as twgl from "twgl.js";
-
   import { viewport, rInfo } from "../viewport";
-  import { lines } from "./line";
+  import { getLines, subscribeLines, type Output } from "./output";
   import FrameUpdater from "../../lib/frameUpdater";
+  import { makeBezierPoint } from "./getBezierPoints";
 
   import VERT from "./shaders/vert.vert?raw";
   import FRAG from "./shaders/frag.frag?raw";
-  import { get } from "svelte/store";
-  import { makeBezierPoints } from "./getBezierPoints";
 
-  const { unsupported } = $props();
+  const { unsupported }: { unsupported: () => unknown } = $props();
 
-  /** @type {HTMLCanvasElement} */
-  let canvas = $state(null);
-  /** @type {WebGL2RenderingContext} */
-  let gl;
-  let programInfo;
-  let bufferInfo;
-  let pointBuffer;
+  let canvas: HTMLCanvasElement | null = $state(null);
+  let gl: WebGL2RenderingContext;
+  let programInfo: twgl.ProgramInfo;
+  let bufferInfo: twgl.BufferInfo;
+  let pointBuffer: WebGLBuffer;
 
-  let WIDTH, HEIGHT, PW, PH;
+  let WIDTH: number, HEIGHT: number, PW: number, PH: number;
   const FLOAT_SIZE = 4;
   const POINTS_PER_LINE = 4;
   const COMPONENTS_PER_POINT = 2;
@@ -43,27 +40,29 @@
   }
 
   function initWebGL() {
-    gl = canvas.getContext("webgl2", {
+    if (!canvas) return;
+
+    const tempGl = canvas.getContext("webgl2", {
       antialias: true,
       alpha: true,
       premultipliedAlpha: false
     });
 
-    if (!gl) {
+    if (!tempGl) {
       console.warn(
         "Lines will be rendered with Canvas because this machine doesn't support WEBGL2."
       );
-      gl = null;
       unsupported();
       return;
     }
+    gl = tempGl;
 
     programInfo = twgl.createProgramInfo(gl, [VERT, FRAG]);
 
     setBufferInfo();
   }
 
-  function createSampleSide(segments) {
+  function createSampleSide(segments: number) {
     const sampleSide = new Int8Array((segments + 1) * 2 * 2);
 
     for (let i = 0; i <= segments; i++) {
@@ -80,27 +79,25 @@
   }
   const SampleSides = SEGMENTS.map((s) => createSampleSide(s));
 
-  let pointsLen = 0;
-  function createPointDataArr() {
-    const bezierPoints = makeBezierPoints(lineArr);
-    pointsLen = bezierPoints.length;
-
-    const data = new Float32Array(bezierPoints.length * FLOATS_PER_LINE);
-
-    bezierPoints.forEach((points, i) => {
-      const o = i * FLOATS_PER_LINE;
-      const p0 = points[0];
-      const p1 = points[1];
-      const p2 = points[2];
-      const p3 = points[3];
-      const p0x = p0[0];
-      const p0y = p0[1];
-      const p1x = p1[0];
-      const p1y = p1[1];
-      const p2x = p2[0];
-      const p2y = p2[1];
-      const p3x = p3[0];
-      const p3y = p3[1];
+  const bezierPoints: Map<string, number[]> = new Map();
+  const lineChanges = {
+    reset: false,
+    changes: new Map<string, boolean>() //true: set, false: remove
+  };
+  function getCurveData(l: Output) {
+    const b = makeBezierPoint(l);
+    const data = new Array(b.length);
+    const lineCount = b.length / FLOATS_PER_LINE;
+    for (let i = 0; i < lineCount; i++) {
+      const o = FLOATS_PER_LINE * i;
+      const p0x = b[o + 0];
+      const p0y = b[o + 1];
+      const p1x = b[o + 2];
+      const p1y = b[o + 3];
+      const p2x = b[o + 4];
+      const p2y = b[o + 5];
+      const p3x = b[o + 6];
+      const p3y = b[o + 7];
 
       data[o + 0] = -p0x + 3 * p1x - 3 * p2x + p3x;
       data[o + 1] = -p0y + 3 * p1y - 3 * p2y + p3y;
@@ -113,6 +110,41 @@
 
       data[o + 6] = p0x;
       data[o + 7] = p0y;
+    }
+
+    return data;
+  }
+  let pointsLen = 0;
+  function createPointDataArr() {
+    const lines = getLines();
+    if (lineChanges.reset) {
+      bezierPoints.clear();
+      pointsLen = 0;
+      lines.forEach((l, id) => {
+        const c = getCurveData(l);
+        pointsLen += c.length;
+        bezierPoints.set(id, c);
+      });
+      lineChanges.reset = false;
+    } else {
+      lineChanges.changes.forEach((isSet, id) => {
+        if (!isSet) {
+          bezierPoints.delete(id);
+          return;
+        }
+        const l = lines.get(id);
+        l && bezierPoints.set(id, getCurveData(l));
+      });
+      pointsLen = bezierPoints.values().reduce((v, a) => v + a.length, 0);
+    }
+
+    lineChanges.changes.clear();
+
+    const data = new Float32Array(pointsLen);
+    let o = 0;
+    bezierPoints.forEach((p) => {
+      data.set(p, o);
+      o += p.length;
     });
 
     return data;
@@ -132,12 +164,16 @@
     updateLineBuffer(gl);
   }
 
-  function updateSegmentsBuffer(gl, segmentArr) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferInfo.attribs.a_sampleSide.buffer);
+  function updateSegmentsBuffer(gl: WebGL2RenderingContext, segmentArr: Int8Array<ArrayBuffer>) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferInfo!.attribs!.a_sampleSide.buffer);
     gl.bufferData(gl.ARRAY_BUFFER, segmentArr, gl.STATIC_DRAW);
   }
 
-  function bindVec2Instanced(program, name, offset) {
+  function bindVec2Instanced(
+    program: WebGLProgram,
+    name: `a_${"a" | "b" | "c" | "d"}`,
+    offset: number
+  ) {
     const loc = gl.getAttribLocation(program, name);
     if (loc < 0) return;
 
@@ -145,7 +181,7 @@
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, POINT_STRIDE, offset);
     gl.vertexAttribDivisor(loc, 1);
   }
-  function bindPointAttributes(programInfo) {
+  function bindPointAttributes(programInfo: twgl.ProgramInfo) {
     gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
 
     const program = programInfo.program;
@@ -156,14 +192,15 @@
     bindVec2Instanced(program, "a_d", 6 * FLOAT_SIZE);
   }
 
-  function updateLineBuffer(gl) {
+  function updateLineBuffer(gl: WebGL2RenderingContext) {
     const data = createPointDataArr();
+    if (!data) return;
 
     gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
   }
 
-  let lineUpdateRequired = true;
+  let lineUpdateRequired = false;
   const frameUpdater = new FrameUpdater(async () => {
     if (!gl) return;
 
@@ -189,7 +226,12 @@
     };
 
     twgl.setUniforms(programInfo, uniforms);
-    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, (SEGMENTS[lineSegmentIdx] + 1) * 2, pointsLen);
+    gl.drawArraysInstanced(
+      gl.TRIANGLE_STRIP,
+      0,
+      (SEGMENTS[lineSegmentIdx] + 1) * 2,
+      pointsLen / FLOATS_PER_LINE
+    );
   }, 2);
 
   function setCanvas() {
@@ -202,7 +244,6 @@
     frameUpdater.draw();
   }
 
-  let lineArr = [];
   const unsubs = [
     viewport.screen.subscribe(({ width, height, pixelWidth, pixelHeight }) => {
       if (!width || !height) return;
@@ -218,10 +259,16 @@
       changeLineSegments();
       frameUpdater.draw();
     }),
-    lines.subscribe((l) => {
-      lineArr = l;
+    subscribeLines((type, id) => {
+      if (lineChanges.reset) return;
+
       lineUpdateRequired = true;
       frameUpdater.draw();
+      if (type === "reset") {
+        lineChanges.reset = true;
+        return;
+      }
+      lineChanges.changes.set(id!, type === "set");
     }),
     function () {
       frameUpdater.destroy();

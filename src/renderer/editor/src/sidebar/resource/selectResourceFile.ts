@@ -1,14 +1,15 @@
 import { addHistory } from "../../lib/workHistory";
 import { join } from "path";
 import { ipc } from "../../lib/ipc";
+import type { Types } from "@shared/projectData/types";
 
 export const AssetDir = join(ipc.sendSync("getDataDir"), "assets");
 
-export function splitPath(path) {
+export function splitPath(path: string) {
   return path.replace(AssetDir, "").replace(/^\\/, "").replace(/\\/g, "/");
 }
 
-export async function changeResourceFile(resource) {
+export async function changeResourceFile(resource: Types.Resource) {
   const result = await ipc.invoke("selectFile", {
     title: "변경할 자원 파일 선택",
     properties: ["openFile"]
@@ -36,11 +37,11 @@ export async function changeResourceFile(resource) {
   const src = splitPath(target);
 
   addHistory({
-    doFn: ({ that, src }) => {
-      that.src = src;
+    doFn: ({ src }) => {
+      resource.src = src;
     },
-    doData: { that: resource, src },
-    undoData: { that: resource, src: resource.src }
+    doData: { src },
+    undoData: { src: resource.src }
   });
 }
 

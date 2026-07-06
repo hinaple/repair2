@@ -1,17 +1,16 @@
-<script>
+<script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { viewport, rInfo, posFromViewport } from "./viewport";
   import FrameUpdater from "../lib/frameUpdater";
 
-  let canvas = $state(null);
-  /** @type {CanvasRenderingContext2D | null} */
-  let ctx;
+  let canvas: HTMLCanvasElement | null = $state(null);
+  let ctx: CanvasRenderingContext2D | null;
 
   let vpPos = { x: 0, y: 0 },
-    WIDTH,
-    HEIGHT,
-    PW,
-    PH;
+    WIDTH: number,
+    HEIGHT: number,
+    PW: number,
+    PH: number;
 
   const CENTER_CROSS_LEN = 20;
   const frameUpdater = new FrameUpdater(() => {
@@ -61,7 +60,10 @@
     canvas.width = PW;
     canvas.height = PH;
 
-    ctx?.setTransform(PW / WIDTH, 0, 0, PH / HEIGHT, 0, 0);
+    if (!ctx) ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.setTransform(PW / WIDTH, 0, 0, PH / HEIGHT, 0, 0);
 
     ctx.fillStyle = "#0007";
     ctx.strokeStyle = "#0007";
@@ -93,7 +95,6 @@
     RGlimit = 25;
 
   onMount(() => {
-    ctx = canvas.getContext("2d");
     setCanvas();
   });
 </script>

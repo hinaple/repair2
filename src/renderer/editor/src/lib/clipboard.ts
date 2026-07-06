@@ -5,14 +5,10 @@ import { getViewportCenter } from "../nodes/viewport";
 import { currentFocus, selectManyNodes } from "../sidebar/editUtils";
 import { clipboard } from "electron";
 import { unpack, pack } from "msgpackr";
-
-import Step from "@renderer/classes/step.svelte";
-import Element from "@renderer/classes/element.svelte";
-import Listener from "@renderer/classes/listener.svelte";
-import ValueProcess from "@renderer/classes/value/valueProcess";
-import { NodeClasses } from "@renderer/utils";
-import { genId } from "@renderer/classes/genId";
+import { genId } from "@shared/genId";
 import { reload } from "./stores";
+import { NODE_TYPES } from "@shared/constants";
+import type { Types } from "@shared/projectData/types";
 
 const ClipboardFormat = "application/x-repair2-clipboard-binary";
 
@@ -27,7 +23,7 @@ export function copyItem(itemData, itemType) {
   );
 }
 
-export function pasted(target = get(currentFocus), pos = null) {
+export function pasted(target = get(currentFocus), pos: Record<"x" | "y", number> | null = null) {
   try {
     if (!clipboard.has(ClipboardFormat)) return;
     const { type, data } = unpack(clipboard.readBuffer(ClipboardFormat));
@@ -75,9 +71,33 @@ export function pasted(target = get(currentFocus), pos = null) {
   }
 }
 
-export function genClipboardFn(type, target, removing = null, { excludes = [] } = {}) {
+type EditableTypes = { [k in (typeof NODE_TYPES)[number]]: Types.Node } & {
+  step: Types.Step;
+  element: Types.Element;
+  listener: Types.Listener;
+  valueProcess: Types.ValueProcess;
+};
+type Copiable = keyof EditableTypes;
+export type ClipboardFn = "cut" | "copy" | "paste" | "delete";
+
+export function genClipboardFn<
+  C extends Copiable,
+  E extends ClipboardFn,
+  R extends (() => unknown) | null
+>(
+  type: C,
+  target: EditableTypes[C],
+  removing?: R,
+  { excludes }?: { excludes?: E[] }
+): Record<Exclude<ClipboardFn, R extends null ? E | "delete" | "cut" : E>, () => unknown>;
+export function genClipboardFn<C extends Copiable>(
+  type: C,
+  target: EditableTypes[C],
+  removing: (() => unknown) | null = null,
+  { excludes = [] }: { excludes?: ClipboardFn[] } = {}
+) {
   const currentCopy = () => {
-    if (target.type in NodeClasses) copyNodes([target]);
+    if (NODE_TYPES.includes(target.type)) copyNodes([target]);
     else copyItem(target.copyData(), type);
   };
   return {
@@ -96,7 +116,7 @@ export function genClipboardFn(type, target, removing = null, { excludes = [] } 
       }
     }),
     ...(!excludes.includes("paste") && {
-      paste: async () => {
+      paste: () => {
         pasted({ type, obj: target });
         return true;
       }

@@ -19,6 +19,6 @@
       "@shared/*": ["../../shared/*"]
     },
   },
-  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte", "**/*.d.ts"],
   "exclude": ["node_modules", "dist", "../../../out"]
 }

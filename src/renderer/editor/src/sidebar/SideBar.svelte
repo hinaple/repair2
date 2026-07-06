@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import Variables from "./variable/Variables.svelte";
   import Resources from "./resource/Resources.svelte";
   import Plugins from "./plugins/Plugins.svelte";

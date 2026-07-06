@@ -1,5 +1,4 @@
-<script>
-  import Coord from "@renderer/classes/coord";
+<script lang="ts">
   import InputField from "./InputField.svelte";
   import * as Easings from "easing-utils";
 

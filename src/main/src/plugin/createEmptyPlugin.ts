@@ -4,6 +4,7 @@ import { pluginDir, sdkDir, templateDir } from "../system/dirs";
 import { pathExists } from "../system/pathExists";
 import type { RawManifest } from "./type";
 import { logger } from "../logs/logger";
+import { toKebabCase } from "@shared/stringUtils";
 
 declare const __SDK_VERSION__: string;
 declare const __SVELTE_VERSION__: string;
@@ -51,11 +52,7 @@ const MANIFEST_ENTRIES: Partial<Record<PLUGIN_ENTRY_TYPE, { [key: string]: any }
 };
 
 function pluginNameValidate(name: string): { error: string } | { name: string } {
-  name = String(name)
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+  name = toKebabCase(name);
   if (!name?.length) return { error: `${name} is invalid plugin name` };
   else return { name };
 }

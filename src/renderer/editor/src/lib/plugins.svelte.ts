@@ -1,7 +1,14 @@
 import { showModalPromise } from "./modal/modal.svelte";
-import { showToast } from "./toast/toast.svelte";
-import { PLUGIN_TYPES } from "@renderer/utils";
+import { PLUGIN_TYPES } from "@shared/constants";
 import { ipc } from "./ipc";
+import { toKebabCase } from "@shared/stringUtils";
+import { showToast, type Toast } from "./toast/toast.svelte";
+import type {
+  ManifestErrorForRenderer,
+  PluginList,
+  PluginRendererInfo,
+  PluginType
+} from "@shared/plugin.types";
 
 /**
  * @typedef {import("@shared/plugin.types").PluginType} PluginType
@@ -11,8 +18,9 @@ import { ipc } from "./ipc";
  * @typedef {import("./toast/toast.svelte").Toast} Toast
  */
 
-/** @type {Record<PluginType, Record<string, PluginRendererInfo>>} */
-export const plugins = $state(Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}])));
+export const plugins: Record<PluginType, Record<string, PluginRendererInfo>> = $state(
+  Object.fromEntries(PLUGIN_TYPES.map((t) => [t, {}])) as Record<PluginType, {}>
+);
 
 export function requestUpdatePlugins() {
   return Promise.all([
@@ -45,8 +53,7 @@ ipc.on("plugin:removed", (_, info) => {
 });
 ipc.on("plugin:manifest-error", (_, manifestErrors) => updateManifestErrors(manifestErrors));
 
-/** @param {PluginList} p */
-function updatePlugins(p) {
+function updatePlugins(p: PluginList) {
   PLUGIN_TYPES.forEach((t) => {
     plugins[t] = {};
   });
@@ -56,10 +63,8 @@ function updatePlugins(p) {
   });
 }
 
-/** @type {Map<string, Toast>} */
-const errorToasts = new Map();
-/** @param {PluginRendererInfo} plugin */
-function updatePluginErrors(plugin) {
+const errorToasts: Map<string, Toast[]> = new Map();
+function updatePluginErrors(plugin: PluginRendererInfo) {
   const existing = errorToasts.get(plugin.name);
   if (existing) {
     existing.forEach((t) => t.destroy());
@@ -82,11 +87,9 @@ function updatePluginErrors(plugin) {
   );
 }
 
-/** @type {Map<string, Toast>} */
-const manifestErrorToasts = new Map();
+const manifestErrorToasts: Map<string, Toast> = new Map();
 
-/** @param {ManifestErrorForRenderer[]} manifestErrors */
-function updateManifestErrors(manifestErrors) {
+function updateManifestErrors(manifestErrors: ManifestErrorForRenderer[]) {
   const removedErrors = new Set([...manifestErrorToasts.keys()]);
 
   manifestErrors.forEach((ME) => {
@@ -105,7 +108,7 @@ function updateManifestErrors(manifestErrors) {
   });
 
   removedErrors.forEach((dir) => {
-    manifestErrorToasts.get(dir).destroy();
+    manifestErrorToasts.get(dir)?.destroy();
     manifestErrorToasts.delete(dir);
   });
 }
@@ -116,13 +119,7 @@ ipc.on("plugin:show-create-modal", async () => {
     fields: [
       {
         label: "name",
-        filter: (v) => {
-          return v
-            .toLowerCase()
-            .replace(/[^a-z0-9\-]/g, "-")
-            .replace(/-+/g, "-")
-            .replace(/^-/g, "");
-        },
+        filter: toKebabCase,
         autofocus: true,
         required: true
       },
@@ -144,7 +141,7 @@ ipc.on("plugin:show-create-modal", async () => {
       },
       { label: "External location", type: "checkbox" }
     ],
-    buttons: [{ label: "취소" }, { label: "생성" }]
+    buttons: [{ label: "취소" }, { label: "생성" }] as const
   });
   if (modalResult.canceled) return;
 
@@ -159,6 +156,16 @@ ipc.on("plugin:show-create-modal", async () => {
     closable: false
   });
   const createResult = await ipc.invoke("plugin:create", { name, type, isExternal });
+  if ("dir" in createResult) {
+    showToast({
+      id: "pluginCreate",
+      title: `"${name}" plugin created.`,
+      content: createResult.dir,
+      duration: 1000
+    });
+    return;
+  }
+
   if (createResult.error) {
     showToast({
       id: "pluginCreate",
@@ -168,11 +175,5 @@ ipc.on("plugin:show-create-modal", async () => {
       duration: 5000
     });
     return;
-  } else if (createResult.canceled) return;
-  showToast({
-    id: "pluginCreate",
-    title: `"${name}" plugin created.`,
-    content: createResult.dir,
-    duration: 1000
-  });
+  }
 });

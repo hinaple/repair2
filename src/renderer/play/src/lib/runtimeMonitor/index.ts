@@ -27,7 +27,7 @@ function readyToFlush() {
 }
 
 function flush() {
-  ipc.send("monitor-info", "update", changesBuffer);
+  ipc.send("monitor-info", { channel: "update", data: changesBuffer });
   clear();
 }
 function clear() {
@@ -56,14 +56,17 @@ export function sendTotalInfo() {
   );
   const entries = getProject()
     .n.entry.filter((node) => node.d.standbyMode && (node as StandbyEntry).activated)
-    .map((node: any) => node.id);
+    .map((node) => node.d.id);
   const components = getAllComponents().map((c) => c.realId);
-  ipc.send("monitor-info", "total", {
-    variables,
-    preloads,
-    steps,
-    entries,
-    components
+  ipc.send("monitor-info", {
+    channel: "total",
+    data: {
+      variables,
+      preloads,
+      steps,
+      entries,
+      components
+    }
   });
 }
 

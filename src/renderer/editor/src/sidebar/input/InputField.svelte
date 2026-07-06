@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { appData } from "../../lib/syncData.svelte";
   import { addHistory } from "../../lib/workHistory";
   import InputField from "./InputField.svelte";

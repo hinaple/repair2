@@ -1,3 +1,4 @@
+import { toKebabCase } from "@shared/stringUtils";
 import {
   normalizeLogLevel,
   normalizeLogSubject,
@@ -44,12 +45,7 @@ function compactSegment(value: string) {
 }
 
 function normalizeLogSegment(value: string) {
-  const normalized = value
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-  return compactSegment(normalized || "log");
+  return compactSegment(toKebabCase(value) || "log");
 }
 
 function shouldLogByDefault(level: LogLevel) {

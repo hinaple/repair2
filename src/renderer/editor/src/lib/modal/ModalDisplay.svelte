@@ -1,31 +1,33 @@
-<script>
+<script lang="ts">
   import { autofocus } from "../actions/autofocus";
   import Checkbox from "../../sidebar/input/Checkbox.svelte";
   import { closeModal, modal } from "./modal.svelte.js";
+  import type { ResolveParams } from "./types";
 
-  let values = $state(null);
-  $effect(
-    () =>
-      (values = modal.currentModal?.fields
-        ? Array.from(modal.currentModal?.fields, (f) => f.value ?? null)
-        : null)
+  type ModalValues = NonNullable<ResolveParams["fields"]>;
+
+  let values: ModalValues | null = $derived(
+    modal.currentModal?.fields
+      ? Array.from(modal.currentModal?.fields, (f) => f.value ?? null)
+      : null
   );
 
-  let confirmable = $derived(
-    !modal.currentModal?.fields?.some?.(
-      ({ type, required = false }, i) => required && type !== "checkbox" && !values[i]
-    )
+  let confirmable: boolean = $derived(
+    !!values &&
+      !modal.currentModal?.fields?.some?.(
+        ({ type, required = false }, i) => required && type !== "checkbox" && !values[i]
+      )
   );
 
   function tryConfirm() {
-    if (!confirmable) return;
+    if (!confirmable || !values) return;
     closeModal({ canceled: false, fields: $state.snapshot(values) });
   }
   function cancel() {
     closeModal({ canceled: true });
   }
 
-  function onkeydown({ key }) {
+  function onkeydown({ key }: KeyboardEvent) {
     if (key === "Enter") tryConfirm();
     else if (key === "Escape") cancel();
   }
@@ -43,7 +45,7 @@
       {/if}
       <div class="body">
         {#each m.fields as f, i}
-          {@const af = f.autofocus && autofocus}
+          {@const af = (f.autofocus && autofocus) || (() => {})}
           <div
             class={["field", f.type ?? "input"]}
             onclick={() => f.type === "checkbox" && (values[i] = !values[i])}
@@ -68,8 +70,9 @@
                 type="text"
                 value={values[i]}
                 oninput={(evt) => {
-                  values[i] = f.filter?.(evt.target.value) ?? evt.target.value;
-                  evt.target.value = values[i];
+                  const target = evt.currentTarget;
+                  values[i] = f.filter?.(target.value) ?? target.value;
+                  target.value = values[i] ?? "";
                 }}
                 placeholder={f.placeholder}
                 use:af
@@ -86,7 +89,7 @@
             disabled={!isCancel && !confirmable}
             onclick={() => {
               const params = { canceled: isCancel, fields: $state.snapshot(values) };
-              if (btn.onclick && !btn.onclick(params)) return;
+              if (btn.onclick && !btn.onclick?.(params)) return;
               closeModal(params);
             }}
           >

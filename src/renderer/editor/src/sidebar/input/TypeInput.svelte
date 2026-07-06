@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { addHistory } from "../../lib/workHistory";
 
   let { type, options = {}, onchange = null, ...props } = $props();

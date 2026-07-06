@@ -1,7 +1,11 @@
 import { get } from "svelte/store";
-import { hoverInput } from "./line";
+import { hoverInput } from "./output";
+import type { Action } from "svelte/action";
 
-export default function inputNode(node, { id, hasInput = true }) {
+const inputNode: Action<HTMLElement, { id: string; hasInput?: boolean }> = (
+  node,
+  { id, hasInput = true }
+) => {
   if (!id) return;
   let hasInputNow = hasInput;
   node.addEventListener("mouseenter", () => {
@@ -14,7 +18,9 @@ export default function inputNode(node, { id, hasInput = true }) {
   });
   return {
     update({ hasInput }) {
-      hasInputNow = hasInput;
+      if (hasInput) hasInputNow = hasInput;
     }
   };
-}
+};
+
+export default inputNode;
