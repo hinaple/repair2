@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { appData } from "../../lib/syncData.svelte";
+  import { appData } from "../../project/store";
   import ResourcePreview from "../../lib/ResourcePreview.svelte";
   import outClickAction from "../../lib/actions/outclickaction";
   import outScrollAction from "../../lib/actions/outscrollaction";

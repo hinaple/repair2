@@ -2,15 +2,15 @@
   import { onDestroy } from "svelte";
   import Icon from "../../assets/icons/Icon.svelte";
   import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
-  import { currentFocus, focusData } from "../../sidebar/editUtils";
+  import { currentFocus, focusData } from "../../lib/editUtils/focus";
   import { get } from "svelte/store";
   import { grabbing, reload } from "../../lib/stores";
   import { ElementTypes } from "../../lib/translate";
-  import Sortable from "../../lib/Sortable.svelte";
+  import Sortable from "../Sortable.svelte";
   import Listener from "./Listener.svelte";
-  import { addHistory } from "../../lib/workHistory";
+  import { addHistory } from "../../lib/editUtils/history";
   import registerHighlight from "../../lib/highlight";
-  import { genClipboardFn } from "../../lib/clipboard";
+  import { genClipboardFn } from "../../lib/editUtils/clipboard";
 
   let {
     item: element,

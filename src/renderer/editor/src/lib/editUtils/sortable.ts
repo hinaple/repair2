@@ -1,4 +1,4 @@
-import { addHistory } from "../workHistory";
+import { addHistory } from "./history";
 
 type Getter = () => string[];
 type Setter = (arr: string[]) => unknown;
@@ -24,36 +24,23 @@ function insert({ get, set }: GetSet, idx: number, v: string) {
 
 function reorderWithHistory(getset: GetSet, from: number, to: number) {
   addHistory({
-    doFn: ([f, t]) => {
-      reorder(getset, f, t);
-    },
+    doFn: ([f, t]) => reorder(getset, f, t),
     doData: [from, to],
     undoData: [to, from]
   });
 }
 function removeWithHistory(getset: GetSet, idx: number, afterChange?: () => unknown) {
-  const v = getset.get()[idx];
   addHistory({
-    doFn: (idx) => {
-      remove(getset, idx);
-      afterChange?.();
-    },
-    undoFn: ({ idx, v }) => {
-      insert(getset, idx, v);
-      afterChange?.();
-    },
-    doData: idx,
-    undoData: { idx, v }
+    doFn: () => remove(getset, idx),
+    undoFn: (v) => insert(getset, idx, v),
+    undoData: getset.get()[idx],
+    afterChange
   });
 }
 function appendWithHistory(getset: GetSet, v: string) {
   addHistory({
-    doFn: () => {
-      append(getset, v);
-    },
-    undoFn: (idx) => {
-      remove(getset, idx);
-    },
+    doFn: () => append(getset, v),
+    undoFn: (idx) => remove(getset, idx),
     undoData: getset.get().length
   });
 }

@@ -20,7 +20,7 @@ export default class TypePayload {
     return this.getTemplateWithTypes();
   }
   genPayload(payload = {}, currentTemplate = this.currentTemplate, creatingOpt = null) {
-    if (currentTemplate?.isTypeObj) return;
+    if (currentTemplate?.$types) return;
 
     if (!currentTemplate) return payload;
     // else if (currentTemplate.isClass)
@@ -36,7 +36,7 @@ export default class TypePayload {
     }
 
     const currentTemplate = this.currentTemplate;
-    if (currentTemplate?.isTypeObj) {
+    if (currentTemplate?.$types) {
       this.payload = null;
       return;
     }
@@ -55,9 +55,9 @@ export default class TypePayload {
     const tree = [Object.keys(this.#template)];
     this.types.reduce((currentObj, currentStep, i) => {
       const nextObj = currentObj[currentStep];
-      if (nextObj?.isTypeObj) {
+      if (nextObj?.$types) {
         const keys = Object.keys(nextObj);
-        tree.push(keys.toSpliced(keys.indexOf("isTypeObj"), 1));
+        tree.push(keys.toSpliced(keys.indexOf("$types"), 1));
       }
       return nextObj;
     }, this.#template);
@@ -69,7 +69,7 @@ export default class TypePayload {
     newTypes.push(type);
 
     const tempTemplate = this.getTemplateWithTypes(newTypes);
-    const newPayload = tempTemplate?.isTypeObj ? null : this.genPayload({}, tempTemplate);
+    const newPayload = tempTemplate?.$types ? null : this.genPayload({}, tempTemplate);
 
     addHistory({
       doFn: ({ types, payload = {}, that }) => that.changeType(types, payload, true),

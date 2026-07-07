@@ -25,7 +25,6 @@ export type IpcRuntimeMonitorChange =
   | [type: "preload", status: "added" | "released", target: string]
   | [type: "variable", status: "changed", target: string, value: string | null]
   | [type: "entry", status: "entered" | "disabled" | "activated", target: string]
-  // | [type: "component", status: "created" | "removed" | "set", target: string | string[]]
   | [type: "component", status: "created" | "removed", target: string]
   | [type: "component", status: "set", target: string[]];
 
@@ -47,6 +46,12 @@ export type IpcPluginRuntimeCallPayload = {
   activationId: string;
   methodName: string;
   args: unknown[];
+};
+
+export type IpcPreviewPayload = {
+  component: Types.Component;
+  elements: Map<string, Types.Element>;
+  // showContents?: unknown;
 };
 
 export type RendererToMainInvokeMap = {
@@ -175,13 +180,7 @@ export type RendererToMainSendMap = {
   "monitor-info": IpcRuntimeMonitorInfoArgs;
   "custom-log": [content: any];
   "request-execute": [payload: { type: string; id: string }];
-  "layout-preview": [
-    payload: {
-      component: Types.Component;
-      elements: Map<string, Types.Element>;
-      showContents?: unknown;
-    }
-  ];
+  "layout-preview": [payload: IpcPreviewPayload];
   "preview-content-visible": [visible: boolean];
   "stop-preview": IpcNoArgs;
   "play-win-ready": IpcNoArgs;
@@ -238,13 +237,7 @@ export interface MainToPlaySendMap extends MainToRendererSharedSendMap {
   data: [data: EditorInitialData];
   "global-css": [css: string];
   "request-execute": [payload: { type: string; id: string }];
-  "layout-preview": [
-    payload: {
-      component: Types.Component;
-      elements: Map<string, Types.Element>;
-      showContents?: unknown;
-    }
-  ];
+  "layout-preview": [payload: IpcPreviewPayload];
   "preview-content-visible": [visible: boolean];
   "stop-preview": IpcNoArgs;
   "monitor-event": [channel: string, ...data: unknown[]];

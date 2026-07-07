@@ -14,6 +14,12 @@ export function typedEntries<T extends Record<string | number | symbol, unknown>
   return Object.entries(o) as Entries<T>;
 }
 
+export function typedFromEntries<K extends string, T extends unknown>(
+  e: [K, T][]
+): { [k in K]: T } & {} {
+  return Object.fromEntries(e) as Record<K, T>;
+}
+
 export type Split<S extends string, D extends string> = string extends S
   ? string[]
   : S extends ""
@@ -41,3 +47,7 @@ export type Tuple<
 > = Accumulator["length"] extends Length
   ? Accumulator
   : Tuple<Length, Type, [...Accumulator, Type]>;
+
+export function truthy<T>(a: T): a is Extract<T, string | number> {
+  return !!a;
+}

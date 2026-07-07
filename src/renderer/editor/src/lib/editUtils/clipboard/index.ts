@@ -1,18 +1,26 @@
 import { get } from "svelte/store";
-import { appData } from "./syncData.svelte";
-import { addHistory } from "./workHistory";
-import { getViewportCenter } from "../nodes/viewport";
-import { currentFocus, selectManyNodes } from "../sidebar/editUtils";
+import { appData } from "../../../project/store";
+import { addHistory } from "../history";
+import { getViewportCenter } from "../../../nodes/viewport";
+import { currentFocus, selectManyNodes } from "../focus";
 import { clipboard } from "electron";
 import { unpack, pack } from "msgpackr";
 import { genId } from "@shared/genId";
-import { reload } from "./stores";
+import { reload } from "../../stores";
 import { NODE_TYPES } from "@shared/constants";
 import type { Types } from "@shared/projectData/types";
+import { extractDataFrom, type ExtractResult } from "../extractData";
+import type { CopyMap } from "./copyMap";
 
 const ClipboardFormat = "application/x-repair2-clipboard-binary";
 
-export function copyItem(itemData, itemType) {
+// type CopiedData<T extends keyof typeof CopyMap> = {
+//   REPAIR_VERSION: string;
+//   } & {  type: T,
+//   data: 
+// }
+
+export function copyItem<T extends keyof typeof CopyMap>(type: T, data: ) {
   clipboard.writeBuffer(
     ClipboardFormat,
     pack({
@@ -71,13 +79,6 @@ export function pasted(target = get(currentFocus), pos: Record<"x" | "y", number
   }
 }
 
-type EditableTypes = { [k in (typeof NODE_TYPES)[number]]: Types.Node } & {
-  step: Types.Step;
-  element: Types.Element;
-  listener: Types.Listener;
-  valueProcess: Types.ValueProcess;
-};
-type Copiable = keyof EditableTypes;
 export type ClipboardFn = "cut" | "copy" | "paste" | "delete";
 
 export function genClipboardFn<
@@ -135,8 +136,13 @@ function pasteHandler(e) {
   }
   pasted(target);
 }
-function copyNodes(nodesArr) {
-  const nodeIds = nodesArr.map((n) => n.id);
+function copyNodes(nodeIds: string[]) {
+  const nodes: Types.Node[] = [];
+  const result: ExtractResult = {};
+  nodeIds.forEach((id) => {
+    const { source } = extractDataFrom("nodes", id, { onlyOwns: true }, result);
+    nodes.push(source);
+  });
   copyItem(
     nodesArr.map((node) => node.copyData(nodeIds)),
     "nodes"

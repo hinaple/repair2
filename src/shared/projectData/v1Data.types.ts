@@ -1,4 +1,14 @@
-import type { ScreenConfigStoreData } from "./projectConfig.types";
+import type { ScreenConfigTypePayload } from "./typePayload";
+
+type ScreenConfigData = ScreenConfigTypePayload;
+
+type ViewportData = {
+  size: number;
+  pos: {
+    x: number;
+    y: number;
+  };
+};
 
 type ProjectConfig = {
   title: string;
@@ -19,7 +29,7 @@ type ProjectConfig = {
       multiScreen: boolean;
     }
   | {
-      screenConfig: ScreenConfigStoreData;
+      screenConfig: ScreenConfigData;
     }
 );
 
@@ -214,6 +224,7 @@ type Data = {
   resources: Resource[];
   variables: Variable[];
   nodes: AllNode[];
+  viewport: ViewportData;
   updatedAt?: number;
 };
 
@@ -240,5 +251,7 @@ export type {
   Resource,
   Variable,
   PluginPointer,
-  Transition
+  Transition,
+  ViewportData,
+  ScreenConfigData
 };

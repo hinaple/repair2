@@ -2,7 +2,7 @@ import { nullDefault, type TypePayloadUnion } from "./union.types";
 
 export const StepPayloadTemplate = {
   Component: {
-    isTypeObj: true,
+    $types: true,
     create: { componentId: nullDefault<string>() },
     remove: { componentAlias: nullDefault<string>(), ignoreUnbreakable: true },
     clear: { ignoreUnbreakable: false },
@@ -13,13 +13,13 @@ export const StepPayloadTemplate = {
     }
   },
   Preload: {
-    isTypeObj: true,
+    $types: true,
     add: { resourceArr: [] },
     release: { resourceArr: [] },
     releaseAll: null
   },
   Audio: {
-    isTypeObj: true,
+    $types: true,
     play: {
       resourceId: nullDefault<string>(),
       channel: "default",
@@ -32,9 +32,9 @@ export const StepPayloadTemplate = {
     reset: {}
   },
   Communication: {
-    isTypeObj: true,
+    $types: true,
     Serial: {
-      isTypeObj: true,
+      $types: true,
       open: {
         portAlias: nullDefault<string>(),
         port: nullDefault<string>(),
@@ -44,7 +44,7 @@ export const StepPayloadTemplate = {
       close: null
     },
     Socket: {
-      isTypeObj: true,
+      $types: true,
       connect: { url: nullDefault<string>() },
       connectService: { type: nullDefault<string>(), name: nullDefault<string>() },
       send: { channel: nullDefault<string>(), data: [null] },
@@ -53,7 +53,7 @@ export const StepPayloadTemplate = {
   },
   delay: { delayMs: 0 },
   Others: {
-    isTypeObj: true,
+    $types: true,
     customReset: {
       audios: true,
       variables: true,

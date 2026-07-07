@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { addHistory } from "../../lib/workHistory";
+  import { addHistory } from "../../lib/editUtils/history";
   import autoResizeTextarea from "../../lib/actions/autoResizeTextarea";
-  import { setPreviewContentVisible } from "../editUtils";
+  import { setPreviewContentVisible } from "../../lib/editUtils/focus";
 
   let {
     setter,

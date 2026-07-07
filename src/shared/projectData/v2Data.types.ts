@@ -1,4 +1,3 @@
-import type { ScreenConfigStoreData } from "./projectConfig.types";
 import type {
   ElementTypePayload,
   EntryTypePayload,
@@ -12,7 +11,7 @@ import type * as V1 from "./v1Data.types";
 type ProjectConfig = Override<
   Omit<V1.ProjectConfig, "multiScreen">,
   {
-    screenConfig: ScreenConfigStoreData;
+    screenConfig: V1.ScreenConfigData;
     runtimePlugins: string[];
   }
 >;
@@ -100,31 +99,27 @@ type ValueProcess = {
   id: string;
 } & ValueProcessTypePayload;
 
-type PluginPointer = V1.PluginPointer;
-type Resource = V1.Resource;
-type Variable = V1.Variable;
-
 type Data = {
   version: 2;
   appVersion: string;
   config: ProjectConfig;
-  resources: Record<string, Resource>;
-  variables: Record<string, Variable>;
+  resources: Record<string, V1.Resource>;
+  variables: Record<string, V1.Variable>;
   nodes: Record<string, AllNode>;
   steps: Record<string, Step>;
   components: Record<string, Component>;
   elements: Record<string, Element>;
   listeners: Record<string, Listener>;
   valueProcesses: Record<string, ValueProcess>;
-  pluginPointers: Record<string, PluginPointer>;
+  pluginPointers: Record<string, V1.PluginPointer>;
   values: Record<string, Value>;
+  viewport: V1.ViewportData;
   updatedAt: number;
 };
 
 export * from "./v1Data.types";
 export type {
   ProjectConfig,
-  ScreenConfigStoreData as ScreenConfig,
   Data,
   Branch,
   Entry,
@@ -137,8 +132,5 @@ export type {
   Listener,
   Value,
   ValueProcess,
-  PluginPointer,
-  Resource,
-  Variable,
   Transition
 };

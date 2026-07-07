@@ -2,7 +2,7 @@
   import { ElementTypes, InputAllowedTypes } from "../../../lib/translate";
   import InputField from "../../input/InputField.svelte";
   import Position from "../../input/Position.svelte";
-  import { reloadPreview } from "../../editUtils";
+  import { reloadPreview } from "../../../lib/editUtils/focus";
   import DragOption from "../../input/DragOption.svelte";
 
   const { data } = $props();

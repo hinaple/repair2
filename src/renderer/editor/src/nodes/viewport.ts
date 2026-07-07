@@ -1,6 +1,6 @@
 import { get, writable } from "svelte/store";
 import { outClicked } from "../lib/contextMenu/contextUtils";
-import { appData } from "../lib/syncData.svelte";
+import { appData } from "../project/store";
 import FrameUpdater from "../lib/frameUpdater";
 import { ipc } from "../lib/ipc";
 import type { Types } from "@shared/projectData/types";

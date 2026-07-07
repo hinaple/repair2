@@ -1,59 +1,29 @@
-<script>
-  import { onDestroy } from "svelte";
+<script lang="ts">
+  import { onDestroy, untrack } from "svelte";
   import Icon from "../../assets/icons/Icon.svelte";
   import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
-  import { currentFocus, focusData } from "../../sidebar/editUtils";
+  import { currentFocus, focusData } from "../../lib/editUtils/focus";
   import { get } from "svelte/store";
   import { grabbing } from "../../lib/stores";
   import { ElementListenerTypes } from "../../lib/translate";
   import outputNode from "../lines/output";
-  import { genClipboardFn } from "../../lib/clipboard";
+  import { genClipboardFn } from "../../lib/editUtils/clipboard";
+  import type { SortableProps } from "../types";
 
   let {
-    item: listener,
-    handle = $bindable(null),
-    el = $bindable(null),
+    id,
     remove,
+    onpointerdown,
     hidden = false
+  }: SortableProps & {
+    hidden: boolean;
   } = $props();
-
-  onDestroy(() => {
-    if (get(currentFocus).obj === listener) {
-      focusData("project");
-    }
-  });
-
-  const clipboardFn = genClipboardFn("listener", listener, () => remove());
-
-  const contextmenu = [
-    {
-      label: "잘라내기",
-      click: clipboardFn.cut
-    },
-    {
-      label: "복사",
-      click: clipboardFn.copy
-    },
-    {
-      label: "붙여넣기",
-      click: clipboardFn.paste
-    },
-    { type: "separator" },
-    {
-      label: "삭제",
-      click: () => {
-        remove();
-        return true;
-      },
-      action: "remove"
-    }
-  ];
 </script>
 
 <div class="listener" bind:this={el}>
   <div
     class={["container", $currentFocus.obj === listener && "focus"]}
-    use:rightclick={contextmenu}
+    use:rightclick={{ type: "listener", id }}
     onpointerdown={(evt) => {
       if (evt.button || $grabbing) return;
       evt.stopPropagation();
@@ -61,7 +31,7 @@
       outClicked();
     }}
   >
-    <div class="handle" bind:this={handle}>
+    <div class="handle" {onpointerdown}>
       <Icon icon="hamburger" color="rgba(255, 255, 255, 0.5)" size={8} />
     </div>
     <div class="title">

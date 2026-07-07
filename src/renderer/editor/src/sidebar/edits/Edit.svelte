@@ -11,7 +11,7 @@
   import EntryEdit from "./editPages/EntryEdit.svelte";
   import VariableSetEdit from "./editPages/VariableSetEdit.svelte";
   import { get } from "svelte/store";
-  import { currentFocus as currentFocusStore } from "../editUtils";
+  import { currentFocus as currentFocusStore } from "../../lib/editUtils/focus";
   import { onDestroy } from "svelte";
 
   let { title = $bindable() } = $props();

@@ -1,4 +1,4 @@
-import { addHistory } from "../../lib/workHistory";
+import { addHistory } from "../../lib/editUtils/history";
 import { join } from "path";
 import { ipc } from "../../lib/ipc";
 import type { Types } from "@shared/projectData/types";

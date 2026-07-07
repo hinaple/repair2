@@ -11,6 +11,7 @@ import { createStep } from "./step";
 import { createValue } from "./value";
 import { createValueProcess } from "./valueProcess";
 import { createVariable } from "./variable";
+import { createViewportData } from "./viewport";
 
 declare const __APP_VERSION__: string;
 
@@ -18,6 +19,7 @@ export const createProject = createFactory<Types.Data>({
   version: 2,
   appVersion: () => __APP_VERSION__,
   config: nested(createConfig),
+  viewport: nested(createViewportData),
   resources: recordOf(createResource, "id"),
   variables: recordOf(createVariable, "id"),
   nodes: recordOf<Types.Node, "id">(createNode, "id"),

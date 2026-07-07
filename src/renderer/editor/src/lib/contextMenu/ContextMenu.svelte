@@ -27,15 +27,15 @@
       {#if item.type === "separator"}
         <div class="separator"></div>
       {:else}
+        {@const execute = () => {
+          if (item.role && /*...*/ item.click?.(get(contextMenu)!)) outClicked();
+        }}
         <div
           class="item"
           tabindex="0"
-          onclick={() => {
-            if (item.click(get(contextMenu)!)) outClicked();
-          }}
+          onclick={execute}
           onkeydown={(evt) => {
-            if ((evt.key === " " || evt.key === "Enter") && item.click(get(contextMenu)!))
-              outClicked();
+            if (evt.key === " " || evt.key === "Enter") execute();
           }}
         >
           {item.label}

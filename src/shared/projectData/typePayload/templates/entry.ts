@@ -3,9 +3,9 @@ import { nullDefault, type TypePayloadUnion } from "./union.types";
 export const EntryPayloadTemplate = {
   startup: null,
   Communication: {
-    isTypeObj: true,
+    $types: true,
     Socket: {
-      isTypeObj: true,
+      $types: true,
       ondata: {
         channel: nullDefault<string>(),
         data: nullDefault<string>()

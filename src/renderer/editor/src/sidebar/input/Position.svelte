@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { addHistory } from "../../lib/workHistory";
+  import { addHistory } from "../../lib/editUtils/history";
   import HistoryInput from "./HistoryInput.svelte";
 
   let { position, oninput = null, previewer = false } = $props();

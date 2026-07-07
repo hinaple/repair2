@@ -2,14 +2,14 @@
   import { onDestroy, onMount } from "svelte";
   import Grabber from "../lib/grabber";
   import inputNode from "./lines/input";
-  import { grabbing, reload, sequenceMovedReloader } from "../lib/stores";
+  import { grabbing, GrabKeys, reload, sequenceMovedReloader } from "../lib/stores";
   import FoldArrow from "../lib/FoldArrow.svelte";
-  import { addHistory } from "../lib/workHistory";
+  import { addHistory } from "../lib/editUtils/history";
   import { rightclick } from "../lib/contextMenu/contextUtils";
   import outputNode from "./lines/output";
   import FrameUpdater from "../lib/frameUpdater";
-  import { currentFocus as CurrentFocus, focusData } from "../sidebar/editUtils";
-  import { appData } from "../lib/syncData.svelte";
+  import { currentFocus as CurrentFocus, focusData } from "../lib/editUtils/focus";
+  import { appData } from "../project/store";
   import { ipc } from "../lib/ipc";
 
   let {
@@ -127,7 +127,8 @@
   });
 
   function onpointerdown(evt) {
-    if (evt.button || $grabbing === "viewport" || $grabbing === "viewportReady") return;
+    if (evt.button || $grabbing === GrabKeys.viewport || $grabbing === GrabKeys.viewportReady)
+      return;
     focusData(type, node, { clipboardFn });
     bubbleMouseDown(evt);
   }

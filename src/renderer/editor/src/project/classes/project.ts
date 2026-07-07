@@ -1,4 +1,4 @@
-import { addHistory } from "../../lib/workHistory";
+import { addHistory } from "../../lib/editUtils/history";
 import { SvelteMap } from "svelte/reactivity";
 
 import type { RuntimeProjectData, Types } from "@shared/projectData/types";
@@ -6,6 +6,7 @@ import type { Entries, ValueOf } from "@shared/utils.types";
 import type { PROJECT_RECORDS } from "@shared/constants";
 import { genId } from "@shared/genId";
 import { getConnectedOutputs, setAllOutput } from "../../nodes/lines/output";
+import type { RecordKey, RecordValue } from "@shared/constants";
 
 type MapToSvelteMap<T> = {
   readonly [K in keyof T]: T[K] extends Map<infer MK, infer MV> ? SvelteMap<MK, MV> : T[K];
@@ -29,12 +30,10 @@ function assignProjectData(target: SvelteProject, data: RuntimeProjectData) {
   }
 }
 
-type RecordKey = (typeof PROJECT_RECORDS)[number];
-type RecordValue<K extends RecordKey> = ValueOf<Types.Data[K]>;
 type ProjectRecord<K extends RecordKey> = SvelteMap<string, RecordValue<K>>;
 
-export interface Project extends SvelteProject {}
-export class Project {
+export interface ProjectInstance extends SvelteProject {}
+export class ProjectInstance {
   constructor(data: RuntimeProjectData) {
     assignProjectData(this, data);
   }
@@ -44,7 +43,8 @@ export class Project {
   add<T extends RecordKey>(
     type: T,
     target: RecordValue<T>,
-    id: string = "id" in target ? target.id : genId()
+    id: string = "id" in target ? target.id : genId(),
+    afterChange?: () => unknown
   ): string {
     const record = this.record(type);
 
@@ -54,13 +54,18 @@ export class Project {
       },
       undoFn: () => {
         record.delete(id);
-      }
+      },
+      afterChange
     });
     return id;
   }
-  delete<T extends RecordKey>(type: T, target: RecordValue<T>): void;
-  delete(type: RecordKey, id: string): void;
-  delete<T extends RecordKey>(type: T, data: string | RecordValue<T>): void {
+  delete<T extends RecordKey>(type: T, target: RecordValue<T>, afterChange?: () => unknown): void;
+  delete(type: RecordKey, id: string, afterChange?: () => unknown): void;
+  delete<T extends RecordKey>(
+    type: T,
+    data: string | RecordValue<T>,
+    afterChange?: () => unknown
+  ): void {
     try {
       const [id, target]: [string, RecordValue<T>] =
         typeof data === "string"
@@ -74,7 +79,8 @@ export class Project {
         },
         undoFn: () => {
           record.set(id, target);
-        }
+        },
+        afterChange
       });
     } catch (err) {
       console.error(err);
@@ -83,8 +89,11 @@ export class Project {
   }
   getUnsafe<T extends RecordKey>(type: T, id: string) {
     const r = this.record(type).get(id) as RecordValue<T>;
-    if (r === undefined) throw new Error(`There is no data with id "${id}" in ${type}.`);
+    if (r === undefined) throw new Error(`There is no ${type} with id "${id}".`);
     return r;
+  }
+  getArrUnsafe<T extends RecordKey>(type: T, arr: string[]) {
+    return arr.map((id) => this.getUnsafe(type, id));
   }
   getIdFromData<T extends RecordKey>(
     type: T,
@@ -139,19 +148,4 @@ export class Project {
       undoData: { nodes, connectedOutputs }
     });
   }
-  // get nodeConnects() {
-  //   const connects = new Map(
-  //     this.nodes.values().map((n) => [
-  //       n.id,
-  //       {
-  //         ins: new Set(),
-  //         outs: new Set((n.outputs ?? [n.output])?.map((o) => o.to).filter(Boolean) ?? [])
-  //       }
-  //     ])
-  //   );
-  //   connects.forEach((c, id) => {
-  //     c.outs.forEach((o) => connects.get(o).ins.add(id));
-  //   });
-  //   return connects;
-  // }
 }

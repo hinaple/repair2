@@ -1,6 +1,6 @@
 <script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
-  import { addHistory } from "../../lib/workHistory";
+  import { addHistory } from "../../lib/editUtils/history";
 
   let { falseIcon, trueIcon, value, onclick = null, setter = null } = $props();
 

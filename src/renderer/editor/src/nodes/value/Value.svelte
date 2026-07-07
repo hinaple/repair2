@@ -1,16 +1,16 @@
 <script>
   import { get } from "svelte/store";
   import Icon from "../../assets/icons/Icon.svelte";
-  import Sortable from "../../lib/Sortable.svelte";
+  import Sortable from "../Sortable.svelte";
   import { BaseValueTypes } from "../../lib/translate";
   import ValueProcess from "./ValueProcess.svelte";
   import { grabbing, reload } from "../../lib/stores";
-  import { addHistory } from "../../lib/workHistory";
-  import { currentFocus, focusData } from "../../sidebar/editUtils";
+  import { addHistory } from "../../lib/editUtils/history";
+  import { currentFocus, focusData } from "../../lib/editUtils/focus";
   import { outClicked } from "../../lib/contextMenu/contextUtils";
   import { onDestroy } from "svelte";
   import registerHighlight from "../../lib/highlight";
-  import { genClipboardFn } from "../../lib/clipboard";
+  import { genClipboardFn } from "../../lib/editUtils/clipboard";
 
   let { value, pre, isFull = false, isValueA = false, inNodeSpace = true } = $props();
 

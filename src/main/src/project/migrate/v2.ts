@@ -2,8 +2,6 @@ import { genId } from "@shared/genId";
 import type * as V1 from "@shared/projectData/v1Data.types";
 import type * as V2 from "@shared/projectData/v2Data.types";
 import type { EntryTypePayload, TypePayloads } from "@shared/projectData/typePayload";
-import type { ScreenConfigStoreData } from "@shared/projectData/projectConfig.types";
-import type { Override } from "@shared/utils.types";
 
 function resolveOutput<K extends string, T extends { [k in K]: V1.Output }>(
   object: T,
@@ -87,7 +85,7 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
   const runtimePlugins = (
     data.config.runtimePlugins?.map((p) => movePluginPointer(p, tempPluginPointers)) ?? []
   ).filter((id): id is string => id !== null);
-  const screenConfig: ScreenConfigStoreData =
+  const screenConfig: V2.ScreenConfigData =
     "screenConfig" in data.config
       ? data.config.screenConfig
       : {
@@ -105,6 +103,7 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
     version: 2,
     appVersion,
     config,
+    viewport: data.viewport,
     resources: IdArr2Object(data.resources),
     variables: IdArr2Object(data.variables),
     nodes: {},

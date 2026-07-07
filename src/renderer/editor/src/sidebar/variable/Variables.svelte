@@ -1,7 +1,7 @@
 <script>
-  import { appData } from "../../lib/syncData.svelte";
+  import { appData } from "../../project/store";
   import VariableClass from "@renderer/classes/variable.svelte";
-  import { addHistory } from "../../lib/workHistory";
+  import { addHistory } from "../../lib/editUtils/history";
   import Variable from "./Variable.svelte";
 
   let currentEdit = -1;

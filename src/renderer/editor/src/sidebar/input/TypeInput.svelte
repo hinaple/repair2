@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { addHistory } from "../../lib/workHistory";
+  import { addHistory } from "../../lib/editUtils/history";
 
   let { type, options = {}, onchange = null, ...props } = $props();
 

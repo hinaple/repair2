@@ -1,11 +1,11 @@
 <script lang="ts" generics="T extends string">
   import { onDestroy, onMount, tick, type Snippet } from "svelte";
-  import Grabber from "./grabber";
-  import { rInfo } from "../nodes/viewport";
-  import { addHistory } from "./workHistory";
-  import FrameUpdater from "./frameUpdater";
+  import Grabber from "../lib/grabber";
+  import { rInfo } from "./viewport";
+  import FrameUpdater from "../lib/frameUpdater";
   import { cubicOut } from "svelte/easing";
-  import { SortableUtils } from "./editUtils/sortable";
+  import { SortableUtils } from "../lib/editUtils/sortable";
+  import type { SortableProps } from "./types";
 
   type StyleType = "waterfall" | "enum" | "listener";
 
@@ -26,9 +26,7 @@
     onmoved?(): unknown;
     style?: StyleType;
     noGrab?: boolean;
-    children: Snippet<
-      [{ id: string; remove(): unknown; onpointerdown(evt: PointerEvent): unknown }]
-    >;
+    children: Snippet<[SortableProps]>;
   } = $props();
   let listArr: {
     id: string;
@@ -57,7 +55,7 @@
     listener: 5,
     waterfall: 0
   } as const;
-  const gap = Gaps[style] ?? 0;
+  const gap = Gaps[(() => style)()] ?? 0;
 
   $effect(() => {
     parent[key];
@@ -265,7 +263,7 @@
           bind:handle={item.handle}
           remove={() => remove(i)}
           {...props} -->
-        />
+        <!-- /> -->
       </div>
     </div>
   {/each}

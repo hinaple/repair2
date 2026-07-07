@@ -4,7 +4,7 @@
   import { grabbing } from "../lib/stores";
   import Value from "./value/Value.svelte";
   import { outClicked } from "../lib/contextMenu/contextUtils";
-  import { appData } from "../lib/syncData.svelte";
+  import { appData } from "../project/store";
 
   let { variableSet, onpointerdown, ...nodeData } = $props();
 

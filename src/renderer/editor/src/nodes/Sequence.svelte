@@ -1,13 +1,13 @@
-<script>
-  import Node from "./Node.svelte";
-  import Step from "./Step.svelte";
+<script lang="ts">
+  // import Node from "./Node.svelte";
+  // import Step from "./Step.svelte";
   import Sortable from "../lib/Sortable.svelte";
   import Icon from "../assets/icons/Icon.svelte";
   import { addHistory } from "../lib/workHistory";
   import { get } from "svelte/store";
   import { grabbing, reload } from "../lib/stores";
-  import { focusData } from "../sidebar/editUtils";
-  import { genClipboardFn } from "../lib/clipboard";
+  import { focusData } from "../lib/editUtils/focus";
+  import { genClipboardFn } from "../lib/editUtils/clipboard";
 
   let { sequence, isLastHold, onpointerdown, ...nodeData } = $props();
 
@@ -48,15 +48,17 @@
   {#snippet body()}
     <div class="body">
       <Sortable
-        Component={Step}
-        sortable={sequence.steps}
-        pretty
+        key="steps"
+        parent={sequence}
         resized={() => {
           reload("nodeMoved");
         }}
         onmoved={() => reload("nodeMoved")}
-        {nodeCountChanged}
-      />
+      >
+        {#snippet children({ id, remove, onpointerdown })}
+          <Step {id} {nodeCountChanged} {onpointerdown} {remove} pretty />
+        {/snippet}
+      </Sortable>
       <div class="add" onpointerdown={addStep}>
         <Icon color="#fff" lineWidth={2} />
       </div>

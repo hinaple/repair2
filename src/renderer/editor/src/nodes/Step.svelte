@@ -1,14 +1,14 @@
 <script>
   import { get } from "svelte/store";
   import Icon from "../assets/icons/Icon.svelte";
-  import { currentFocus, focusData } from "../sidebar/editUtils";
+  import { currentFocus, focusData } from "../lib/editUtils/focus";
   import { grabbing, reload } from "../lib/stores";
   import { StepTypes } from "../lib/translate";
   import Component from "./component/Component.svelte";
   import { outClicked, rightclick } from "../lib/contextMenu/contextUtils";
   import { onDestroy } from "svelte";
   import registerHighlight from "../lib/highlight";
-  import { genClipboardFn } from "../lib/clipboard";
+  import { genClipboardFn } from "../lib/editUtils/clipboard";
   import { startMonitoring } from "../lib/runtimeMonitor.svelte";
 
   let {

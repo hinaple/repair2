@@ -1,6 +1,6 @@
 <script>
   import PluginPointer from "@renderer/classes/pluginPointer.svelte";
-  import { screenConfigTypes } from "../../../lib/translate";
+  import { ScreenConfigTypes } from "../../../lib/translate";
   import InputField from "../../input/InputField.svelte";
 
   const { data } = $props();
@@ -16,7 +16,7 @@
   setter={(d) => (data.sizeRatio = d)}
   placeholder="가로비율,세로비율"
 />
-<InputField label="창 유형" type="type" value={data.screenConfig} options={screenConfigTypes} />
+<InputField label="창 유형" type="type" value={data.screenConfig} options={ScreenConfigTypes} />
 {#if data.screenConfig.types[0] === "windowMode"}
   <InputField
     label="창 X좌표(px)"

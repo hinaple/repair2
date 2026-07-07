@@ -47,7 +47,7 @@ export function createPayload<
     template = template[key];
   }
 
-  if (isRecord(template) && template.isTypeObj === true) {
+  if (isRecord(template) && template.$types === true) {
     return null;
   }
 

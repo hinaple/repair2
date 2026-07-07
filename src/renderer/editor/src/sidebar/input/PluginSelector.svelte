@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { addHistory } from "../../lib/workHistory";
+  import { addHistory } from "../../lib/editUtils/history";
   import Attributes from "./Attributes.svelte";
   import { plugins } from "../../lib/plugins.svelte";
   import InputField from "./InputField.svelte";

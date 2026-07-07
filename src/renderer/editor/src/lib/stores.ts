@@ -1,4 +1,8 @@
+import { typedFromEntries } from "@shared/utils.types";
 import { writable, type Writable } from "svelte/store";
+
+const Grabs = ["viewport", "viewportReady"] as const;
+export const GrabKeys = typedFromEntries(Grabs.map((g) => [g, Symbol(g)]));
 
 export const grabbing: Writable<any> = writable(null);
 grabbing.subscribe((g) => {

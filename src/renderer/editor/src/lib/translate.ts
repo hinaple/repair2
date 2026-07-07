@@ -113,7 +113,6 @@ export const ComparisonOperatorTypes = {
   gte: "A >= B",
   lte: "A <= B",
   jsFunction: "함수"
-  // scriptFile: "스크립트 파일"
 } as const;
 
 export const ElementTypes = {
@@ -139,7 +138,6 @@ export const ElementListenerTypes = {
   input: "값 입력",
   videoEnd: "영상 종료",
   keyPress: "키보드 누름",
-  // globalKeyPress: "전역 키보드 누름",
   jsFunction: "함수",
   Drag: "드래그",
   released: "종료",
@@ -173,8 +171,15 @@ export const InputAllowedTypes = {
   regex: "정규표현식 직접 입력"
 } as const;
 
-export const screenConfigTypes = {
+export const ScreenConfigTypes = {
   fullscreen: "전체화면",
   fullMultiScreen: "다중 모니터 전체화면",
   windowMode: "창 모드"
+} as const;
+
+export const NodeLabelMap = {
+  entry: "진입점",
+  sequence: "시퀀스",
+  branch: "분기점",
+  variableSet: "변수설정"
 } as const;

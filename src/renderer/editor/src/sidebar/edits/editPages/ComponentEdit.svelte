@@ -1,7 +1,7 @@
 <script>
   import InputField from "../../input/InputField.svelte";
   import ToggleZone from "../../input/ToggleZone.svelte";
-  import { reloadPreview } from "../../editUtils";
+  import { reloadPreview } from "../../../lib/editUtils/focus";
   import Toggles from "../../input/Toggles.svelte";
 
   const { data } = $props();

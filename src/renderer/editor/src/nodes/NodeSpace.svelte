@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import Background from "./Background.svelte";
   import {
@@ -11,33 +11,37 @@
     setViewportEl
   } from "./viewport";
   import Sequence from "./Sequence.svelte";
-  import { grabbing } from "../lib/stores";
+  import { grabbing, GrabKeys } from "../lib/stores";
   import Lines from "./lines/Lines.svelte";
-  import { appData } from "../lib/syncData.svelte";
-  import { focusData, selectManyNodes } from "../sidebar/editUtils";
+  import { getProject } from "../project/store";
+  import { focusData, selectManyNodes } from "../lib/editUtils/focus";
   import { rightclick } from "../lib/contextMenu/contextUtils";
-  import SequenceClass from "@renderer/classes/nodes/sequence.svelte";
-  import BranchClass from "@renderer/classes/nodes/branch.svelte";
-  import EntryClass from "@renderer/classes/nodes/entry.svelte";
-  import VariableSetClass from "@renderer/classes/nodes/variableSet.svelte";
   import Branch from "./Branch.svelte";
   import Entry from "./Entry.svelte";
-  import { pasted } from "../lib/clipboard";
+  import { pasted } from "../lib/editUtils/clipboard";
   import { fade } from "svelte/transition";
   import FrameUpdater from "../lib/frameUpdater";
   import VariableSet from "./VariableSet.svelte";
   import LinesOld from "./lines/LinesOld.svelte";
   import event from "../lib/actions/eventAction";
 
+  const myReadyGrab = GrabKeys.viewport;
+  const myGrab = GrabKeys.viewportReady;
+
   let readyToGrab = $state(false);
-  function keydown(evt) {
-    if (evt.target.tagName === "INPUT" || evt.target.tagName === "TEXTAREA") return;
+  function keydown(evt: KeyboardEvent) {
+    if (
+      !(evt.target instanceof HTMLElement) ||
+      evt.target.tagName === "INPUT" ||
+      evt.target.tagName === "TEXTAREA"
+    )
+      return;
     if (evt.key === " " && !$grabbing) {
       readyToGrab = true;
       $grabbing = myReadyGrab;
     }
   }
-  function keyup(evt) {
+  function keyup(evt: KeyboardEvent) {
     if (evt.key === " ") {
       readyToGrab = false;
       if ($grabbing === myGrab || $grabbing === myReadyGrab) $grabbing = null;
@@ -45,15 +49,15 @@
     if (evt.key === "Alt") evt.preventDefault();
   }
 
-  const myReadyGrab = "viewportReady";
-  const myGrab = "viewport";
   let realGrabbing = $state(false);
-  let prvMouse = null;
-  let selectOrigin = $state(null);
-  let selectBoxEl = $state(null);
-  function pointerdown(evt) {
+  let prvMouse: { x: number; y: number } | null = null;
+  let selectOrigin = $state<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  let selectBoxEl = $state<HTMLElement | null>(null);
+  function pointerdown(evt: PointerEvent) {
     if (evt.button === 0 && !$grabbing) {
-      selectOrigin = { x1: evt.clientX, y1: evt.clientY };
+      const x = evt.clientX,
+        y = evt.clientY;
+      selectOrigin = { x1: x, y1: y, x2: x, y2: y };
     }
 
     if ((evt.button === 0 && readyToGrab) || (evt.button === 1 && (readyToGrab || !$grabbing))) {
@@ -63,7 +67,7 @@
       evt.preventDefault();
     } else if (evt.button === 0 && (!$grabbing || readyToGrab)) focusData("project");
   }
-  function pointermove(evt) {
+  function pointermove(evt: PointerEvent) {
     if (selectOrigin && selectBoxEl) {
       if ($grabbing !== "select") $grabbing = "select";
 
@@ -78,10 +82,10 @@
 
     if (!realGrabbing) return;
 
-    moveViewport(-evt.screenX + prvMouse.x, -evt.screenY + prvMouse.y);
+    moveViewport(-evt.screenX + prvMouse!.x, -evt.screenY + prvMouse!.y);
     prvMouse = { x: evt.screenX, y: evt.screenY };
   }
-  function pointerup(evt) {
+  function pointerup(evt: PointerEvent) {
     if (selectOrigin) {
       if (selectOrigin.x2) {
         const area = {
@@ -90,20 +94,23 @@
           x2: Math.max(selectOrigin.x1, selectOrigin.x2),
           y2: Math.max(selectOrigin.y1, selectOrigin.y2)
         };
-        selectManyNodes(
-          appData.nodes
-            .values()
-            .filter((node) => {
-              const rect = node.requestRect();
-              return (
-                rect &&
-                area.x1 < rect.left &&
-                area.x2 > rect.right &&
-                area.y1 < rect.top &&
-                area.y2 > rect.bottom
-              );
-            })
-            .toArray()
+        focusData(
+          "nodes",
+
+          new Set(
+            getProject()
+              .nodes.values()
+              .filter((node) => {
+                const rect = node.requestRect();
+                return (
+                  rect &&
+                  area.x1 < rect.left &&
+                  area.x2 > rect.right &&
+                  area.y1 < rect.top &&
+                  area.y2 > rect.bottom
+                );
+              })
+          )
         );
       }
       selectOrigin = null;
@@ -115,7 +122,7 @@
     realGrabbing = false;
   }
 
-  function wheel(evt) {
+  function wheel(evt: WheelEvent) {
     if (!readyToGrab && $grabbing) return;
     const dir = Math.abs(evt.deltaY) / evt.deltaY;
     if (isNaN(dir)) return;
@@ -124,7 +131,7 @@
     else resizeViewport(-dir, { x: evt.clientX, y: evt.clientY });
   }
 
-  let viewportEl = $state(null);
+  let viewportEl = $state<HTMLElement | null>(null);
 
   const frameUpdater = new FrameUpdater(() => {
     if (!viewportEl) return;
@@ -146,54 +153,7 @@
     unsubs.forEach((u) => u());
   });
 
-  let lastHold = $state(null);
-
-  const contextmenu = [
-    {
-      label: "새 진입점",
-      click: ({ pos: { x, y } }) => {
-        const entry = new EntryClass({ nodePos: getOriginalPos(x, y) });
-        focusData("entry", entry, { clipboardFn: entry.clipboardFn });
-        appData.addNode(entry);
-        return true;
-      }
-    },
-    {
-      label: "새 시퀀스",
-      click: ({ pos: { x, y } }) => {
-        const seq = new SequenceClass({ nodePos: getOriginalPos(x, y) });
-        focusData("sequence", seq, { clipboardFn: seq.clipboardFn });
-        appData.addNode(seq);
-        return true;
-      }
-    },
-    {
-      label: "새 분기점",
-      click: ({ pos: { x, y } }) => {
-        const branch = new BranchClass({ nodePos: getOriginalPos(x, y) });
-        focusData("branch", branch, { clipboardFn: branch.clipboardFn });
-        appData.addNode(branch);
-        return true;
-      }
-    },
-    {
-      label: "새 변수설정",
-      click: ({ pos: { x, y } }) => {
-        const variableSet = new VariableSetClass({ nodePos: getOriginalPos(x, y) });
-        focusData("variableSet", variableSet, { clipboardFn: variableSet.clipboardFn });
-        appData.addNode(variableSet);
-        return true;
-      }
-    },
-    { type: "separator" },
-    {
-      label: "붙여넣기",
-      click: ({ pos: { x, y } }) => {
-        pasted({ type: "project" }, getOriginalPos(x, y));
-        return true;
-      }
-    }
-  ];
+  let lastHold = $state<string | null>(null);
 
   let renderWithWebGL = $state(true);
   function unsupported() {
@@ -213,7 +173,7 @@
   class:ready-to-grab={readyToGrab}
   onpointerdown={pointerdown}
   use:event={["wheel", wheel, { passive: true }]}
-  use:rightclick={contextmenu}
+  use:rightclick={{ type: "project" }}
   use:setViewportEl
 >
   <Background />
@@ -223,30 +183,22 @@
     <LinesOld />
   {/if}
   <div class="viewport" bind:this={viewportEl}>
-    {#each appData.nodes.values() as node (node.id)}
-      {#if node.type === "sequence"}
+    {#each getProject().nodes as [id, node] (id)}
+      {#if node.nodeType === "sequence"}
         <Sequence
           sequence={node}
-          isLastHold={node.id === lastHold}
-          onpointerdown={() => (lastHold = node.id)}
+          isLastHold={id === lastHold}
+          onpointerdown={() => (lastHold = id)}
         />
-      {:else if node.type === "branch"}
-        <Branch
-          branch={node}
-          isLastHold={node.id === lastHold}
-          onpointerdown={() => (lastHold = node.id)}
-        />
-      {:else if node.type === "entry"}
-        <Entry
-          entry={node}
-          isLastHold={node.id === lastHold}
-          onpointerdown={() => (lastHold = node.id)}
-        />
-      {:else if node.type === "variableSet"}
+      {:else if node.nodeType === "branch"}
+        <Branch branch={node} isLastHold={id === lastHold} onpointerdown={() => (lastHold = id)} />
+      {:else if node.nodeType === "entry"}
+        <Entry entry={node} isLastHold={id === lastHold} onpointerdown={() => (lastHold = id)} />
+      {:else if node.nodeType === "variableSet"}
         <VariableSet
           variableSet={node}
-          isLastHold={node.id === lastHold}
-          onpointerdown={() => (lastHold = node.id)}
+          isLastHold={id === lastHold}
+          onpointerdown={() => (lastHold = id)}
         />
       {/if}
     {/each}

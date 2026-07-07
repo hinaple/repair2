@@ -10,14 +10,14 @@ function mapToRecord<K extends string, T>(map: Map<K, T>) {
 
 export function convertToRuntime(data: StoredProjectData): RuntimeProjectData {
   const newData: any = { ...data };
-  PROJECT_RECORDS.forEach((k) => {
+  Object.keys(PROJECT_RECORDS).forEach((k) => {
     newData[k] = recordToMap(newData[k]);
   });
   return newData;
 }
 export function convertToStored(data: RuntimeProjectData): StoredProjectData {
   const newData: any = { ...data };
-  PROJECT_RECORDS.forEach((k) => {
+  Object.keys(PROJECT_RECORDS).forEach((k) => {
     newData[k] = mapToRecord(newData[k]);
   });
   return newData;

@@ -1,4 +1,4 @@
-import { ipc } from "./ipc";
+import { ipc } from "../ipc";
 
 const MaxHistoryLen = 50;
 
@@ -9,6 +9,7 @@ type SameHistoryArgs<DoData = undefined> = {
   undoFn?: undefined;
   doData?: DoData;
   undoData?: DoData;
+  afterChange?: () => unknown;
 };
 
 type DifferentHistoryArgs<DoData = undefined, UndoData = undefined> = {
@@ -16,15 +17,16 @@ type DifferentHistoryArgs<DoData = undefined, UndoData = undefined> = {
   undoFn: HistoryFn<UndoData>;
   doData?: DoData;
   undoData?: UndoData;
+  afterChange?: () => unknown;
 };
 
 type AddHistoryArgs<DoData = undefined, UndoData = DoData> =
-  | SameHistoryArgs<DoData>
-  | DifferentHistoryArgs<DoData, UndoData>;
+  SameHistoryArgs<DoData> | DifferentHistoryArgs<DoData, UndoData>;
 
 interface HistoryItem {
   redo: () => unknown;
   undo: () => unknown;
+  afterChange?: () => unknown;
 }
 
 let history: HistoryItem[] = [];
@@ -45,21 +47,27 @@ export function addHistory<DoData = undefined, UndoData = DoData>({
   doFn,
   undoFn,
   doData,
-  undoData
+  undoData,
+  afterChange
 }: AddHistoryArgs<DoData, UndoData>): (newValue: DoData) => void {
   let currentDoData = doData;
 
   doFn(currentDoData as DoData);
   if (history.length > currentCursor) history = history.toSpliced(currentCursor);
   const tempHistory: HistoryItem = {
-    redo: () => doFn(currentDoData as DoData),
+    redo: () => {
+      doFn(currentDoData as DoData);
+      afterChange?.();
+    },
     undo: () => {
       if (undoFn) {
         undoFn(undoData as UndoData);
       } else {
         doFn(undoData as DoData);
       }
-    }
+      afterChange?.();
+    },
+    afterChange
   };
   history.push(tempHistory);
   console.log("NEW HISTORY", history[currentCursor]);

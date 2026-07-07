@@ -3,35 +3,32 @@
 <script lang="ts">
   import ToastDisplay from "./lib/toast/ToastDisplay.svelte";
   import ContextMenu from "./lib/contextMenu/ContextMenu.svelte";
-  import { appData } from "./lib/syncData.svelte";
-  import { redo, undo } from "./lib/workHistory";
+  import { redo, undo } from "./lib/editUtils/history";
   import NodeSpace from "./nodes/NodeSpace.svelte";
-  import { focusData } from "./sidebar/editUtils";
+  import { focusData } from "./lib/editUtils/focus";
   import SideBar from "./sidebar/SideBar.svelte";
   import { onMount } from "svelte";
   import { reload } from "./lib/stores";
   import Modal from "./lib/modal/ModalDisplay.svelte";
   import { ipc } from "./lib/ipc";
 
-  focusData("project");
-
-  function onkeydown(evt) {
-    if (
-      evt.target.tagName !== "INPUT" &&
-      evt.target.tagName !== "TEXTAREA" &&
-      evt.ctrlKey &&
-      (evt.key == "z" || evt.key == "y")
-    ) {
-      evt.preventDefault();
-      if (evt.key === "z" && evt.shiftKey) redo();
-      else if (evt.key === "z") undo();
-    }
+  function onkeydown(evt: KeyboardEvent) {
+    // if (
+    //   evt.ctrlKey &&
+    //   evt.target &&
+    //   evt.target instanceof HTMLElement &&
+    //   evt.target.tagName !== "INPUT" &&
+    //   evt.target.tagName !== "TEXTAREA" &&
+    //   (evt.key == "z" || evt.key == "y")
+    // ) {
+    //   evt.preventDefault();
+    //   if (evt.key === "z" && evt.shiftKey) redo();
+    //   else if (evt.key === "z") undo();
+    // }
   }
 
-  $inspect(appData);
-
   onMount(() => {
-    ipc.send("monitor-evnt", "start");
+    ipc.send("monitor-event", "start");
   });
 
   document.fonts.ready.then(() => {

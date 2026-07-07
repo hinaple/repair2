@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { appData } from "../../lib/syncData.svelte";
-  import { addHistory } from "../../lib/workHistory";
+  import { appData } from "../../project/store";
+  import { addHistory } from "../../lib/editUtils/history";
   import InputField from "./InputField.svelte";
   import Checkbox from "./Checkbox.svelte";
   import HistoryInput from "./HistoryInput.svelte";

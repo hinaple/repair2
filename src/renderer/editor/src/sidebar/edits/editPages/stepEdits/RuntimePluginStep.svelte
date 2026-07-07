@@ -1,6 +1,6 @@
 <script>
   import Attributes from "../../../input/Attributes.svelte";
-  import { appData } from "../../../../lib/syncData.svelte";
+  import { appData } from "../../../../project/store";
   import InputField from "../../../input/InputField.svelte";
   import { plugins } from "../../../../lib/plugins.svelte";
 

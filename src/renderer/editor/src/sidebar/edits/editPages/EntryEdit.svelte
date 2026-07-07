@@ -1,7 +1,7 @@
 <script>
   import InputField from "../../input/InputField.svelte";
   import { EntryTypes } from "../../../lib/translate";
-  import { addHistory } from "../../../lib/workHistory";
+  import { addHistory } from "../../../lib/editUtils/history";
   import { getConnectedLines, setAllOutput } from "../../../nodes/lines/line.deprecated";
 
   const { data } = $props();

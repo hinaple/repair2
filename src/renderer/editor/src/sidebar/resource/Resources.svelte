@@ -1,7 +1,7 @@
 <script>
-  import { appData } from "../../lib/syncData.svelte";
+  import { appData } from "../../project/store";
   import ResourceClass from "@renderer/classes/resource.svelte";
-  import { addHistory } from "../../lib/workHistory";
+  import { addHistory } from "../../lib/editUtils/history";
   import Resource from "./Resource.svelte";
   import { AssetDir, selectMany, splitPath } from "./selectResourceFile";
   import { ipc } from "../../lib/ipc";

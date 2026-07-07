@@ -3,10 +3,10 @@
   import Icon from "../../assets/icons/Icon.svelte";
   import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
   import { ValueProcessTypes } from "../../lib/translate";
-  import { currentFocus, focusData } from "../../sidebar/editUtils";
+  import { currentFocus, focusData } from "../../lib/editUtils/focus";
   import { get } from "svelte/store";
   import { grabbing } from "../../lib/stores";
-  import { genClipboardFn } from "../../lib/clipboard";
+  import { genClipboardFn } from "../../lib/editUtils/clipboard";
 
   let { item: valueProcess, handle = $bindable(null), el = $bindable(null), remove } = $props();
 

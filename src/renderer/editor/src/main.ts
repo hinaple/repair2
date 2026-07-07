@@ -7,6 +7,9 @@ import "./sidebar/resizer/resizer.css";
 
 import App from "./App.svelte";
 
+import { updateProject } from "./project/store";
+updateProject();
+
 const app = mount(App, {
   target: document.getElementById("app")!
 });

@@ -1,12 +1,12 @@
 import { getOriginalPos } from "../viewport";
 import Grabber from "../../lib/grabber";
 import { get } from "svelte/store";
-import { addHistory } from "../../lib/workHistory";
+import { addHistory } from "../../lib/editUtils/history";
 import { nodeMovedReloader } from "../../lib/stores";
 import FrameUpdater from "../../lib/frameUpdater";
-import { appData } from "../../lib/syncData.svelte";
 import { writable, type Writable } from "svelte/store";
 import type { Action } from "svelte/action";
+import { getProject } from "../../project/store";
 
 type Coord = Record<"x" | "y", number>;
 export interface Output {
@@ -45,12 +45,12 @@ const outputNode: Action<HTMLElement, { id: string; container: { output: string 
     lineUpdated("remove", id);
   }
   function updateToCoord() {
-    const connectedNode = appData.findNodeById(o.output);
+    const connectedNode = getProject().nodes.get(o.output!);
     if (!connectedNode) return false;
 
     o.toCoord = {
       x: connectedNode.nodePos.x,
-      y: connectedNode.nodePos.y + (connectedNode.type === "entry" ? 45 : 30) / 2
+      y: connectedNode.nodePos.y + (connectedNode.nodeType === "entry" ? 45 : 30) / 2
     };
 
     return true;

@@ -1,12 +1,12 @@
 <script>
   import InputField from "../../input/InputField.svelte";
   import { StepTypes } from "../../../lib/translate";
-  import { focusData } from "../../editUtils";
+  import { focusData } from "../../../lib/editUtils/focus";
   import Components from "./stepEdits/Components.svelte";
   import Audios from "./stepEdits/Audios.svelte";
   import Preloads from "./stepEdits/Preloads.svelte";
   import Communication from "./stepEdits/Communications.svelte";
-  import { pasted } from "../../../lib/clipboard";
+  import { pasted } from "../../../lib/editUtils/clipboard";
   import RuntimePluginStep from "./stepEdits/RuntimePluginStep.svelte";
 
   const { data } = $props();

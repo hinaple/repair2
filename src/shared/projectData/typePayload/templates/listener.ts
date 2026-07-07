@@ -3,7 +3,7 @@ import { nullDefault, type TypePayloadUnion } from "./union.types";
 export const ListenerPayloadTemplate = {
   custom: { channel: nullDefault<string>() },
   Mouse: {
-    isTypeObj: true,
+    $types: true,
     click: null,
     down: null,
     up: null
@@ -13,7 +13,7 @@ export const ListenerPayloadTemplate = {
   videoEnd: null,
   jsFunction: { channel: nullDefault<string>(), scriptData: nullDefault<string>() },
   Drag: {
-    isTypeObj: true,
+    $types: true,
     released: { hotspotIndexes: null },
     return: null
   },

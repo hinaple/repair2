@@ -2,14 +2,14 @@
   import { get } from "svelte/store";
   import { grabbing, reload } from "../../lib/stores";
   import { outClicked } from "../../lib/contextMenu/contextUtils";
-  import { currentFocus, focusData } from "../../sidebar/editUtils";
+  import { currentFocus, focusData } from "../../lib/editUtils/focus";
   import Icon from "../../assets/icons/Icon.svelte";
-  import { addHistory } from "../../lib/workHistory";
-  import Sortable from "../../lib/Sortable.svelte";
+  import { addHistory } from "../../lib/editUtils/history";
+  import Sortable from "../Sortable.svelte";
   import Element from "./Element.svelte";
   import { onDestroy } from "svelte";
-  import { pasted } from "../../lib/clipboard";
-  import { genClipboardFn } from "../../lib/clipboard";
+  import { pasted } from "../../lib/editUtils/clipboard";
+  import { genClipboardFn } from "../../lib/editUtils/clipboard";
   import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
 
   let { payload: compTemp, noGrab = false, nodeCountChanged } = $props();

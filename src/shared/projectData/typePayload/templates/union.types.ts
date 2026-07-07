@@ -1,6 +1,6 @@
 import type { Prettify } from "../../../utils.types";
 
-type TemplateKey<T> = Exclude<keyof T, "isTypeObj"> & string;
+type TemplateKey<T> = Exclude<keyof T, "$types"> & string;
 
 type JoinPath<Prefix extends string, Key extends string> = Prefix extends ""
   ? Key
@@ -35,7 +35,7 @@ export const nullDefault = <T>() => null as unknown as NullDefault<T>;
 
 export type TP<T, Prefix extends string = "", IsRoot extends boolean = true> = IsRoot extends true
   ? NextTemplate<T, Prefix>
-  : T extends { isTypeObj: true }
+  : T extends { $types: true }
     ? NextTemplate<T, Prefix>
     : {
         type: Prefix;

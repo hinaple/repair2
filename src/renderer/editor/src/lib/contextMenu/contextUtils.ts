@@ -1,23 +1,13 @@
 import { get, writable, type Writable } from "svelte/store";
 import { grabbing } from "../stores";
+import { ContextMenus } from "./templates";
 import type { Action } from "svelte/action";
+import type { ContextMenu, ContextMenuParam } from "./types";
 
-type ContextMenuItems = (
-  | { type: "separator" }
-  | {
-      type?: "button";
-      click(menuInfo: ContextMenu): boolean | undefined;
-      label: string;
-    }
-)[];
-interface ContextMenu {
-  pos: { x: number; y: number };
-  items: ContextMenuItems;
-}
 export const contextMenu: Writable<ContextMenu | undefined | null> = writable();
 
-export default function showContextMenu({ pos, items }: ContextMenu) {
-  contextMenu.set({ pos, items });
+export default function showContextMenu(menu: ContextMenu) {
+  contextMenu.set(menu);
 }
 function removeContextMenu() {
   contextMenu.set(null);
@@ -34,10 +24,15 @@ function clearContextMenuClass() {
     rightNode = null;
   }
 }
-export const rightclick: Action<HTMLElement, ContextMenuItems> = (node, items) => {
+
+export const rightclick: Action<HTMLElement, ContextMenuParam> = (node, p) => {
   node.addEventListener("contextmenu", (evt: MouseEvent) => {
     if (get(grabbing)) return;
-    showContextMenu({ pos: { x: evt.clientX, y: evt.clientY }, items });
+    showContextMenu({
+      ...p,
+      pos: { x: evt.clientX, y: evt.clientY },
+      items: ContextMenus[p.type]
+    });
     evt.stopPropagation();
     clearContextMenuClass();
     rightNode = node;

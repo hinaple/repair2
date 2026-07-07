@@ -1,7 +1,7 @@
 <script>
   import InputField from "../../input/InputField.svelte";
   import { BaseValueTypes } from "../../../lib/translate";
-  import { addHistory } from "../../../lib/workHistory";
+  import { addHistory } from "../../../lib/editUtils/history";
 
   const { data } = $props();
 </script>
