@@ -1,11 +1,10 @@
-<script>
+<script lang="ts">
   import { getAssetDir } from "@renderer/utils";
   import { onDestroy } from "svelte";
 
   let { resource, controls = true, small = false } = $props();
 
-  /** @type {HTMLMediaElement} */
-  let mediaEl = $state(null);
+  let mediaEl: HTMLMediaElement | null = $state(null);
 
   onDestroy(() => {
     if (!mediaEl) return;

@@ -44,7 +44,7 @@ const OUTPUT = {
 const PLUGIN = {
   $type: TYPE.ID,
   $key: "pluginPointers",
-  $kind: KIND.REF
+  $kind: KIND.OWN
 } satisfies RelationLeaf;
 const VARIABLE = {
   $type: TYPE.ID,
@@ -69,10 +69,7 @@ export function isRelationLeaf(value: unknown): value is RelationLeaf {
 
 export function isRelationTree(value: unknown): value is RelationTree {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    !isRelationLeaf(value)
+    typeof value === "object" && value !== null && !Array.isArray(value) && !isRelationLeaf(value)
   );
 }
 

@@ -1,22 +1,24 @@
+import type { FocusData } from "../focus";
 import type { ContextMenus } from "./templates";
 
 export type ContextRole = "copy" | "cut" | "paste" | "remove";
 
-export type ContextMenuItems = (
+export type ContextMenuItem =
   | { type: "separator" }
   | {
       type?: "button";
       click?(menuInfo: ContextMenu): boolean | undefined;
       label: string;
       role?: ContextRole;
-    }
-)[];
+    };
+export type ContextMenuItems = ContextMenuItem[];
 
 export type ContextMenuParam =
-  | { type: "project"; id?: undefined }
-  | { type: Exclude<keyof typeof ContextMenus, "project">; id: string };
+  | { type: Exclude<keyof typeof ContextMenus, "project">; id: string; parents?: string[] }
+  | { type: "project"; id?: undefined; parents?: undefined };
 
 export type ContextMenu = ContextMenuParam & {
   pos: { x: number; y: number };
   items: ContextMenuItems;
+  focusData: Exclude<FocusData, { type: "nodes" }>;
 };

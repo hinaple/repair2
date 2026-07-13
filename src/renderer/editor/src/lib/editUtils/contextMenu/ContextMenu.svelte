@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { get } from "svelte/store";
-  import { contextMenu, outClicked } from "./contextUtils";
+  import { contextMenu, itemClicked, outClicked } from "./contextUtils";
 
   let menuEl: HTMLElement | undefined = $state();
 
@@ -11,10 +10,9 @@
   });
   function onpointerdown(evt: PointerEvent) {
     if (
-      evt.target instanceof HTMLElement &&
-      get(contextMenu) &&
+      $contextMenu &&
       menuEl &&
-      !menuEl.contains(evt.target)
+      (!(evt.target instanceof HTMLElement) || !menuEl.contains(evt.target))
     )
       outClicked();
   }
@@ -27,15 +25,12 @@
       {#if item.type === "separator"}
         <div class="separator"></div>
       {:else}
-        {@const execute = () => {
-          if (item.role && /*...*/ item.click?.(get(contextMenu)!)) outClicked();
-        }}
         <div
           class="item"
           tabindex="0"
-          onclick={execute}
+          onclick={() => itemClicked($contextMenu, item)}
           onkeydown={(evt) => {
-            if (evt.key === " " || evt.key === "Enter") execute();
+            if (evt.key === " " || evt.key === "Enter") itemClicked($contextMenu, item);
           }}
         >
           {item.label}

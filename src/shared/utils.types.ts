@@ -51,3 +51,17 @@ export type Tuple<
 export function truthy<T>(a: T): a is Extract<T, string | number> {
   return !!a;
 }
+
+export type ReverseRecord<T extends Record<PropertyKey, PropertyKey>> = {
+  [P in keyof T as T[P]]: P;
+};
+
+export type Optional<T extends Record<PropertyKey, any>, K extends keyof T> = {
+  [k in Exclude<keyof T, K>]: T[k];
+} & {
+  [k in K]?: T[k];
+};
+
+export type SatisfiedKey<T, V> = {
+  [K in keyof T]: T[K] extends V ? K : never;
+}[keyof T];

@@ -1,15 +1,15 @@
-import { getVariables } from "../variables";
-import { getPreloads } from "../resources";
-import { WaitingSteps } from "../../project/step";
-import { getProject } from "../../project";
-import { getAllComponents } from "../components";
-import { ipc } from "../ipc";
-import type { StandbyEntry } from "../../project/nodes/standbyEntry";
-import type { IpcRuntimeMonitorChange } from "@shared/ipc.types";
+import { getVariables } from "./variables";
+import { getPreloads } from "./resources";
+import { WaitingSteps } from "../project/step";
+import { getProject } from "../project";
+import { getAllComponents } from "./components";
+import type { StandbyEntry } from "../project/nodes/standbyEntry";
+import { editor } from "./msg";
+import type { MsgRuntimeMonitorChange } from "@renderer/messagePort";
 
-let changesBuffer: Array<IpcRuntimeMonitorChange> = [];
+let changesBuffer: Array<MsgRuntimeMonitorChange> = [];
 
-export function sendChanges(...data: IpcRuntimeMonitorChange): void {
+export function sendChanges(...data: MsgRuntimeMonitorChange): void {
   if (!monitoring) return;
 
   changesBuffer.push(data);
@@ -27,7 +27,7 @@ function readyToFlush() {
 }
 
 function flush() {
-  ipc.send("monitor-info", { channel: "update", data: changesBuffer });
+  editor.send("monitor:info", "update", changesBuffer);
   clear();
 }
 function clear() {
@@ -58,22 +58,21 @@ export function sendTotalInfo() {
     .n.entry.filter((node) => node.d.standbyMode && (node as StandbyEntry).activated)
     .map((node) => node.d.id);
   const components = getAllComponents().map((c) => c.realId);
-  ipc.send("monitor-info", {
-    channel: "total",
-    data: {
-      variables,
-      preloads,
-      steps,
-      entries,
-      components
-    }
+  editor.send("monitor:info", "total", {
+    variables,
+    preloads,
+    steps,
+    entries,
+    components
   });
 }
 
 let monitoring: boolean = false;
-ipc.on("monitor-event", (evt, channel: string) => {
-  if (channel === "start") {
-    monitoring = true;
-    sendTotalInfo();
-  } else if (channel === "end") monitoring = false;
+editor.on("monitor:start", () => {
+  monitoring = true;
+  sendTotalInfo();
+});
+editor.on("end", () => {
+  monitoring = false;
+  discard();
 });

@@ -1,6 +1,6 @@
-import type { IpcRuntimeMonitorChange, IpcRuntimeMonitorTotal } from "@shared/ipc.types";
-import { ipc } from "./ipc";
 import { typedEntries } from "@shared/utils.types";
+import { play } from "./msg";
+import type { MsgRuntimeMonitorChange, MsgRuntimeMonitorTotal } from "@renderer/messagePort";
 
 interface RuntimeMonitorData {
   variables: Map<string, string | null>;
@@ -24,16 +24,20 @@ const RuntimeData: RuntimeMonitorData = {
   components: new Set()
 };
 
-ipc.on("monitor-info", (evt, params) => {
-  if (params.channel === "total") handleTotalInfo(params.data);
-  else if (params.channel === "update") {
-    for (const singleUpdate of params.data) {
+play.on("start", () => {
+  play.send("monitor:start");
+});
+
+play.on("monitor:info", (channel, data) => {
+  if (channel === "total") handleTotalInfo(data);
+  else if (channel === "update") {
+    for (const singleUpdate of data) {
       handleChange(singleUpdate);
     }
   }
 });
 
-function handleTotalInfo(obj: IpcRuntimeMonitorTotal) {
+function handleTotalInfo(obj: MsgRuntimeMonitorTotal) {
   RuntimeData.variables = obj.variables;
   RuntimeData.steps = obj.steps;
   RuntimeData.preloads = new Set(obj.preloads);
@@ -60,7 +64,7 @@ const ChangesTotalTypeMap = {
   entry: "entries",
   component: "components"
 } satisfies RuntimeTypeByChangeType;
-function handleChange(params: IpcRuntimeMonitorChange) {
+function handleChange(params: MsgRuntimeMonitorChange) {
   if (!receivedTotal) return;
 
   if (params[0] === "step") handleStepChange(params);
@@ -79,8 +83,8 @@ function handleChange(params: IpcRuntimeMonitorChange) {
   notifySubscription(TotalType, params[2]);
 }
 
-type ChangeParam<type extends IpcRuntimeMonitorChange[0]> = Extract<
-  IpcRuntimeMonitorChange,
+type ChangeParam<type extends MsgRuntimeMonitorChange[0]> = Extract<
+  MsgRuntimeMonitorChange,
   [type, ...unknown[]]
 >;
 

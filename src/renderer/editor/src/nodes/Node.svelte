@@ -5,12 +5,13 @@
   import { grabbing, GrabKeys, reload, sequenceMovedReloader } from "../lib/stores";
   import FoldArrow from "../lib/FoldArrow.svelte";
   import { addHistory } from "../lib/editUtils/history";
-  import { rightclick } from "../lib/contextMenu/contextUtils";
+  import { rightclick } from "../lib/editUtils/contextMenu/contextUtils";
   import outputNode from "./lines/output";
   import FrameUpdater from "../lib/frameUpdater";
   import { currentFocus as CurrentFocus, focusData } from "../lib/editUtils/focus";
   import { appData } from "../project/store";
   import { ipc } from "../lib/ipc";
+  import { play } from "../lib/msg";
 
   let {
     node: n,
@@ -137,14 +138,16 @@
     type === "entry" && {
       label: "실행",
       click: () => {
-        ipc.send("request-execute", { type: "entry", id: node.id });
+        play.send("execute:request", { type: "entry", id: node.id });
+        // ipc.send("request-execute", { type: "entry", id: node.id });
         return true;
       }
     },
     (type !== "entry" || node.standbyMode) && {
       label: type === "entry" ? "활성화" : "실행",
       click: () => {
-        ipc.send("request-execute", { type: "node", id: node.id });
+        play.send("execute:request", { type: "node", id: node.id });
+        // ipc.send("request-execute", { type: "node", id: node.id });
         return true;
       }
     },

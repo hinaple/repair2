@@ -13,7 +13,7 @@ export const createComponent = createFactory<Types.Component>({
   unbreakable: false,
   visible: true,
   style: null,
-  frame: null,
+  frame: "",
   introTransition: nested(createTransition),
   outroTransition: nested(createTransition)
 });

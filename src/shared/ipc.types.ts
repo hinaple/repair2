@@ -20,38 +20,11 @@ export type IpcNoArgs = [];
 
 export type IpcSocketIncomeArgs = [channel: string, data: unknown, url?: string];
 
-export type IpcRuntimeMonitorChange =
-  | [type: "step", status: "executed" | "started" | "ended", target: string]
-  | [type: "preload", status: "added" | "released", target: string]
-  | [type: "variable", status: "changed", target: string, value: string | null]
-  | [type: "entry", status: "entered" | "disabled" | "activated", target: string]
-  | [type: "component", status: "created" | "removed", target: string]
-  | [type: "component", status: "set", target: string[]];
-
-export type IpcRuntimeMonitorTotal = {
-  variables: Map<string, string>;
-  preloads: string[];
-  steps: Map<string, number>;
-  entries: string[];
-  components: string[];
-};
-
-export type IpcRuntimeMonitorInfoArgs = [
-  | { channel: "update"; data: IpcRuntimeMonitorChange[] }
-  | { channel: "total"; data: IpcRuntimeMonitorTotal }
-];
-
 export type IpcPluginRuntimeCallPayload = {
   pluginName: string;
   activationId: string;
   methodName: string;
   args: unknown[];
-};
-
-export type IpcPreviewPayload = {
-  component: Types.Component;
-  elements: Map<string, Types.Element>;
-  // showContents?: unknown;
 };
 
 export type RendererToMainInvokeMap = {
@@ -176,13 +149,7 @@ export type RendererToMainSendMap = {
   saved: IpcNoArgs;
   "vscode:open": [sourcePath: string];
   "open-dir": [dir: string];
-  "monitor-event": [channel: string, ...data: unknown[]];
-  "monitor-info": IpcRuntimeMonitorInfoArgs;
   "custom-log": [content: any];
-  "request-execute": [payload: { type: string; id: string }];
-  "layout-preview": [payload: IpcPreviewPayload];
-  "preview-content-visible": [visible: boolean];
-  "stop-preview": IpcNoArgs;
   "play-win-ready": IpcNoArgs;
   "request-save:done": [payload: { requestId: number; saved: boolean }];
 };
@@ -218,7 +185,6 @@ export interface MainToRendererSharedSendMap {
 }
 
 export interface MainToEditorSendMap extends MainToRendererSharedSendMap {
-  "monitor-info": IpcRuntimeMonitorInfoArgs;
   "request-save": [request: { requestId: number }];
   "socket-failed": IpcNoArgs;
   "serial-connected": [port: string];
@@ -236,11 +202,6 @@ export interface MainToEditorSendMap extends MainToRendererSharedSendMap {
 export interface MainToPlaySendMap extends MainToRendererSharedSendMap {
   data: [data: EditorInitialData];
   "global-css": [css: string];
-  "request-execute": [payload: { type: string; id: string }];
-  "layout-preview": [payload: IpcPreviewPayload];
-  "preview-content-visible": [visible: boolean];
-  "stop-preview": IpcNoArgs;
-  "monitor-event": [channel: string, ...data: unknown[]];
   "global-key-event": [type: "keydown" | "keyup", event: GlobalKeyEvent];
   "plugin:runtime:to-renderer": [payload: IpcPluginRuntimeCallPayload];
 }

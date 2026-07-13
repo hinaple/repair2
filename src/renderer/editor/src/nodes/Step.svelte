@@ -5,7 +5,7 @@
   import { grabbing, reload } from "../lib/stores";
   import { StepTypes } from "../lib/translate";
   import Component from "./component/Component.svelte";
-  import { outClicked, rightclick } from "../lib/contextMenu/contextUtils";
+  import { outClicked, rightclick } from "../lib/editUtils/contextMenu/contextUtils";
   import { onDestroy } from "svelte";
   import registerHighlight from "../lib/highlight";
   import { genClipboardFn } from "../lib/editUtils/clipboard";

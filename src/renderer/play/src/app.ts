@@ -8,6 +8,7 @@ import "./lib/preview";
 import "./webcomponents/repairAsset";
 
 import type { Entry } from "./project/nodes/entry";
+import { editor } from "./lib/msg";
 
 window.addEventListener("load", () => {
   afterPluginImported().then(() => {
@@ -17,7 +18,7 @@ window.addEventListener("load", () => {
   });
 });
 
-ipc.on("request-execute", (event, { type, id }) => {
+editor.on("execute:request", ({ type, id }) => {
   const node = getProject().nodes.get(id);
   if (!node) return;
 

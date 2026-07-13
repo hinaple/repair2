@@ -1,7 +1,7 @@
-<script>
+<script lang="ts">
   import { onDestroy } from "svelte";
   import Icon from "../../assets/icons/Icon.svelte";
-  import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
+  import { outClicked, rightclick } from "../../lib/editUtils/contextMenu/contextUtils";
   import { currentFocus, focusData } from "../../lib/editUtils/focus";
   import { get } from "svelte/store";
   import { grabbing, reload } from "../../lib/stores";
@@ -9,90 +9,62 @@
   import Sortable from "../Sortable.svelte";
   import Listener from "./Listener.svelte";
   import { addHistory } from "../../lib/editUtils/history";
-  import registerHighlight from "../../lib/highlight";
-  import { genClipboardFn } from "../../lib/editUtils/clipboard";
+  import registerHighlight, { type HighlightData } from "../../lib/highlight";
+  import type { SortableProps } from "../types";
+  import { getsetFrom, SortableUtils } from "../../lib/editUtils/sortable";
+  import { createListener } from "@shared/projectData/factories";
+  import { getProject } from "../../project/store";
+  import { data } from "../../lib/editUtils/dataAction";
 
   let {
-    item: element,
-    handle = $bindable(null),
-    el = $bindable(null),
+    id,
     noGrab = false,
-    remove,
-    nodeCountChanged,
-    parent
+    onpointerdown,
+    onNodeCountChanged,
+    parents
+  }: SortableProps & {
+    onNodeCountChanged: () => unknown;
+    parents: string[];
   } = $props();
 
-  onDestroy(() => {
-    if (get(currentFocus).obj === element) {
-      focusData("project");
-    }
-  });
+  // svelte-ignore state_referenced_locally
+  const myParents = [id, ...parents];
 
-  const clipboardFn = genClipboardFn("element", element, () => remove());
+  // svelte-ignore state_referenced_locally
+  const element = getProject().getUnsafe("elements", id);
 
-  const contextmenu = [
-    {
-      label: "잘라내기",
-      click: clipboardFn.cut
-    },
-    {
-      label: "복사",
-      click: clipboardFn.copy
-    },
-    {
-      label: "붙여넣기",
-      click: clipboardFn.paste
-    },
-    { type: "separator" },
-    {
-      label: "삭제",
-      click: () => {
-        remove();
-        return true;
-      },
-      action: "remove"
-    }
-  ];
-
-  function addListener(evt) {
+  function addListener(evt: PointerEvent) {
     if (evt.button || $grabbing) return;
     evt.stopPropagation();
-    focusData(
-      "listener",
-      element.listeners.addWithHistory(addHistory, {
-        afterChange: () => {
-          reload("nodeMoved");
-          if (nodeCountChanged) nodeCountChanged();
-        }
-      })
-    );
+    const temp = createListener();
+    SortableUtils.appendWithHistory(getsetFrom(element, "listeners"), temp.id);
+    focusData("listener", temp.id, myParents);
   }
 
-  let hlData = $derived.by(() => {
+  let hlData = $derived.by<HighlightData>(() => {
     if (element.type === "input")
-      return { type: "variable", data: element.payload?.variableId, active: true };
+      return element.payload.variableId
+        ? { type: "variable", data: element.payload.variableId }
+        : null;
     if (element.type === "image" || element.type === "video")
-      return { type: "resource", data: element.payload?.resourceId, active: true };
-    if (element.type === "plugin")
-      return { type: "plugin", data: element.payload?.name, active: true };
-    return { active: false };
+      return element.payload.resourceId
+        ? { type: "resource", data: element.payload.resourceId }
+        : null;
+    if (element.type === "plugin") {
+      const pluginName = getProject().getUnsafe("pluginPointers", element.payload.plugin).name;
+      return pluginName
+        ? {
+            type: "plugin",
+            data: pluginName
+          }
+        : null;
+    }
   });
 </script>
 
-<div
-  class={["element", $currentFocus.obj === element && "focus"]}
-  bind:this={el}
-  onpointerdown={(evt) => {
-    if (evt.button || $grabbing) return;
-    evt.stopPropagation();
-    focusData("element", element, { preview: parent, clipboardFn });
-    outClicked();
-  }}
-  use:rightclick={contextmenu}
-  use:registerHighlight={hlData}
->
+<div class="element" use:data={{ type: "element", id, parents }} use:registerHighlight={hlData}>
   <div class="info">
-    <div class="handle" bind:this={handle}>
+    <div class="handle" {onpointerdown}>
       <Icon icon="hamburger" color="rgba(0, 0, 0, 0.5)" size={8} />
     </div>
     <div class="title">
@@ -104,14 +76,18 @@
   </div>
   <div class="listeners">
     <Sortable
-      sortable={element.listeners}
-      Component={Listener}
+      key="listeners"
+      parent={element}
       style="listener"
-      resized={() => reload("nodeMoved")}
+      onresized={() => reload("nodeMoved")}
       onmoved={() => reload("nodeMoved")}
       {noGrab}
-      onremoved={nodeCountChanged}
-    />
+      onremoved={onNodeCountChanged}
+    >
+      {#snippet children(props)}
+        <Listener parents={myParents} {...props} />
+      {/snippet}
+    </Sortable>
   </div>
 </div>
 

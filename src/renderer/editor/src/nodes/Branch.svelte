@@ -4,7 +4,7 @@
   import { grabbing } from "../lib/stores";
   import Value from "./value/Value.svelte";
   import { ComparisonOperatorTypes } from "../lib/translate";
-  import { outClicked } from "../lib/contextMenu/contextUtils";
+  import { outClicked } from "../lib/editUtils/contextMenu/contextUtils";
 
   let { branch, onpointerdown, ...nodeData } = $props();
 

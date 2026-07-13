@@ -1,7 +1,7 @@
 <script>
   import { onDestroy } from "svelte";
   import Icon from "../../assets/icons/Icon.svelte";
-  import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
+  import { outClicked, rightclick } from "../../lib/editUtils/contextMenu/contextUtils";
   import { ValueProcessTypes } from "../../lib/translate";
   import { currentFocus, focusData } from "../../lib/editUtils/focus";
   import { get } from "svelte/store";

@@ -1,3 +1,5 @@
+import type { Types } from "@shared/projectData/types";
+
 export const StepTypes = {
   delay: "딜레이",
 
@@ -116,6 +118,8 @@ export const ComparisonOperatorTypes = {
 } as const;
 
 export const ElementTypes = {
+  "": "요소",
+
   empty: "빈 요소",
   image: "이미지",
   video: "영상",
@@ -125,6 +129,8 @@ export const ElementTypes = {
 } as const;
 
 export const ElementListenerTypes = {
+  "": "리스너",
+
   custom: "사용자 정의",
 
   Mouse: "마우스",

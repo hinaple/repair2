@@ -1,11 +1,11 @@
-import { addHistory } from "../../lib/editUtils/history";
+import { addHistory } from "../lib/editUtils/history";
 import { SvelteMap } from "svelte/reactivity";
 
 import type { RuntimeProjectData, Types } from "@shared/projectData/types";
 import type { Entries, ValueOf } from "@shared/utils.types";
 import type { PROJECT_RECORDS } from "@shared/constants";
 import { genId } from "@shared/genId";
-import { getConnectedOutputs, setAllOutput } from "../../nodes/lines/output";
+import { getConnectedOutputs, setAllOutput } from "../nodes/lines/output";
 import type { RecordKey, RecordValue } from "@shared/constants";
 
 type MapToSvelteMap<T> = {
@@ -71,6 +71,8 @@ export class ProjectInstance {
         typeof data === "string"
           ? [data, this.getUnsafe(type, data)]
           : [this.getIdFromData(type, data, true), data];
+      if (type === "nodes") return this.removeNode(target as Types.Node, afterChange);
+
       const record = this.record(type);
 
       addHistory({
@@ -114,7 +116,7 @@ export class ProjectInstance {
 
     return undefined;
   }
-  deleteNode(node: Types.Node) {
+  removeNode(node: Types.Node, afterChange?: () => unknown) {
     const connectedOutputs = getConnectedOutputs(node.id);
     addHistory({
       doFn: ({ id, connectedOutputs }) => {
@@ -126,10 +128,11 @@ export class ProjectInstance {
         setAllOutput(connectedOutputs, node.id);
       },
       doData: { id: node.id, connectedOutputs },
-      undoData: { node, connectedOutputs }
+      undoData: { node, connectedOutputs },
+      afterChange
     });
   }
-  deleteManyNode(nodes: Types.Node[]) {
+  removeManyNode(nodes: Types.Node[], afterChange?: () => unknown) {
     const connectedOutputs = nodes.map((node) => getConnectedOutputs(node.id));
     addHistory({
       doFn: ({ nodes, connectedOutputs }) => {
@@ -145,7 +148,8 @@ export class ProjectInstance {
         });
       },
       doData: { nodes, connectedOutputs },
-      undoData: { nodes, connectedOutputs }
+      undoData: { nodes, connectedOutputs },
+      afterChange
     });
   }
 }

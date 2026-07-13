@@ -3,7 +3,7 @@
   import { get } from "svelte/store";
   import { grabbing } from "../lib/stores";
   import Value from "./value/Value.svelte";
-  import { outClicked } from "../lib/contextMenu/contextUtils";
+  import { outClicked } from "../lib/editUtils/contextMenu/contextUtils";
   import { appData } from "../project/store";
 
   let { variableSet, onpointerdown, ...nodeData } = $props();

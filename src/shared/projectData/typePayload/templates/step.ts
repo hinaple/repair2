@@ -1,9 +1,9 @@
-import { nullDefault, type TypePayloadUnion } from "./union.types";
+import { nullDefault, owns, type TypePayloadUnion } from "./union.types";
 
 export const StepPayloadTemplate = {
   Component: {
     $types: true,
-    create: { componentId: nullDefault<string>() },
+    create: { componentId: owns("components") },
     remove: { componentAlias: nullDefault<string>(), ignoreUnbreakable: true },
     clear: { ignoreUnbreakable: false },
     modify: {

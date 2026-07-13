@@ -1,7 +1,7 @@
 import { typedEntries, typedFromEntries } from "@shared/utils.types";
 import type { ContextMenuItems } from "../types";
 import { ProjectMenu } from "./project";
-import { CopyMap } from "../../editUtils/clipboard/copyMap";
+import { CopyMap } from "../../clipboard/constants";
 
 export function genTemplate({
   copy = true,

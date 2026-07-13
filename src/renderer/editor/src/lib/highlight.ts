@@ -1,38 +1,18 @@
 import type { Action } from "svelte/action";
-import FrameUpdater from "./frameUpdater";
+import { get, writable } from "svelte/store";
 
-export type HightlightType = "variable" | "plugin" | "resource";
+export type HighlightType = "variable" | "plugin" | "resource";
 
-interface Highlight {
-  node: HTMLElement;
-  type: HightlightType;
-  data: string;
-  active: boolean;
+const currentHighlights = writable<null | [HighlightType, string]>(null);
+
+function activeHighlight(type: HighlightType, data: string) {
+  currentHighlights.set([type, data]);
 }
-const highlights: Set<Highlight> = new Set();
-const currentHighlights: Map<HightlightType, string> = new Map();
-
-const FU = new FrameUpdater(() => {
-  highlights.forEach((h) => {
-    if (h.active && currentHighlights.get(h.type) === h.data) {
-      h.node.classList.add("highlight");
-      h.node.classList.add(`hl-${h.type}`);
-    } else {
-      h.node.classList.remove("highlight");
-      h.node.classList.remove(`hl-${h.type}`);
-    }
-  });
-});
-function activeHighlight(type: HightlightType, data: string) {
-  currentHighlights.set(type, data);
-  FU.draw();
-}
-function deactiveHighlight(type: HightlightType) {
-  currentHighlights.delete(type);
-  FU.draw();
+function deactiveHighlight(type: HighlightType) {
+  currentHighlights.update((h) => (h && h[0] === type ? null : h));
 }
 
-export const hoverHighlight: Action<HTMLElement, { type: HightlightType; data: string }> = (
+export const hoverHighlight: Action<HTMLElement, { type: HighlightType; data: string }> = (
   node,
   { type, data }
 ) => {
@@ -53,10 +33,7 @@ export const hoverHighlight: Action<HTMLElement, { type: HightlightType; data: s
       if (hovering) deactiveHighlight(mine.type);
       mine.type = type;
       mine.data = data;
-      if (hovering) {
-        activeHighlight(mine.type, mine.data);
-        FU.draw();
-      }
+      if (hovering) activeHighlight(mine.type, mine.data);
     },
     destroy() {
       node.removeEventListener("mouseenter", mouseenter);
@@ -65,23 +42,42 @@ export const hoverHighlight: Action<HTMLElement, { type: HightlightType; data: s
   };
 };
 
-const registerHighlight: Action<
-  HTMLElement,
-  { type: HightlightType; data: string; active?: boolean }
-> = (node, { type, data, active = false }) => {
-  const mine = { node, type, data, active };
-  highlights.add(mine);
-  FU.draw();
+export type HighlightData = { type: HighlightType; data: string } | undefined | null;
+const registerHighlight: Action<HTMLElement, HighlightData> = (node, params) => {
+  let on = false;
+
+  function activate() {
+    if (!params) return;
+    node.classList.add("highlight");
+    node.classList.add(`hl-${params.type}`);
+  }
+  function deactivate() {
+    if (!params) return;
+    node.classList.remove("highlight");
+    node.classList.remove(`hl-${params.type}`);
+  }
+
+  function check(ch: [HighlightType, string] | null) {
+    if (!params) return;
+
+    if (on && (!ch || ch[0] !== params.type || ch[1] !== params.data)) {
+      on = false;
+      deactivate();
+    } else if (!on && ch && ch[0] === params.type && ch[1] === params.data) {
+      on = true;
+      activate();
+    }
+  }
+  const unsub = currentHighlights.subscribe(check);
+
   return {
     destroy() {
-      highlights.delete(mine);
-      FU.draw();
+      unsub();
+      if (on) deactivate();
     },
-    update({ type, data, active }) {
-      mine.type = type;
-      mine.data = data;
-      mine.active = !!active;
-      FU.draw();
+    update(newParams) {
+      params = newParams;
+      check(get(currentHighlights));
     }
   };
 };

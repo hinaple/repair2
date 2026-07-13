@@ -54,3 +54,10 @@ export const SortableUtils = {
   removeWithHistory,
   appendWithHistory
 };
+
+export function getsetFrom<K extends string>(parent: { [k in K]: string[] }, key: K): GetSet {
+  return {
+    get: () => parent[key],
+    set: (v: string[]) => (parent[key] = v)
+  };
+}

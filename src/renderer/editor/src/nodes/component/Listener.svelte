@@ -1,44 +1,36 @@
 <script lang="ts">
-  import { onDestroy, untrack } from "svelte";
   import Icon from "../../assets/icons/Icon.svelte";
-  import { outClicked, rightclick } from "../../lib/contextMenu/contextUtils";
-  import { currentFocus, focusData } from "../../lib/editUtils/focus";
-  import { get } from "svelte/store";
-  import { grabbing } from "../../lib/stores";
   import { ElementListenerTypes } from "../../lib/translate";
   import outputNode from "../lines/output";
-  import { genClipboardFn } from "../../lib/editUtils/clipboard";
   import type { SortableProps } from "../types";
+  import { getProject } from "../../project/store";
+  import { data } from "../../lib/editUtils/dataAction";
 
   let {
     id,
-    remove,
     onpointerdown,
-    hidden = false
+    hidden = false,
+    parents
   }: SortableProps & {
-    hidden: boolean;
+    hidden?: boolean;
+    parents: string[];
   } = $props();
+
+  const getId = () => id;
+
+  const listener = getProject().getUnsafe("listeners", getId());
 </script>
 
-<div class="listener" bind:this={el}>
-  <div
-    class={["container", $currentFocus.obj === listener && "focus"]}
-    use:rightclick={{ type: "listener", id }}
-    onpointerdown={(evt) => {
-      if (evt.button || $grabbing) return;
-      evt.stopPropagation();
-      focusData("listener", listener, { clipboardFn });
-      outClicked();
-    }}
-  >
+<div class="listener">
+  <div use:data={{ type: "listener", id, parents }} class="container">
     <div class="handle" {onpointerdown}>
       <Icon icon="hamburger" color="rgba(255, 255, 255, 0.5)" size={8} />
     </div>
     <div class="title">
-      {(listener.payload?.channel?.trim?.() || ElementListenerTypes[listener.type]) ?? "리스너"}
+      {(listener.payload as any)?.channel?.trim?.() || ElementListenerTypes[listener.type]}
     </div>
     {#if !hidden}
-      <div class="output" use:outputNode={listener}></div>
+      <div class="output" use:outputNode={{ id, data: listener }}></div>
     {/if}
   </div>
 </div>

@@ -14,8 +14,8 @@
   import { grabbing, GrabKeys } from "../lib/stores";
   import Lines from "./lines/Lines.svelte";
   import { getProject } from "../project/store";
-  import { focusData, selectManyNodes } from "../lib/editUtils/focus";
-  import { rightclick } from "../lib/contextMenu/contextUtils";
+  import { focusData } from "../lib/editUtils/focus";
+  import { rightclick } from "../lib/editUtils/contextMenu/contextUtils";
   import Branch from "./Branch.svelte";
   import Entry from "./Entry.svelte";
   import { pasted } from "../lib/editUtils/clipboard";
@@ -94,24 +94,23 @@
           x2: Math.max(selectOrigin.x1, selectOrigin.x2),
           y2: Math.max(selectOrigin.y1, selectOrigin.y2)
         };
-        focusData(
-          "nodes",
-
-          new Set(
-            getProject()
-              .nodes.values()
-              .filter((node) => {
-                const rect = node.requestRect();
-                return (
-                  rect &&
-                  area.x1 < rect.left &&
-                  area.x2 > rect.right &&
-                  area.y1 < rect.top &&
-                  area.y2 > rect.bottom
-                );
-              })
-          )
-        );
+        // focusData(
+        //   "nodes",
+        //   new Set(
+        //     getProject()
+        //       .nodes.values()
+        //       .filter((node) => {
+        //         const rect = node.requestRect();
+        //         return (
+        //           rect &&
+        //           area.x1 < rect.left &&
+        //           area.x2 > rect.right &&
+        //           area.y1 < rect.top &&
+        //           area.y2 > rect.bottom
+        //         );
+        //       })
+        //   )
+        // );
       }
       selectOrigin = null;
       $grabbing = null;

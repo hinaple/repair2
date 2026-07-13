@@ -1,10 +1,10 @@
 import { typedEntries } from "@shared/utils.types";
-import { NodeLabelMap } from "../../translate";
+import { NodeLabelMap } from "../../../translate";
 import { createNode } from "@shared/projectData/factories";
 import type { ContextMenuItems } from "../types";
-import { getOriginalPos } from "../../../nodes/viewport";
-import { focusData } from "../../editUtils/focus";
-import { getProject } from "../../../project/store";
+import { getOriginalPos } from "../../../../nodes/viewport";
+import { focusData } from "../../focus";
+import { getProject } from "../../../../project/store";
 
 export const ProjectMenu: ContextMenuItems = [
   ...typedEntries(NodeLabelMap).map(([k, l]): ContextMenuItems[number] => ({

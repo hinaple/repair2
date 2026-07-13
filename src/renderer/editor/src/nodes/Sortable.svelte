@@ -4,7 +4,7 @@
   import { rInfo } from "./viewport";
   import FrameUpdater from "../lib/frameUpdater";
   import { cubicOut } from "svelte/easing";
-  import { SortableUtils } from "../lib/editUtils/sortable";
+  import { getsetFrom, SortableUtils } from "../lib/editUtils/sortable";
   import type { SortableProps } from "./types";
 
   type StyleType = "waterfall" | "enum" | "listener";
@@ -12,7 +12,7 @@
   let {
     key,
     parent,
-    resized,
+    onresized,
     onremoved,
     onmoved,
     style = "waterfall",
@@ -21,7 +21,7 @@
   }: {
     key: T;
     parent: { [k in T]: string[] };
-    resized(): unknown;
+    onresized(): unknown;
     onremoved?(): unknown;
     onmoved?(): unknown;
     style?: StyleType;
@@ -45,10 +45,7 @@
     } | null;
   }[] = $state([]);
 
-  const getset = {
-    get: () => parent[key],
-    set: (arr: string[]) => (parent[key] = arr)
-  };
+  const getset = getsetFrom((() => parent)(), (() => key)());
 
   const Gaps = {
     enum: 5,
@@ -227,11 +224,11 @@
 
   function remove(idx: number) {
     // sortable.removeWithHistory(sortable.list[idx], addHistory, () => {
-    //   resized();
+    //   onresized();
     //   if (onremoved) onremoved();
     // });
     SortableUtils.removeWithHistory(getset, idx, () => {
-      resized();
+      onresized();
       onremoved?.();
     });
   }
@@ -255,7 +252,8 @@
         {@render children({
           id: item.id,
           remove: () => remove(i),
-          onpointerdown: (evt) => item.grabber?.onpointerdown(evt)
+          onpointerdown: (evt) => item.grabber?.onpointerdown(evt),
+          noGrab
         })}
         <!-- <Component
           item={item.itemData}

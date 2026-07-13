@@ -5,7 +5,6 @@ import { addHistory } from "../../lib/editUtils/history";
 import { nodeMovedReloader } from "../../lib/stores";
 import FrameUpdater from "../../lib/frameUpdater";
 import { writable, type Writable } from "svelte/store";
-import type { Action } from "svelte/action";
 import { getProject } from "../../project/store";
 
 type Coord = Record<"x" | "y", number>;
@@ -21,12 +20,24 @@ const outputs = new Map<string, Output>();
 const drawings = new Map<string, Output>();
 export const hoverInput: Writable<string | null> = writable(null);
 
-const outputNode: Action<HTMLElement, { id: string; container: { output: string | null } }> = (
-  node,
-  { id, container }
-) => {
+type OutputNodeParams<K extends string> =
+  | {
+      id: string;
+      outputKey: K;
+      data: { [k in K]: string | null };
+    }
+  | {
+      id: string;
+      outputKey?: "output";
+      data: { output: string | null };
+    };
+const outputNode = <K extends string>(node: HTMLElement, params: OutputNodeParams<K>) => {
   let mounted = false;
   let drawing = false;
+
+  const id = params.id;
+  const outputKey = params.outputKey ?? "output";
+  const data = params.data as { [k in typeof outputKey]: string | null };
 
   function positiveUpdate() {
     if (!mounted) return;
@@ -58,7 +69,7 @@ const outputNode: Action<HTMLElement, { id: string; container: { output: string 
   const o: Output = {
     set output(t: string | null) {
       if (t) {
-        container.output = t;
+        data[outputKey] = t;
 
         if (!updateToCoord()) {
           o.output = null;
@@ -67,11 +78,11 @@ const outputNode: Action<HTMLElement, { id: string; container: { output: string 
         positiveUpdate();
         return;
       }
-      container.output = null;
+      data[outputKey] = null;
       negativeUpdate();
     },
     get output() {
-      return container.output;
+      return data[outputKey];
     },
     fromId: id,
     fromCoord: null,
@@ -130,7 +141,7 @@ const outputNode: Action<HTMLElement, { id: string; container: { output: string 
 
     if (!mounted) {
       mounted = true;
-      o.output = container.output;
+      o.output = data[outputKey];
 
       return;
     }

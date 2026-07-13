@@ -1,8 +1,8 @@
 import type { Types } from "@shared/projectData/types";
 import { genElement } from "./resources";
-import { ipc } from "./ipc";
 import { coordToStyleString } from "./coord";
 import { getRef } from "../project/refs";
+import { editor } from "./msg";
 
 const previewComponent = document.getElementById("preview-component")!;
 
@@ -17,16 +17,19 @@ let currentPreview: {
   elements: Map<string, Types.Element>;
 } | null = null;
 const els: Map<string, ElementPreview> = new Map();
-ipc.on("layout-preview", (event, { component, elements }) => {
+editor.on("preview:info", ({ component, elements }) => {
   currentPreview = { component, elements };
   render();
 });
-ipc.on("stop-preview", () => {
+function stopPreview() {
   currentPreview = null;
   previewComponent.classList.remove("show-content");
   render();
-});
-ipc.on("preview-content-visible", (event, visible) => {
+}
+editor.on("preview:stop", stopPreview);
+editor.on("end", stopPreview);
+
+editor.on("preview:visible", (visible) => {
   previewComponent.classList.toggle("show-content", visible);
 });
 

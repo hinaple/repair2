@@ -1,7 +1,7 @@
 <script lang="ts">
   // import Node from "./Node.svelte";
   // import Step from "./Step.svelte";
-  import Sortable from "../lib/Sortable.svelte";
+  import Sortable from "./Sortable.svelte";
   import Icon from "../assets/icons/Icon.svelte";
   import { addHistory } from "../lib/workHistory";
   import { get } from "svelte/store";

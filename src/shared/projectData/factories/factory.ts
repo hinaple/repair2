@@ -1,8 +1,10 @@
+import type { RecordKey, RecordValue } from "../../constants";
 import type { TypePayloadMap, TypePayloads } from "../typePayload";
 import { createPayload } from "../typePayload/create";
 
 const NESTED_FACTORY = Symbol("nestedFactory");
 const RECORD_FACTORY = Symbol("recordFactory");
+const OWNING = Symbol("ownFactory");
 
 type Factory<T extends object> = (overrides?: Partial<T>) => T;
 
@@ -17,12 +19,24 @@ type RecordFactory<T extends object, K extends keyof T & string = keyof T & stri
   idKey?: K;
 };
 
+type Owning<
+  T extends RecordKey,
+  O extends RecordValue<T> = RecordValue<T>,
+  K extends keyof O & string = keyof O & string
+> = {
+  [OWNING]: true;
+  recordKey: T;
+  idKey?: K;
+};
+
 type FactoryValue<T> = [T] extends [object]
   ? string extends keyof T
     ? T extends Record<string, infer V>
       ? [V] extends [object]
         ? (() => T) | RecordFactory<V>
-        : () => T
+        : [V] extends [RecordKey]
+          ? (() => T) | Owning<V>
+          : () => T
       : () => T
     : (() => T) | NestedFactory<T>
   : T | (() => T);
@@ -53,6 +67,10 @@ function isNestedFactory(value: unknown): value is NestedFactory<object> {
 
 function isRecordFactory(value: unknown): value is RecordFactory<object> {
   return isRecord(value) && (value as Partial<RecordFactory<object>>)[RECORD_FACTORY] === true;
+}
+
+function isOwns(value: unknown): value is Owning<RecordKey> {
+  return isRecord(value) && (value as Partial<Owning<RecordKey>>)[OWNING] === true;
 }
 
 function resolveFactoryValue(defaultValue: unknown, overrideValue: unknown) {
@@ -103,13 +121,26 @@ export function recordOf<T extends object, K extends keyof T & string>(
   };
 }
 
+export function owns<T extends RecordKey, K extends keyof RecordValue<T> & string>(
+  recordKey: T,
+  idKey?: K
+): Owning<T> {
+  return {
+    [OWNING]: true,
+    recordKey,
+    idKey
+  };
+}
+
+type OwnCallback = (type: RecordKey, id: string) => unknown;
+
 export function createFactory<T extends TypePayloads>(
   defaults: Omit<FactoryObject<T>, "payload">,
   typePayloadName: TypePayloadNameOf<T>
-): <O extends Partial<T>>(overrides?: O) => Result<T, O>;
+): <O extends Partial<T>>(overrides?: O, owns?: OwnCallback) => Result<T, O>;
 export function createFactory<T extends object>(
   defaults: FactoryObject<T>
-): <O extends Partial<T>>(overrides?: O) => Result<T, O>;
+): <O extends Partial<T>>(overrides?: O, owns?: OwnCallback) => Result<T, O>;
 export function createFactory(defaults: object, typePayloadName?: keyof TypePayloadMap) {
   const { type: defaultType, ...noTypeDefaults } = defaults as Record<string, unknown>;
   return (overrides?: object) => {

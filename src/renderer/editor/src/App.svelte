@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import ToastDisplay from "./lib/toast/ToastDisplay.svelte";
-  import ContextMenu from "./lib/contextMenu/ContextMenu.svelte";
+  import ContextMenu from "./lib/editUtils/contextMenu/ContextMenu.svelte";
   import { redo, undo } from "./lib/editUtils/history";
   import NodeSpace from "./nodes/NodeSpace.svelte";
   import { focusData } from "./lib/editUtils/focus";
@@ -11,6 +11,7 @@
   import { reload } from "./lib/stores";
   import Modal from "./lib/modal/ModalDisplay.svelte";
   import { ipc } from "./lib/ipc";
+  import { play } from "./lib/msg";
 
   function onkeydown(evt: KeyboardEvent) {
     // if (
@@ -26,10 +27,6 @@
     //   else if (evt.key === "z") undo();
     // }
   }
-
-  onMount(() => {
-    ipc.send("monitor-event", "start");
-  });
 
   document.fonts.ready.then(() => {
     reload("nodeMoved");

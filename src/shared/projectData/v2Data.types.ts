@@ -12,7 +12,7 @@ type ProjectConfig = Override<
   Omit<V1.ProjectConfig, "multiScreen">,
   {
     screenConfig: V1.ScreenConfigData;
-    runtimePlugins: string[];
+    runtimePlugins: (string | null)[];
   }
 >;
 
@@ -61,7 +61,7 @@ type Component = Override<
   V1.Component,
   {
     elements: string[];
-    frame: string | null;
+    frame: string;
     introTransition: Transition;
     outroTransition: Transition;
   }
@@ -70,7 +70,7 @@ type Component = Override<
 type Transition = Override<
   V1.Transition,
   {
-    plugin: string | null;
+    plugin: string;
   }
 >;
 

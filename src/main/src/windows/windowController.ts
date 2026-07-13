@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from "electron";
+import { BrowserWindow, ipcMain, MessageChannelMain } from "electron";
 import { join } from "path";
 import { createEditorMenu } from "./editorMenu";
 import { checkVscodeInstalled } from "../system/vscodeUtils";
@@ -7,6 +7,7 @@ import { logger } from "../logs/logger";
 
 export class WindowController {
   #app: MainApp;
+  #channel: MessageChannelMain | null = null;
 
   constructor(app: MainApp) {
     this.#app = app;
@@ -33,6 +34,11 @@ export class WindowController {
     });
     state.window.main = mainWindow;
     mainWindow.setMenu(null);
+
+    mainWindow.once("ready-to-show", () => {
+      if (this.#channel)
+        mainWindow.webContents.postMessage("messagePort", null, [this.#channel.port1]);
+    });
 
     ipcMain.once("play-win-ready", () => {
       startup.closeSplash();
@@ -112,6 +118,10 @@ export class WindowController {
     editorWindow.setMenu(createEditorMenu(this.#app));
 
     editorWindow.on("ready-to-show", () => {
+      this.#channel = new MessageChannelMain();
+      state.window.main?.webContents.postMessage("messagePort", null, [this.#channel.port1]);
+      editorWindow.webContents.postMessage("messagePort", null, [this.#channel.port2]);
+
       editorWindow.show();
       editorWindow.focus();
       if (state.project.data) {
@@ -131,11 +141,13 @@ export class WindowController {
     }
 
     editorWindow.on("close", () => {
+      this.#channel?.port1.close();
+      this.#channel?.port2.close();
+      this.#channel = null;
       if (editorSave.pending) {
         editorSave.resolveEditorSaveRequest(editorSave.pending.requestId, false);
       }
       state.window.editor = null;
-      message.sendToPlay("monitor-event", "end");
     });
   }
 

@@ -1,11 +1,11 @@
-import type { IpcPreviewPayload } from "@shared/ipc.types";
-import { ipc } from "../ipc";
 import { currentFocus, type FocusData } from "./focus";
 import { extractDataFrom } from "./extractData";
+import { play } from "../msg";
+import type { MsgPreviewPayload } from "@renderer/messagePort";
 
-let previewing: IpcPreviewPayload | null = null;
+let previewing: MsgPreviewPayload | null = null;
 
-function getPreviewData(cf: FocusData): IpcPreviewPayload | null {
+function getPreviewData(cf: FocusData): MsgPreviewPayload | null {
   if (cf.type !== "component" && cf.type !== "element") return null;
 
   let componentId: string | undefined = cf.type === "component" ? cf.target : cf.parents?.[0];
@@ -28,18 +28,18 @@ function getPreviewData(cf: FocusData): IpcPreviewPayload | null {
 currentFocus.subscribe((cf) => {
   const tempP = getPreviewData(cf);
 
-  if (tempP) ipc.send("layout-preview", tempP);
-  else if (previewing) ipc.send("stop-preview");
+  if (tempP) play.send("preview:info", tempP);
+  else if (previewing) play.send("preview:stop");
 
   previewing = tempP;
 });
 
 export function reloadPreview() {
   if (!previewing) return;
-  ipc.send("layout-preview", previewing);
+  play.send("preview:info", previewing);
 }
 
 export function setPreviewContentVisible(visible: boolean) {
   if (!previewing) return;
-  ipc.send("preview-content-visible", visible);
+  play.send("preview:visible", visible);
 }

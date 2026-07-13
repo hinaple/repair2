@@ -1,7 +1,7 @@
-<script>
+<script lang="ts">
   import { get } from "svelte/store";
   import { grabbing, reload } from "../../lib/stores";
-  import { outClicked } from "../../lib/contextMenu/contextUtils";
+  import { outClicked } from "../../lib/editUtils/contextMenu/contextUtils";
   import { currentFocus, focusData } from "../../lib/editUtils/focus";
   import Icon from "../../assets/icons/Icon.svelte";
   import { addHistory } from "../../lib/editUtils/history";
@@ -11,31 +11,33 @@
   import { pasted } from "../../lib/editUtils/clipboard";
   import { genClipboardFn } from "../../lib/editUtils/clipboard";
   import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
+  import { getProject } from "../../project/store";
+  import { createElement } from "@shared/projectData/factories";
 
-  let { payload: compTemp, noGrab = false, nodeCountChanged } = $props();
+  let {
+    id,
+    noGrab = false,
+    onNodeCountChanged,
+    parents
+  }: {
+    id: string;
+    noGrab?: boolean;
+    onNodeCountChanged: () => unknown;
+    parents: string[];
+  } = $props();
+
   // svelte-ignore state_referenced_locally
-  const comp = compTemp;
+  const comp = getProject().getUnsafe("components", id);
 
   $effect(() => {
     comp.alias;
     reload("nodeMoved");
   });
 
-  function onpointerdown(evt) {
+  function addElement(evt: PointerEvent) {
     if (evt.button || $grabbing) return;
     evt.stopPropagation();
-    focusData("component", comp, {
-      preview: comp,
-      clipboardFn: {
-        paste: () => pasted({ type: "component", obj: comp })
-      }
-    });
-    outClicked();
-  }
-
-  function addElement(evt) {
-    if (evt.button || $grabbing) return;
-    evt.stopPropagation();
+    const temp = createElement();
     const newElement = comp.elements.addWithHistory(addHistory, {
       afterChange: () => reload("nodeMoved")
     });

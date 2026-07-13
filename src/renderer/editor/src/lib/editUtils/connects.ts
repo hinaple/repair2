@@ -1,6 +1,6 @@
 import type { Types } from "@shared/projectData/types";
 import { getProject } from "../../project/store";
-import type { ProjectInstance } from "../../project/classes/project";
+import type { ProjectInstance } from "../../project/project";
 
 export function getOutsFromNode(
   node: Types.Node,

@@ -19,14 +19,6 @@ function moveToRecord<T extends Record<string, any>>(object: T, target: Record<s
   return id;
 }
 
-function movePluginPointer(
-  pointer: V1.PluginPointer | null | undefined,
-  target: Record<string, V2.PluginPointer>
-) {
-  if (!pointer?.name) return null;
-  return moveToRecord(pointer, target);
-}
-
 function removeAndMove<K extends string, O extends { [k in K]: Record<string, any> }>(
   original: O,
   target: Record<string, any>,
@@ -83,7 +75,7 @@ function stringifyType<P extends TypePayloads>(obj: { type: string[]; [k: string
 export function migrateToV2(appVersion: string, data: V1.Data) {
   const tempPluginPointers: Record<string, V2.PluginPointer> = {};
   const runtimePlugins = (
-    data.config.runtimePlugins?.map((p) => movePluginPointer(p, tempPluginPointers)) ?? []
+    data.config.runtimePlugins?.map((p) => moveToRecord(p, tempPluginPointers)) ?? []
   ).filter((id): id is string => id !== null);
   const screenConfig: V2.ScreenConfigData =
     "screenConfig" in data.config
@@ -159,7 +151,7 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
       return;
     }
     if (joinedType === "Others.executePlugin") {
-      const pluginPointerId = movePluginPointer(step.payload.plugin, v2.pluginPointers);
+      const pluginPointerId = moveToRecord(step.payload.plugin, v2.pluginPointers);
       v2.steps[step.id] = {
         ...step,
         type: joinedType,
@@ -186,15 +178,9 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
 
   const tempElements: Record<string, V1.Element> = {};
   Object.values(tempComponents).forEach((component) => {
-    const framePluginPointerId = movePluginPointer(component.frame, v2.pluginPointers);
-    const introPluginPointerId = movePluginPointer(
-      component.introTransition.plugin,
-      v2.pluginPointers
-    );
-    const outroPluginPointerId = movePluginPointer(
-      component.outroTransition.plugin,
-      v2.pluginPointers
-    );
+    const framePluginPointerId = moveToRecord(component.frame, v2.pluginPointers);
+    const introPluginPointerId = moveToRecord(component.introTransition.plugin, v2.pluginPointers);
+    const outroPluginPointerId = moveToRecord(component.outroTransition.plugin, v2.pluginPointers);
     v2.components[component.id] = {
       ...removeAndMoveArr(component, tempElements, "elements"),
       frame: framePluginPointerId,
@@ -208,7 +194,7 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
     const el: V2.Element = stringifyType(removeAndMoveArr(element, tempListeners, "listeners"));
     if (el.type === "plugin") {
       el.payload = {
-        plugin: movePluginPointer(element.payload as V1.PluginPointer, v2.pluginPointers)
+        plugin: moveToRecord(element.payload as V1.PluginPointer, v2.pluginPointers)
       };
     }
     v2.elements[element.id] = el;
@@ -219,7 +205,7 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
     l.id = id;
     if (l.type === "plugin")
       l.payload = {
-        plugin: movePluginPointer(listener.payload.plugin as V1.PluginPointer, v2.pluginPointers),
+        plugin: moveToRecord(listener.payload.plugin as V1.PluginPointer, v2.pluginPointers),
         channel: listener.payload.channel ? String(listener.payload.channel) : null
       };
     v2.listeners[id] = l;

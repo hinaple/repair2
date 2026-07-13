@@ -7,7 +7,7 @@
   import { grabbing, reload } from "../../lib/stores";
   import { addHistory } from "../../lib/editUtils/history";
   import { currentFocus, focusData } from "../../lib/editUtils/focus";
-  import { outClicked } from "../../lib/contextMenu/contextUtils";
+  import { outClicked } from "../../lib/editUtils/contextMenu/contextUtils";
   import { onDestroy } from "svelte";
   import registerHighlight from "../../lib/highlight";
   import { genClipboardFn } from "../../lib/editUtils/clipboard";

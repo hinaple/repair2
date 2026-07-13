@@ -1,13 +1,22 @@
 import type { RecordKey, RecordValue } from "../../constants";
 import type { RuntimeProjectData } from "../types";
 import { isRelationLeaf, isRelationTree, KIND, RelationMap, TYPE } from "./map";
-import type { RelationLeaf, RelationMapType, RelationTree } from "./map";
+import type {
+  RelationLeaf,
+  RelationMapType,
+  RelationRootData,
+  RelationRootKey,
+  RelationTree
+} from "./map";
 
 export interface ForEachOpt {
   includes?: RecordKey[];
+  includePath?: boolean;
   maxLevel?: number;
   onlyOwns?: boolean;
 }
+
+export type ForEachRelationIdOpt = Pick<ForEachOpt, "includes" | "includePath" | "onlyOwns">;
 
 export type DeepForEachCallback = <R extends RecordKey>(d: {
   type: R;
@@ -21,16 +30,32 @@ export type DeepForEachCallback = <R extends RecordKey>(d: {
 export type DeepForEachVia = {
   type: RecordKey;
   id: string;
-  path: string[];
+  path?: string[];
   kind: KIND;
 };
+
+export type ForEachRelationIdCallback = <R extends RecordKey>(d: {
+  type: R;
+  id: string;
+  owned: boolean;
+  path?: string[];
+  kind: KIND;
+}) => unknown;
 
 type WalkContext = {
   project: RuntimeProjectData;
   callback: DeepForEachCallback;
   opt: ForEachOpt;
   includes?: Set<RecordKey>;
+  includePath: boolean;
   visited: Set<string>;
+};
+
+type RelationIdWalkContext = {
+  callback: ForEachRelationIdCallback;
+  opt: ForEachRelationIdOpt;
+  includes?: Set<RecordKey>;
+  includePath: boolean;
 };
 
 type VisitState = {
@@ -39,16 +64,30 @@ type VisitState = {
   via: DeepForEachVia | null;
 };
 
-type RelationSource = {
-  type: RecordKey;
-  id: string;
+type RelationIdWalkState = {
+  path?: string[];
 };
 
-type MapWalkState = {
-  source: RelationSource;
-  level: number;
-  path: string[];
-};
+export function forEachRelationId<K extends RelationRootKey>(
+  type: K,
+  data: RelationRootData<K>,
+  callback: ForEachRelationIdCallback,
+  opt: ForEachRelationIdOpt = {}
+) {
+  const map = (RelationMap as RelationMapType)[type];
+  if (!map) return;
+  walkMap(
+    {
+      callback,
+      opt,
+      includes: opt.includes ? new Set(opt.includes) : undefined,
+      includePath: opt.includePath === true
+    },
+    data,
+    map,
+    { path: opt.includePath === true ? [] : undefined }
+  );
+}
 
 export function deepForEach(
   project: RuntimeProjectData,
@@ -63,6 +102,7 @@ export function deepForEach(
       callback,
       opt,
       includes: opt.includes ? new Set(opt.includes) : undefined,
+      includePath: opt.includePath === true,
       visited: new Set()
     },
     type,
@@ -79,22 +119,42 @@ function dfe(ctx: WalkContext, type: RecordKey, id: string | null, state: VisitS
 
   const data = ctx.project[type].get(id);
   if (!data) return;
-  if (!ctx.includes || ctx.includes.has(type)) {
-    ctx.callback({ type, id, data, ...state });
-  }
+  ctx.callback({ type, id, data, ...state });
 
   if (ctx.opt.maxLevel !== undefined && state.level >= ctx.opt.maxLevel) return;
 
   const map = (RelationMap as RelationMapType)[type];
   if (!map) return;
-  walkMap(ctx, data, map, {
-    source: { type, id },
-    level: state.level,
-    path: []
-  });
+  walkMap(
+    {
+      callback: ({ type: relationType, id: relationId, owned, path, kind }) => {
+        dfe(ctx, relationType, relationId, {
+          level: state.level + 1,
+          owned,
+          via: {
+            type,
+            id,
+            ...(path !== undefined ? { path } : {}),
+            kind
+          }
+        });
+      },
+      opt: ctx.opt,
+      includes: ctx.includes,
+      includePath: ctx.includePath
+    },
+    data,
+    map,
+    { path: ctx.includePath ? [] : undefined }
+  );
 }
 
-function walkMap(ctx: WalkContext, data: unknown, map: RelationTree, state: MapWalkState) {
+function walkMap(
+  ctx: RelationIdWalkContext,
+  data: unknown,
+  map: RelationTree,
+  state: RelationIdWalkState
+) {
   if (!isRecord(data)) return;
 
   if (map.$dependsOn && map.$cases) {
@@ -105,58 +165,62 @@ function walkMap(ctx: WalkContext, data: unknown, map: RelationTree, state: MapW
     }
   }
 
-  for (const [key, relation] of Object.entries(map)) {
+  for (const key in map) {
     if (key === "$dependsOn" || key === "$cases") continue;
 
+    const relation = map[key];
     const value = data[key];
-    const nextState = { ...state, path: [...state.path, key] };
+    if (state.path) state.path.push(key);
     if (isRelationLeaf(relation)) {
-      followRelation(ctx, nextState, relation, value);
+      followRelation(ctx, state, relation, value);
+      if (state.path) state.path.pop();
       continue;
     }
 
     if (isRelationTree(relation)) {
-      walkMap(ctx, value, relation, nextState);
+      walkMap(ctx, value, relation, state);
     }
+
+    if (state.path) state.path.pop();
   }
 }
 
 function followRelation(
-  ctx: WalkContext,
-  state: MapWalkState,
+  ctx: RelationIdWalkContext,
+  state: RelationIdWalkState,
   relation: RelationLeaf,
   value: unknown
 ) {
   const owned = relation.$kind === KIND.OWN;
   if (ctx.opt.onlyOwns && !owned) return;
+  if (ctx.includes && !ctx.includes.has(relation.$key)) return;
 
   if (relation.$type === TYPE.ID) {
     if (typeof value === "string") {
-      dfe(ctx, relation.$key, value, createNextVisitState(state, owned, relation.$kind));
+      ctx.callback({
+        type: relation.$key,
+        id: value,
+        owned,
+        ...(ctx.includePath && state.path ? { path: [...state.path] } : {}),
+        kind: relation.$kind
+      });
     }
     return;
   }
 
   if (relation.$type === TYPE.ID_ARRAY && Array.isArray(value)) {
-    const nextVisitState = createNextVisitState(state, owned, relation.$kind);
     for (const id of value) {
       if (typeof id === "string") {
-        dfe(ctx, relation.$key, id, nextVisitState);
+        ctx.callback({
+          type: relation.$key,
+          id,
+          owned,
+          ...(ctx.includePath && state.path ? { path: [...state.path] } : {}),
+          kind: relation.$kind
+        });
       }
     }
   }
-}
-
-function createNextVisitState(state: MapWalkState, owned: boolean, kind: KIND): VisitState {
-  return {
-    level: state.level + 1,
-    owned,
-    via: {
-      ...state.source,
-      path: state.path,
-      kind
-    }
-  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
