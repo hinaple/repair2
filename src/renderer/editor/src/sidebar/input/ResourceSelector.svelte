@@ -1,10 +1,13 @@
 <script lang="ts">
-  import { appData } from "../../project/store";
+  import { getProject } from "../../project/store";
   import ResourcePreview from "../../lib/ResourcePreview.svelte";
   import outClickAction from "../../lib/actions/outclickaction";
   import outScrollAction from "../../lib/actions/outscrollaction";
   import { tick } from "svelte";
   import Icon from "../../assets/icons/Icon.svelte";
+  import { getResourceInfo } from "../resource/resourceInfo";
+
+  type ResourceInfo = ReturnType<typeof getResourceInfo>;
 
   let {
     resourceId = $bindable(null),
@@ -16,29 +19,35 @@
 
   const RESOURCE_BTN_HEIGHT = 80;
 
-  let resource = $derived(appData.resources.find((r) => r.id === resourceId));
+  let resources = $derived([...getProject().resources.values()].map(getResourceInfo));
+  let resource = $derived.by(() => {
+    const data = resourceId ? getProject().resources.get(resourceId) : undefined;
+    return data ? getResourceInfo(data) : undefined;
+  });
 
   let isSelecting = $state(false);
 
   /** @type {HTMLDivElement} */
-  let selectBtnEl = $state(null);
+  let selectBtnEl = $state<HTMLDivElement | null>(null);
   /** @type {HTMLDivElement} */
-  let containerEl = $state(null);
+  let containerEl = $state<HTMLDivElement | null>(null);
   /** @type {HTMLDivElement} */
-  let listEl = $state(null);
+  let listEl = $state<HTMLDivElement | null>(null);
   /** @type {HTMLInputElement} */
-  let inputEl = $state(null);
+  let inputEl = $state<HTMLInputElement | null>(null);
   let searchString = $state("");
 
   let selectedResourceIdx = $state(0);
 
   async function open() {
+    if (!selectBtnEl) return;
     isSelecting = true;
     searchString = "";
-    resourceList = appData.resources.filter((r) => !type || r.fileType === type);
+    resourceList = resources.filter((r) => !type || r.fileType === type);
 
     const selectBtnRect = selectBtnEl.getBoundingClientRect();
     await tick();
+    if (!containerEl || !inputEl) return;
 
     containerEl.style.width = `${selectBtnRect.width}px`;
     containerEl.style.maxHeight = `${window.innerHeight / 2 - selectBtnRect.height / 2}px`;
@@ -58,7 +67,7 @@
 
     focusBtn(
       resourceList.findIndex((r) => r.id === resourceId),
-      { behavior: "instant", block: "start" }
+      { behavior: "auto", block: "start" }
     );
   }
   function close() {
@@ -68,21 +77,25 @@
     searchString = "";
     resourceList = [];
   }
-  function focusBtn(idx, scrollOption = { behavior: "smooth", block: "nearest" }) {
+  function focusBtn(
+    idx: number,
+    scrollOption: ScrollIntoViewOptions = { behavior: "smooth", block: "nearest" }
+  ) {
+    if (!listEl || idx < 0 || idx >= listEl.children.length) return;
     selectedResourceIdx = idx;
     listEl.children[selectedResourceIdx].scrollIntoView(scrollOption);
   }
 
-  function selectResource(id) {
+  function selectResource(id: string) {
     resourceId = id;
     isSelecting = false;
     onchange(id);
   }
 
   let resourceTitle = $derived(resource?.title || "할당된 자원 없음");
-  let resourceList = $state([]);
+  let resourceList = $state<ResourceInfo[]>([]);
 
-  function onkeydown(e) {
+  function onkeydown(e: KeyboardEvent) {
     if (e.key === "ArrowDown") focusBtn(Math.min(resourceList.length - 1, selectedResourceIdx + 1));
     else if (e.key === "ArrowUp") focusBtn(Math.max(0, selectedResourceIdx - 1));
     else if (e.key === "Escape") close();
@@ -90,7 +103,7 @@
       selectResource(resourceList[selectedResourceIdx].id);
   }
   async function oninput() {
-    resourceList = appData.resources.filter(
+    resourceList = resources.filter(
       (r) => (!type || r.fileType === type) && (!searchString || r.title.includes(searchString))
     );
     const tempSelectedIdx = searchString
@@ -98,7 +111,8 @@
       : (resourceList.findIndex((r) => r.id === resourceId) ?? 0);
     await tick();
     focusBtn(tempSelectedIdx, {
-      behavior: "instant"
+      behavior: "auto",
+      block: "nearest"
     });
   }
 </script>
@@ -108,7 +122,7 @@
     bind:this={containerEl}
     class="resource-selector"
     style={`--resource-btn-height: ${RESOURCE_BTN_HEIGHT}px;`}
-    use:outClickAction={{ callback: close, excludes: [selectBtnEl] }}
+    use:outClickAction={{ callback: close, excludes: selectBtnEl ? [selectBtnEl] : [] }}
     use:outScrollAction={close}
   >
     <div class={["search-zone", !searchString?.length && "hidden"]}>

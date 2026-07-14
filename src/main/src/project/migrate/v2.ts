@@ -79,7 +79,10 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
   ).filter((id): id is string => id !== null);
   const screenConfig: V2.ScreenConfigData =
     "screenConfig" in data.config
-      ? data.config.screenConfig
+      ? ({
+          ...data.config.screenConfig,
+          type: joinType(data.config.screenConfig.type)
+        } as V2.ScreenConfigData)
       : {
           type: data.config.multiScreen ? "fullMultiScreen" : "fullscreen",
           payload: null

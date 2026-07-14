@@ -1,7 +1,7 @@
-import { addHistory } from "../../lib/editUtils/history";
 import { join } from "path";
 import { ipc } from "../../lib/ipc";
 import type { Types } from "@shared/projectData/types";
+import { getMutator } from "../../project/store";
 
 export const AssetDir = join(ipc.sendSync("getDataDir"), "assets");
 
@@ -9,7 +9,7 @@ export function splitPath(path: string) {
   return path.replace(AssetDir, "").replace(/^\\/, "").replace(/\\/g, "/");
 }
 
-export async function changeResourceFile(resource: Types.Resource) {
+export async function changeResourceFile(id: string) {
   const result = await ipc.invoke("selectFile", {
     title: "변경할 자원 파일 선택",
     properties: ["openFile"]
@@ -36,13 +36,7 @@ export async function changeResourceFile(resource: Types.Resource) {
 
   const src = splitPath(target);
 
-  addHistory({
-    doFn: ({ src }) => {
-      resource.src = src;
-    },
-    doData: { src },
-    undoData: { src: resource.src }
-  });
+  getMutator().record("resources", id).field("src").set(src);
 }
 
 export async function selectMany() {

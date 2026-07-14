@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+  import type { Component } from "svelte";
   import ProjectEdit from "./editPages/ProjectEdit.svelte";
   import SequenceEdit from "./editPages/SequenceEdit.svelte";
   import StepEdit from "./editPages/StepEdit.svelte";
@@ -10,11 +11,11 @@
   import ListenerEdit from "./editPages/ListenerEdit.svelte";
   import EntryEdit from "./editPages/EntryEdit.svelte";
   import VariableSetEdit from "./editPages/VariableSetEdit.svelte";
-  import { get } from "svelte/store";
-  import { currentFocus as currentFocusStore } from "../../lib/editUtils/focus";
-  import { onDestroy } from "svelte";
+  import { currentFocus } from "../../lib/editUtils/focus";
+  import { getMutator, getProject } from "../../project/store";
+  import type { FieldBinding } from "../../project/mutator";
 
-  let { title = $bindable() } = $props();
+  let { title = $bindable("") }: { title?: string } = $props();
 
   const Edits = {
     project: { title: "Project", component: ProjectEdit },
@@ -28,23 +29,53 @@
     listener: { title: "Listener", component: ListenerEdit },
     entry: { title: "Entry", component: EntryEdit },
     variableSet: { title: "Variable Set", component: VariableSetEdit }
-  };
-  let CurrentEditComponent = $state();
-
-  const unsub = currentFocusStore.subscribe((cf) => {
-    const currentEdit = Edits[cf.type];
-    if (!currentEdit) return;
-
-    CurrentEditComponent = currentEdit.component;
-    title = currentEdit.title;
+  } as const;
+  const RecordMap = {
+    sequence: "nodes",
+    branch: "nodes",
+    entry: "nodes",
+    variableSet: "nodes",
+    step: "steps",
+    valueProcess: "valueProcesses",
+    value: "values",
+    component: "components",
+    element: "elements",
+    listener: "listeners"
+  } as const;
+  let currentEdit = $derived.by(() => {
+    const focus = $currentFocus;
+    if (focus.type === "node") {
+      const node = getProject().nodes.get(focus.target);
+      return node ? Edits[node.nodeType] : undefined;
+    }
+    if (focus.type === "nodes") return undefined;
+    return Edits[focus.type];
   });
-  onDestroy(unsub);
+  // The selected component and editor are correlated by currentFocus, but that
+  // relationship cannot be represented by Svelte's dynamic component union.
+  let CurrentEditComponent = $derived(
+    currentEdit?.component as Component<{ editor: FieldBinding<unknown> }> | undefined
+  );
+  let editor = $derived.by(() => {
+    const focus = $currentFocus;
+    if (focus.type === "project") return getMutator().config();
+    if (focus.type === "nodes") return null;
+    if (focus.type === "node") return getMutator().record("nodes", focus.target);
+    if (!(focus.type in RecordMap)) return null;
+    const recordType = RecordMap[focus.type as keyof typeof RecordMap];
+    if (!getProject().get(recordType, focus.target)) return null;
+    return getMutator().record(recordType, focus.target);
+  });
+
+  $effect(() => {
+    if (currentEdit) title = currentEdit.title;
+  });
 </script>
 
 <div class="options">
-  {#if CurrentEditComponent}
-    {#key CurrentEditComponent}
-      <CurrentEditComponent data={get(currentFocusStore).obj} />
+  {#if CurrentEditComponent && editor}
+    {#key `${$currentFocus.type}:${$currentFocus.target}`}
+      <CurrentEditComponent {editor} />
     {/key}
   {/if}
 </div>

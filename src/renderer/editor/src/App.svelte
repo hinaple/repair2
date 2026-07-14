@@ -12,6 +12,8 @@
   import Modal from "./lib/modal/ModalDisplay.svelte";
   import { ipc } from "./lib/ipc";
   import { play } from "./lib/msg";
+  import { setViewportSize, viewport } from "./nodes/viewport";
+  import { getProject } from "./project/store";
 
   function onkeydown(evt: KeyboardEvent) {
     // if (
@@ -27,6 +29,13 @@
     //   else if (evt.key === "z") undo();
     // }
   }
+
+  onMount(() => {
+    const project = getProject();
+
+    viewport.pos.set(project.viewport.pos);
+    setViewportSize(project.viewport.size);
+  });
 
   document.fonts.ready.then(() => {
     reload("nodeMoved");

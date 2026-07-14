@@ -1,18 +1,33 @@
-<script>
-  import { get } from "svelte/store";
+<script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
-  import Sortable from "../Sortable.svelte";
-  import { BaseValueTypes } from "../../lib/translate";
-  import ValueProcess from "./ValueProcess.svelte";
-  import { grabbing, reload } from "../../lib/stores";
-  import { addHistory } from "../../lib/editUtils/history";
-  import { currentFocus, focusData } from "../../lib/editUtils/focus";
-  import { outClicked } from "../../lib/editUtils/contextMenu/contextUtils";
-  import { onDestroy } from "svelte";
+  import { data } from "../../lib/editUtils/dataAction";
+  import { focusData } from "../../lib/editUtils/focus";
   import registerHighlight from "../../lib/highlight";
-  import { genClipboardFn } from "../../lib/editUtils/clipboard";
+  import { grabbing, reload } from "../../lib/stores";
+  import { BaseValueTypes } from "../../lib/translate";
+  import { Factories } from "../../project/factories";
+  import { getMutator } from "../../project/store";
+  import Sortable from "../Sortable.svelte";
+  import ValueProcess from "./ValueProcess.svelte";
 
-  let { value, pre, isFull = false, isValueA = false, inNodeSpace = true } = $props();
+  let {
+    id,
+    parents,
+    pre,
+    isFull = false,
+    isValueA = false,
+    inNodeSpace = true
+  }: {
+    id: string;
+    parents: string[];
+    pre: string;
+    isFull?: boolean;
+    isValueA?: boolean;
+    inNodeSpace?: boolean;
+  } = $props();
+
+  const editor = $derived(getMutator().record("values", id));
+  const value = $derived(editor.value);
 
   if (inNodeSpace)
     $effect(() => {
@@ -20,58 +35,48 @@
       reload("nodeMoved");
     });
 
-  function addProcess(evt) {
+  function addProcess(event: PointerEvent) {
     if ($grabbing) return;
-    evt.stopPropagation();
-    const newProcess = value.process.addWithHistory(addHistory, {
-      afterChange: () => reload("nodeMoved")
+    event.stopPropagation();
+    const processId = getMutator().transaction(() => {
+      const newId = Factories.valueProcess();
+      editor.field("process").splice(value.process.length, 0, newId);
+      return newId;
     });
-    const newClipboardFn = genClipboardFn("valueProcess", newProcess, () =>
-      value.process.removeWithHistory(newProcess, addHistory, () => reload("nodeMoved"))
-    );
-    focusData("valueProcess", newProcess, { clipboardFn: newClipboardFn });
+    focusData("valueProcess", processId, [id, ...parents]);
+    reload("nodeMoved");
   }
 
-  function clickBase(evt) {
-    if (evt.button || $grabbing) return;
-    evt.stopPropagation();
-    focusData("value", value);
-    outClicked();
-  }
-
-  onDestroy(() => {
-    if (get(currentFocus).obj === value) focusData("project");
-  });
-
-  let hlActive = $derived(!!(value.baseType === "variable" && value.baseValue));
+  let highlightActive = $derived(value.baseType === "variable" && !!value.baseValue);
 </script>
 
 <div class={["value-wrapper", isFull && "full", isValueA && "right-border"]}>
   <div
-    class={["value", $currentFocus.obj === value && "focus"]}
-    onpointerdown={clickBase}
-    use:registerHighlight={{ type: "variable", data: value.baseValue, active: hlActive }}
+    class="value"
+    use:data={{ type: "value", id, parents }}
+    use:registerHighlight={highlightActive
+      ? { type: "variable", data: value.baseValue ?? "" }
+      : null}
   >
     <div class="base-value">
       <div class="text">
         {pre}<b
           >{value.baseType === "string" && value.baseValue?.length
             ? value.baseValue
-            : (BaseValueTypes[value.baseType] ?? "알 수 없는 값")}</b
+            : (BaseValueTypes[value.baseType as keyof typeof BaseValueTypes] ?? "알 수 없는 값")}</b
         >
       </div>
     </div>
     <Sortable
-      Component={ValueProcess}
-      sortable={value.process}
-      pretty
-      resized={() => {
-        reload("nodeMoved");
-      }}
-    />
-    <div class="add" onpointerdown={addProcess}>
-      <Icon color="#000" lineWidth={2} />
-    </div>
+      binding={editor.field("process")}
+      itemType="valueProcesses"
+      onresized={() => reload("nodeMoved")}
+    >
+      {#snippet children(props)}
+        <ValueProcess parents={[id, ...parents]} {...props} />
+      {/snippet}
+    </Sortable>
+    <div class="add" onpointerdown={addProcess}><Icon color="#000" lineWidth={2} /></div>
     <div class="empty-space"></div>
   </div>
 </div>
@@ -128,12 +133,9 @@
     width: 100%;
     height: 20px;
     background-color: var(--b-o2);
-    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    font-size: 20px;
     cursor: pointer;
     flex: 0 0 auto;
     border-bottom: solid #000 2px;

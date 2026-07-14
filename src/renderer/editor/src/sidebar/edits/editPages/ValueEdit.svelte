@@ -1,36 +1,22 @@
-<script>
+<script lang="ts">
   import InputField from "../../input/InputField.svelte";
   import { BaseValueTypes } from "../../../lib/translate";
-  import { addHistory } from "../../../lib/editUtils/history";
-
-  const { data } = $props();
+  import type { RecordEditor } from "../../../project/mutator";
+  const { editor }: { editor: RecordEditor<"values"> } = $props();
+  let data = $derived(editor.value);
 </script>
 
 <InputField
   label="기본값 종류"
   type="select"
   value={data.baseType}
-  setter={(d) => {
-    addHistory({
-      doFn: ({ type, value = null }) => data.changeBaseType(type, value),
-      doData: { type: d },
-      undoData: { type: data.baseType, value: data.baseValue }
-    });
+  oncommit={(d: string) => {
+    editor.set({ ...data, baseType: d, baseValue: null });
   }}
   options={BaseValueTypes}
-  manual
 />
 {#if data.baseType === "string"}
-  <InputField
-    label="기본값 직접 입력"
-    value={data.baseValue}
-    setter={(d) => (data.baseValue = d)}
-  />
+  <InputField label="기본값 직접 입력" binding={editor.field("baseValue")} />
 {:else if data.baseType === "variable"}
-  <InputField
-    label="변수 할당"
-    value={data.baseValue}
-    setter={(d) => (data.baseValue = d)}
-    type="variable"
-  />
+  <InputField label="변수 할당" binding={editor.field("baseValue")} type="variable" />
 {/if}

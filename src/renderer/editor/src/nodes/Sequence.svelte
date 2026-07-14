@@ -1,67 +1,81 @@
 <script lang="ts">
-  // import Node from "./Node.svelte";
-  // import Step from "./Step.svelte";
-  import Sortable from "./Sortable.svelte";
   import Icon from "../assets/icons/Icon.svelte";
-  import { addHistory } from "../lib/workHistory";
-  import { get } from "svelte/store";
-  import { grabbing, reload } from "../lib/stores";
   import { focusData } from "../lib/editUtils/focus";
-  import { genClipboardFn } from "../lib/editUtils/clipboard";
+  import { grabbing, reload } from "../lib/stores";
+  import { Factories } from "../project/factories";
+  import { getMutator } from "../project/store";
+  import Node from "./Node.svelte";
+  import Sortable from "./Sortable.svelte";
+  import Step from "./Step.svelte";
+  import type { Types } from "@shared/projectData/types";
+  import type { FieldBinding } from "../project/mutator";
 
-  let { sequence, isLastHold, onpointerdown, ...nodeData } = $props();
+  let {
+    id,
+    isLastHold = false,
+    onpointerdown = () => {}
+  }: {
+    id: string;
+    isLastHold?: boolean;
+    onpointerdown?: (event: PointerEvent) => unknown;
+  } = $props();
 
-  function addStep(evt) {
-    if (evt.button || $grabbing) return;
-    evt.stopPropagation();
-    const newStep = sequence.steps.addWithHistory(addHistory);
-    const newClipboardFn = genClipboardFn("step", newStep, () =>
-      sequence.steps.removeWithHistory(newStep, addHistory, () => reload("nodeMoved"))
-    );
-    focusData("step", newStep, { clipboardFn: newClipboardFn });
+  const editor = $derived(getMutator().record<"nodes", Types.Sequence>("nodes", id));
+  const sequence = $derived(editor.value);
+
+  function addStep(event: PointerEvent) {
+    if (event.button || $grabbing) return;
+    event.stopPropagation();
+    const stepId = getMutator().transaction(() => {
+      const newId = Factories.step();
+      editor.field("steps").splice(sequence.steps.length, 0, newId);
+      return newId;
+    });
+    focusData("step", stepId, [id]);
+    reload("nodeMoved");
   }
 
-  let innerOutputs = $state([]);
-  function nodeCountChanged() {
-    innerOutputs = [];
-    sequence.steps.list
-      .filter((s) => s.type === "Component.create")
-      .forEach((s) => {
-        s.payload.elements.list.forEach(
-          (e) => (innerOutputs = [...innerOutputs, ...e.listeners.list])
-        );
-      });
-  }
-  nodeCountChanged();
+  let innerOutputs = $derived.by(() => {
+    const outputs: { id: string; binding: FieldBinding<string | null> }[] = [];
+    for (const stepId of sequence.steps) {
+      const step = getMutator().record("steps", stepId).value;
+      if (step.type !== "Component.create") continue;
+      const component = getMutator().record("components", step.payload.componentId).value;
+      for (const elementId of component.elements) {
+        const element = getMutator().record("elements", elementId).value;
+        for (const listenerId of element.listeners) {
+          outputs.push({
+            id: listenerId,
+            binding: getMutator().record("listeners", listenerId).field("output")
+          });
+        }
+      }
+    }
+    return outputs;
+  });
 </script>
 
 <Node
-  node={sequence}
-  type="sequence"
-  outputs={[{ output: sequence.output, id: sequence.id }]}
+  {id}
+  outputs={[{ id, binding: editor.field("output") }]}
   {innerOutputs}
   title={sequence.alias?.length ? sequence.alias : "시퀀스"}
   {isLastHold}
   {onpointerdown}
-  {...nodeData}
 >
   {#snippet body()}
     <div class="body">
       <Sortable
-        key="steps"
-        parent={sequence}
-        resized={() => {
-          reload("nodeMoved");
-        }}
+        binding={editor.field("steps")}
+        itemType="steps"
+        onresized={() => reload("nodeMoved")}
         onmoved={() => reload("nodeMoved")}
       >
-        {#snippet children({ id, remove, onpointerdown })}
-          <Step {id} {nodeCountChanged} {onpointerdown} {remove} pretty />
+        {#snippet children(props)}
+          <Step parents={[id]} {...props} />
         {/snippet}
       </Sortable>
-      <div class="add" onpointerdown={addStep}>
-        <Icon color="#fff" lineWidth={2} />
-      </div>
+      <div class="add" onpointerdown={addStep}><Icon color="#fff" lineWidth={2} /></div>
     </div>
   {/snippet}
 </Node>
@@ -85,8 +99,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    font-size: 20px;
     cursor: pointer;
   }
   .add :global(svg) {

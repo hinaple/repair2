@@ -18,12 +18,12 @@
   import { rightclick } from "../lib/editUtils/contextMenu/contextUtils";
   import Branch from "./Branch.svelte";
   import Entry from "./Entry.svelte";
-  import { pasted } from "../lib/editUtils/clipboard";
   import { fade } from "svelte/transition";
   import FrameUpdater from "../lib/frameUpdater";
   import VariableSet from "./VariableSet.svelte";
   import LinesOld from "./lines/LinesOld.svelte";
   import event from "../lib/actions/eventAction";
+  import { isFocusHandled } from "../lib/editUtils/dataAction";
 
   const myReadyGrab = GrabKeys.viewport;
   const myGrab = GrabKeys.viewportReady;
@@ -54,6 +54,8 @@
   let selectOrigin = $state<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   let selectBoxEl = $state<HTMLElement | null>(null);
   function pointerdown(evt: PointerEvent) {
+    if (isFocusHandled(evt)) return;
+
     if (evt.button === 0 && !$grabbing) {
       const x = evt.clientX,
         y = evt.clientY;
@@ -87,31 +89,6 @@
   }
   function pointerup(evt: PointerEvent) {
     if (selectOrigin) {
-      if (selectOrigin.x2) {
-        const area = {
-          x1: Math.min(selectOrigin.x1, selectOrigin.x2),
-          y1: Math.min(selectOrigin.y1, selectOrigin.y2),
-          x2: Math.max(selectOrigin.x1, selectOrigin.x2),
-          y2: Math.max(selectOrigin.y1, selectOrigin.y2)
-        };
-        // focusData(
-        //   "nodes",
-        //   new Set(
-        //     getProject()
-        //       .nodes.values()
-        //       .filter((node) => {
-        //         const rect = node.requestRect();
-        //         return (
-        //           rect &&
-        //           area.x1 < rect.left &&
-        //           area.x2 > rect.right &&
-        //           area.y1 < rect.top &&
-        //           area.y2 > rect.bottom
-        //         );
-        //       })
-        //   )
-        // );
-      }
       selectOrigin = null;
       $grabbing = null;
       return;
@@ -184,21 +161,13 @@
   <div class="viewport" bind:this={viewportEl}>
     {#each getProject().nodes as [id, node] (id)}
       {#if node.nodeType === "sequence"}
-        <Sequence
-          sequence={node}
-          isLastHold={id === lastHold}
-          onpointerdown={() => (lastHold = id)}
-        />
+        <Sequence {id} isLastHold={id === lastHold} onpointerdown={() => (lastHold = id)} />
       {:else if node.nodeType === "branch"}
-        <Branch branch={node} isLastHold={id === lastHold} onpointerdown={() => (lastHold = id)} />
+        <Branch {id} isLastHold={id === lastHold} onpointerdown={() => (lastHold = id)} />
       {:else if node.nodeType === "entry"}
-        <Entry entry={node} isLastHold={id === lastHold} onpointerdown={() => (lastHold = id)} />
+        <Entry {id} isLastHold={id === lastHold} onpointerdown={() => (lastHold = id)} />
       {:else if node.nodeType === "variableSet"}
-        <VariableSet
-          variableSet={node}
-          isLastHold={id === lastHold}
-          onpointerdown={() => (lastHold = id)}
-        />
+        <VariableSet {id} isLastHold={id === lastHold} onpointerdown={() => (lastHold = id)} />
       {/if}
     {/each}
   </div>

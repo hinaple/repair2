@@ -1,20 +1,19 @@
-<script>
-  import { appData } from "../../project/store";
-  import ResourceClass from "@renderer/classes/resource.svelte";
-  import { addHistory } from "../../lib/editUtils/history";
+<script lang="ts">
+  import { createResource } from "@shared/projectData/factories";
+  import { ipc } from "../../lib/ipc";
+  import { getMutator, getProject } from "../../project/store";
   import Resource from "./Resource.svelte";
   import { AssetDir, selectMany, splitPath } from "./selectResourceFile";
-  import { ipc } from "../../lib/ipc";
 
-  async function addResource(evt) {
-    evt.stopPropagation();
+  async function addResource(event: MouseEvent) {
+    event.stopPropagation();
     const srcs = await selectMany();
-    if (!srcs?.length) return;
-
-    const inAssets = [];
-    let outAssets = [];
-    srcs.forEach((s) => (s.includes(AssetDir) ? inAssets.push(splitPath(s)) : outAssets.push(s)));
-    let doCopy = false;
+    if (!srcs.length) return;
+    const inAssets: string[] = [];
+    let outAssets: string[] = [];
+    srcs.forEach((src) =>
+      src.includes(AssetDir) ? inAssets.push(splitPath(src)) : outAssets.push(src)
+    );
     if (outAssets.length) {
       const result = await ipc.invoke("dialog", {
         type: "question",
@@ -23,43 +22,21 @@
         buttons: ["자원 폴더에 복사", "건너뛰기"],
         cancelId: 1
       });
-      doCopy = result.response === 0;
+      outAssets = result.response === 0 ? await ipc.invoke("copyInfoAsset", outAssets) : [];
     }
-    if (doCopy) outAssets = await ipc.invoke("copyInfoAsset", outAssets);
-    const resourceArr = [...inAssets, ...(doCopy ? outAssets : [])].map(
-      (s) => new ResourceClass({ src: s, folded: false })
-    );
-
-    addHistory({
-      doFn: (resources) => {
-        appData.resources.push(...resources);
-      },
-      undoFn: (deleteCount) => {
-        appData.resources.splice(-deleteCount, deleteCount);
-      },
-      doData: resourceArr,
-      undoData: resourceArr.length
-    });
-  }
-
-  function remove(idx) {
-    addHistory({
-      doFn: (idx) => {
-        appData.resources.splice(idx, 1);
-      },
-      undoFn: ({ idx, resource }) => {
-        appData.resources.splice(idx, 0, resource);
-      },
-      doData: idx,
-      undoData: { idx, resource: appData.resources[idx] }
+    getMutator().transaction(() => {
+      for (const src of [...inAssets, ...outAssets]) {
+        const resource = createResource({ src });
+        getMutator().add("resources", resource.id, resource);
+      }
     });
   }
 </script>
 
 <div class="resources">
   <div class="list">
-    {#each appData.resources as resource, index}
-      <Resource {resource} remove={() => remove(index)} />
+    {#each getProject().resources as [id] (id)}
+      <Resource {id} remove={() => getMutator().delete("resources", id)} />
     {/each}
   </div>
   <div class="add" onclick={addResource}>자원 추가</div>

@@ -1,20 +1,15 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
   import Icon from "../../assets/icons/Icon.svelte";
-  import { outClicked, rightclick } from "../../lib/editUtils/contextMenu/contextUtils";
-  import { currentFocus, focusData } from "../../lib/editUtils/focus";
-  import { get } from "svelte/store";
+  import { focusData } from "../../lib/editUtils/focus";
   import { grabbing, reload } from "../../lib/stores";
   import { ElementTypes } from "../../lib/translate";
   import Sortable from "../Sortable.svelte";
   import Listener from "./Listener.svelte";
-  import { addHistory } from "../../lib/editUtils/history";
   import registerHighlight, { type HighlightData } from "../../lib/highlight";
   import type { SortableProps } from "../types";
-  import { getsetFrom, SortableUtils } from "../../lib/editUtils/sortable";
-  import { createListener } from "@shared/projectData/factories";
-  import { getProject } from "../../project/store";
+  import { getMutator } from "../../project/store";
   import { data } from "../../lib/editUtils/dataAction";
+  import { Factories } from "../../project/factories";
 
   let {
     id,
@@ -30,15 +25,29 @@
   // svelte-ignore state_referenced_locally
   const myParents = [id, ...parents];
 
-  // svelte-ignore state_referenced_locally
-  const element = getProject().getUnsafe("elements", id);
+  const editor = $derived(getMutator().record("elements", id));
+  const element = $derived(editor.value);
+
+  $effect(() => {
+    element.alias;
+    element.type;
+    reload("nodeMoved");
+  });
 
   function addListener(evt: PointerEvent) {
     if (evt.button || $grabbing) return;
     evt.stopPropagation();
-    const temp = createListener();
-    SortableUtils.appendWithHistory(getsetFrom(element, "listeners"), temp.id);
-    focusData("listener", temp.id, myParents);
+    focusData(
+      "listener",
+      getMutator().transaction(() => {
+        const newId = Factories.listener();
+        editor.field("listeners").splice(element.listeners.length, 0, newId);
+        reload("nodeMoved");
+        onNodeCountChanged();
+        return newId;
+      }),
+      myParents
+    );
   }
 
   let hlData = $derived.by<HighlightData>(() => {
@@ -51,7 +60,7 @@
         ? { type: "resource", data: element.payload.resourceId }
         : null;
     if (element.type === "plugin") {
-      const pluginName = getProject().getUnsafe("pluginPointers", element.payload.plugin).name;
+      const pluginName = getMutator().record("pluginPointers", element.payload.plugin).value.name;
       return pluginName
         ? {
             type: "plugin",
@@ -76,8 +85,8 @@
   </div>
   <div class="listeners">
     <Sortable
-      key="listeners"
-      parent={element}
+      binding={editor.field("listeners")}
+      itemType="listeners"
       style="listener"
       onresized={() => reload("nodeMoved")}
       onmoved={() => reload("nodeMoved")}

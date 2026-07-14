@@ -1,21 +1,21 @@
 import { genId } from "../../genId";
 import type { Types } from "../types";
-import { createFactory } from "./factory";
+import { createFactory, owns } from "./factory";
+import type { RegisterOwned } from "./factory";
+import { createTypePayloadFactory } from "./typePayloadFactory";
+import { createValue } from "./value";
 
 const createNodePos = () => ({ x: 0, y: 0 });
 
-export const createEntry = createFactory<Types.Entry>(
-  {
-    id: () => genId(),
-    alias: null,
-    nodePos: createNodePos,
-    nodeType: "entry",
-    output: null,
-    standbyMode: false,
-    type: "startup"
-  },
-  "entry"
-);
+export const createEntry = createTypePayloadFactory<Types.Entry>("entry")({
+  id: () => genId(),
+  alias: null,
+  nodePos: createNodePos,
+  nodeType: "entry",
+  output: null,
+  standbyMode: false,
+  type: "startup"
+});
 
 export const createSequence = createFactory<Types.Sequence>({
   id: () => genId(),
@@ -28,13 +28,13 @@ export const createSequence = createFactory<Types.Sequence>({
   output: null
 });
 
-export const createBranch = createFactory<Types.Branch>({
+export const createBranch = createFactory<Types.Branch>()({
   id: () => genId(),
   alias: null,
   nodePos: createNodePos,
   nodeType: "branch",
-  valueA: "",
-  valueB: "",
+  valueA: owns(createValue),
+  valueB: owns(createValue),
   operator: "equals",
   scriptData: null,
   trueOutput: null,
@@ -43,7 +43,7 @@ export const createBranch = createFactory<Types.Branch>({
   disableAfterFalse: false
 });
 
-export const createVariableSet = createFactory<Types.VariableSet>({
+export const createVariableSet = createFactory<Types.VariableSet>()({
   id: () => genId(),
   alias: null,
   nodePos: createNodePos,
@@ -51,13 +51,16 @@ export const createVariableSet = createFactory<Types.VariableSet>({
   folded: false,
   inputColor: "#000",
   variable: null,
-  value: "",
+  value: owns(createValue),
   output: null
 });
 
-export function createNode(overrides: Partial<Types.Node> = {}): Types.Node {
-  if (overrides.nodeType === "entry") return createEntry(overrides);
-  if (overrides.nodeType === "branch") return createBranch(overrides);
-  if (overrides.nodeType === "variableSet") return createVariableSet(overrides);
+export function createNode(
+  overrides: Partial<Types.Node> = {},
+  registerOwned?: RegisterOwned
+): Types.Node {
+  if (overrides.nodeType === "entry") return createEntry(overrides, registerOwned!);
+  if (overrides.nodeType === "branch") return createBranch(overrides, registerOwned!);
+  if (overrides.nodeType === "variableSet") return createVariableSet(overrides, registerOwned!);
   return createSequence(overrides as Partial<Types.Sequence>);
 }

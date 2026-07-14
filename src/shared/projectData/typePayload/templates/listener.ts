@@ -1,4 +1,6 @@
-import { nullDefault, owns, type TypePayloadUnion } from "./union.types";
+import { owns } from "../../factories/factory";
+import { createPluginPointer } from "../../factories/pluginPointer";
+import { nullDefault, type TypePayloadUnion } from "./union.types";
 
 export const ListenerPayloadTemplate = {
   custom: { channel: nullDefault<string>() },
@@ -17,7 +19,7 @@ export const ListenerPayloadTemplate = {
     released: { hotspotIndexes: null },
     return: null
   },
-  plugin: { plugin: owns("pluginPointers"), channel: nullDefault<string>() }
+  plugin: { plugin: owns(createPluginPointer), channel: nullDefault<string>() }
 } as const;
 
 export type ListenerTypePayload = TypePayloadUnion<typeof ListenerPayloadTemplate>;

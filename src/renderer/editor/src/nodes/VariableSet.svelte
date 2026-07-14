@@ -1,45 +1,38 @@
-<script>
+<script lang="ts">
+  import { getMutator, getProject } from "../project/store";
   import Node from "./Node.svelte";
-  import { get } from "svelte/store";
-  import { grabbing } from "../lib/stores";
   import Value from "./value/Value.svelte";
-  import { outClicked } from "../lib/editUtils/contextMenu/contextUtils";
-  import { appData } from "../project/store";
+  import type { Types } from "@shared/projectData/types";
 
-  let { variableSet, onpointerdown, ...nodeData } = $props();
-
-  function focusZoneMouseDown(evt) {
-    if (evt.button || $grabbing) return;
-    evt.stopPropagation();
-    outClicked();
-    onpointerdown();
-  }
-
-  let variableName = $derived(appData.findVariableById(variableSet.variable)?.name ?? "없음");
+  let {
+    id,
+    isLastHold = false,
+    onpointerdown = () => {}
+  }: {
+    id: string;
+    isLastHold?: boolean;
+    onpointerdown?: (event: PointerEvent) => unknown;
+  } = $props();
+  const editor = $derived(getMutator().record<"nodes", Types.VariableSet>("nodes", id));
+  const variableSet = $derived(editor.value);
+  let variableName = $derived(
+    (variableSet.variable ? getProject().variables.get(variableSet.variable)?.name : null) ?? "없음"
+  );
 </script>
 
 <Node
-  node={variableSet}
-  type="variableSet"
+  {id}
   title={variableSet.alias?.length ? variableSet.alias : "변수설정"}
+  {isLastHold}
   {onpointerdown}
-  outputs={[{ output: variableSet.output, id: variableSet.id }]}
-  {...nodeData}
+  outputs={[{ binding: editor.field("output"), id }]}
 >
   {#snippet body()}
     <div class="body">
       <div class="value-wrapper">
-        <Value
-          pre="초기값: "
-          isFull
-          value={variableSet.value}
-          onpointerdown={focusZoneMouseDown}
-          parent={variableSet}
-        />
+        <Value pre="초기값: " isFull id={variableSet.value} parents={[id]} />
       </div>
-      <div class="variable" onpointerdown={focusZoneMouseDown}>
-        변수 {variableName}
-      </div>
+      <div class="variable">변수 {variableName}</div>
     </div>
   {/snippet}
 </Node>

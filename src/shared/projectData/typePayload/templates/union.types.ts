@@ -1,5 +1,5 @@
-import type { RecordKey } from "../../../constants";
 import type { Prettify } from "../../../utils.types";
+import type { Owning } from "../../factories/factory";
 
 type TemplateKey<T> = Exclude<keyof T, "$types"> & string;
 
@@ -10,7 +10,7 @@ type JoinPath<Prefix extends string, Key extends string> = Prefix extends ""
 type PayloadFromTemplate<T> =
   T extends NullDefault<infer U>
     ? U | null
-    : T extends Owns
+    : T extends Owning
       ? string
       : T extends string
         ? string | null
@@ -46,8 +46,3 @@ type NullDefault<T> = {
   readonly __defaultNullType?: T;
 };
 export const nullDefault = <T>() => null as unknown as NullDefault<T>;
-
-type Owns<T extends RecordKey = RecordKey> = {
-  readonly __owns?: T;
-};
-export const owns = <T extends RecordKey>(type: T): Owns<T> => ({ __owns: type });

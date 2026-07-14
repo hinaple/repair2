@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { appData } from "../../project/store";
-  import { addHistory } from "../../lib/editUtils/history";
+  import { getProject } from "../../project/store";
+  import type { FieldBinding } from "../../project/mutator";
   import InputField from "./InputField.svelte";
   import Checkbox from "./Checkbox.svelte";
   import HistoryInput from "./HistoryInput.svelte";
@@ -13,10 +13,9 @@
 
   let {
     label = null,
-    value,
-    setter,
+    value: legacyValue = undefined,
+    binding = null,
     type = "input",
-    manual = false,
     small = false,
     row = false,
     children = null,
@@ -24,26 +23,35 @@
     oninputremove = null,
     background = false,
     seriesOption = null,
-    style,
+    style = null,
     ...props
+  }: {
+    binding?: FieldBinding<any> | null;
+    value?: any;
+    [key: string]: any;
   } = $props();
 
-  function selectChange(newData) {
-    if (manual) {
-      setter(newData);
+  let value = $derived(binding ? binding.value : legacyValue);
+
+  function selectChange(newData: any) {
+    if (props.oncommit) {
+      props.oncommit(newData);
+      props.onchange?.();
       return;
     }
-    addHistory({ doFn: setter, doData: newData, undoData: value });
+    binding?.set(newData);
 
     props.onchange?.();
   }
 
   function checkboxClick() {
-    if (manual) {
-      setter(!value);
+    if (props.oncommit) {
+      props.oncommit(!value);
+      props.onchange?.();
       return;
     }
-    addHistory({ doFn: setter, doData: !value, undoData: !!value });
+    binding?.set(!value);
+    props.onchange?.();
   }
 </script>
 
@@ -69,30 +77,25 @@
       <span>{label}</span>
       {#if oninputremove}
         <button class="remove" onclick={oninputremove}>
-          <Icon icon="close" color="#fff" size="12" lineWidth={1.5} />
+          <Icon icon="close" color="#fff" size={12} lineWidth={1.5} />
         </button>
       {/if}
     </div>
   {/if}
-  {#if seriesOption && seriesOption.array}
-    {@const array = seriesOption.array}
+  {#if seriesOption?.binding}
+    {@const seriesBinding = seriesOption.binding as FieldBinding}
+    {@const array = seriesBinding.value}
     <div class="series-container" style={`gap: ${seriesOption.gap ?? 5}px;`}>
       {#each array as v, i}
         {@const canRemoveNow = (seriesOption.min ?? 0) <= i}
-        {@const remove = () =>
-          addHistory({
-            doFn: (idx) => array.splice(idx, 1),
-            undoFn: ({ value, idx }) => array.splice(idx, 0, value),
-            doData: i,
-            undoData: { value: array[i], idx: i }
-          })}
+        {@const remove = () => {
+          seriesBinding.splice(i, 1);
+        }}
         <div class="series-field">
           <InputField
-            value={v}
-            setter={(d) => (array[i] = d)}
+            binding={seriesBinding.at(i)}
             label={seriesOption?.label?.(i) ?? null}
             {type}
-            {manual}
             {small}
             {row}
             {children}
@@ -114,12 +117,14 @@
       {#if (seriesOption.max ?? Infinity) > array.length}
         <button
           class="plus"
-          onclick={() =>
-            addHistory({
-              doFn: (newData) => array.push(newData),
-              undoFn: () => array.pop(),
-              doData: seriesOption.newData?.() ?? null
-            })}
+          onclick={() => {
+            if (seriesOption.create) {
+              seriesOption.create();
+              return;
+            }
+            const newData = seriesOption.newData?.() ?? null;
+            seriesBinding.splice(array.length, 0, newData);
+          }}
         >
           <Icon icon="plus" color="#fff" size={13} lineWidth={1} />
           추가
@@ -131,9 +136,16 @@
   {:else if type === "checkbox"}
     <Checkbox {value} />
   {:else if type === "input" || type === "number" || type === "textarea"}
-    <HistoryInput {value} {type} {setter} {small} {previewer} {...props} />
+    {#if binding}<HistoryInput
+        {binding}
+        {type}
+        {small}
+        {previewer}
+        onpreview={props.oninput}
+        {...props}
+      />{/if}
   {:else if type === "select"}
-    <select {value} onchange={(evt) => selectChange(evt.target.value || null)}>
+    <select {value} onchange={(evt) => selectChange(evt.currentTarget.value || null)}>
       <option value={null} hidden={!props.canUnselect}>선택 안함</option>
       {#if Array.isArray(props.options)}
         {#each props.options as value}
@@ -146,24 +158,24 @@
       {/if}
     </select>
   {:else if type === "variable"}
-    <select {value} onchange={(evt) => selectChange(evt.target.value || null)}>
+    <select {value} onchange={(evt) => selectChange(evt.currentTarget.value || null)}>
       <option value={null}>변수 할당 없음</option>
-      {#each appData.variables as variable}
+      {#each getProject().variables.values() as variable}
         <option value={variable.id}>
           {variable.name?.length ? variable.name : "이름 없는 변수"}
         </option>
       {/each}
     </select>
-  {:else if type === "type"}
-    <TypeInput type={value} {...props} />
-  {:else if type === "position"}
-    <Position position={value} {previewer} {...props} />
+  {:else if type === "type" && binding}
+    <TypeInput {value} {binding} typeName={props.typeName} {...props} />
+  {:else if type === "position" && binding}
+    <Position {binding} {previewer} {...props} />
   {:else if type === "resource"}
     <ResourceSelector resourceId={value} type={props.elType} onchange={selectChange} {...props} />
-  {:else if type === "plugin"}
-    <PluginSelector plugin={value} type={props.pluginType} {...props} />
-  {:else if type === "transition"}
-    <TransitionInput transition={value} {...props} />
+  {:else if type === "plugin" && binding}
+    <PluginSelector {binding} type={props.pluginType} canUnselect={props.canUnselect} />
+  {:else if type === "transition" && binding}
+    <TransitionInput {binding} />
   {/if}
 </div>
 

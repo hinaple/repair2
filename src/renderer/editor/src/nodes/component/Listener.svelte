@@ -3,8 +3,10 @@
   import { ElementListenerTypes } from "../../lib/translate";
   import outputNode from "../lines/output";
   import type { SortableProps } from "../types";
-  import { getProject } from "../../project/store";
+  import { getMutator } from "../../project/store";
   import { data } from "../../lib/editUtils/dataAction";
+  import { reload } from "../../lib/stores";
+  import type { Types } from "@shared/projectData/types";
 
   let {
     id,
@@ -16,9 +18,20 @@
     parents: string[];
   } = $props();
 
-  const getId = () => id;
+  const editor = $derived(getMutator().record("listeners", id));
+  const listener = $derived(editor.value);
 
-  const listener = getProject().getUnsafe("listeners", getId());
+  function getChannel(data: Types.Listener) {
+    const payload = data.payload;
+    if (!payload || typeof payload !== "object" || !("channel" in payload)) return null;
+    return typeof payload.channel === "string" ? payload.channel.trim() : null;
+  }
+
+  $effect(() => {
+    listener.type;
+    getChannel(listener);
+    reload("nodeMoved");
+  });
 </script>
 
 <div class="listener">
@@ -27,10 +40,10 @@
       <Icon icon="hamburger" color="rgba(255, 255, 255, 0.5)" size={8} />
     </div>
     <div class="title">
-      {(listener.payload as any)?.channel?.trim?.() || ElementListenerTypes[listener.type]}
+      {getChannel(listener) || ElementListenerTypes[listener.type]}
     </div>
     {#if !hidden}
-      <div class="output" use:outputNode={{ id, data: listener }}></div>
+      <div class="output" use:outputNode={{ id, binding: editor.field("output") }}></div>
     {/if}
   </div>
 </div>

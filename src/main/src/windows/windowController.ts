@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, MessageChannelMain } from "electron";
+import { BrowserWindow, ipcMain, MessageChannelMain, type IpcMainEvent } from "electron";
 import { join } from "path";
 import { createEditorMenu } from "./editorMenu";
 import { checkVscodeInstalled } from "../system/vscodeUtils";
@@ -15,6 +15,13 @@ export class WindowController {
 
   createMainWindow() {
     const { controllers, globalKey, service, startup, state, system } = this.#app;
+    let playRendererShown = false;
+    let playRendererFailed = false;
+    const quitOnStartupError = () => {
+      if (playRendererShown || playRendererFailed) return;
+      playRendererFailed = true;
+      system.app.quit();
+    };
     const mainWindow = new BrowserWindow({
       show: false,
       webPreferences: {
@@ -40,12 +47,16 @@ export class WindowController {
         mainWindow.webContents.postMessage("messagePort", null, [this.#channel.port1]);
     });
 
-    ipcMain.once("play-win-ready", () => {
+    const onPlayWindowReady = (event: IpcMainEvent) => {
+      if (event.sender !== mainWindow.webContents) return;
+      ipcMain.removeListener("play-win-ready", onPlayWindowReady);
+      playRendererShown = true;
       startup.closeSplash();
-      state.window.main?.show();
+      mainWindow.show();
 
       controllers.project.applyDataConfig();
-    });
+    };
+    ipcMain.on("play-win-ready", onPlayWindowReady);
 
     if (this.#app.isDev) {
       mainWindow.loadURL("http://localhost:3100");
@@ -54,6 +65,7 @@ export class WindowController {
     }
 
     mainWindow.on("closed", () => {
+      ipcMain.removeListener("play-win-ready", onPlayWindowReady);
       state.window.main = null;
       globalKey.stopSuppress();
       if (!service.projectFileManager.importing) {
@@ -70,6 +82,7 @@ export class WindowController {
 
     mainWindow.webContents.on("render-process-gone", (evt, details) => {
       logger.error("[Play renderer gone]", details.reason);
+      quitOnStartupError();
     });
     mainWindow.webContents.on(
       "did-fail-load",
@@ -86,11 +99,13 @@ export class WindowController {
             4
           )
         );
+        quitOnStartupError();
       }
     );
     mainWindow.webContents.on("console-message", (event, level, message, line, sourceId) => {
       if (level < 3) return;
       logger.error("Play renderer error", message + `\n\tat ${sourceId}:${line}`);
+      quitOnStartupError();
     });
   }
 

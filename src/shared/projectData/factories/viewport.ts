@@ -3,8 +3,8 @@ import { createFactory } from "./factory";
 
 export const createViewportData = createFactory<Types.ViewportData>({
   size: 0,
-  pos: {
+  pos: () => ({
     x: 0,
     y: 0
-  }
+  })
 });

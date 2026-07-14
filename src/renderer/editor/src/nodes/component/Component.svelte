@@ -1,18 +1,14 @@
 <script lang="ts">
-  import { get } from "svelte/store";
   import { grabbing, reload } from "../../lib/stores";
-  import { outClicked } from "../../lib/editUtils/contextMenu/contextUtils";
-  import { currentFocus, focusData } from "../../lib/editUtils/focus";
+  import { focusData } from "../../lib/editUtils/focus";
   import Icon from "../../assets/icons/Icon.svelte";
-  import { addHistory } from "../../lib/editUtils/history";
   import Sortable from "../Sortable.svelte";
   import Element from "./Element.svelte";
-  import { onDestroy } from "svelte";
-  import { pasted } from "../../lib/editUtils/clipboard";
-  import { genClipboardFn } from "../../lib/editUtils/clipboard";
   import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
-  import { getProject } from "../../project/store";
-  import { createElement } from "@shared/projectData/factories";
+  import { getMutator } from "../../project/store";
+  import { Factories } from "../../project/factories";
+  import { data } from "../../lib/editUtils/dataAction";
+  import { onDestroy } from "svelte";
 
   let {
     id,
@@ -27,7 +23,10 @@
   } = $props();
 
   // svelte-ignore state_referenced_locally
-  const comp = getProject().getUnsafe("components", id);
+  const myParents = [id, ...parents];
+
+  const editor = $derived(getMutator().record("components", id));
+  const comp = $derived(editor.value);
 
   $effect(() => {
     comp.alias;
@@ -37,28 +36,24 @@
   function addElement(evt: PointerEvent) {
     if (evt.button || $grabbing) return;
     evt.stopPropagation();
-    const temp = createElement();
-    const newElement = comp.elements.addWithHistory(addHistory, {
-      afterChange: () => reload("nodeMoved")
-    });
-    const newClipboardFn = genClipboardFn("element", newElement, () =>
-      comp.elements.removeWithHistory(newElement, addHistory, () => reload("nodeMoved"))
+    focusData(
+      "element",
+      getMutator().transaction(() => {
+        const newId = Factories.element();
+        editor.field("elements").splice(comp.elements.length, 0, newId);
+        reload("nodeMoved");
+        return newId;
+      }),
+      myParents
     );
-    focusData("element", newElement, { clipboardFn: newClipboardFn, preview: comp });
   }
 
   let activated = $state(false);
-  startMonitoring("components", comp.id, (status) => (activated = status));
-
-  onDestroy(() => {
-    if (get(currentFocus).obj === comp) focusData("project");
-  });
+  const unsub = startMonitoring("components", comp.id, (status) => (activated = status));
+  onDestroy(unsub);
 </script>
 
-<div
-  class={["component", $currentFocus.obj === comp && "focus", activated && "activated"]}
-  {onpointerdown}
->
+<div class={["component", activated && "activated"]} use:data={{ type: "component", id, parents }}>
   <div class="head">
     <span>
       {comp.alias?.length ? comp.alias : "이름 없는 컴포넌트"}
@@ -69,15 +64,17 @@
   </div>
   <div class="elements">
     <Sortable
-      sortable={comp.elements}
-      Component={Element}
-      style="enum"
-      resized={() => reload("nodeMoved")}
+      binding={editor.field("elements")}
+      itemType="elements"
+      onresized={() => reload("nodeMoved")}
       onmoved={() => reload("nodeMoved")}
+      style="enum"
       {noGrab}
-      {nodeCountChanged}
-      parent={comp}
-    />
+    >
+      {#snippet children(props)}
+        <Element parents={myParents} {onNodeCountChanged} {...props} />
+      {/snippet}
+    </Sortable>
   </div>
 </div>
 

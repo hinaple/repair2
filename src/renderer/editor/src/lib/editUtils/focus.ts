@@ -14,7 +14,7 @@ function expandFocus(f: Extract<FocusData, { target: string }>) {
   return getAllChainedNodes(f.target);
 }
 
-const FOCUS_EXPAND_TIME_MS = 400;
+const FOCUS_EXPAND_TIME_MS = 200;
 let lastFocussed:
   | (FocusData & {
       timeout: NodeJS.Timeout;
@@ -59,7 +59,7 @@ function selectNodeOnNode(cf: FocusData, f: FocusData): boolean {
 
   const before = cf.type === "nodes" ? cf.target : new Set([cf.target]);
 
-  const result = before.symmetricDifference(f.type === "nodes" ? f.target : new Set([f.type]));
+  const result = before.symmetricDifference(f.type === "nodes" ? f.target : new Set([f.target]));
 
   if (result.size === 0) {
     focusData("project");

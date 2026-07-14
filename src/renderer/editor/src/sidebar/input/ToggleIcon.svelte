@@ -1,12 +1,23 @@
 <script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
-  import { addHistory } from "../../lib/editUtils/history";
+  import type { FieldBinding } from "../../project/mutator";
 
-  let { falseIcon, trueIcon, value, onclick = null, setter = null } = $props();
+  let {
+    falseIcon,
+    trueIcon,
+    binding,
+    onclick = null
+  }: {
+    falseIcon: string;
+    trueIcon: string;
+    binding: FieldBinding<boolean>;
+    onclick?: (() => unknown) | null;
+  } = $props();
+  let value = $derived(binding.value);
 
   function clickHandler() {
     onclick?.();
-    if (setter) addHistory({ doFn: setter, doData: !value, undoData: value });
+    binding.set(!value);
   }
 </script>
 

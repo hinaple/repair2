@@ -1,42 +1,26 @@
-<script>
+<script lang="ts">
   import InputField from "../../input/InputField.svelte";
   import { ComparisonOperatorTypes } from "../../../lib/translate";
-  import { addHistory } from "../../../lib/editUtils/history";
-
-  const { data } = $props();
+  import type { Types } from "@shared/projectData/types";
+  import type { RecordEditor } from "../../../project/mutator";
+  const { editor }: { editor: RecordEditor<"nodes", Types.Branch> } = $props();
+  let data = $derived(editor.value);
 </script>
 
-<InputField label="분기점 이름" value={data.alias} setter={(d) => (data.alias = d)} />
+<InputField label="분기점 이름" binding={editor.field("alias")} />
 <InputField
   label="비교 연산자"
   type="select"
   options={ComparisonOperatorTypes}
   value={data.operator}
-  setter={(d) => {
-    addHistory({
-      doFn: ({ operator, scriptData = null }) => {
-        data.operator = operator;
-        data.scriptData = scriptData;
-      },
-      doData: { operator: d },
-      undoData: { operator: data.operator, scriptData: data.scriptData }
-    });
+  oncommit={(operator: Types.Branch["operator"]) => {
+    editor.set({ ...data, operator, scriptData: null });
   }}
-  manual
 />
-{#if data.operator === "scriptFile"}
-  <InputField
-    label="스크립트 파일"
-    value={data.scriptData}
-    setter={(d) => (data.scriptData = d)}
-    type="resource"
-    elType="script"
-  />
-{:else if data.operator === "jsFunction"}
+{#if data.operator === "jsFunction"}
   <InputField
     label="콜백 함수 코드"
-    value={data.scriptData}
-    setter={(d) => (data.scriptData = d)}
+    binding={editor.field("scriptData")}
     type="textarea"
     code
     placeholder="return valueA === valueB"
@@ -46,12 +30,10 @@
 <InputField
   label="'참' 발동 이후 비활성화"
   type="checkbox"
-  value={data.disableAfterTrue}
-  setter={(d) => (data.disableAfterTrue = d)}
+  binding={editor.field("disableAfterTrue")}
 />
 <InputField
   label="'거짓' 발동 이후 비활성화"
   type="checkbox"
-  value={data.disableAfterFalse}
-  setter={(d) => (data.disableAfterFalse = d)}
+  binding={editor.field("disableAfterFalse")}
 />

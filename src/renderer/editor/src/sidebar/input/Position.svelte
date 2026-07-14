@@ -1,10 +1,28 @@
 <script lang="ts">
-  import { addHistory } from "../../lib/editUtils/history";
+  import type { FieldBinding } from "../../project/mutator";
   import HistoryInput from "./HistoryInput.svelte";
 
-  let { position, oninput = null, previewer = false } = $props();
+  let {
+    binding,
+    oninput = null,
+    previewer = false
+  }: {
+    binding: FieldBinding<any>;
+    oninput?: (() => unknown) | null;
+    previewer?: boolean;
+  } = $props();
 
-  const Origin = ["start", "center", "end"];
+  let position = $derived(binding.value);
+  const Origin = ["start", "center", "end"] as const;
+
+  function setOrigins(xOrigin: string, yOrigin: string) {
+    binding.set({
+      ...position,
+      x: { ...position.x, origin: xOrigin },
+      y: { ...position.y, origin: yOrigin }
+    });
+    oninput?.();
+  }
 </script>
 
 <div class="position-input">
@@ -14,57 +32,31 @@
         class="dot"
         class:current={Origin[i % 3] === position.x.origin &&
           Origin[Math.trunc(i / 3)] === position.y.origin}
-        onclick={() => {
-          addHistory({
-            doFn: ({ xOrigin, yOrigin, position }) => {
-              position.x.origin = xOrigin;
-              position.y.origin = yOrigin;
-              oninput?.();
-            },
-            doData: {
-              xOrigin: Origin[i % 3],
-              yOrigin: Origin[Math.trunc(i / 3)],
-              position
-            },
-            undoData: {
-              xOrigin: position.x.origin,
-              yOrigin: position.y.origin,
-              position
-            }
-          });
-        }}
+        onclick={() => setOrigins(Origin[i % 3], Origin[Math.trunc(i / 3)])}
       ></div>
     {/each}
   </div>
   <div class="lines">
     {#each ["x", "y"] as axis}
       {@const a = position[axis]}
+      {@const axisBinding = binding.at(axis)}
       <div class="line">
         {axis.toUpperCase()}
         {#if a.origin === "center"}
           <div class="disabled">중앙</div>
         {:else}
           <HistoryInput
-            value={a.distance}
-            setter={(d) => {
-              a.distance = +d;
-              oninput?.();
-            }}
+            binding={axisBinding.at("distance")}
             type="number"
             placeholder="0"
             {previewer}
+            onpreview={oninput}
           />
           <div
             class="unit"
             onclick={() => {
-              addHistory({
-                doFn: ({ value, axis }) => {
-                  axis.relative = value;
-                  oninput?.();
-                },
-                doData: { value: !a.relative, axis: a },
-                undoData: { value: a.relative, axis: a }
-              });
+              axisBinding.at("relative").set(!a.relative);
+              oninput?.();
             }}
           >
             {a.relative ? "%" : "px"}
@@ -116,7 +108,6 @@
   }
   .dot:not(.current):hover {
     border-color: #fff;
-    /* background-color: rgba(255, 255, 255, 0.3); */
   }
   .lines {
     display: flex;

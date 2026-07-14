@@ -1,47 +1,56 @@
-<script>
-  import Attributes from "../../../input/Attributes.svelte";
-  import { appData } from "../../../../project/store";
-  import InputField from "../../../input/InputField.svelte";
+<script lang="ts">
   import { plugins } from "../../../../lib/plugins.svelte";
+  import { getMutator, getProject } from "../../../../project/store";
+  import Attributes from "../../../input/Attributes.svelte";
+  import InputField from "../../../input/InputField.svelte";
+  import type { RecordEditor } from "../../../../project/mutator";
+  import type { Types } from "@shared/projectData/types";
 
-  const { data } = $props();
-
+  const { editor }: { editor: RecordEditor<"steps"> } = $props();
+  let data = $derived(editor.value as Extract<Types.Step, { type: "Others.runtimePluginStep" }>);
+  let runtimePluginIds = $derived(getMutator().config().field("runtimePlugins").value);
   let runtimePluginNames = $derived(
-    appData.config.runtimePlugins.map((p) => p.name).filter((p) => p && plugins.runtime?.[p]?.steps)
+    runtimePluginIds
+      .map((id) => (id ? getProject().pluginPointers.get(id)?.name : null))
+      .filter((name): name is string => !!name && !!plugins.runtime?.[name]?.steps)
   );
   let runtimePluginDisplayName = $derived(
-    runtimePluginNames.includes(data.payload.pluginName) ? data.payload.pluginName : null
+    data.payload.pluginName && runtimePluginNames.includes(data.payload.pluginName)
+      ? data.payload.pluginName
+      : null
   );
-  let runtimePluginInfo = $derived(plugins.runtime?.[runtimePluginDisplayName]);
+  let runtimePluginInfo = $derived(
+    runtimePluginDisplayName ? plugins.runtime?.[runtimePluginDisplayName] : null
+  );
 </script>
 
 <InputField
   label="런타임 플러그인"
-  value={runtimePluginDisplayName}
-  setter={(d) => (data.payload.pluginName = d)}
+  binding={editor.at("payload", "pluginName")}
   type="select"
   options={runtimePluginNames}
 />
 <div class="step-edit-zone">
-  {#if runtimePluginInfo && runtimePluginInfo.steps}
+  {#if runtimePluginInfo?.steps}
     <InputField
       label="스텝"
-      value={data.payload.step}
-      setter={(d) => (data.payload.step = d)}
+      binding={editor.at("payload", "step")}
       type="select"
-      options={Object.keys(runtimePluginInfo.steps ?? {})}
+      options={Object.keys(runtimePluginInfo.steps)}
     />
   {/if}
-  {#if runtimePluginInfo && data.payload.step && runtimePluginInfo?.steps[data.payload.step]}
+  {#if runtimePluginInfo && data.payload.step && runtimePluginInfo.steps?.[data.payload.step]}
     {#key data.payload.step}
-      <Attributes attributes={runtimePluginInfo?.steps[data.payload.step]} plugin={data.payload} />
+      <Attributes
+        attributes={runtimePluginInfo.steps[data.payload.step] ?? []}
+        binding={editor.at("payload", "payloads")}
+      />
     {/key}
   {/if}
 </div>
 <InputField
   label="끝날 때까지 기다리기"
-  value={data.payload.waitTillEnd}
-  setter={(d) => (data.payload.waitTillEnd = d)}
+  binding={editor.at("payload", "waitTillEnd")}
   type="checkbox"
 />
 

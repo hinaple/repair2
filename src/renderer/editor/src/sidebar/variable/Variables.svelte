@@ -1,50 +1,31 @@
-<script>
-  import { appData } from "../../project/store";
-  import VariableClass from "@renderer/classes/variable.svelte";
-  import { addHistory } from "../../lib/editUtils/history";
+<script lang="ts">
+  import { Factories } from "../../project/factories";
+  import { getMutator, getProject } from "../../project/store";
   import Variable from "./Variable.svelte";
 
-  let currentEdit = -1;
-  function addVariable(evt) {
-    evt.stopPropagation();
-    addHistory({
-      doFn: (v) => {
-        appData.variables.push(v);
-      },
-      undoFn: () => {
-        appData.variables.pop();
-      },
-      doData: new VariableClass({})
-    });
-    currentEdit = appData.variables.length - 1;
+  let currentEdit = $state<string | null>(null);
+  function addVariable(event: MouseEvent) {
+    event.stopPropagation();
+    currentEdit = Factories.variable();
   }
-
-  function remove(idx) {
-    addHistory({
-      doFn: (idx) => {
-        appData.variables.splice(idx, 1);
-      },
-      undoFn: ({ idx, variable }) => {
-        appData.variables.splice(idx, 0, variable);
-      },
-      doData: idx,
-      undoData: { idx, variable: appData.variables[idx] }
-    });
+  function remove(id: string) {
+    getMutator().delete("variables", id);
+    if (currentEdit === id) currentEdit = null;
   }
 </script>
 
 <div class="variables">
   <div class="list">
-    {#each appData.variables as variable, index}
+    {#each getProject().variables as [id] (id)}
       <Variable
-        {variable}
-        isEditing={currentEdit === index}
-        edit={(evt) => {
-          evt.stopPropagation();
-          currentEdit = index;
+        {id}
+        isEditing={currentEdit === id}
+        edit={(event) => {
+          event.stopPropagation();
+          currentEdit = id;
         }}
-        blur={() => (currentEdit = -1)}
-        remove={() => remove(index)}
+        blur={() => (currentEdit = null)}
+        remove={() => remove(id)}
       />
     {/each}
   </div>

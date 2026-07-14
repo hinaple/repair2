@@ -9,9 +9,10 @@
   import { sidebar } from "./resizer/sidebarSize";
   import { getSidebarWidth, setActualSidebarWidth, SIDEBAR_WIDTH_MIN } from "../nodes/viewport";
 
-  let currentTab = $state("edit");
+  type Tab = keyof typeof tabs;
+  let currentTab = $state<Tab>("edit");
 
-  let title = $state();
+  let title = $state("");
   $effect(() => {
     if (currentTab !== "edit") title = tabs[currentTab];
   });
@@ -41,7 +42,7 @@
     {#each Object.entries(tabs) as [id, label]}
       <button
         class={["tab-wrapper", currentTab === id && "active"]}
-        onclick={() => (currentTab = id)}
+        onclick={() => (currentTab = id as Tab)}
         data-tippy-content={label}
       >
         <div class="tab">

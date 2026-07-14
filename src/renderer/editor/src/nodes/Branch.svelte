@@ -1,52 +1,42 @@
-<script>
-  import Node from "./Node.svelte";
-  import { get } from "svelte/store";
-  import { grabbing } from "../lib/stores";
-  import Value from "./value/Value.svelte";
+<script lang="ts">
   import { ComparisonOperatorTypes } from "../lib/translate";
-  import { outClicked } from "../lib/editUtils/contextMenu/contextUtils";
+  import { getMutator } from "../project/store";
+  import Node from "./Node.svelte";
+  import Value from "./value/Value.svelte";
+  import type { Types } from "@shared/projectData/types";
 
-  let { branch, onpointerdown, ...nodeData } = $props();
-
-  function focusZoneMouseDown(evt) {
-    if (evt.button || $grabbing) return;
-    evt.stopPropagation();
-    outClicked();
-    onpointerdown();
-  }
+  let {
+    id,
+    isLastHold = false,
+    onpointerdown = () => {}
+  }: {
+    id: string;
+    isLastHold?: boolean;
+    onpointerdown?: (event: PointerEvent) => unknown;
+  } = $props();
+  const editor = $derived(getMutator().record<"nodes", Types.Branch>("nodes", id));
+  const branch = $derived(editor.value);
 </script>
 
 <Node
-  node={branch}
-  type="branch"
+  {id}
   title={branch.alias?.length ? branch.alias : "분기"}
+  {isLastHold}
   {onpointerdown}
   minWidth={350}
   outputs={[
-    { output: branch.trueOutput, id: `${branch.id}_true`, label: "참" },
-    { output: branch.falseOutput, id: `${branch.id}_false`, label: "거짓" }
+    { binding: editor.field("trueOutput"), id: `${id}_true`, label: "참" },
+    { binding: editor.field("falseOutput"), id: `${id}_false`, label: "거짓" }
   ]}
-  {...nodeData}
 >
   {#snippet body()}
     <div class="body">
       <div class="values">
-        <Value
-          pre="값A: "
-          isValueA
-          value={branch.valueA}
-          onpointerdown={focusZoneMouseDown}
-          parent={branch}
-        />
-        <Value
-          pre="값B: "
-          value={branch.valueB}
-          onpointerdown={focusZoneMouseDown}
-          parent={branch}
-        />
+        <Value pre="값A: " id={branch.valueA} parents={[id]} isValueA />
+        <Value pre="값B: " id={branch.valueB} parents={[id]} />
       </div>
-      <div class="operator" onpointerdown={focusZoneMouseDown}>
-        {ComparisonOperatorTypes[branch.operator] ?? "?"}
+      <div class="operator">
+        {ComparisonOperatorTypes[branch.operator as keyof typeof ComparisonOperatorTypes] ?? "?"}
       </div>
     </div>
   {/snippet}

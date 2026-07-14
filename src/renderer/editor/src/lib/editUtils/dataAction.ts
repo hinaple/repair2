@@ -6,6 +6,28 @@ import { rightclick } from "./contextMenu/contextUtils";
 import type { Action } from "svelte/action";
 import type { ContextMenuParam } from "./contextMenu/types";
 
+const focusTargets = new WeakMap<EventTarget, FocusData>();
+const focusHandledEvents = new WeakSet<Event>();
+
+window.addEventListener(
+  "pointerdown",
+  (evt) => {
+    if (evt.button !== 0 || get(grabbing)) return;
+
+    const focusTarget = evt.composedPath().find((target) => focusTargets.has(target));
+    if (!focusTarget) return;
+
+    const focussingData = focusTargets.get(focusTarget)!;
+    focusHandledEvents.add(evt);
+    focusData(focussingData.type, focussingData.target, focussingData.parents);
+  },
+  { capture: true }
+);
+
+export function isFocusHandled(evt: Event) {
+  return focusHandledEvents.has(evt);
+}
+
 export const data: Action<HTMLElement, ContextMenuParam> = (node, p) => {
   const contextNode = node.querySelector<HTMLElement>("[data-contextmenu]") || node;
   const focusNode = node.querySelector<HTMLElement>("[data-focus]") || node;
@@ -20,12 +42,7 @@ export const data: Action<HTMLElement, ContextMenuParam> = (node, p) => {
     parents: p.parents
   } as FocusData;
 
-  focusNode.addEventListener("pointerdown", (evt: PointerEvent) => {
-    if (evt.button !== 0 || get(grabbing)) return;
-    evt.stopPropagation();
-
-    focusData(focussingData.type, focussingData.target, focussingData.parents);
-  });
+  focusTargets.set(focusNode, focussingData);
 
   let focussing = false;
   const unsub = currentFocus.subscribe((cf) => {
@@ -40,6 +57,7 @@ export const data: Action<HTMLElement, ContextMenuParam> = (node, p) => {
 
   return {
     destroy() {
+      focusTargets.delete(focusNode);
       unsub();
       if (focussing) focusData("project");
     }

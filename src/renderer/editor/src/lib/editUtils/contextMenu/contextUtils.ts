@@ -50,7 +50,7 @@ function clearContextMenuClass() {
 export const rightclick: Action<HTMLElement, ContextMenuParam> = (node, p) => {
   node.addEventListener("contextmenu", (evt: MouseEvent) => {
     if (get(grabbing)) return;
-    showContextMenu({
+    const menu: ContextMenu = {
       ...p,
       pos: { x: evt.clientX, y: evt.clientY },
       items: ContextMenus[p.type],
@@ -59,7 +59,11 @@ export const rightclick: Action<HTMLElement, ContextMenuParam> = (node, p) => {
         target: p.id ?? null,
         parents: p.parents
       } as Exclude<FocusData, { type: "nodes" }>
-    });
+    };
+    menu.items = menu.items.filter(
+      (item) => item.type === "separator" || item.when?.(menu) !== false
+    );
+    showContextMenu(menu);
     evt.stopPropagation();
     clearContextMenuClass();
     rightNode = node;

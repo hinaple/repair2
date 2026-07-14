@@ -1,47 +1,47 @@
-<script>
-  import Node from "./Node.svelte";
-  import { EntryTypes } from "../lib/translate";
-  import { startMonitoring } from "../lib/runtimeMonitor.svelte";
+<script lang="ts">
   import { onDestroy } from "svelte";
+  import { startMonitoring } from "../lib/runtimeMonitor.svelte";
+  import { EntryTypes } from "../lib/translate";
+  import { getMutator } from "../project/store";
+  import Node from "./Node.svelte";
+  import type { Types } from "@shared/projectData/types";
 
-  let { entry, isLastHold, onpointerdown, ...nodeData } = $props();
+  let {
+    id,
+    isLastHold = false,
+    onpointerdown = () => {}
+  }: {
+    id: string;
+    isLastHold?: boolean;
+    onpointerdown?: (event: PointerEvent) => unknown;
+  } = $props();
+  const editor = $derived(getMutator().record<"nodes", Types.Entry>("nodes", id));
+  const entry = $derived(editor.value);
 
   let title = $derived.by(() => {
     if (entry.alias?.length) return entry.alias;
-    if (entry.data.type === "event" && entry.data.payload.channel?.length)
-      return entry.data.payload.channel;
-    if (entry.data.type === "shortcut" && entry.data.payload.key?.length)
-      return (
-        "단축키 " +
-        (entry.data.payload.ctrlKey ? "Ctrl+" : "") +
-        (entry.data.payload.altKey ? "Alt+" : "") +
-        (entry.data.payload.shiftKey ? "Shift+" : "") +
-        (entry.data.payload.metaKey ? "Win+" : "") +
-        entry.data.payload.key.toUpperCase()
-      );
-    if (entry.data.type === "Communication.serialData" && entry.data.payload.whenDataIs?.length)
-      return `시리얼 데이터 수신${entry.data.payload.whenDataIs?.length ? `(${entry.data.payload.whenDataIs})` : ""}`;
-    if (entry.data.type === "Communication.Socket.ondata" && entry.data.payload.channel?.length)
-      return `소켓 데이터 수신(${entry.data.payload.channel}${entry.data.payload.data?.length ? ":" + entry.data.payload.data : ""})`;
-    return EntryTypes[entry.data.type];
+    if (entry.type === "event" && entry.payload.channel?.length) return entry.payload.channel;
+    if (entry.type === "shortcut" && entry.payload.key?.length)
+      return `단축키 ${entry.payload.ctrlKey ? "Ctrl+" : ""}${entry.payload.altKey ? "Alt+" : ""}${entry.payload.shiftKey ? "Shift+" : ""}${entry.payload.metaKey ? "Win+" : ""}${entry.payload.key.toUpperCase()}`;
+    if (entry.type === "Communication.serialData" && entry.payload.whenDataIs?.length)
+      return `시리얼 데이터 수신(${entry.payload.whenDataIs})`;
+    if (entry.type === "Communication.Socket.ondata" && entry.payload.channel?.length)
+      return `소켓 데이터 수신(${entry.payload.channel}${entry.payload.data?.length ? `:${entry.payload.data}` : ""})`;
+    return EntryTypes[entry.type as keyof typeof EntryTypes] ?? "진입점";
   });
 
-  let color = $state(!entry.standbyMode ? "#000" : "#555555");
-  const unsub = startMonitoring("entries", entry.id, (isActivated) => {
-    color = entry.standbyMode ? (isActivated ? "var(--orange)" : "#555555") : "#000";
-  });
-
-  onDestroy(unsub);
+  let activated = $state(false);
+  const unsubscribe = startMonitoring("entries", id, (value) => (activated = value));
+  onDestroy(unsubscribe);
+  let color = $derived(entry.standbyMode ? (activated ? "var(--orange)" : "#555555") : "#000");
 </script>
 
 <Node
-  node={entry}
-  type="entry"
-  outputs={[{ output: entry.output, id: entry.id }]}
+  {id}
+  outputs={[{ binding: editor.field("output"), id }]}
   hasInput={entry.standbyMode}
   {title}
   {isLastHold}
   {onpointerdown}
   {color}
-  {...nodeData}
 />

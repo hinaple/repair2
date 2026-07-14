@@ -7,17 +7,14 @@ import {
 } from "@shared/constants";
 import { isRelationLeaf, isRelationTree, RelationMap, TYPE } from "@shared/projectData/relation";
 import type { RelationLeaf, RelationMapType, RelationTree } from "@shared/projectData/relation";
-import { endGroup, startGroup } from "../history";
 import type { ExtractResult } from "../extractData";
-import { getProject } from "../../../project/store";
+import { getMutator, getProject } from "../../../project/store";
 import type { ProjectInstance } from "../../../project/project";
 import { ClipboardFormat, ClipboardOwnMap, type Copiable, type CopiedData } from "./constants";
 import { currentFocus, focusData, type FocusData } from "../focus";
 import { get } from "svelte/store";
-import { getsetFrom, SortableUtils } from "../sortable";
 import { clipboard } from "electron";
 import { unpack } from "msgpackr";
-import type { SatisfiedKey } from "@shared/utils.types";
 
 export type PasteIdKey = `${RecordKey}:${string}`;
 export type PasteIdMap = Map<PasteIdKey, string>;
@@ -35,12 +32,6 @@ export type PasteResult = {
   rootType: (typeof SINGULAR_RECORD_MAP)[Exclude<CopiedData["type"], "nodes">] | "nodes";
   rootIds: string[];
   idMap: PasteIdMap;
-  // records: {
-  //   type: RecordKey;
-  //   id: string;
-  //   data: RecordValue;
-  //   root: boolean;
-  // }[];
 };
 
 function checkPastable(pastingType: Copiable, focussing: FocusData, project: ProjectInstance) {
@@ -81,25 +72,21 @@ function processPasteData(
   const pasteAt = checkPastable(data.type, focussing, project);
   if (!pasteAt) return;
 
-  startGroup();
-  try {
+  return getMutator().transaction(() => {
     const pasteResult = pasteInProject(data, position, project);
     if (typeof pasteAt === "string") {
       const cf = focussing as Exclude<FocusData, { type: "project" | "nodes" | "node" }>;
-      const target = project.getUnsafe(SINGULAR_RECORD_MAP[cf.type], cf.target);
-      SortableUtils.appendWithHistory(
-        getsetFrom(target, pasteAt as SatisfiedKey<typeof target, string[]>),
-        pasteResult.rootIds[0]
-      );
+      const targetType = SINGULAR_RECORD_MAP[cf.type];
+      const binding = getMutator().record(targetType, cf.target).at<string[]>(pasteAt);
+      binding.splice(binding.value.length, 0, pasteResult.rootIds[0]);
     }
 
     focusData(
       PROJECT_RECORDS[pasteResult.rootType],
       pasteResult.rootType === "nodes" ? new Set(pasteResult.rootIds) : pasteResult.rootIds[0]
     );
-  } finally {
-    endGroup();
-  }
+    return pasteResult;
+  });
 }
 
 function pasteInProject(
@@ -145,33 +132,20 @@ function pasteInProject(
     addPasteRecord(type, copiedData, oldId, false);
   });
 
-  // const addedRecords: PasteResult["records"] = [];
-  // startGroup();
-  try {
-    for (const record of records) {
-      const clonedData = structuredClone(record.data) as RecordValue;
-      assignDataId(clonedData, record.newId);
-      applyPastedNodePosition(record, clonedData, position, nodePositionBase);
-      rewriteRelationIds(record.type, clonedData, (type, id) => {
-        return idMap.get(createPasteIdKey(type, id)) ?? id;
-      });
-      project.add(record.type, clonedData, record.newId);
-      // addedRecords.push({
-      //   type: record.type,
-      //   id: record.newId,
-      //   data: clonedData,
-      //   root: record.root
-      // });
-    }
-  } finally {
-    // endGroup();
+  for (const record of records) {
+    const clonedData = structuredClone(record.data) as RecordValue;
+    assignDataId(clonedData, record.newId);
+    applyPastedNodePosition(record, clonedData, position, nodePositionBase);
+    rewriteRelationIds(record.type, clonedData, (type, id) => {
+      return idMap.get(createPasteIdKey(type, id)) ?? id;
+    });
+    getMutator().add(record.type, record.newId, clonedData as never);
   }
 
   return {
     rootType,
     rootIds,
     idMap
-    // records: addedRecords
   };
 }
 

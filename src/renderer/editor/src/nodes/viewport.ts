@@ -1,6 +1,6 @@
 import { get, writable } from "svelte/store";
 import { outClicked } from "../lib/editUtils/contextMenu/contextUtils";
-import { appData } from "../project/store";
+import { getProject } from "../project/store";
 import FrameUpdater from "../lib/frameUpdater";
 import { ipc } from "../lib/ipc";
 import type { Types } from "@shared/projectData/types";
@@ -229,7 +229,5 @@ ipc.on("zoom", (_, step) => {
 });
 
 ipc.on("zoom-fit", () => {
-  if (appData) {
-    fitViewportToNodes(appData.nodes);
-  }
+  fitViewportToNodes(getProject().nodes);
 });

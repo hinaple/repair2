@@ -1,12 +1,9 @@
 import { genId } from "../../genId";
 import type { Types } from "../types";
-import { createFactory } from "./factory";
+import { createTypePayloadFactory } from "./typePayloadFactory";
 
-export const createStep = createFactory<Types.Step>(
-  {
-    id: () => genId(),
-    title: null,
-    type: ""
-  },
-  "step"
-);
+export const createStep = createTypePayloadFactory<Types.Step>("step")({
+  id: () => genId(),
+  title: null,
+  type: ""
+});

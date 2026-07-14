@@ -12,12 +12,12 @@ function requestDraw() {
     const reupdates = [];
     while (asyncBuffer.length) {
       const current = asyncBuffer.pop();
-      if (current?.callback(ts)) reupdates.push(current);
+      if (current && !current.destroyed && current.callback(ts)) reupdates.push(current);
     }
     for (const works of promiseBuffer) {
       const tempWorks = works.splice(0);
       works.length = 0;
-      await Promise.all(tempWorks.map((w) => w.callback(ts)));
+      await Promise.all(tempWorks.filter((w) => !w.destroyed).map((w) => w.callback(ts)));
     }
 
     reupdates.forEach((r) => r.draw());
@@ -41,5 +41,7 @@ export default class FrameUpdater {
   }
   destroy() {
     this.destroyed = true;
+    const index = this.localBuffer.indexOf(this);
+    if (index !== -1) this.localBuffer.splice(index, 1);
   }
 }

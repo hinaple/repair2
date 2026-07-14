@@ -36,12 +36,52 @@ interface HistoryItem {
   afterChange?: () => unknown;
 }
 
+export type HistoryDirection = "forward" | "backward";
+
+export interface PatchHistoryArgs<P> {
+  patches: readonly P[];
+  apply(patch: P, direction: HistoryDirection): unknown;
+  afterChange?: () => unknown;
+  alreadyApplied?: boolean;
+}
+
 let history: (HistoryItem | HistoryItem[])[] = [];
 let saveIdx = 0;
 let currentCursor = 0;
+let beforeHistoryChange: (() => unknown) | null = null;
+let pendingChangeCount = 0;
+
+export function setBeforeHistoryChange(callback: (() => unknown) | null) {
+  beforeHistoryChange = callback;
+}
 function setCurrentCursor(v: number) {
   currentCursor = v;
-  ipc.send(currentCursor !== saveIdx ? "unsaved" : "saved");
+  notifySaveState();
+}
+
+function notifySaveState() {
+  ipc.send(currentCursor !== saveIdx || pendingChangeCount > 0 ? "unsaved" : "saved");
+}
+
+export function beginPendingHistoryChange() {
+  let dirty = false;
+  let finished = false;
+
+  return {
+    setDirty(value: boolean) {
+      if (finished || dirty === value) return;
+      dirty = value;
+      pendingChangeCount += value ? 1 : -1;
+      notifySaveState();
+    },
+    finish() {
+      if (finished) return;
+      finished = true;
+      if (!dirty) return;
+      pendingChangeCount--;
+      notifySaveState();
+    }
+  };
 }
 
 function pushHistory(item: HistoryItem | HistoryItem[]) {
@@ -56,30 +96,58 @@ function pushHistory(item: HistoryItem | HistoryItem[]) {
   }
 }
 
+function recordHistory(item: HistoryItem) {
+  if (group) group.items.push(item);
+  else pushHistory(item);
+}
+
 let group: {
+  depth: number;
   prom: Promise<void>;
   res: () => void;
   items: HistoryItem[];
 } | null = null;
 export function startGroup() {
-  if (group) return;
+  if (group) {
+    group.depth++;
+    return;
+  }
 
   let res: () => void;
   const prom = new Promise<void>((r) => (res = r));
   group = {
+    depth: 1,
     prom,
     res: res!,
     items: []
   };
 }
 export function endGroup() {
-  if (!group) return;
-  if (group.items.length !== 0) {
-    console.log("NEW HISTORY GROUP", group.items);
-    pushHistory(group.items);
+  if (!group) {
+    throw new Error("endGroup() called without a matching startGroup().");
   }
-  group.res();
+
+  group.depth--;
+  if (group.depth > 0) return;
+
+  const completedGroup = group;
   group = null;
+  if (completedGroup.items.length !== 0) {
+    console.log("NEW HISTORY GROUP", completedGroup.items);
+    pushHistory(completedGroup.items);
+  }
+  completedGroup.res();
+}
+
+type SyncResult<T> = T extends PromiseLike<unknown> ? never : T;
+
+export function withHistoryGroup<T>(fn: () => SyncResult<T>): T {
+  startGroup();
+  try {
+    return fn();
+  } finally {
+    endGroup();
+  }
 }
 
 export function beforeSave() {
@@ -114,17 +182,39 @@ export function addHistory<DoData = undefined, UndoData = DoData>(
     afterChange
   };
 
-  if (group) group.items.push(tempHistory);
-  else {
-    pushHistory(tempHistory);
-    console.log("NEW HISTORY", tempHistory);
-  }
+  recordHistory(tempHistory);
 
   return (newValue: DoData) => {
     currentDoData = newValue;
   };
 }
+
+/**
+ * Stores serializable mutation data instead of requiring every caller to
+ * maintain a matching do/undo function pair. Undo is applied in reverse order.
+ */
+export function addPatchHistory<P>({
+  patches,
+  apply,
+  afterChange,
+  alreadyApplied = false
+}: PatchHistoryArgs<P>): void {
+  if (patches.length === 0) return;
+
+  const redo = () => {
+    for (const patch of patches) apply(patch, "forward");
+    afterChange?.();
+  };
+  const undo = () => {
+    for (let i = patches.length - 1; i >= 0; i--) apply(patches[i], "backward");
+    afterChange?.();
+  };
+
+  if (!alreadyApplied) redo();
+  recordHistory({ redo, undo, afterChange });
+}
 export async function undo() {
+  beforeHistoryChange?.();
   if (group) await group.prom;
   if (currentCursor <= 0) return;
 
@@ -136,6 +226,7 @@ export async function undo() {
   }
 }
 export async function redo() {
+  beforeHistoryChange?.();
   if (group) await group.prom;
   if (currentCursor >= history.length) return;
 
@@ -152,7 +243,7 @@ export async function clearHistory() {
 }
 export function updateSaveIdx() {
   saveIdx = currentCursor;
-  ipc.send("saved");
+  notifySaveState();
 }
 
 ipc.on("undo", undo);

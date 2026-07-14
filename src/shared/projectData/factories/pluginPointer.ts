@@ -1,8 +1,11 @@
 import type { Types } from "../types";
-import { createFactory } from "./factory";
+import { createFactory, createRecordFactory } from "./factory";
 
-export const createPluginPointer = createFactory<Types.PluginPointer>({
-  name: null,
-  exportName: "default",
-  payloads: () => ({})
-});
+export const createPluginPointer = createRecordFactory(
+  "pluginPointers",
+  createFactory<Types.PluginPointer>()({
+    name: null,
+    exportName: "default",
+    payloads: () => ({})
+  })
+);

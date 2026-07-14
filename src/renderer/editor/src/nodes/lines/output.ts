@@ -1,11 +1,11 @@
 import { getOriginalPos } from "../viewport";
 import Grabber from "../../lib/grabber";
 import { get } from "svelte/store";
-import { addHistory } from "../../lib/editUtils/history";
 import { nodeMovedReloader } from "../../lib/stores";
 import FrameUpdater from "../../lib/frameUpdater";
 import { writable, type Writable } from "svelte/store";
-import { getProject } from "../../project/store";
+import { getMutator, getProject } from "../../project/store";
+import type { FieldBinding } from "../../project/mutator";
 
 type Coord = Record<"x" | "y", number>;
 export interface Output {
@@ -20,24 +20,16 @@ const outputs = new Map<string, Output>();
 const drawings = new Map<string, Output>();
 export const hoverInput: Writable<string | null> = writable(null);
 
-type OutputNodeParams<K extends string> =
-  | {
-      id: string;
-      outputKey: K;
-      data: { [k in K]: string | null };
-    }
-  | {
-      id: string;
-      outputKey?: "output";
-      data: { output: string | null };
-    };
-const outputNode = <K extends string>(node: HTMLElement, params: OutputNodeParams<K>) => {
+type OutputNodeParams = {
+  id: string;
+  binding: FieldBinding<string | null>;
+};
+const outputNode = (node: HTMLElement, params: OutputNodeParams) => {
   let mounted = false;
   let drawing = false;
 
   const id = params.id;
-  const outputKey = params.outputKey ?? "output";
-  const data = params.data as { [k in typeof outputKey]: string | null };
+  const binding = params.binding;
 
   function positiveUpdate() {
     if (!mounted) return;
@@ -69,7 +61,7 @@ const outputNode = <K extends string>(node: HTMLElement, params: OutputNodeParam
   const o: Output = {
     set output(t: string | null) {
       if (t) {
-        data[outputKey] = t;
+        binding.set(t);
 
         if (!updateToCoord()) {
           o.output = null;
@@ -78,11 +70,11 @@ const outputNode = <K extends string>(node: HTMLElement, params: OutputNodeParam
         positiveUpdate();
         return;
       }
-      data[outputKey] = null;
+      binding.set(null);
       negativeUpdate();
     },
     get output() {
-      return data[outputKey];
+      return binding.value;
     },
     fromId: id,
     fromCoord: null,
@@ -90,6 +82,16 @@ const outputNode = <K extends string>(node: HTMLElement, params: OutputNodeParam
     noBezier: false
   };
   outputs.set(id, o);
+
+  const unsubscribeBinding = getMutator().subscribe(binding.target, (change) => {
+    if (
+      change.path.length === binding.path.length &&
+      change.path.every((part, index) => part === binding.path[index])
+    ) {
+      if (o.output && updateToCoord()) positiveUpdate();
+      else negativeUpdate();
+    }
+  });
 
   const grabber = new Grabber({
     container: node,
@@ -115,15 +117,8 @@ const outputNode = <K extends string>(node: HTMLElement, params: OutputNodeParam
 
       o.noBezier = false;
       const targetEnd = get(hoverInput);
-      const prev = o.output;
-      if (prev !== targetEnd) {
-        addHistory({
-          doFn: (d) => {
-            o.output = d;
-          },
-          doData: targetEnd,
-          undoData: prev
-        });
+      if (o.output !== targetEnd) {
+        o.output = targetEnd;
       } else o.output = targetEnd;
     }
   });
@@ -141,7 +136,7 @@ const outputNode = <K extends string>(node: HTMLElement, params: OutputNodeParam
 
     if (!mounted) {
       mounted = true;
-      o.output = data[outputKey];
+      o.output = binding.value;
 
       return;
     }
@@ -160,6 +155,7 @@ const outputNode = <K extends string>(node: HTMLElement, params: OutputNodeParam
       destroyed = true;
       if (grabber) grabber.destroy();
       unsub();
+      unsubscribeBinding();
       negativeUpdate();
       outputs.delete(id);
     }
@@ -187,9 +183,6 @@ export function getLines() {
   return drawings;
 }
 
-export function setAllOutput(outputs: Output[], toId: string | null) {
-  outputs.forEach((o) => (o.output = toId));
-}
 export function getConnectedOutputs(nodeId: string) {
   return [...outputs.values().filter((o) => o.output === nodeId)];
 }

@@ -1,66 +1,31 @@
-<script>
-  import { onDestroy } from "svelte";
+<script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
-  import { outClicked, rightclick } from "../../lib/editUtils/contextMenu/contextUtils";
+  import { data } from "../../lib/editUtils/dataAction";
+  import { grabbing, reload } from "../../lib/stores";
   import { ValueProcessTypes } from "../../lib/translate";
-  import { currentFocus, focusData } from "../../lib/editUtils/focus";
-  import { get } from "svelte/store";
-  import { grabbing } from "../../lib/stores";
-  import { genClipboardFn } from "../../lib/editUtils/clipboard";
+  import { getMutator } from "../../project/store";
+  import type { SortableProps } from "../types";
 
-  let { item: valueProcess, handle = $bindable(null), el = $bindable(null), remove } = $props();
-
-  onDestroy(() => {
-    if (get(currentFocus).obj === valueProcess) {
-      focusData("project");
-    }
+  let { id, onpointerdown, parents }: SortableProps & { parents: string[] } = $props();
+  const editor = $derived(getMutator().record("valueProcesses", id));
+  const valueProcess = $derived(editor.value);
+  $effect(() => {
+    valueProcess.type;
+    reload("nodeMoved");
   });
-
-  const clipboardFn = genClipboardFn("valueProcess", valueProcess, () => remove());
-
-  const contextmenu = [
-    {
-      label: "잘라내기",
-      click: clipboardFn.cut
-    },
-    {
-      label: "복사",
-      click: clipboardFn.copy
-    },
-    {
-      label: "붙여넣기",
-      click: clipboardFn.paste
-    },
-    { type: "separator" },
-    {
-      label: "삭제",
-      click: () => {
-        remove();
-        return true;
-      },
-      action: "remove"
-    }
-  ];
 </script>
 
 <div
-  class={["value-process", $currentFocus.obj === valueProcess && "focus"]}
-  bind:this={el}
-  onpointerdown={(evt) => {
-    if (evt.button || $grabbing) return;
-    evt.stopPropagation();
-    focusData("valueProcess", valueProcess, { clipboardFn });
-    outClicked();
+  class="value-process"
+  onpointerdown={(event) => {
+    if (event.button || $grabbing) return;
+    onpointerdown(event);
   }}
-  use:rightclick={contextmenu}
+  use:data={{ type: "valueProcess", id, parents }}
 >
   <div class="info">
-    <div class="handle" bind:this={handle}>
-      <Icon icon="hamburger" color="rgba(0, 0, 0, 0.5)" size={8} />
-    </div>
-    <span>
-      {ValueProcessTypes[valueProcess.type] ?? "?"}
-    </span>
+    <div class="handle"><Icon icon="hamburger" color="rgba(0,0,0,.5)" size={8} /></div>
+    <span>{ValueProcessTypes[valueProcess.type as keyof typeof ValueProcessTypes] ?? "?"}</span>
   </div>
 </div>
 

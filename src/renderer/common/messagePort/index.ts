@@ -34,7 +34,11 @@ function send(channel: string, ...data: any) {
 
 const listeners = new Map<string, ((...data: any[]) => unknown)[]>();
 function on(channel: string, callback: (...data: any[]) => unknown) {
-  const arr = listeners.getOrInsertComputed(channel, () => []);
+  let arr = listeners.get(channel);
+  if (!arr) {
+    arr = [];
+    listeners.set(channel, arr);
+  }
   arr.push(callback);
 }
 

@@ -1,8 +1,10 @@
 <script lang="ts">
   import { getAssetDir } from "@renderer/utils";
   import { onDestroy } from "svelte";
+  import { getResourceInfo } from "../sidebar/resource/resourceInfo";
 
   let { resource, controls = true, small = false } = $props();
+  let info = $derived("fileType" in resource ? resource : getResourceInfo(resource));
 
   let mediaEl: HTMLMediaElement | null = $state(null);
 
@@ -14,14 +16,14 @@
   });
 </script>
 
-{#if resource.src}
-  <div class={["preview", small && "small", resource.fileType]}>
-    {#if resource.fileType === "image"}
-      <img src={getAssetDir(resource.src)} />
-    {:else if resource.fileType === "video"}
-      <video bind:this={mediaEl} src={getAssetDir(resource.src)} {controls} muted></video>
-    {:else if resource.fileType === "audio"}
-      <audio bind:this={mediaEl} src={getAssetDir(resource.src)} controls></audio>
+{#if info.src}
+  <div class={["preview", small && "small", info.fileType]}>
+    {#if info.fileType === "image"}
+      <img src={getAssetDir(info.src)} alt={info.title} />
+    {:else if info.fileType === "video"}
+      <video bind:this={mediaEl} src={getAssetDir(info.src)} {controls} muted></video>
+    {:else if info.fileType === "audio"}
+      <audio bind:this={mediaEl} src={getAssetDir(info.src)} controls></audio>
     {/if}
   </div>
 {/if}

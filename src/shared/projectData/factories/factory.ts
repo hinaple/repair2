@@ -1,32 +1,49 @@
 import type { RecordKey, RecordValue } from "../../constants";
-import type { TypePayloadMap, TypePayloads } from "../typePayload";
-import { createPayload } from "../typePayload/create";
 
 const NESTED_FACTORY = Symbol("nestedFactory");
 const RECORD_FACTORY = Symbol("recordFactory");
+const RECORD_KEY = Symbol("recordKey");
 const OWNING = Symbol("ownFactory");
+const FACTORY_DEFINITION = Symbol("factoryDefinition");
+const FACTORY_RESULT = Symbol("factoryResult");
 
-type Factory<T extends object> = (overrides?: Partial<T>) => T;
+export type RegisterOwned = <K extends RecordKey>(type: K, data: RecordValue<K>) => string | void;
 
-type NestedFactory<T extends object> = {
+type RuntimeFactory<T extends object> = (
+  overrides?: Partial<T>,
+  registerOwned?: RegisterOwned
+) => T;
+
+export type FactoryResult<T extends object> = {
+  readonly [FACTORY_RESULT]?: T;
+};
+
+type NestedFactory<T extends object, D extends object = object> = {
   [NESTED_FACTORY]: true;
-  factory: Factory<T>;
+  factory: RuntimeFactory<T>;
+  definition?: D;
 };
 
 type RecordFactory<T extends object, K extends keyof T & string = keyof T & string> = {
   [RECORD_FACTORY]: true;
-  factory: Factory<T>;
+  factory: RuntimeFactory<T>;
   idKey?: K;
 };
 
-type Owning<
-  T extends RecordKey,
-  O extends RecordValue<T> = RecordValue<T>,
-  K extends keyof O & string = keyof O & string
-> = {
+export type ProjectRecordFactory<K extends RecordKey, T extends object = object> = ((
+  overrides: undefined,
+  registerOwned: RegisterOwned
+) => T) & {
+  [RECORD_KEY]: K;
+} & FactoryResult<T>;
+
+type ProjectRecordFactoryTag<K extends RecordKey, T extends object> = {
+  [RECORD_KEY]: K;
+} & FactoryResult<T>;
+
+export type Owning<K extends RecordKey = RecordKey, T extends object = object> = {
   [OWNING]: true;
-  recordKey: T;
-  idKey?: K;
+  factory: ProjectRecordFactory<K, T>;
 };
 
 type FactoryValue<T> = [T] extends [object]
@@ -34,28 +51,68 @@ type FactoryValue<T> = [T] extends [object]
     ? T extends Record<string, infer V>
       ? [V] extends [object]
         ? (() => T) | RecordFactory<V>
-        : [V] extends [RecordKey]
-          ? (() => T) | Owning<V>
-          : () => T
+        : () => T
       : () => T
     : (() => T) | NestedFactory<T>
-  : T | (() => T);
+  : T extends string
+    ? T | (() => T) | Owning
+    : T | (() => T);
 
-type FactoryObject<T extends object> = {
+export type FactoryObject<T extends object> = {
   [K in keyof T]: FactoryValue<T[K]>;
 };
 
-type Result<T, O extends Partial<T>> = T extends TypePayloads
+type OwnRequirement<V> = V extends Owning
+  ? string
+  : V extends NestedFactory<infer T, infer D>
+    ? OwnRequirements<D> extends infer R
+      ? R extends object
+        ? keyof R extends never
+          ? never
+          : Partial<T> & R
+        : never
+      : never
+    : never;
+
+type OwnRequirements<D extends object> = {
+  [K in keyof D as OwnRequirement<D[K]> extends never ? never : K]-?: OwnRequirement<D[K]>;
+};
+
+type FactoryOverrides<T extends object, D extends object> = {
+  [K in keyof T]?: K extends keyof D
+    ? D[K] extends NestedFactory<infer NT, infer ND>
+      ? FactoryOverrides<NT, ND>
+      : T[K]
+    : T[K];
+};
+
+type Result<T, O extends object> = T extends { type: string }
   ? O extends { type: string }
-    ? Extract<T, { type: O["type"] }>
+    ? Extract<T, { type: O["type"] }> extends never
+      ? T
+      : Extract<T, { type: O["type"] }>
     : T
   : T;
 
-type TypePayloadNameOf<T> = {
-  [K in keyof TypePayloadMap]: Exclude<T, { type: ""; payload: null }> extends TypePayloadMap[K]
-    ? K
-    : never;
-}[keyof TypePayloadMap];
+type FactoryCalls<
+  T extends object,
+  D extends FactoryObject<T>
+> = keyof OwnRequirements<D> extends never
+  ? <O extends FactoryOverrides<T, D>>(overrides?: O, registerOwned?: RegisterOwned) => Result<T, O>
+  : {
+      <O extends FactoryOverrides<T, D> & OwnRequirements<D>>(
+        overrides: O,
+        registerOwned?: RegisterOwned
+      ): Result<T, O>;
+      <O extends FactoryOverrides<T, D>>(
+        overrides: O | undefined,
+        registerOwned: RegisterOwned
+      ): Result<T, O>;
+    };
+
+type CreatedFactory<T extends object, D extends FactoryObject<T>> = FactoryCalls<T, D> & {
+  readonly [FACTORY_DEFINITION]?: D;
+} & FactoryResult<T>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -69,13 +126,17 @@ function isRecordFactory(value: unknown): value is RecordFactory<object> {
   return isRecord(value) && (value as Partial<RecordFactory<object>>)[RECORD_FACTORY] === true;
 }
 
-function isOwns(value: unknown): value is Owning<RecordKey> {
-  return isRecord(value) && (value as Partial<Owning<RecordKey>>)[OWNING] === true;
+export function isOwns(value: unknown): value is Owning {
+  return isRecord(value) && (value as Partial<Owning>)[OWNING] === true;
 }
 
-function resolveFactoryValue(defaultValue: unknown, overrideValue: unknown) {
+export function resolveFactoryValue(
+  defaultValue: unknown,
+  overrideValue: unknown,
+  registerOwned?: RegisterOwned
+) {
   if (isNestedFactory(defaultValue)) {
-    return defaultValue.factory(isRecord(overrideValue) ? overrideValue : undefined);
+    return defaultValue.factory(isRecord(overrideValue) ? overrideValue : undefined, registerOwned);
   }
 
   if (isRecordFactory(defaultValue)) {
@@ -92,18 +153,50 @@ function resolveFactoryValue(defaultValue: unknown, overrideValue: unknown) {
                   ...itemOverride,
                   [defaultValue.idKey]: recordKey
                 }
-              : itemOverride
+              : itemOverride,
+            registerOwned
           )
         ];
       })
     );
   }
 
+  if (isOwns(defaultValue)) {
+    if (typeof overrideValue === "string") return overrideValue;
+
+    if (!registerOwned) {
+      throw new Error(
+        `registerOwned is required to create an owned ${defaultValue.factory[RECORD_KEY]} record.`
+      );
+    }
+
+    const type = defaultValue.factory[RECORD_KEY];
+    const data = defaultValue.factory(undefined, registerOwned);
+    const registeredId = registerOwned(type, data as RecordValue<typeof type>);
+    if (typeof registeredId === "string") return registeredId;
+    if (registeredId !== undefined) {
+      throw new Error(`registerOwned returned a non-string ID for an owned ${type} record.`);
+    }
+
+    if ("id" in data && typeof data.id === "string") return data.id;
+
+    throw new Error(
+      `registerOwned did not return an ID and the owned ${type} record has no string id.`
+    );
+  }
+
   if (overrideValue !== undefined) return overrideValue;
+
   return typeof defaultValue === "function" ? (defaultValue as () => unknown)() : defaultValue;
 }
 
-export function nested<T extends object>(factory: Factory<T>): NestedFactory<T> {
+export function nested<T extends object, D extends FactoryObject<T>>(
+  factory: CreatedFactory<T, D>
+): NestedFactory<T, D>;
+export function nested<T extends object>(
+  factory: RuntimeFactory<T> & FactoryResult<T>
+): NestedFactory<T>;
+export function nested<T extends object>(factory: RuntimeFactory<T>): NestedFactory<T> {
   return {
     [NESTED_FACTORY]: true,
     factory
@@ -111,7 +204,7 @@ export function nested<T extends object>(factory: Factory<T>): NestedFactory<T> 
 }
 
 export function recordOf<T extends object, K extends keyof T & string>(
-  factory: Factory<T>,
+  factory: RuntimeFactory<T> & FactoryResult<T>,
   idKey?: K
 ): RecordFactory<T, K> {
   return {
@@ -121,47 +214,49 @@ export function recordOf<T extends object, K extends keyof T & string>(
   };
 }
 
-export function owns<T extends RecordKey, K extends keyof RecordValue<T> & string>(
-  recordKey: T,
-  idKey?: K
-): Owning<T> {
+export function owns<K extends RecordKey, T extends object>(
+  factory: ((overrides: undefined, registerOwned: RegisterOwned) => T) &
+    ProjectRecordFactoryTag<K, T>
+): Owning<K, T> {
   return {
     [OWNING]: true,
-    recordKey,
-    idKey
+    factory
   };
 }
 
-type OwnCallback = (type: RecordKey, id: string) => unknown;
+function buildFactory<T extends object, D extends FactoryObject<T>>(
+  defaults: D
+): CreatedFactory<T, D> {
+  return ((overrides?: Partial<T>, registerOwned?: RegisterOwned) => {
+    const overrideRecord = overrides as Record<string, unknown> | undefined;
+    return Object.fromEntries(
+      Object.entries(defaults).map(([key, defaultValue]) => [
+        key,
+        resolveFactoryValue(defaultValue, overrideRecord?.[key], registerOwned)
+      ])
+    ) as T;
+  }) as CreatedFactory<T, D>;
+}
 
-export function createFactory<T extends TypePayloads>(
-  defaults: Omit<FactoryObject<T>, "payload">,
-  typePayloadName: TypePayloadNameOf<T>
-): <O extends Partial<T>>(overrides?: O, owns?: OwnCallback) => Result<T, O>;
+export function createFactory<T extends object>(): <const D extends FactoryObject<T>>(
+  defaults: D
+) => CreatedFactory<T, D>;
 export function createFactory<T extends object>(
   defaults: FactoryObject<T>
-): <O extends Partial<T>>(overrides?: O, owns?: OwnCallback) => Result<T, O>;
-export function createFactory(defaults: object, typePayloadName?: keyof TypePayloadMap) {
-  const { type: defaultType, ...noTypeDefaults } = defaults as Record<string, unknown>;
-  return (overrides?: object) => {
-    const overrideRecord = overrides as Record<string, unknown> | undefined;
-    const obj = Object.fromEntries(
-      Object.entries(noTypeDefaults).map(([k, v]) => {
-        return [k, resolveFactoryValue(v, overrideRecord?.[k])];
-      })
-    );
-    if (typePayloadName) {
-      const typeName = (overrideRecord?.type ?? defaultType) as TypePayloads["type"];
-      return {
-        ...obj,
-        type: typeName,
-        payload: createPayload(
-          typePayloadName,
-          typeName,
-          (overrideRecord?.payload ?? undefined) as Record<string, unknown> | undefined
-        )
-      };
-    }
-    return obj;
-  };
+): RuntimeFactory<T> & FactoryResult<T>;
+export function createFactory<T extends object>(defaults?: FactoryObject<T>) {
+  if (defaults === undefined) {
+    return <const D extends FactoryObject<T>>(curriedDefaults: D) =>
+      buildFactory<T, D>(curriedDefaults);
+  }
+  return buildFactory<T, typeof defaults>(defaults);
+}
+
+export function createRecordFactory<K extends RecordKey, F extends (...args: never[]) => object>(
+  recordKey: K,
+  factory: F & (ReturnType<F> extends RecordValue<K> ? unknown : never)
+): F & ProjectRecordFactoryTag<K, ReturnType<F>> {
+  const recordFactory = factory as unknown as F & ProjectRecordFactoryTag<K, ReturnType<F>>;
+  recordFactory[RECORD_KEY] = recordKey;
+  return recordFactory;
 }

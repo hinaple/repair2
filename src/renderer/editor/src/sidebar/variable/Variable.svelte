@@ -1,15 +1,30 @@
-<script>
+<script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
   import InputField from "../input/InputField.svelte";
   import outClickAction from "../../lib/actions/outclickaction";
   import { hoverHighlight } from "../../lib/highlight";
   import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
   import { onDestroy } from "svelte";
+  import { getMutator } from "../../project/store";
 
-  let { variable, isEditing, edit, blur, remove } = $props();
+  let {
+    id,
+    isEditing,
+    edit,
+    blur,
+    remove
+  }: {
+    id: string;
+    isEditing: boolean;
+    edit: (event: MouseEvent) => unknown;
+    blur: () => unknown;
+    remove: () => unknown;
+  } = $props();
+  const editor = $derived(getMutator().record("variables", id));
+  const variable = $derived(editor.value);
 
-  let runtimeValue = $state(null);
-  const unsub = startMonitoring("variables", variable.id, (v) => (runtimeValue = v));
+  let runtimeValue = $state<string | null>(null);
+  const unsub = startMonitoring("variables", id, (v) => (runtimeValue = v));
   onDestroy(unsub);
 </script>
 
@@ -22,18 +37,12 @@
     <div class="edit-zone" use:outClickAction={() => blur()}>
       <InputField
         label="변수명"
-        value={variable.name}
+        binding={editor.field("name")}
         placeholder="이름 없는 변수"
-        setter={(d) => (variable.name = d)}
         autofocus
         small
       />
-      <InputField
-        label="기본값"
-        value={variable.defaultValue}
-        setter={(d) => (variable.defaultValue = d)}
-        small
-      />
+      <InputField label="기본값" binding={editor.field("defaultValue")} small />
     </div>
   {:else}
     <div class="top">

@@ -1,8 +1,11 @@
 import type { Types } from "../types";
-import { createFactory } from "./factory";
+import { createFactory, createRecordFactory } from "./factory";
 
-export const createValue = createFactory<Types.Value>({
-  baseType: "string",
-  baseValue: null,
-  process: () => []
-});
+export const createValue = createRecordFactory(
+  "values",
+  createFactory<Types.Value>({
+    baseType: "string",
+    baseValue: null,
+    process: () => []
+  })
+);

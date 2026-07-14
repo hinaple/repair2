@@ -1,40 +1,31 @@
 <script lang="ts">
+  import type { FieldBinding } from "../../project/mutator";
   import InputField from "./InputField.svelte";
   import PluginSelector from "./PluginSelector.svelte";
 
-  let { transition } = $props();
+  let { binding }: { binding: FieldBinding<any> } = $props();
+  let transition = $derived(binding.value);
 </script>
 
 <div class="transition-input">
-  <PluginSelector plugin={transition.plugin} type="transition" />
-  {#if transition.plugin.name}
-    <InputField
-      label="지속시간(ms)"
-      value={transition.duration}
-      type="number"
-      setter={(d) => (transition.duration = d)}
-      placeholder={400}
-      row
-      small
-    />
-    <InputField
-      label="딜레이(ms)"
-      value={transition.delay}
-      type="number"
-      setter={(d) => (transition.delay = d)}
-      placeholder={0}
-      row
-      small
-    />
-    <InputField
-      label="easing"
-      value={transition.easing}
-      setter={(d) => (transition.easing = d)}
-      placeholder="linear"
-      row
-      small
-    />
-  {/if}
+  <PluginSelector binding={binding.at("plugin")} type="transition" />
+  <InputField
+    label="지속시간(ms)"
+    binding={binding.at("duration")}
+    type="number"
+    placeholder={400}
+    row
+    small
+  />
+  <InputField
+    label="딜레이(ms)"
+    binding={binding.at("delay")}
+    type="number"
+    placeholder={0}
+    row
+    small
+  />
+  <InputField label="easing" binding={binding.at("easing")} placeholder="linear" row small />
 </div>
 
 <style>

@@ -1,69 +1,52 @@
-<script>
+<script lang="ts">
   import InputField from "../../../input/InputField.svelte";
-
-  const { data } = $props();
+  import type { RecordEditor } from "../../../../project/mutator";
+  const { editor }: { editor: RecordEditor<"steps"> } = $props();
+  let parts = $derived(editor.value.type.split("."));
 </script>
 
-{#if data.types[1] === "Serial"}
-  {#if data.types[2] === "open"}
+{#if parts[1] === "Serial"}
+  {#if parts[2] === "open"}
     <InputField
       label="연결 키워드(선택)"
-      value={data.payload.portAlias}
-      setter={(d) => (data.payload.portAlias = d)}
+      binding={editor.at("payload", "portAlias")}
       placeholder="기기 이름에 포함 시 연결"
     />
     <InputField
       label="포트 번호"
-      value={data.payload.port}
-      setter={(d) => (data.payload.port = d)}
+      binding={editor.at("payload", "port")}
       placeholder="키워드 없을 시 연결"
     />
     <InputField
       label="통신 속도"
-      value={data.payload.baudRate}
-      setter={(d) => (data.payload.baudRate = d)}
+      binding={editor.at("payload", "baudRate")}
+      type="number"
       placeholder="9600"
     />
-  {:else if data.types[2] === "send"}
-    <InputField
-      label="전송할 데이터"
-      value={data.payload.data}
-      setter={(d) => (data.payload.data = d)}
-      type="textarea"
-    />
+  {:else if parts[2] === "send"}
+    <InputField label="전송할 데이터" binding={editor.at("payload", "data")} type="textarea" />
   {/if}
-{:else if data.types[1] === "Socket"}
-  {#if data.types[2] === "connect"}
+{:else if parts[1] === "Socket"}
+  {#if parts[2] === "connect"}
     <InputField
       label="URL"
-      value={data.payload.url}
-      setter={(d) => (data.payload.url = d)}
+      binding={editor.at("payload", "url")}
       placeholder="Enter로 구분"
       type="textarea"
     />
-  {:else if data.types[2] === "connectService"}
-    <InputField
-      label="서비스 종류"
-      value={data.payload.type}
-      setter={(d) => (data.payload.type = d)}
-      placeholder="http"
-    />
+  {:else if parts[2] === "connectService"}
+    <InputField label="서비스 종류" binding={editor.at("payload", "type")} placeholder="http" />
     <InputField
       label="서비스 이름"
-      value={data.payload.name}
-      setter={(d) => (data.payload.name = d)}
+      binding={editor.at("payload", "name")}
       placeholder="서비스 이름"
     />
-  {:else if data.types[2] === "send"}
-    <InputField
-      label="통신 채널"
-      value={data.payload.channel}
-      setter={(d) => (data.payload.channel = d)}
-    />
+  {:else if parts[2] === "send"}
+    <InputField label="통신 채널" binding={editor.at("payload", "channel")} />
     <InputField
       label="전송할 데이터"
       type="textarea"
-      seriesOption={{ array: data.payload.data, min: 1 }}
+      seriesOption={{ binding: editor.at("payload", "data"), min: 1 }}
       autoResizeOpt={{ minHeight: 0 }}
     />
   {/if}

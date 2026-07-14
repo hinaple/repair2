@@ -1,11 +1,8 @@
 import { genId } from "../../genId";
 import type { Types } from "../types";
-import { createFactory } from "./factory";
+import { createTypePayloadFactory } from "./typePayloadFactory";
 
-export const createValueProcess = createFactory<Types.ValueProcess>(
-  {
-    id: () => genId(),
-    type: ""
-  },
-  "valueProcess"
-);
+export const createValueProcess = createTypePayloadFactory<Types.ValueProcess>("valueProcess")({
+  id: () => genId(),
+  type: ""
+});

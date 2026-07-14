@@ -1,9 +1,12 @@
-import { nullDefault, owns, type TypePayloadUnion } from "./union.types";
+import { createComponent } from "../../factories/component";
+import { createPluginPointer } from "../../factories/pluginPointer";
+import { owns } from "../../factories/factory";
+import { nullDefault, type TypePayloadUnion } from "./union.types";
 
 export const StepPayloadTemplate = {
   Component: {
     $types: true,
-    create: { componentId: owns("components") },
+    create: { componentId: owns(createComponent) },
     remove: { componentAlias: nullDefault<string>(), ignoreUnbreakable: true },
     clear: { ignoreUnbreakable: false },
     modify: {
@@ -65,7 +68,7 @@ export const StepPayloadTemplate = {
     },
     setVariable: { variableId: nullDefault<string>(), value: null },
     resetAllVariables: null,
-    executePlugin: { plugin: nullDefault<string>(), waitTillEnd: false },
+    executePlugin: { plugin: owns(createPluginPointer), waitTillEnd: false },
     runtimePluginStep: {
       pluginName: nullDefault<string>(),
       step: nullDefault<string>(),

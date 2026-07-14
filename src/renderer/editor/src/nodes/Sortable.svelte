@@ -1,17 +1,19 @@
-<script lang="ts" generics="T extends string">
+<script lang="ts">
   import { onDestroy, onMount, tick, type Snippet } from "svelte";
   import Grabber from "../lib/grabber";
   import { rInfo } from "./viewport";
   import FrameUpdater from "../lib/frameUpdater";
   import { cubicOut } from "svelte/easing";
-  import { getsetFrom, SortableUtils } from "../lib/editUtils/sortable";
+  import type { RecordKey } from "@shared/constants";
+  import type { FieldBinding } from "../project/mutator";
+  import { getMutator } from "../project/store";
   import type { SortableProps } from "./types";
 
   type StyleType = "waterfall" | "enum" | "listener";
 
   let {
-    key,
-    parent,
+    binding,
+    itemType,
     onresized,
     onremoved,
     onmoved,
@@ -19,9 +21,9 @@
     noGrab = false,
     children
   }: {
-    key: T;
-    parent: { [k in T]: string[] };
-    onresized(): unknown;
+    binding: FieldBinding<string[]>;
+    itemType: RecordKey;
+    onresized?(): unknown;
     onremoved?(): unknown;
     onmoved?(): unknown;
     style?: StyleType;
@@ -32,7 +34,6 @@
     id: string;
     idx?: number;
     el: HTMLElement | null;
-    key: Symbol;
     grabber?: Grabber;
     rect?: DOMRect;
     grabTop?: number;
@@ -45,8 +46,6 @@
     } | null;
   }[] = $state([]);
 
-  const getset = getsetFrom((() => parent)(), (() => key)());
-
   const Gaps = {
     enum: 5,
     listener: 5,
@@ -54,8 +53,8 @@
   } as const;
   const gap = Gaps[(() => style)()] ?? 0;
 
-  $effect(() => {
-    parent[key];
+  $effect.pre(() => {
+    binding.value;
     update();
   });
 
@@ -159,20 +158,24 @@
   }
 
   let mouseMoved = false;
+  let updateVersion = 0;
   async function update() {
     if (!mounted) return;
+    const version = ++updateVersion;
     clearGrabbers();
-    listArr = parent[key].map((id) => ({
+    listArr = binding.value.map((id) => ({
       id,
       el: null,
-      handle: null,
-      key: Symbol()
+      handle: null
     }));
     if (noGrab) return;
     await tick();
+    if (!mounted || version !== updateVersion) return;
     listArr.forEach((d, i) => {
+      if (!d.el) return;
+      d.el.style.transform = "";
       d.grabber = new Grabber({
-        container: d.el!,
+        container: d.el,
         noHandle: true,
         onMoveStart: () => {
           listArr.forEach((l) => {
@@ -195,11 +198,7 @@
         },
         onMoveEnd: () => {
           if (grabItemIdx !== finalGrabIdx) {
-            // array.reorderWithHistory(addHistory, {
-            //   from: grabItemIdx,
-            //   to: finalGrabIdx
-            // });
-            SortableUtils.reorderWithHistory(getset, grabItemIdx, finalGrabIdx);
+            binding.move(grabItemIdx, finalGrabIdx);
           } else update();
           grabItemIdx = -1;
           finalGrabIdx = -1;
@@ -220,17 +219,21 @@
     mounted = true;
     update();
   });
-  onDestroy(clearGrabbers);
+  onDestroy(() => {
+    mounted = false;
+    updateVersion++;
+    frameUpdater.destroy();
+    clearGrabbers();
+  });
 
   function remove(idx: number) {
-    // sortable.removeWithHistory(sortable.list[idx], addHistory, () => {
-    //   onresized();
-    //   if (onremoved) onremoved();
-    // });
-    SortableUtils.removeWithHistory(getset, idx, () => {
-      onresized();
-      onremoved?.();
+    const id = binding.value[idx];
+    getMutator().transaction(() => {
+      binding.splice(idx, 1);
+      getMutator().deleteTree(itemType, id);
     });
+    onresized?.();
+    onremoved?.();
   }
 </script>
 
@@ -243,7 +246,7 @@
   {#if style === "waterfall" && listArr.length}
     <div class="triangle top"></div>
   {/if}
-  {#each listArr as item, i (item.key)}
+  {#each listArr as item, i (item.id)}
     <div bind:this={item.el} class={["item-wrapper", grabItemIdx === i && "floating"]}>
       {#if i !== listArr.length - 1 && style === "waterfall"}
         <div class="triangle"></div>
@@ -255,13 +258,6 @@
           onpointerdown: (evt) => item.grabber?.onpointerdown(evt),
           noGrab
         })}
-        <!-- <Component
-          item={item.itemData}
-          {sortable}
-          bind:handle={item.handle}
-          remove={() => remove(i)}
-          {...props} -->
-        <!-- /> -->
       </div>
     </div>
   {/each}

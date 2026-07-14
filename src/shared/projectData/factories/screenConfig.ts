@@ -1,9 +1,6 @@
 import type { Types } from "../types";
-import { createFactory } from "./factory";
+import { createTypePayloadFactory } from "./typePayloadFactory";
 
-export const createScreenConfig = createFactory<Types.ScreenConfigData>(
-  {
-    type: "fullscreen"
-  },
-  "screenConfig"
-);
+export const createScreenConfig = createTypePayloadFactory<Types.ScreenConfigData>("screenConfig")({
+  type: "fullscreen"
+});

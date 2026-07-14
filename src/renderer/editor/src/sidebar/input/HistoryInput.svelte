@@ -1,44 +1,66 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { addHistory } from "../../lib/editUtils/history";
+  import type { EditSession, FieldBinding } from "../../project/mutator";
   import autoResizeTextarea from "../../lib/actions/autoResizeTextarea";
-  import { setPreviewContentVisible } from "../../lib/editUtils/focus";
 
   let {
-    setter,
-    value,
+    binding,
     small = false,
     autofocus = false,
     code = false,
-    autoResizeOpt = {},
+    autoResizeOpt = { minHeight: 0 },
     previewer = false,
+    onpreview = null,
     ...props
+  }: {
+    binding: FieldBinding<any>;
+    small?: boolean;
+    autofocus?: boolean;
+    code?: boolean;
+    autoResizeOpt?: { minHeight: number };
+    previewer?: boolean;
+    onpreview?: (() => unknown) | null;
+    [key: string]: any;
   } = $props();
 
-  let valueBeforeFocus;
-  let updateHistory;
+  let value = $state<any>(binding.value ?? "");
+  let focused = false;
+  let session: EditSession<any> | null = null;
+
+  $effect(() => {
+    const next = binding.value;
+    if (!focused && !Object.is(value, next)) value = next ?? "";
+  });
+
+  function modelValue() {
+    if (props.type !== "number") return value;
+    return value === "" || value === null ? null : Number(value);
+  }
+
   function onfocus() {
-    valueBeforeFocus = value;
-    if (previewer) setPreviewContentVisible(true);
+    focused = true;
+    session = binding.begin();
   }
+
   function oninput() {
-    if (!updateHistory) {
-      updateHistory = addHistory({ doFn: setter, doData: value, undoData: valueBeforeFocus });
-    } else {
-      updateHistory(value);
-      setter(value);
+    const next = modelValue();
+    if (session) session.update(next);
+    else {
+      session = binding.begin();
+      session.update(next);
     }
+    onpreview?.();
   }
+
   function onblur() {
-    updateHistory = null;
-    valueBeforeFocus = null;
-    if (previewer) setPreviewContentVisible(false);
+    session?.commit();
+    session = null;
+    focused = false;
   }
 
-  let el = $state(null);
-
+  let el = $state<HTMLInputElement | HTMLTextAreaElement | null>(null);
   onMount(() => {
-    if (autofocus && el) el.focus();
+    if (autofocus) el?.focus();
   });
 </script>
 

@@ -1,4 +1,6 @@
-import { nullDefault, owns, type TypePayloadUnion } from "./union.types";
+import { owns } from "../../factories/factory";
+import { createPluginPointer } from "../../factories/pluginPointer";
+import { nullDefault, type TypePayloadUnion } from "./union.types";
 
 export const ElementPayloadTemplate = {
   empty: { content: nullDefault<string>(), isHtml: false },
@@ -19,7 +21,7 @@ export const ElementPayloadTemplate = {
     maxLength: nullDefault<number>(),
     securityText: nullDefault<string>()
   },
-  plugin: { plugin: owns("pluginPointers") }
+  plugin: { plugin: owns(createPluginPointer) }
 } as const;
 
 export type ElementTypePayload = TypePayloadUnion<typeof ElementPayloadTemplate>;

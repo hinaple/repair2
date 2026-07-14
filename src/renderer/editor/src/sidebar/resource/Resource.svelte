@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
   import InputField from "../input/InputField.svelte";
   import { hoverHighlight } from "../../lib/highlight";
@@ -7,37 +7,42 @@
   import { changeResourceFile } from "./selectResourceFile";
   import { startMonitoring } from "../../lib/runtimeMonitor.svelte";
   import { onDestroy } from "svelte";
+  import { getMutator } from "../../project/store";
+  import { getResourceInfo } from "./resourceInfo";
 
-  let { resource, remove } = $props();
+  let { id, remove }: { id: string; remove: () => unknown } = $props();
+  const editor = $derived(getMutator().record("resources", id));
+  const resource = $derived(editor.value);
+  const info = $derived(getResourceInfo(resource));
+  let folded = $state(true);
 
   let isPreloaded = $state(false);
-  const unsub = startMonitoring("preloads", resource.id, (f) => (isPreloaded = f));
+  const unsub = startMonitoring("preloads", id, (f) => (isPreloaded = f));
   onDestroy(unsub);
 </script>
 
 <div
-  class={["resource", isPreloaded && "preloaded", resource.folded && "folded"]}
-  use:hoverHighlight={{ type: "resource", data: resource.id }}
+  class={["resource", isPreloaded && "preloaded", folded && "folded"]}
+  use:hoverHighlight={{ type: "resource", data: id }}
 >
-  <div class="top" onclick={() => (resource.folded = !resource.folded)}>
-    <div class="name">{resource.title}</div>
-    <FoldArrow folded={resource.folded} />
+  <div class="top" onclick={() => (folded = !folded)}>
+    <div class="name">{info.title}</div>
+    <FoldArrow {folded} />
   </div>
-  {#if !resource.folded}
+  {#if !folded}
     <div class="body">
       <div class="preview-wrapper">
-        <ResourcePreview {resource} />
+        <ResourcePreview resource={info} />
       </div>
-      <div class="src" onclick={() => changeResourceFile(resource)}>
+      <div class="src" onclick={() => changeResourceFile(id)}>
         <span>{resource.src ?? "선택된 파일 없음"}</span>
         <button class="select-file">파일 선택</button>
       </div>
       <hr />
       <InputField
         label="자원 이름"
-        value={resource.alias}
-        placeholder={resource.title}
-        setter={(d) => (resource.alias = d)}
+        binding={editor.field("alias")}
+        placeholder={info.title}
         autofocus
         small
         row

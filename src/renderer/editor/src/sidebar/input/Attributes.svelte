@@ -1,7 +1,11 @@
 <script lang="ts">
+  import type { FieldBinding } from "../../project/mutator";
   import InputField from "./InputField.svelte";
 
-  let { attributes, plugin } = $props();
+  let {
+    attributes,
+    binding
+  }: { attributes: string[]; binding: FieldBinding<Record<string, string>> } = $props();
 </script>
 
 {#if attributes.length}
@@ -11,8 +15,7 @@
         type="textarea"
         autoResizeOpt={{ minHeight: 0 }}
         label={attr}
-        value={plugin.payloads[attr]}
-        setter={(d) => (plugin.payloads[attr] = d)}
+        binding={binding.at(attr)}
         row
         small
       />
@@ -25,7 +28,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 10px 10px 12px 10px;
+    padding: 10px 10px 12px;
     border-radius: 5px;
     border: solid var(--w-o2) 1px;
   }

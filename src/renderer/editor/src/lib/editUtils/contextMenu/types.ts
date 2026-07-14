@@ -8,6 +8,7 @@ export type ContextMenuItem =
   | {
       type?: "button";
       click?(menuInfo: ContextMenu): boolean | undefined;
+      when?(menuInfo: ContextMenu): boolean;
       label: string;
       role?: ContextRole;
     };

@@ -1,24 +1,24 @@
-<script>
-  import { get } from "svelte/store";
+<script lang="ts">
+  import { onDestroy } from "svelte";
   import Icon from "../assets/icons/Icon.svelte";
-  import { currentFocus, focusData } from "../lib/editUtils/focus";
+  import { data } from "../lib/editUtils/dataAction";
+  import registerHighlight, { type HighlightData } from "../lib/highlight";
+  import { startMonitoring } from "../lib/runtimeMonitor.svelte";
   import { grabbing, reload } from "../lib/stores";
   import { StepTypes } from "../lib/translate";
+  import { getMutator } from "../project/store";
+  import type { SortableProps } from "./types";
   import Component from "./component/Component.svelte";
-  import { outClicked, rightclick } from "../lib/editUtils/contextMenu/contextUtils";
-  import { onDestroy } from "svelte";
-  import registerHighlight from "../lib/highlight";
-  import { genClipboardFn } from "../lib/editUtils/clipboard";
-  import { startMonitoring } from "../lib/runtimeMonitor.svelte";
 
   let {
-    item: step,
-    handle = $bindable(null),
-    el = $bindable(null),
-    remove,
+    id,
+    onpointerdown,
     noGrab = false,
-    nodeCountChanged
-  } = $props();
+    parents
+  }: SortableProps & { parents: string[] } = $props();
+
+  const editor = $derived(getMutator().record("steps", id));
+  const step = $derived(editor.value);
 
   $effect(() => {
     step.type;
@@ -26,84 +26,49 @@
     reload("nodeMoved");
   });
 
-  const clipboardFn = genClipboardFn("step", step, remove);
-
-  const contextmenu = [
-    // { label: "플로우 실행", click: () => {} },
-    // { label: "단독 실행", click: () => {} },
-    // { type: "separator" },
-    {
-      label: "잘라내기",
-      click: clipboardFn.cut
-    },
-    {
-      label: "복사",
-      click: clipboardFn.copy
-    },
-    {
-      label: "붙여넣기",
-      click: clipboardFn.paste
-    },
-    { type: "separator" },
-    {
-      label: "삭제",
-      click: () => {
-        remove();
-        return true;
-      },
-      action: "remove"
-    }
-  ];
-
-  let hlData = $derived.by(() => {
+  let hlData = $derived.by<HighlightData>(() => {
     if (step.type === "Others.setVariable")
-      return { type: "variable", data: step.payload?.variableId, active: true };
-    else if (step.type === "Others.executePlugin")
-      return { type: "plugin", data: step.payload?.plugin.name, active: true };
-    else if (step.type === "Others.runtimePluginStep")
-      return { type: "plugin", data: step.payload?.pluginName, active: true };
-    return { active: false };
+      return step.payload.variableId ? { type: "variable", data: step.payload.variableId } : null;
+    if (step.type === "Others.executePlugin") {
+      const name = getMutator().record("pluginPointers", step.payload.plugin).value.name;
+      return name ? { type: "plugin", data: name } : null;
+    }
+    if (step.type === "Others.runtimePluginStep")
+      return step.payload.pluginName ? { type: "plugin", data: step.payload.pluginName } : null;
+    return null;
   });
 
   let activated = $state(false);
-  const unsub = startMonitoring("steps", step.id, (f) => (activated = f));
-
-  onDestroy(() => {
-    unsub();
-    if (get(currentFocus).obj === step) {
-      focusData("project");
-    }
-  });
+  const unsubscribe = startMonitoring("steps", id, (value) => (activated = value));
+  onDestroy(unsubscribe);
 </script>
 
 <div
-  class={["step", $currentFocus.obj === step && "focus", activated && "activated"]}
-  bind:this={el}
-  onpointerdown={(evt) => {
-    if (evt.button || $grabbing) return;
-    evt.stopPropagation();
-    focusData("step", step, { clipboardFn });
-    outClicked();
-  }}
-  use:rightclick={contextmenu}
+  class={["step", activated && "activated"]}
+  use:data={{ type: "step", id, parents }}
   use:registerHighlight={hlData}
 >
   <div class="info">
-    <div class="handle" bind:this={handle}>
+    <div class="handle" {onpointerdown}>
       <Icon
         icon="hamburger"
-        color={activated ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
+        color={activated ? "rgba(255,255,255,.5)" : "rgba(0,0,0,.5)"}
         size={8}
       />
     </div>
     <div class="title-wrapper">
       <div class="title">
-        {step.displayTitle ?? StepTypes[step.type] ?? "빈 스텝"}
+        {step.title || StepTypes[step.type as keyof typeof StepTypes] || "빈 스텝"}
       </div>
     </div>
   </div>
   {#if step.type === "Component.create"}
-    <Component payload={step.payload} {noGrab} {nodeCountChanged} />
+    <Component
+      id={step.payload.componentId}
+      parents={[id, ...parents]}
+      {noGrab}
+      onNodeCountChanged={() => reload("nodeMoved")}
+    />
   {/if}
 </div>
 
@@ -145,8 +110,7 @@
     width: 100%;
     position: absolute;
     text-overflow: ellipsis;
-    word-break: break-all;
-    overflow-x: hidden;
+    overflow: hidden;
     white-space: nowrap;
   }
 </style>
