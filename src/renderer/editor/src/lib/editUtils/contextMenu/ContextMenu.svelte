@@ -9,16 +9,12 @@
     menuEl.style.top = `${$contextMenu.pos.y}px`;
   });
   function onpointerdown(evt: PointerEvent) {
-    if (
-      $contextMenu &&
-      menuEl &&
-      (!(evt.target instanceof HTMLElement) || !menuEl.contains(evt.target))
-    )
+    if ($contextMenu && menuEl && !evt.composedPath().includes(menuEl))
       outClicked();
   }
 </script>
 
-<svelte:body {onpointerdown} />
+<svelte:body onpointerdowncapture={onpointerdown} />
 {#if $contextMenu}
   <div class="context-menu" bind:this={menuEl}>
     {#each $contextMenu.items as item}

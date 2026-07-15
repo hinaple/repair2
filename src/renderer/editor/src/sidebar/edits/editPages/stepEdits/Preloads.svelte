@@ -9,6 +9,6 @@
   <InputField
     label="자원 목록"
     type="resource"
-    seriesOption={{ binding: editor.at("payload", "resourceArr") }}
+    seriesOption={{ binding: editor.at<string[]>("payload", "resourceArr") }}
   />
 {/if}

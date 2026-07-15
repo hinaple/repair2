@@ -56,7 +56,7 @@
     type="position"
     style="padding: 5px 5px 10px 10px; border-radius: 5px; border: solid rgba(255, 255, 255, .2) 1px;"
     seriesOption={{
-      binding: binding.at("hotspots"),
+      binding: binding.at<ReturnType<typeof createCoord>[]>("hotspots"),
       label: (idx: number) => `좌표${idx}`,
       newData: createCoord
     }}

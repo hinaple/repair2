@@ -12,7 +12,7 @@ type ProjectConfig = Override<
   Omit<V1.ProjectConfig, "multiScreen">,
   {
     screenConfig: V1.ScreenConfigData;
-    runtimePlugins: (string | null)[];
+    runtimePlugins: string[];
   }
 >;
 

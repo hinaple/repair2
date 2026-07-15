@@ -1,6 +1,6 @@
 {
-    "verbatimModuleSyntax": true,
     "compilerOptions": {
+        "verbatimModuleSyntax": true,
         "target": "esnext",
         "module": "ESNext",
         "lib": ["ESNext"],

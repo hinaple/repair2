@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getProject } from "../../project/store";
-  import type { FieldBinding } from "../../project/mutator";
+  import type { ArrayFieldBinding, FieldBinding } from "../../project/mutator";
   import InputField from "./InputField.svelte";
   import Checkbox from "./Checkbox.svelte";
   import HistoryInput from "./HistoryInput.svelte";
@@ -10,6 +10,16 @@
   import TypeInput from "./TypeInput.svelte";
   import TransitionInput from "./TransitionInput.svelte";
   import Icon from "../../assets/icons/Icon.svelte";
+
+  type SeriesOption = {
+    binding: ArrayFieldBinding<any>;
+    gap?: number;
+    min?: number;
+    max?: number;
+    label?: (index: number) => string | null;
+    create?: () => unknown;
+    newData?: () => any;
+  };
 
   let {
     label = null,
@@ -28,6 +38,7 @@
   }: {
     binding?: FieldBinding<any> | null;
     value?: any;
+    seriesOption?: SeriesOption | null;
     [key: string]: any;
   } = $props();
 
@@ -83,7 +94,7 @@
     </div>
   {/if}
   {#if seriesOption?.binding}
-    {@const seriesBinding = seriesOption.binding as FieldBinding}
+    {@const seriesBinding = seriesOption.binding}
     {@const array = seriesBinding.value}
     <div class="series-container" style={`gap: ${seriesOption.gap ?? 5}px;`}>
       {#each array as v, i}

@@ -46,7 +46,7 @@
     <InputField
       label="전송할 데이터"
       type="textarea"
-      seriesOption={{ binding: editor.at("payload", "data"), min: 1 }}
+      seriesOption={{ binding: editor.at<string[]>("payload", "data"), min: 1 }}
       autoResizeOpt={{ minHeight: 0 }}
     />
   {/if}

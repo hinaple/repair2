@@ -61,8 +61,7 @@ export class Project {
 
       if (
         entryData.type === "Communication.serialData" &&
-        typeof entryData.payload.whenDataIs === "string" &&
-        entryData.payload.whenDataIs
+        !entryData.payload.whenDataIs?.length
       )
         return true;
 

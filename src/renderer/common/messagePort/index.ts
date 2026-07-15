@@ -19,7 +19,7 @@ ipcRenderer.on("messagePort", (e) => {
       return;
     }
 
-    callListeners(evt.data.channel, evt.data.data);
+    callListeners(evt.data.channel, ...evt.data.data);
   });
   messagePort.addEventListener("close", () => {
     callListeners("end");

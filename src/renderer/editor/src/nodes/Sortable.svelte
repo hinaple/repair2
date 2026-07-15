@@ -5,7 +5,7 @@
   import FrameUpdater from "../lib/frameUpdater";
   import { cubicOut } from "svelte/easing";
   import type { RecordKey } from "@shared/constants";
-  import type { FieldBinding } from "../project/mutator";
+  import type { ArrayFieldBinding } from "../project/mutator";
   import { getMutator } from "../project/store";
   import type { SortableProps } from "./types";
 
@@ -21,7 +21,7 @@
     noGrab = false,
     children
   }: {
-    binding: FieldBinding<string[]>;
+    binding: ArrayFieldBinding<string>;
     itemType: RecordKey;
     onresized?(): unknown;
     onremoved?(): unknown;

@@ -64,10 +64,17 @@ export interface FieldBinding<T = unknown> {
   set(value: T): void;
   setTransient(value: T): void;
   begin(): EditSession<T>;
-  at<U = unknown>(...path: MutationPath): FieldBinding<U>;
-  splice(index: number, deleteCount: number, ...inserted: unknown[]): void;
+  at<U = unknown>(...path: MutationPath): Binding<U>;
+}
+
+export interface ArrayFieldBinding<Item> extends FieldBinding<Item[]> {
+  at(index: number): Binding<Item>;
+  at<U = unknown>(...path: MutationPath): Binding<U>;
+  splice(index: number, deleteCount: number, ...inserted: Item[]): void;
   move(from: number, to: number): void;
 }
+
+export type Binding<T> = [T] extends [(infer Item)[]] ? ArrayFieldBinding<Item> : FieldBinding<T>;
 
 type ChangeListener = (change: ProjectChange) => unknown;
 
@@ -426,8 +433,8 @@ export class Field<T = unknown> implements FieldBinding<T> {
     return this.mutator.beginSet<T>(this.target, this.path);
   }
 
-  at<U = unknown>(...path: MutationPath): FieldBinding<U> {
-    return new Field(this.mutator, this.target, [...this.path, ...path]);
+  at<U = unknown>(...path: MutationPath): Binding<U> {
+    return new Field(this.mutator, this.target, [...this.path, ...path]) as unknown as Binding<U>;
   }
 
   splice(index: number, deleteCount: number, ...inserted: unknown[]) {
@@ -452,7 +459,7 @@ export class RecordEditor<
     this.id = id;
   }
 
-  field<P extends keyof T>(key: P): FieldBinding<T[P]> {
+  field<P extends keyof T>(key: P): Binding<T[P]> {
     return this.at<T[P]>(key as string);
   }
 }
@@ -462,7 +469,7 @@ export class ConfigEditor extends Field<ProjectConfig> {
     super(mutator, { kind: "config" }, []);
   }
 
-  field<P extends keyof ProjectConfig>(key: P): FieldBinding<ProjectConfig[P]> {
+  field<P extends keyof ProjectConfig>(key: P): Binding<ProjectConfig[P]> {
     return this.at<ProjectConfig[P]>(key as string);
   }
 }
