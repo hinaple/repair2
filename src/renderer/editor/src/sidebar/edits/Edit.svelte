@@ -44,7 +44,7 @@
 <div class="options">
     {#if CurrentEditComponent}
         {#key CurrentEditComponent}
-            <CurrentEditComponent data={get(currentFocusStore).obj} />
+            <CurrentEditComponent data={$currentFocusStore.obj} />
         {/key}
     {/if}
 </div>
