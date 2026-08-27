@@ -178,6 +178,20 @@ ipc.on("socket-income", (evt, channel, data, url) => {
         });
 });
 
+ipc.on("mqtt-connected", (_) => {
+    showToast({
+        title: "MQTT 통신이 시작되었습니다.",
+        duration: 3000
+    });
+});
+ipc.on("mqtt-income", (_, topic, data) => {
+    showToast({
+        title: "MQTT 통신 데이터를 수신했습니다.",
+        content: `토픽: <${topic}>\n<${data}>`,
+        duration: 3000
+    });
+});
+
 // ipc.on("custom-log", (evt, content) => {
 //     showToast({ title: content, duration: 5000 });
 // });

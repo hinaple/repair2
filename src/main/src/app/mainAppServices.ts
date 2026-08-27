@@ -10,12 +10,14 @@ import type {
 } from "./mainApp.types";
 import type { PluginManager } from "../plugin/pluginManager";
 import type { MainApp } from "./mainApp";
+import MqttConnector from "../communication/mqtt";
 
 export class MainAppServices implements MainService {
     #pluginManager: PluginManager | null = null;
     #projectFileManager: ProjectFileManagerService | null = null;
     #socket: SocketService | null = null;
     #serial: SerialService | null = null;
+    #mqtt: MqttConnector | null = null;
 
     get pluginManager() {
         return this.#pluginManager;
@@ -42,10 +44,16 @@ export class MainAppServices implements MainService {
         return this.#serial;
     }
 
+    get mqtt() {
+        if (!this.#mqtt) throw new Error("MQTT service is not initialized.");
+        return this.#mqtt;
+    }
+
     initialize(app: MainApp) {
         this.#projectFileManager = this.#createProjectFileManager(app);
         this.#socket = this.#createSocketConnector(app);
         this.#serial = this.#createSerialConnector(app);
+        this.#mqtt = this.#createMqttConnect(app);
         this.#registerGlobalKeyBridge(app);
     }
 
@@ -102,6 +110,24 @@ export class MainAppServices implements MainService {
             },
             (port) => {
                 app.message.sendToEditor("serial-connected", port);
+            }
+        );
+    }
+
+    #createMqttConnect(app: MainApp) {
+        return new MqttConnector(
+            (topic, message) => {
+                if (!app.state.window.main) return;
+
+                logger.info(`MQTT INCOMING at ${topic}: ${message}`);
+
+                app.message.sendToEditor("mqtt-income", topic, message);
+                app.message.sendToPlay("mqtt-income", topic, message);
+            },
+            () => {
+                app.message.sendToEditor("mqtt-connected");
+                if (!app.state.window.main) return;
+                app.message.sendToPlay("mqtt-connected");
             }
         );
     }

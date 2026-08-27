@@ -162,6 +162,9 @@ export type RendererToMainSendMap = {
     "serial-open": [alias?: string, port?: string, baudRate?: number];
     "serial-send": [data: unknown];
     "serial-close": IpcNoArgs;
+    "mqtt-connect": [url: string, topics: string[]];
+    "mqtt-publish": [topic: string, message: string];
+    "mqtt-disconnect": [];
     "plugin:runtime:deactivate-all": IpcNoArgs;
     "editor-on": IpcNoArgs;
     unsaved: IpcNoArgs;
@@ -197,6 +200,8 @@ export type RendererToMainSyncMap = {
 export interface MainToRendererSharedSendMap {
     "socket-income": IpcSocketIncomeArgs;
     "serial-income": [data: string];
+    "mqtt-income": [topic: string, data: string];
+    "mqtt-connected": [];
     "plugin:list": [
         payload: {
             plugins: PluginList;

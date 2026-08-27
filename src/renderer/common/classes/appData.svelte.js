@@ -43,6 +43,14 @@ export default class AppData {
             )
                 return true;
 
+            if(
+              entryType === "Communication.Mqtt.ondata" &&
+              data?.topic &&
+              data.topic === node.data.payload.topic &&
+              !node.data.payload.data?.length
+            )
+              return true;
+
             return Object.entries(node.data.payload).every(
                 ([key, value]) => value.trim() === data[key].trim()
             );

@@ -38,4 +38,14 @@ export function setupCommunicationIpc(app: MainApp) {
     ipc.on("serial-close", () => {
         app.service.serial.close();
     });
+
+    ipc.on("mqtt-connect", (event, url, topics) => {
+        app.service.mqtt.connect(url, topics);
+    });
+    ipc.on("mqtt-publish", (event, topic, message) => {
+        app.service.mqtt.publish(topic, message);
+    });
+    ipc.on("mqtt-disconnect", () => {
+        app.service.mqtt.disconnect();
+    });
 }

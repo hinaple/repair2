@@ -8,6 +8,7 @@ import type { ProjectController } from "../controllers/projectController";
 import type { WindowController } from "../windows/windowController";
 import type { MainToEditorSendMap, MainToPlaySendMap } from "@shared/ipc.types";
 import type { NewDialogs } from "../system/dialog";
+import type MqttConnector from "../communication/mqtt";
 
 export type ProjectFileManagerService = {
     importing: boolean;
@@ -54,6 +55,7 @@ export type MainService = {
     projectFileManager: ProjectFileManagerService;
     socket: SocketService;
     serial: SerialService;
+    mqtt: MqttConnector;
 };
 
 export type MainControllers = {

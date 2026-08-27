@@ -13,7 +13,10 @@ import {
     socketConnect,
     socketSend,
     socketDisconnect,
-    socketConnectService
+    socketConnectService,
+    mqttConnect,
+    mqttPublish,
+    mqttDisconnect
 } from "./communication";
 import { emitRepairEvent } from "./event";
 import { playAudio, pauseAudio, resumeAudio, changeAudioVolume, resetAudio } from "./audio";
@@ -84,6 +87,17 @@ const actions = {
             },
             close: () => {
                 serialClose();
+            }
+        },
+        Mqtt: {
+            connect: (s) => {
+                mqttConnect(s.payload.url, s.payload.topics);
+            },
+            publish: (s) => {
+                mqttPublish(s.payload.topic, s.payload.payload);
+            },
+            disconnect: () => {
+                mqttDisconnect();
             }
         }
     },

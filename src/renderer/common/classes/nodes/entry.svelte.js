@@ -11,7 +11,12 @@ const EntryTemplate = {
             ondata: { channel: null, data: null },
             connect: null
         },
-        serialData: { whenDataIs: null }
+        serialData: { whenDataIs: null },
+        Mqtt: {
+          isTypeObj: true,
+          ondata: { topic: null, data: null },
+          connect: null
+        }
     },
     shortcut: {
         ctrlKey: true,

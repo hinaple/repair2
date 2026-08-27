@@ -102,4 +102,18 @@
         setter={(d) => (data.data.payload.whenDataIs = d)}
         placeholder="모든 데이터 수신"
     />
+{:else if data.data.type === "Communication.Mqtt.ondata"}
+    <InputField
+        label="토픽"
+        value={data.data.payload.topic}
+        setter={(d) => (data.data.payload.topic = d)}
+    />
+    <InputField
+        label="일치 시 작동할 데이터"
+        value={data.data.payload.data}
+        setter={(d) => {
+            data.data.payload.data = d;
+        }}
+        placeholder="항상 작동"
+    />
 {/if}

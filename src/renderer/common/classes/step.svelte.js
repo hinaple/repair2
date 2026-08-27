@@ -52,6 +52,12 @@ const PayloadTemplates = {
             connectService: { type: null, name: null },
             send: { channel: null, data: [null] },
             disconnect: null
+        },
+        Mqtt: {
+          isTypeObj: true,
+          connect: { url: null, topics: [] },
+          publish: { topic: null, payload: null },
+          disconnect: null
         }
     },
     delay: { delayMs: 0 },

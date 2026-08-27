@@ -16,6 +16,17 @@ ipc.on("serial-income", (event, data) => {
     console.log(`SERIAL DATA: "${data}"`);
 });
 
+ipc.on("mqtt-income", (_, topic, data) => {
+    getAppData().enterEntry("Communication.Mqtt.ondata", { topic, data });
+    emitRepairEvent("mqtt:message", topic, data);
+    console.log(`MQTT DATA at ${topic}: "${data}"`);
+});
+ipc.on("mqtt-connected", (_) => {
+    getAppData().enterEntry("Communication.Mqtt.connect");
+    emitRepairEvent("mqtt:connected");
+    console.log(`MQTT connected`);
+});
+
 export function socketConnect(url) {
     ipc.send("socket-connect", url);
 }
@@ -39,7 +50,18 @@ export function serialClose() {
     ipc.send("serial-close");
 }
 
+export function mqttConnect(url, topics) {
+    ipc.send("mqtt-connect", url, topics);
+}
+export function mqttPublish(topic, message) {
+    ipc.send("mqtt-publish", topic, message);
+}
+export function mqttDisconnect() {
+    ipc.send("mqtt-disconnect");
+}
+
 registerUtils("communication", {
     socketSend,
-    serialSend
+    serialSend,
+    mqttPublish
 });

@@ -34,14 +34,17 @@ export const StepTypes = {
     Communication: "통신",
     Serial: "시리얼 통신",
     Socket: "소켓 통신",
+    Mqtt: "MQTT",
     "Communication.Serial": "시리얼 통신",
     "Communication.Socket": "소켓 통신",
+    "Communication.Mqtt": "MQTT 통신",
     open: "시작",
     send: "전송",
     close: " 종료",
     connect: "연결",
     connectService: "서비스 연결",
     disconnect: "연결 종료",
+    publish: "전송",
     "Communication.Serial.open": "시리얼 통신 시작",
     "Communication.Serial.send": "시리얼 통신 전송",
     "Communication.Serial.close": "시리얼 통신 종료",
@@ -49,6 +52,9 @@ export const StepTypes = {
     "Communication.Socket.connectService": "소켓 통신 서비스 연결",
     "Communication.Socket.send": "소켓 통신 전송",
     "Communication.Socket.disconnect": "소켓 통신 종료",
+    "Communication.Mqtt.connect": "MQTT 통신 연결",
+    "Communication.Mqtt.publish": "MQTT 통신 전송",
+    "Communication.Mqtt.disconnect": "MQTT 통신 종료",
 
     Others: "기타",
     customReset: "모두 초기화",
@@ -162,7 +168,9 @@ export const EntryTypes = {
     ondata: "데이터 수신",
     connect: "연결",
     "Communication.Socket.ondata": "소켓 데이터 수신",
-    "Communication.Socket.connect": "소켓 통신 연결"
+    "Communication.Socket.connect": "소켓 통신 연결",
+    "Communication.Mqtt.ondata": "MQTT 데이터 수신",
+    "Communication.Mqtt.connect": "MQTT 통신 연결"
 };
 
 export const InputAllowedTypes = {

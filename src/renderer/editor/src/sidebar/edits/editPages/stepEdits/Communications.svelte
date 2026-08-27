@@ -67,4 +67,20 @@
             autoResizeOpt={{ minHeight: 0 }}
         />
     {/if}
+{:else if data.types[1] === "Mqtt"}
+    {#if data.types[2] === "connect"}
+        <InputField label="URL" value={data.payload.url} setter={(d) => (data.payload.url = d)} />
+        <InputField label="구독할 토픽" seriesOption={{ array: data.payload.topics, min: 0 }} />
+    {:else if data.types[2] === "publish"}
+        <InputField
+            label="토픽"
+            value={data.payload.topic}
+            setter={(d) => (data.payload.topic = d)}
+        />
+        <InputField
+            label="전송할 메시지"
+            value={data.payload.payload}
+            setter={(d) => (data.payload.payload = d)}
+        />
+    {/if}
 {/if}
