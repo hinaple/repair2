@@ -7,7 +7,6 @@
   import type { RecordKey } from "@shared/constants";
   import type { FieldBinding } from "../../project/mutator";
   import { getMutator } from "../../project/store";
-  import Select from "./Select.svelte";
 
   type TypeName = keyof TypePayloadMap;
   type TypePayloadValue = { type: string; payload: unknown; [key: string]: unknown };
@@ -15,7 +14,7 @@
   let {
     binding,
     typeName,
-    options: labelMap = {},
+    options = {},
     onchange = null,
     ...props
   }: {
@@ -27,9 +26,7 @@
   } = $props();
 
   let value = $derived(binding.value);
-  let parts = $derived(value.type.split("."));
-
-  console.log(value.type, parts);
+  let parts = $derived((value.type || "").split(".").filter(Boolean));
 
   function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -40,7 +37,7 @@
   }
 
   let levels = $derived.by(() => {
-    const result: [string, string][][] = [];
+    const result: string[][] = [];
     let node: unknown = PayloadTemplates[typeName];
     result.push(keys(node));
     for (const part of parts) {
@@ -105,23 +102,20 @@
 
 <div class="types">
   {#each levels as levelOptions, i}
-  <Select value={parts[i]}
-  onchange={(v) => changeType(v!, i)}
-  {...props}
-    // <select
-    //   value={parts[i]}
-    //   onchange={(event) => changeType(event.currentTarget.value, i)}
-    //   {...props}
-    // >
-    //   <option value="" hidden>유형 선택</option>
-    //   {#each levelOptions as option}
-    //     <option value={option}
-    //       >{options[parts.slice(0, i).concat(option).join(".")] ??
-    //         options[option] ??
-    //         option}</option
-    //     >
-    //   {/each}
-    // </select>
+    <select
+      value={parts[i] ?? ""}
+      onchange={(event) => changeType(event.currentTarget.value, i)}
+      {...props}
+    >
+      <option value="" hidden>유형 선택</option>
+      {#each levelOptions as option}
+        <option value={option}
+          >{options[parts.slice(0, i).concat(option).join(".")] ??
+            options[option] ??
+            option}</option
+        >
+      {/each}
+    </select>
   {/each}
 </div>
 

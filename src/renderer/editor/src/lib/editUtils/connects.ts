@@ -25,6 +25,7 @@ export function getOutsFromNode(
     return outs;
   }
 
+  add(node.output);
   node.steps.forEach((s) => {
     const step = project.getUnsafe("steps", s);
     if (!step || step.type !== "Component.create") return;

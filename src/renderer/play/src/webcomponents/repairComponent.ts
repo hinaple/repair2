@@ -1,6 +1,6 @@
 import RepairElement from "./repairElement";
-import { disposePluginContext } from "../lib/plugin/pluginContext";
-import type { PluginMountInfo} from "../lib/plugin/pluginMount";
+import { createPluginContext, disposePluginContext } from "../lib/plugin/pluginContext";
+import type { PluginMountInfo } from "../lib/plugin/pluginMount";
 import { subscribePluginMount } from "../lib/plugin/pluginMount";
 import { compId, removeComponent } from "../lib/components";
 import { reportPluginException } from "../lib/plugin/pluginReporter";
@@ -180,11 +180,25 @@ export default class RepairComponent extends HTMLElement {
         const transitionExport = await getPlugin("transition", plugin.name, plugin.exportName);
 
         let keyframes = transitionExport;
-        if (typeof transitionExport === "function")
-          keyframes = transitionExport({
+        if (typeof transitionExport === "function") {
+          const ctx = createPluginContext({
+            pluginId: plugin.name,
+            pluginType: "transition",
             component: this.componentIdentity
           });
-        else if (keyframes && "keyframes" in keyframes) keyframes = keyframes.keyframes;
+          try {
+            keyframes = transitionExport({
+              attributes: plugin.payloads,
+              ctx
+            });
+            if (keyframes && typeof keyframes.then === "function")
+              throw new TypeError(
+                "Transition plugin functions must return keyframes synchronously."
+              );
+          } finally {
+            disposePluginContext(ctx);
+          }
+        } else if (keyframes && "keyframes" in keyframes) keyframes = keyframes.keyframes;
 
         if (!keyframes) return res();
 

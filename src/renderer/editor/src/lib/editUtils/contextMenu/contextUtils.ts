@@ -6,6 +6,7 @@ import type { ContextMenu, ContextMenuItem, ContextMenuItems, ContextMenuParam }
 import { copy, cutData, paste, removeData } from "../clipboard";
 import { CONTEXT_FOCUS_TYPE_MAP } from "../clipboard/constants";
 import type { FocusData } from "../focus";
+import { getOriginalPos } from "../../../nodes/viewport";
 
 export const contextMenu: Writable<ContextMenu | undefined | null> = writable();
 
@@ -23,7 +24,7 @@ export function outClicked() {
 function itemClickResult(menu: ContextMenu, item: Exclude<ContextMenuItem, { type: "separator" }>) {
   if (!item.role) return item.click?.(menu);
 
-  if (item.role === "paste") paste(menu.focusData, menu.pos);
+  if (item.role === "paste") paste(menu.focusData, getOriginalPos(menu.pos.x, menu.pos.y));
   if (item.role === "copy") copy(menu.focusData);
   if (item.role === "cut") cutData(menu.focusData);
   if (item.role === "remove") removeData(menu.focusData);

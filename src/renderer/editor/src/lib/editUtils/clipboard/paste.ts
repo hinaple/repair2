@@ -15,6 +15,7 @@ import { currentFocus, focusData, type FocusData } from "../focus";
 import { get } from "svelte/store";
 import { clipboard } from "electron";
 import { unpack } from "msgpackr";
+import { viewport } from "../../../nodes/viewport";
 
 export type PasteIdKey = `${RecordKey}:${string}`;
 export type PasteIdMap = Map<PasteIdKey, string>;
@@ -49,7 +50,7 @@ function checkPastable(pastingType: Copiable, focussing: FocusData, project: Pro
 
 export function paste(
   target: FocusData = get(currentFocus),
-  pos: Record<"x" | "y", number> | null = null
+  pos: Record<"x" | "y", number> = get(viewport.pos)
 ) {
   try {
     if (!clipboard.has(ClipboardFormat)) return;
@@ -81,10 +82,9 @@ function processPasteData(
       binding.splice(binding.value.length, 0, pasteResult.rootIds[0]);
     }
 
-    focusData(
-      PROJECT_RECORDS[pasteResult.rootType],
-      pasteResult.rootType === "nodes" ? new Set(pasteResult.rootIds) : pasteResult.rootIds[0]
-    );
+    if (pasteResult.rootType === "nodes") focusData("nodes", new Set(pasteResult.rootIds));
+    else focusData(PROJECT_RECORDS[pasteResult.rootType], pasteResult.rootIds[0]);
+
     return pasteResult;
   });
 }

@@ -10,6 +10,7 @@
   import TypeInput from "./TypeInput.svelte";
   import TransitionInput from "./TransitionInput.svelte";
   import Icon from "../../assets/icons/Icon.svelte";
+  import Select from "./Select.svelte";
 
   type SeriesOption = {
     binding: ArrayFieldBinding<any>;
@@ -156,18 +157,15 @@
         {...props}
       />{/if}
   {:else if type === "select"}
-    <select {value} onchange={(evt) => selectChange(evt.currentTarget.value || null)}>
-      <option value={null} hidden={!props.canUnselect}>선택 안함</option>
-      {#if Array.isArray(props.options)}
-        {#each props.options as value}
-          <option {value}>{value}</option>
-        {/each}
-      {:else}
-        {#each Object.entries(props.options) as [value, label]}
-          <option {value}>{label}</option>
-        {/each}
-      {/if}
-    </select>
+    <Select
+      {value}
+      onchange={(v) => selectChange(v || null)}
+      options={Array.isArray(props.options)
+        ? props.options
+        : Object.entries(props.options).map(([v, l]) => ({ value: v, label: l }))}
+      placeholder="선택 안함"
+      unselectable={props.canUnselect}
+    />
   {:else if type === "variable"}
     <select {value} onchange={(evt) => selectChange(evt.currentTarget.value || null)}>
       <option value={null}>변수 할당 없음</option>

@@ -53,6 +53,8 @@
   } as const;
   const gap = Gaps[(() => style)()] ?? 0;
 
+  let mounted = false;
+
   $effect.pre(() => {
     binding.value;
     update();
@@ -214,7 +216,6 @@
     });
   }
 
-  let mounted = false;
   onMount(() => {
     mounted = true;
     update();

@@ -1,4 +1,4 @@
-import type { ComponentIdentity, ElementContext, FrameContext, FunctionContext } from "./context";
+import type { ElementContext, FrameContext, FunctionContext, TransitionContext } from "./context";
 import type { Attributes, MaybePromise } from "./shared";
 
 export type PluginUnmount = () => MaybePromise<void>;
@@ -69,11 +69,14 @@ export type FunctionExport<TAttributes = Attributes, TResult = unknown> =
   FunctionHandler<TAttributes, TResult> | FunctionPlugin<TAttributes, TResult>;
 export type FunctionExports<TExports extends Record<string, FunctionExport<any, any>>> = TExports;
 
-export interface TransitionArgs {
-  component: ComponentIdentity;
+export interface TransitionArgs<TAttributes = Attributes> {
+  attributes: TAttributes;
+  ctx: TransitionContext;
 }
 
-export type TransitionHandler = (args: TransitionArgs) => MaybePromise<TransitionKeyframes>;
+export type TransitionHandler<TAttributes = Attributes> = (
+  args: TransitionArgs<TAttributes>
+) => TransitionKeyframes;
 
 /** @deprecated Export keyframes or a keyframe-producing function directly instead. */
 export interface TransitionPlugin {
@@ -81,5 +84,6 @@ export interface TransitionPlugin {
   [key: string]: unknown;
 }
 
-export type TransitionExport = TransitionKeyframes | TransitionHandler | TransitionPlugin;
-export type TransitionExports<TExports extends Record<string, TransitionExport>> = TExports;
+export type TransitionExport<TAttributes = Attributes> =
+  TransitionKeyframes | TransitionHandler<TAttributes> | TransitionPlugin;
+export type TransitionExports<TExports extends Record<string, TransitionExport<any>>> = TExports;

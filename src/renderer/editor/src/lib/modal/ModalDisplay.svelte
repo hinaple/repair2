@@ -3,19 +3,21 @@
   import Checkbox from "../../sidebar/input/Checkbox.svelte";
   import { closeModal, modal } from "./modal.svelte.js";
   import type { ResolveParams } from "./types";
+  import Select from "../../sidebar/input/Select.svelte";
 
   type ModalValues = NonNullable<ResolveParams["fields"]>;
 
-  let values: ModalValues | null = $derived(
-    modal.currentModal?.fields
-      ? Array.from(modal.currentModal?.fields, (f) => f.value ?? null)
-      : null
-  );
+  let values: ModalValues | null = $state(null);
+
+  $effect(() => {
+    if (!modal.currentModal) values = null;
+    else values = Array.from(modal.currentModal.fields, (f) => f.value ?? null);
+  });
 
   let confirmable: boolean = $derived(
     !!values &&
       !modal.currentModal?.fields?.some?.(
-        ({ type, required = false }, i) => required && type !== "checkbox" && !values[i]
+        ({ type, required = false }, i) => required && type !== "checkbox" && !values![i]
       )
   );
 
@@ -45,37 +47,39 @@
       {/if}
       <div class="body">
         {#each m.fields as f, i}
-          {@const af = (f.autofocus && autofocus) || (() => {})}
           <div
             class={["field", f.type ?? "input"]}
-            onclick={() => f.type === "checkbox" && (values[i] = !values[i])}
+            onclick={f.type === "checkbox"
+              ? () => {
+                  if (values) values[i] = !values[i];
+                }
+              : null}
           >
             <span class="label">{f.label}</span>
             {#if f.type === "checkbox"}
               <Checkbox value={!!values[i]} />
             {:else if f.type === "select"}
-              {@const options = Array.isArray(f.options)
-                ? f.options.map((opt) => [opt, opt])
-                : Object.entries(f.options)}
-              <select bind:value={values[i]} use:af>
-                <option value={null} hidden={!!f.required}>
-                  {typeof f.placeholder === "string" ? f.placeholder : "선택 없음"}
-                </option>
-                {#each options as [value, label]}
-                  <option {value}>{label}</option>
-                {/each}
-              </select>
+              {@const options = Array.isArray(f.options) ? f.options : Object.entries(f.options)}
+              <Select
+                bind:value={values[i]}
+                unselectable={!f.required}
+                placeholder="선택 없음"
+                autofocus={f.autofocus}
+                {options}
+              />
             {:else}
               <input
                 type="text"
                 value={values[i]}
                 oninput={(evt) => {
+                  if (!values) return;
+
                   const target = evt.currentTarget;
                   values[i] = f.filter?.(target.value) ?? target.value;
-                  target.value = values[i] ?? "";
+                  target.value = values![i] ?? "";
                 }}
                 placeholder={f.placeholder}
-                use:af
+                use:autofocus={f.autofocus}
               />
             {/if}
           </div>
@@ -88,6 +92,8 @@
             class={[isCancel ? "cancel" : "confirm"]}
             disabled={!isCancel && !confirmable}
             onclick={() => {
+              if (!values) return;
+
               const params = { canceled: isCancel, fields: $state.snapshot(values) };
               if (btn.onclick && !btn.onclick?.(params)) return;
               closeModal(params);

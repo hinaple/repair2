@@ -251,7 +251,11 @@ export interface FunctionContext extends PluginContextBase {}
  * Context passed to transition plugin calls.
  * Transition plugins should usually focus on keyframe generation and avoid long-lived side effects.
  */
-export interface TransitionContext extends PluginContextBase {}
+export interface TransitionContext extends PluginContextBase {
+  component: ComponentIdentity;
+  element: null;
+  frame: null;
+}
 
 /** Union of context objects injected by REPAIR2. Plugins should not construct this manually. */
 export type PluginContext =

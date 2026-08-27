@@ -97,7 +97,8 @@ export default [{ opacity: 0 }, { opacity: 1 }];
 ```
 
 ```js
-export function fade({ component }) {
+export function fade({ attributes, ctx }) {
+  ctx.logger.debug("fade", ctx.component.id, attributes);
   return [{ opacity: 0 }, { opacity: 1 }];
 }
 ```

@@ -6,10 +6,14 @@ const outScrollAction: Action<HTMLElement, () => unknown> = (node, callback) => 
       callback();
     }
   };
-  const opt = ["wheel", handleScroll, { capture: true, passive: true }] as const;
-  document.addEventListener(...opt);
+  const controller = new AbortController();
+  document.addEventListener("wheel", handleScroll, {
+    capture: true,
+    passive: true,
+    signal: controller.signal
+  });
   return {
-    destroy: () => document.removeEventListener(...opt)
+    destroy: () => controller.abort()
   };
 };
 

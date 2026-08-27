@@ -1,5 +1,4 @@
 import type { Action } from "svelte/action";
-import type { PointerEventHandler } from "svelte/elements";
 
 const outClickAction: Action<
   HTMLElement,
@@ -14,9 +13,15 @@ const outClickAction: Action<
       callback();
     }
   };
-  document.addEventListener("pointerdown", handleDown);
+
+  const controller = new AbortController();
+  document.addEventListener("pointerdown", handleDown, {
+    capture: true,
+    passive: true,
+    signal: controller.signal
+  });
   return {
-    destroy: () => document.removeEventListener("pointerdown", handleDown)
+    destroy: () => controller.abort()
   };
 };
 

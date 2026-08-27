@@ -185,10 +185,14 @@ You can also export a function that returns keyframes:
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
-export function slide({ component }) {
-  return [{ transform: "translateX(20px)" }, { transform: "translateX(0)" }];
+export function slide({ attributes, ctx }) {
+  const distance = Number(attributes.distance ?? 20);
+  ctx.logger.info(`Transitioning component: ${ctx.component.id}`);
+  return [{ transform: `translateX(${distance}px)` }, { transform: "translateX(0)" }];
 }
 ```
+
+The function must return keyframes synchronously. Promise-returning transition functions are not supported.
 
 For compatibility, REPAIR2 still accepts an object with a `keyframes` property, but that shape is deprecated for new plugins. Transition factories are not supported, and a `function` property on a transition object is ignored.
 

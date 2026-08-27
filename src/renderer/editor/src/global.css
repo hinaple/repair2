@@ -17,7 +17,7 @@
   --b-o1: rgba(0, 0, 0, 0.1);
 
   --darkgray: #1b1c1d;
-  --option-bg: #1e1f20;
+  --option-bg: #313233;
 
   --blue-dark: #2b6eff;
   --blue-bright: #4e86ff;
@@ -110,7 +110,8 @@ textarea.auto-resize {
 }
 input,
 textarea,
-select {
+select,
+button.select {
   padding: 2px 4px;
   border: solid transparent 1px;
   background-color: var(--w-o2);
@@ -128,13 +129,15 @@ select {
 }
 input.small,
 textarea.small,
-select.small {
+select.small,
+button.select.small {
   padding: 3px 4px;
   font-size: 14px;
 }
 input:hover,
 textarea:hover,
-select:hover {
+select:hover,
+button.select:hover {
   border-color: var(--w-o2);
 }
 option {
@@ -166,7 +169,8 @@ textarea {
 }
 input:focus,
 textarea:focus,
-select:focus {
+select:focus,
+button.select:focus {
   border-color: var(--blue-bright) !important;
 }
 

@@ -117,7 +117,10 @@ export function createPluginLinkService({
   async function getPluginLinks(): Promise<PluginLinks | null> {
     if (currentPluginLinks) return currentPluginLinks;
 
-    if (!(await pathExists(LINKS_FILE_PATH))) return {};
+    if (!(await pathExists(LINKS_FILE_PATH))) {
+      currentPluginLinks = {};
+      return currentPluginLinks;
+    }
 
     try {
       const content = await fs.readFile(LINKS_FILE_PATH, "utf8");
