@@ -39,3 +39,6 @@ export type MenuSubmenu = MenuItemBase & {
 export type MenuItem = MenuSeparator | MenuAction | MenuCheckbox | MenuRadio | MenuSubmenu;
 
 export type MenuButtonItem = Exclude<MenuItem, MenuSeparator>;
+
+export type MenuInitialActiveMode = "auto" | "none";
+export type MenuPointerActiveMode = "persistent" | "hover";

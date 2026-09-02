@@ -1,76 +1,91 @@
-import { typedEntries, typedFromEntries } from "@shared/utils.types";
-import type { ContextMenuItems } from "../types";
-import { ProjectMenu } from "./project";
-import { CopyMap } from "../../clipboard/constants";
+import type { MenuItem } from "../../../menu/menu.types";
+import type { ContextMenuContext } from "../types";
+import { createProjectMenuItems } from "./project";
+import { CopyMap, type CopyMapType } from "../../clipboard/constants";
+import { copy, cutData, paste, removeData } from "../../clipboard";
 import { play } from "../../../msg";
 import { getProject } from "../../../../project/store";
+import { getOriginalPos } from "../../../../nodes/viewport";
 
-export function genTemplate({
-  copy = true,
-  remove = true,
-  paste = true
-}: { copy?: boolean; remove?: boolean; paste?: boolean } = {}) {
-  const temp: ContextMenuItems = [];
-  if (copy) {
-    if (remove)
-      temp.push({
+function createClipboardMenuItems(
+  context: ContextMenuContext,
+  { copy: canCopy = true, remove: canRemove = true, paste: canPaste = true }: CopyMapType = {}
+): MenuItem[] {
+  const items: MenuItem[] = [];
+  if (canCopy) {
+    if (canRemove)
+      items.push({
         label: "잘라내기",
-        role: "cut"
+        activate: () => cutData(context.focusData)
       });
-    temp.push({
+    items.push({
       label: "복사",
-      role: "copy"
+      activate: () => copy(context.focusData)
     });
   }
-  if (paste) temp.push({ label: "붙여넣기", role: "paste" });
-  if (remove)
-    temp.push(
+  if (canPaste)
+    items.push({
+      label: "붙여넣기",
+      activate: () =>
+        paste(context.focusData, getOriginalPos(context.position.x, context.position.y))
+    });
+  if (canRemove)
+    items.push(
       { type: "separator" },
       {
         label: "삭제",
-        role: "remove"
+        activate: () => removeData(context.focusData)
       }
     );
 
-  return temp;
+  return items;
 }
 
-function genNodeTemplate(type: "entry" | "sequence" | "branch" | "variableSet") {
-  const execute: ContextMenuItems = [
+function createNodeMenuItems(
+  context: Exclude<ContextMenuContext, { type: "project" }>,
+  type: "entry" | "sequence" | "branch" | "variableSet"
+): MenuItem[] {
+  const items: MenuItem[] = [
     {
       label: "실행",
-      click: ({ id }) => {
-        if (!id) return false;
-        play.send("execute:request", { type: type === "entry" ? "entry" : "node", id });
-        return true;
+      activate: () => {
+        play.send("execute:request", {
+          type: type === "entry" ? "entry" : "node",
+          id: context.id
+        });
       }
     }
   ];
   if (type === "entry") {
-    execute.push({
-      label: "활성화",
-      when: ({ id }) => {
-        if (!id) return false;
-        const node = getProject().nodes.get(id);
-        return node?.nodeType === "entry" && node.standbyMode;
-      },
-      click: ({ id }) => {
-        if (!id) return false;
-        play.send("execute:request", { type: "node", id });
-        return true;
-      }
-    });
+    const node = getProject().nodes.get(context.id);
+    if (node?.nodeType === "entry" && node.standbyMode)
+      items.push({
+        label: "활성화",
+        activate: () => {
+          play.send("execute:request", { type: "node", id: context.id });
+        }
+      });
   }
-  return [...execute, { type: "separator" } as const, ...genTemplate(CopyMap[type])];
+  return items;
 }
 
-export const ContextMenus = typedFromEntries(
-  typedEntries(CopyMap).map(([k, v]) => [
-    k,
-    k === "project"
-      ? ProjectMenu
-      : k === "entry" || k === "sequence" || k === "branch" || k === "variableSet"
-        ? genNodeTemplate(k)
-        : genTemplate(v)
-  ])
-);
+export function createContextMenuItems(context: ContextMenuContext): MenuItem[] {
+  const clipboardItems = createClipboardMenuItems(context, CopyMap[context.type]);
+
+  if (context.type === "project")
+    return [...createProjectMenuItems(context), { type: "separator" }, ...clipboardItems];
+
+  if (
+    context.type === "entry" ||
+    context.type === "sequence" ||
+    context.type === "branch" ||
+    context.type === "variableSet"
+  )
+    return [
+      ...createNodeMenuItems(context, context.type),
+      { type: "separator" },
+      ...clipboardItems
+    ];
+
+  return clipboardItems;
+}

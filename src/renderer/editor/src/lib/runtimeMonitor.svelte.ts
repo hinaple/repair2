@@ -94,7 +94,7 @@ function handleVariableChange([_, status, target, value]: ChangeParam<"variable"
 function handleStepChange([_, status, target]: ChangeParam<"step">) {
   if (status === "started") RuntimeData.steps.set(target, (RuntimeData.steps.get(target) ?? 0) + 1);
   else if (status === "ended")
-    RuntimeData.steps.set(target, Math.min(0, (RuntimeData.steps.get(target) ?? 1) - 1));
+    RuntimeData.steps.set(target, Math.max(0, (RuntimeData.steps.get(target) ?? 1) - 1));
 }
 function handlePreloadChange([_, status, target]: ChangeParam<"preload">) {
   if (status === "added") RuntimeData.preloads.add(target);

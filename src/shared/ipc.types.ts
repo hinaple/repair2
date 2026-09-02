@@ -151,6 +151,7 @@ export type RendererToMainSendMap = {
   "open-dir": [dir: string];
   "custom-log": [content: any];
   "play-win-ready": IpcNoArgs;
+  "message-port:ready": IpcNoArgs;
   "request-save:done": [payload: { requestId: number; saved: boolean }];
 };
 

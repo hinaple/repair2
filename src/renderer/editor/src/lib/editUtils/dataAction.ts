@@ -1,8 +1,7 @@
-import { CONTEXT_FOCUS_TYPE_MAP } from "./clipboard/constants";
 import { currentFocus, focusData, type FocusData } from "./focus";
 import { get } from "svelte/store";
 import { grabbing } from "../stores";
-import { rightclick } from "./contextMenu/contextUtils";
+import { createContextFocusData, rightclick } from "./contextMenu/contextUtils";
 import type { Action } from "svelte/action";
 import type { ContextMenuParam } from "./contextMenu/types";
 
@@ -32,31 +31,33 @@ export const data: Action<HTMLElement, ContextMenuParam> = (node, p) => {
   const contextNode = node.querySelector<HTMLElement>("[data-contextmenu]") || node;
   const focusNode = node.querySelector<HTMLElement>("[data-focus]") || node;
 
-  rightclick(contextNode, p);
+  const contextMenuAction = rightclick(contextNode, p);
 
-  const focusType = CONTEXT_FOCUS_TYPE_MAP[p.type];
-
-  const focussingData = {
-    type: focusType,
-    target: p.id ?? null,
-    parents: p.parents
-  } as FocusData;
+  let focussingData = createContextFocusData(p);
 
   focusTargets.set(focusNode, focussingData);
 
   let focussing = false;
-  const unsub = currentFocus.subscribe((cf) => {
-    if (focussing === (cf.type === focussingData.type && cf.target === focussingData.target))
-      return;
+  function syncFocusClass(current: FocusData) {
+    const nextFocussing =
+      current.type === focussingData.type && current.target === focussingData.target;
+    if (focussing === nextFocussing) return;
 
-    focussing = !focussing;
+    focussing = nextFocussing;
+    focusNode.classList.toggle("focus", focussing);
+  }
 
-    if (focussing) focusNode.classList.add("focus");
-    else focusNode.classList.remove("focus");
-  });
+  const unsub = currentFocus.subscribe(syncFocusClass);
 
   return {
+    update(nextParam) {
+      contextMenuAction?.update?.(nextParam);
+      focussingData = createContextFocusData(nextParam);
+      focusTargets.set(focusNode, focussingData);
+      syncFocusClass(get(currentFocus));
+    },
     destroy() {
+      contextMenuAction?.destroy?.();
       focusTargets.delete(focusNode);
       unsub();
       if (focussing) focusData("project");

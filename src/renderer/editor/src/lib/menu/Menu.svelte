@@ -4,17 +4,28 @@
   import outScrollAction from "../actions/outscrollaction";
   import { onMount } from "svelte";
   import Item from "./Item.svelte";
-  import type { MenuButtonItem, MenuItem } from "./menu.types";
+  import type {
+    MenuButtonItem,
+    MenuInitialActiveMode,
+    MenuItem,
+    MenuPointerActiveMode
+  } from "./menu.types";
 
   let {
     items,
     parents,
     anchorName,
+    width,
+    initialActive = "auto",
+    pointerActive = "persistent",
     collapse
   }: {
     items: readonly MenuItem[];
     parents: HTMLElement[];
     anchorName: string;
+    width?: string;
+    initialActive?: MenuInitialActiveMode;
+    pointerActive?: MenuPointerActiveMode;
     collapse: () => unknown;
   } = $props();
 
@@ -78,6 +89,7 @@
 
   let activePath = $state<number[]>([]);
   let openedPath = $state<number[]>([]);
+  let menuWidth = $derived(width ?? `anchor-size(${anchorName} width)`);
 
   function itemAnchor(path: readonly number[]) {
     return `--menu-${menuId}-${path.join("-")}`;
@@ -93,6 +105,26 @@
     openedPath = item.type === "submenu" ? path : path.slice(0, -1);
   }
 
+  function leaveItem(path: number[]) {
+    if (pointerActive === "hover" && samePath(activePath, path)) activePath = [];
+  }
+
+  function leaveMenuTree(event: PointerEvent) {
+    if (pointerActive !== "hover") return;
+
+    const currentTarget = event.currentTarget;
+    const nextTarget = event.relatedTarget;
+    if (
+      currentTarget instanceof Node &&
+      nextTarget instanceof Node &&
+      currentTarget.contains(nextTarget)
+    )
+      return;
+
+    activePath = [];
+    openedPath = [];
+  }
+
   function openSubmenu(path: number[], focusChild: boolean) {
     const item = itemAt(path);
     if (item?.type !== "submenu" || item.disabled) return;
@@ -106,7 +138,7 @@
 
     activePath = path;
     if (item.type === "submenu") {
-      openSubmenu(path, false);
+      openSubmenu(path, true);
       return;
     }
 
@@ -159,7 +191,8 @@
   }
 
   onMount(() => {
-    const initialPath = findCheckedPath(items) ?? firstSelectablePath([]) ?? [];
+    const initialPath =
+      initialActive === "auto" ? (findCheckedPath(items) ?? firstSelectablePath([]) ?? []) : [];
     activePath = initialPath;
     openedPath = initialPath.slice(0, -1);
 
@@ -177,7 +210,7 @@
   <div
     class={["menu", root ? "root" : "submenu"]}
     role="menu"
-    style={`--a: ${levelAnchor}; width: anchor-size(${anchorName} width);`}
+    style={`--a: ${levelAnchor}; width: ${menuWidth};`}
   >
     {#each levelItems as item, index}
       {@const path = [...parentPath, index]}
@@ -193,6 +226,7 @@
             active={samePath(activePath, path)}
             expanded={opened}
             onhover={() => hoverItem(path, item)}
+            onleave={() => leaveItem(path)}
             onactivate={() => activateItem(path)}
           />
           {#if item.type === "submenu" && opened}
@@ -206,6 +240,8 @@
 
 <div
   class="menu-root"
+  role="presentation"
+  onpointerout={leaveMenuTree}
   use:outClickAction={{ callback: collapse, excludes: parents }}
   use:outScrollAction={collapse}
 >
@@ -233,7 +269,11 @@
 
   .menu.root {
     position-area: end span-end;
-    position-try-fallbacks: flip-block, --top-scrollable;
+    position-try-fallbacks:
+      flip-block,
+      flip-inline,
+      flip-block flip-inline,
+      --top-scrollable;
     margin-block-start: 3px;
   }
 

@@ -1,5 +1,5 @@
 import { get, writable } from "svelte/store";
-import { outClicked } from "../lib/editUtils/contextMenu/contextUtils";
+import { closeContextMenu } from "../lib/editUtils/contextMenu/contextUtils";
 import { getProject } from "../project/store";
 import FrameUpdater from "../lib/frameUpdater";
 import { ipc } from "../lib/ipc";
@@ -134,7 +134,7 @@ export function setViewportSize(size: number, considerLimit = true) {
   if (Number.isNaN(size)) return;
   const newSize = considerLimit ? Math.min(Math.max(size, sizeLimit[0]), sizeLimit[1]) : size;
 
-  outClicked();
+  closeContextMenu();
   viewport.size.set(newSize);
   calcRatio();
 }

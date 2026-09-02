@@ -4,21 +4,7 @@
   import Menu from "../../lib/menu/Menu.svelte";
   import Icon from "../../assets/icons/Icon.svelte";
   import { onMount } from "svelte";
-
-  type ValueOption = {
-    value: T;
-    label?: string;
-    disabled?: boolean;
-  };
-
-  type SubmenuOption = {
-    type: "submenu";
-    label: string;
-    options: readonly SelectOption[];
-    disabled?: boolean;
-  };
-
-  type SelectOption = T | ValueOption | readonly [T, string] | SubmenuOption;
+  import type { SelectOption, SelectSubmenuOption, SelectValueOption } from "./select.types";
 
   type NormalizedOption =
     | {
@@ -44,7 +30,7 @@
     unselectable = false
   }: {
     value?: T | null;
-    options: readonly SelectOption[];
+    options: readonly SelectOption<T>[];
     placeholder?: string;
     selectedLabel?: string;
     autofocus?: boolean;
@@ -52,14 +38,14 @@
     onchange?: (value: T | null) => unknown;
   } = $props();
 
-  function normalizeOption(option: SelectOption): NormalizedOption {
+  function normalizeOption(option: SelectOption<T>): NormalizedOption {
     if (Array.isArray(option)) {
       const [optionValue, label] = option as readonly [T, string];
       return { type: "option", value: optionValue, label };
     }
 
     if (typeof option === "object") {
-      const optionObject = option as ValueOption | SubmenuOption;
+      const optionObject = option as SelectValueOption<T> | SelectSubmenuOption<T>;
       if (!("value" in optionObject)) {
         return {
           type: "submenu",

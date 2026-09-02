@@ -35,6 +35,8 @@ export function registerVariables(variableMap: Map<string, Types.Variable>) {
       set(v: string | null) {
         this.value = v;
         this.subscriptions.forEach((c) => c(v));
+
+        sendChanges("variable", "changed", k, v);
       },
       subscribe(cb: VarSubscriber) {
         this.subscriptions.add(cb);
@@ -49,12 +51,7 @@ export function getVar(id: string) {
 }
 
 export function setVar(id: string, value: string | null) {
-  const v = variables.get(id);
-  if (!v) return;
-  v.value = value;
-  v.subscriptions.forEach((c) => c(value));
-
-  sendChanges("variable", "changed", id, value);
+  variables.get(id)?.set(value);
 }
 
 export function resetAllVar() {

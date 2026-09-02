@@ -1,73 +1,69 @@
 import { get, writable, type Writable } from "svelte/store";
 import { grabbing } from "../../stores";
-import { ContextMenus } from "./templates";
+import { createContextMenuItems } from "./templates";
 import type { Action } from "svelte/action";
-import type { ContextMenu, ContextMenuItem, ContextMenuItems, ContextMenuParam } from "./types";
-import { copy, cutData, paste, removeData } from "../clipboard";
+import type { ContextMenu, ContextMenuContext, ContextMenuParam } from "./types";
 import { CONTEXT_FOCUS_TYPE_MAP } from "../clipboard/constants";
 import type { FocusData } from "../focus";
-import { getOriginalPos } from "../../../nodes/viewport";
 
-export const contextMenu: Writable<ContextMenu | undefined | null> = writable();
+export const contextMenu: Writable<ContextMenu | null> = writable(null);
 
-export default function showContextMenu(menu: ContextMenu) {
+export function createContextFocusData(
+  param: ContextMenuParam
+): Exclude<FocusData, { type: "nodes" }> {
+  return {
+    type: CONTEXT_FOCUS_TYPE_MAP[param.type],
+    target: param.id ?? null,
+    parents: param.parents
+  } as Exclude<FocusData, { type: "nodes" }>;
+}
+
+let rightNode: HTMLElement | null = null;
+
+function clearContextMenuClass() {
+  rightNode?.classList.remove("contextmenu");
+  rightNode = null;
+}
+
+function showContextMenu(menu: ContextMenu, source: HTMLElement) {
+  clearContextMenuClass();
+  rightNode = source;
+  rightNode.classList.add("contextmenu");
   contextMenu.set(menu);
 }
-function removeContextMenu() {
+
+export function closeContextMenu() {
   contextMenu.set(null);
   clearContextMenuClass();
 }
-export function outClicked() {
-  removeContextMenu();
-}
-
-function itemClickResult(menu: ContextMenu, item: Exclude<ContextMenuItem, { type: "separator" }>) {
-  if (!item.role) return item.click?.(menu);
-
-  if (item.role === "paste") paste(menu.focusData, getOriginalPos(menu.pos.x, menu.pos.y));
-  if (item.role === "copy") copy(menu.focusData);
-  if (item.role === "cut") cutData(menu.focusData);
-  if (item.role === "remove") removeData(menu.focusData);
-
-  item.click?.(menu);
-  return true;
-}
-
-export function itemClicked(
-  menu: ContextMenu,
-  item: Exclude<ContextMenuItem, { type: "separator" }>
-) {
-  if (itemClickResult(menu, item)) outClicked();
-}
-
-let rightNode: HTMLElement | null;
-function clearContextMenuClass() {
-  if (rightNode) {
-    rightNode.classList.remove("contextmenu");
-    rightNode = null;
-  }
-}
 
 export const rightclick: Action<HTMLElement, ContextMenuParam> = (node, p) => {
-  node.addEventListener("contextmenu", (evt: MouseEvent) => {
+  let param = p;
+
+  const oncontextmenu = (evt: MouseEvent) => {
     if (get(grabbing)) return;
-    const menu: ContextMenu = {
-      ...p,
-      pos: { x: evt.clientX, y: evt.clientY },
-      items: ContextMenus[p.type],
-      focusData: {
-        type: CONTEXT_FOCUS_TYPE_MAP[p.type],
-        target: p.id ?? null,
-        parents: p.parents
-      } as Exclude<FocusData, { type: "nodes" }>
+
+    const position = { x: evt.clientX, y: evt.clientY };
+    const context: ContextMenuContext = {
+      ...param,
+      position,
+      focusData: createContextFocusData(param)
     };
-    menu.items = menu.items.filter(
-      (item) => item.type === "separator" || item.when?.(menu) !== false
-    );
-    showContextMenu(menu);
+
+    showContextMenu({ position, items: createContextMenuItems(context) }, node);
+    evt.preventDefault();
     evt.stopPropagation();
-    clearContextMenuClass();
-    rightNode = node;
-    rightNode.classList.add("contextmenu");
-  });
+  };
+
+  node.addEventListener("contextmenu", oncontextmenu);
+
+  return {
+    update(nextParam) {
+      param = nextParam;
+    },
+    destroy() {
+      node.removeEventListener("contextmenu", oncontextmenu);
+      if (rightNode === node) closeContextMenu();
+    }
+  };
 };

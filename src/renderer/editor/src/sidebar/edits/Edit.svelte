@@ -51,8 +51,7 @@
     if (focus.type === "nodes") return undefined;
     return Edits[focus.type];
   });
-  // The selected component and editor are correlated by currentFocus, but that
-  // relationship cannot be represented by Svelte's dynamic component union.
+
   let CurrentEditComponent = $derived(
     currentEdit?.component as Component<{ editor: FieldBinding<unknown> }> | undefined
   );
@@ -68,7 +67,7 @@
   });
 
   $effect(() => {
-    if (currentEdit) title = currentEdit.title;
+    title = currentEdit ? currentEdit.title : "Nodes";
   });
 </script>
 

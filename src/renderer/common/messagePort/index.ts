@@ -1,17 +1,25 @@
 import { ipcRenderer } from "electron";
 
-let messagePort: MessagePort;
+let messagePort: MessagePort | undefined;
 
 function callListeners(channel: string, ...data: any[]) {
   listeners.get(channel)?.forEach((cb) => cb(...data));
 }
 
 ipcRenderer.on("messagePort", (e) => {
-  messagePort = e.ports[0];
+  const nextPort = e.ports[0];
+  if (!nextPort) return;
 
-  callListeners("start");
+  if (messagePort) {
+    const previousPort = messagePort;
+    messagePort = undefined;
+    previousPort.close();
+    callListeners("end");
+  }
 
-  messagePort.addEventListener("message", (evt) => {
+  messagePort = nextPort;
+
+  nextPort.addEventListener("message", (evt) => {
     const l = listeners.get(evt.data.channel);
 
     if (!l) {
@@ -21,10 +29,17 @@ ipcRenderer.on("messagePort", (e) => {
 
     callListeners(evt.data.channel, ...evt.data.data);
   });
-  messagePort.addEventListener("close", () => {
+  nextPort.addEventListener("close", () => {
+    if (messagePort !== nextPort) return;
+    messagePort = undefined;
     callListeners("end");
   });
+
+  nextPort.start();
+  callListeners("start");
 });
+
+ipcRenderer.send("message-port:ready");
 
 function send(channel: string, ...data: any) {
   if (!messagePort) throw new Error("Renderer message port is not registered.");

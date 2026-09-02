@@ -3,6 +3,7 @@ import { setupCommunicationIpc } from "./communicationIpc";
 import { setupEditorIpc } from "./editorIpc";
 import { setupLogIpc } from "./logIpc";
 import { setupMonitorIpc } from "./monitorIpc";
+import { setupMessagePortIpc } from "./messagePortIpc";
 import { setupPluginIpc } from "./pluginIpc";
 import { setupProjectIpc } from "./projectIpc";
 import { setupShellIpc } from "./shellIpc";
@@ -18,5 +19,6 @@ export function setupIpcHandlers(app: MainApp) {
   setupAssetIpc(app);
   setupCommunicationIpc(app);
   setupMonitorIpc(app);
+  setupMessagePortIpc(app);
   setupStoreIpc(app);
 }

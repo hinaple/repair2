@@ -1,25 +1,19 @@
 import type { FocusData } from "../focus";
-import type { ContextMenus } from "./templates";
+import type { CopyMap } from "../clipboard/constants";
+import type { MenuItem } from "../../menu/menu.types";
 
-export type ContextRole = "copy" | "cut" | "paste" | "remove";
-
-export type ContextMenuItem =
-  | { type: "separator" }
-  | {
-      type?: "button";
-      click?(menuInfo: ContextMenu): boolean | undefined;
-      when?(menuInfo: ContextMenu): boolean;
-      label: string;
-      role?: ContextRole;
-    };
-export type ContextMenuItems = ContextMenuItem[];
+export type ContextMenuPosition = { x: number; y: number };
 
 export type ContextMenuParam =
-  | { type: Exclude<keyof typeof ContextMenus, "project">; id: string; parents?: string[] }
+  | { type: Exclude<keyof typeof CopyMap, "project">; id: string; parents?: string[] }
   | { type: "project"; id?: undefined; parents?: undefined };
 
-export type ContextMenu = ContextMenuParam & {
-  pos: { x: number; y: number };
-  items: ContextMenuItems;
+export type ContextMenuContext = ContextMenuParam & {
+  position: ContextMenuPosition;
   focusData: Exclude<FocusData, { type: "nodes" }>;
+};
+
+export type ContextMenu = {
+  position: ContextMenuPosition;
+  items: readonly MenuItem[];
 };

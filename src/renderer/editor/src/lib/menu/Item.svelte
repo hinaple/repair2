@@ -2,22 +2,24 @@
   import type { MenuButtonItem } from "./menu.types";
 
   let {
-    el = $bindable(),
     item,
     active = false,
     expanded = false,
     anchorName,
     onhover,
+    onleave,
     onactivate
   }: {
-    el?: HTMLButtonElement;
     item: MenuButtonItem;
     active?: boolean;
     expanded?: boolean;
     anchorName: string;
     onhover: () => unknown;
+    onleave: () => unknown;
     onactivate: () => unknown;
   } = $props();
+
+  let el: HTMLButtonElement | undefined;
 
   let selectable = $derived(item.type === "checkbox" || item.type === "radio");
   let selected = $derived(item.type === "checkbox" || item.type === "radio" ? item.checked : false);
@@ -45,6 +47,7 @@
   onclick={onactivate}
   onpointerdown={(event) => event.preventDefault()}
   onpointerenter={onhover}
+  onpointerleave={onleave}
 >
   <span class="indicator">
     {#if selectable}

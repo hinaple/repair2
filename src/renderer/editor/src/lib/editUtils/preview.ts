@@ -5,14 +5,7 @@ import type { MsgPreviewPayload } from "@renderer/messagePort";
 
 let previewing: MsgPreviewPayload | null = null;
 
-function getPreviewData(cf: FocusData): MsgPreviewPayload | null {
-  if (cf.type !== "component" && cf.type !== "element") return null;
-
-  let componentId: string | undefined = cf.type === "component" ? cf.target : cf.parents?.[0];
-
-  if (!componentId) return null;
-  if (previewing && previewing.component.id === componentId) return previewing;
-
+function extractPreviewData(componentId: string): MsgPreviewPayload {
   const {
     source: component,
     result: { elements }
@@ -23,6 +16,17 @@ function getPreviewData(cf: FocusData): MsgPreviewPayload | null {
   });
 
   return { component, elements: elements || new Map() };
+}
+
+function getPreviewData(cf: FocusData): MsgPreviewPayload | null {
+  if (cf.type !== "component" && cf.type !== "element") return null;
+
+  let componentId: string | undefined = cf.type === "component" ? cf.target : cf.parents?.[0];
+
+  if (!componentId) return null;
+  if (previewing && previewing.component.id === componentId) return previewing;
+
+  return extractPreviewData(componentId);
 }
 
 currentFocus.subscribe((cf) => {
@@ -36,6 +40,7 @@ currentFocus.subscribe((cf) => {
 
 export function reloadPreview() {
   if (!previewing) return;
+  previewing = extractPreviewData(previewing.component.id);
   play.send("preview:info", previewing);
 }
 

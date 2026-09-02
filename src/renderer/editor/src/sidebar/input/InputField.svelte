@@ -31,6 +31,7 @@
     row = false,
     children = null,
     previewer = false,
+    oninput = null,
     oninputremove = null,
     background = false,
     seriesOption = null,
@@ -112,6 +113,7 @@
             {row}
             {children}
             {previewer}
+            {oninput}
             {oninputremove}
             {background}
             {style}
@@ -153,7 +155,7 @@
         {type}
         {small}
         {previewer}
-        onpreview={props.oninput}
+        onpreview={oninput}
         {...props}
       />{/if}
   {:else if type === "select"}
@@ -183,7 +185,7 @@
       onchange={props.onchange}
     />
   {:else if type === "position" && binding}
-    <Position {binding} {previewer} {...props} />
+    <Position {binding} {previewer} {oninput} {...props} />
   {:else if type === "resource"}
     <ResourceSelector resourceId={value} type={props.elType} onchange={selectChange} {...props} />
   {:else if type === "plugin" && binding}

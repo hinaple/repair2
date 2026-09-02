@@ -8,12 +8,10 @@
   import type { FieldBinding } from "../../project/mutator";
   import { getMutator } from "../../project/store";
   import Select from "./Select.svelte";
+  import type { SelectOption } from "./select.types";
 
   type TypeName = keyof TypePayloadMap;
   type TypePayloadValue = { type: string; payload: unknown; [key: string]: unknown };
-  type TypeOption =
-    | { value: string; label: string }
-    | { type: "submenu"; label: string; options: TypeOption[] };
 
   let {
     binding,
@@ -41,7 +39,7 @@
     return isRecord(value) && value.$types === true;
   }
 
-  function createTypeOptions(node: unknown, prefix: string[] = []): TypeOption[] {
+  function createTypeOptions(node: unknown, prefix: string[] = []): SelectOption<string>[] {
     if (!isRecord(node)) return [];
 
     return typeKeys(node).map((key) => {
