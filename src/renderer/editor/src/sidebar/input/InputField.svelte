@@ -176,7 +176,12 @@
       {/each}
     </select>
   {:else if type === "type" && binding}
-    <TypeInput {value} {binding} typeName={props.typeName} {...props} />
+    <TypeInput
+      {binding}
+      typeName={props.typeName}
+      options={props.options}
+      onchange={props.onchange}
+    />
   {:else if type === "position" && binding}
     <Position {binding} {previewer} {...props} />
   {:else if type === "resource"}

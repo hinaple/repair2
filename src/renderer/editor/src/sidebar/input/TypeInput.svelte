@@ -16,61 +16,88 @@
     binding,
     typeName,
     options: labelMap = {},
-    onchange = null,
-    ...props
+    onchange = null
   }: {
     binding: FieldBinding<TypePayloadValue>;
     typeName: TypeName;
     options?: Record<string, string>;
     onchange?: (() => unknown) | null;
-    [key: string]: unknown;
   } = $props();
 
   let value = $derived(binding.value);
-  let parts = $derived(value.type.split("."));
+  let draftParts = $state(value.type ? value.type.split(".") : []);
 
-  console.log(value.type, parts);
+  $effect(() => {
+    draftParts = value.type ? value.type.split(".") : [];
+  });
 
   function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 
-  function keys(value: unknown): string[] {
+  function typeKeys(value: unknown): string[] {
     return isRecord(value) ? Object.keys(value).filter((key) => key !== "$types") : [];
   }
 
+  function isTypeGroup(value: unknown): value is Record<string, unknown> {
+    return isRecord(value) && value.$types === true;
+  }
+
   let levels = $derived.by(() => {
-    const result: [string, string][][] = [];
+    const result: string[][] = [];
     let node: unknown = PayloadTemplates[typeName];
-    result.push(keys(node));
-    for (const part of parts) {
+    result.push(typeKeys(node));
+
+    for (const part of draftParts) {
       if (!isRecord(node)) break;
       node = node[part];
-      if (isRecord(node) && node.$types === true) result.push(keys(node));
+      if (isTypeGroup(node)) result.push(typeKeys(node));
       else break;
     }
+
     return result;
   });
 
-  function firstLeaf(prefix: string[]): string[] {
+  const missingNode = Symbol("missingNode");
+
+  function templateNode(parts: string[]): unknown | typeof missingNode {
     let node: unknown = PayloadTemplates[typeName];
-    for (const part of prefix) node = isRecord(node) ? node[part] : null;
-    while (isRecord(node) && node.$types === true) {
-      const first = keys(node)[0];
-      if (!first) break;
-      prefix.push(first);
-      node = node[first];
+
+    for (const part of parts) {
+      if (!isRecord(node) || !(part in node)) return missingNode;
+      node = node[part];
     }
-    return prefix;
+
+    return node;
   }
 
-  function changeType(selected: string, level: number) {
-    const nextType = firstLeaf([...parts.slice(0, level), selected]).join(".");
+  function optionsFor(levelOptions: string[], level: number): [string, string][] {
+    return levelOptions.map((option) => {
+      const path = [...draftParts.slice(0, level), option].join(".");
+      return [option, labelMap[option] ?? labelMap[path] ?? option];
+    });
+  }
+
+  function selectPart(selected: string, level: number) {
+    const nextParts = [...draftParts.slice(0, level), selected];
+    const node = templateNode(nextParts);
+    if (node === missingNode) return;
+
+    draftParts = nextParts;
+    if (isTypeGroup(node)) return;
+
+    changeType(nextParts.join("."));
+  }
+
+  function changeType(nextType: string) {
     if (nextType === value.type) return;
+
     const mutator = getMutator();
     mutator.transaction(() => {
       const oldOwned: { type: RecordKey; id: string }[] = [];
-      if (binding.target.kind === "record" && binding.path.length === 0) {
+      const isRootRecord = binding.target.kind === "record" && binding.path.length === 0;
+
+      if (isRootRecord) {
         forEachRelationId(
           binding.target.type,
           value as never,
@@ -84,44 +111,43 @@
         mutator.add(type, id, data);
         return id;
       });
-      binding.set({ ...value, type: nextType, payload });
+      const nextValue = { ...value, type: nextType, payload };
+      binding.set(nextValue);
 
-      const retained = new Set<string>();
-      if (binding.target.kind === "record" && binding.path.length === 0) {
+      if (isRootRecord) {
+        const retained = new Set<string>();
         forEachRelationId(
           binding.target.type,
-          { ...value, type: nextType, payload } as never,
+          nextValue as never,
           ({ type, id }) => retained.add(`${type}:${id}`),
           { onlyOwns: true }
         );
-      }
-      for (const owned of oldOwned) {
-        if (!retained.has(`${owned.type}:${owned.id}`)) mutator.deleteTree(owned.type, owned.id);
+
+        for (const owned of oldOwned) {
+          if (!retained.has(`${owned.type}:${owned.id}`)) {
+            mutator.deleteTree(owned.type, owned.id);
+          }
+        }
       }
     });
+
     onchange?.();
   }
 </script>
 
 <div class="types">
   {#each levels as levelOptions, i}
-  <Select value={parts[i]}
-  onchange={(v) => changeType(v!, i)}
-  {...props}
-    // <select
-    //   value={parts[i]}
-    //   onchange={(event) => changeType(event.currentTarget.value, i)}
-    //   {...props}
-    // >
-    //   <option value="" hidden>유형 선택</option>
-    //   {#each levelOptions as option}
-    //     <option value={option}
-    //       >{options[parts.slice(0, i).concat(option).join(".")] ??
-    //         options[option] ??
-    //         option}</option
-    //     >
-    //   {/each}
-    // </select>
+    {#key `${i}:${draftParts.slice(0, i).join(".")}`}
+      <Select
+        value={draftParts[i] ?? null}
+        options={optionsFor(levelOptions, i)}
+        placeholder={labelMap[""] ?? "유형 선택"}
+        autofocus={i > 0 && i === draftParts.length}
+        onchange={(selected) => {
+          if (selected !== null) selectPart(selected, i);
+        }}
+      />
+    {/key}
   {/each}
 </div>
 
