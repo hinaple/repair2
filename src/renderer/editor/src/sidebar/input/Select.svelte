@@ -1,47 +1,112 @@
-<script lang="ts" generics="T extends null | string | number | boolean">
+<script lang="ts" generics="T extends string | number | boolean">
   import { genId } from "@shared/genId";
+  import type { MenuItem } from "../../lib/menu/menu.types";
+  import Menu from "../../lib/menu/Menu.svelte";
   import Icon from "../../assets/icons/Icon.svelte";
-  import SelectOptions from "../../lib/menu/Menu.svelte";
   import { onMount } from "svelte";
 
-  interface Option {
+  type ValueOption = {
     value: T;
     label?: string;
-  }
+    disabled?: boolean;
+  };
+
+  type SubmenuOption = {
+    type: "submenu";
+    label: string;
+    options: readonly SelectOption[];
+    disabled?: boolean;
+  };
+
+  type SelectOption = T | ValueOption | readonly [T, string] | SubmenuOption;
+
+  type NormalizedOption =
+    | {
+        type: "option";
+        value: T;
+        label: string;
+        disabled?: boolean;
+      }
+    | {
+        type: "submenu";
+        label: string;
+        options: readonly NormalizedOption[];
+        disabled?: boolean;
+      };
 
   let {
     value = $bindable(null),
     options = [],
     placeholder = "",
+    selectedLabel = undefined,
     autofocus = false,
     onchange,
     unselectable = false
   }: {
     value?: T | null;
-    options: (T | Option | [T, string])[];
+    options: readonly SelectOption[];
     placeholder?: string;
+    selectedLabel?: string;
     autofocus?: boolean;
     unselectable?: boolean;
-    onchange?: (v: T | null) => unknown;
+    onchange?: (value: T | null) => unknown;
   } = $props();
 
-  let labelMap = $derived<Map<T, string>>(
-    new Map(
-      options.length > 0 && Array.isArray(options[0])
-        ? (options as [T, string][])
-        : (options as (T | Option)[]).map((o) =>
-            o && typeof o === "object" ? [o.value, o.label ?? String(o.value)] : [o, String(o)]
-          )
-    )
-  );
+  function normalizeOption(option: SelectOption): NormalizedOption {
+    if (Array.isArray(option)) {
+      const [optionValue, label] = option as readonly [T, string];
+      return { type: "option", value: optionValue, label };
+    }
 
-  let currentLabel = $derived(value === null ? placeholder : (labelMap.get(value) ?? placeholder));
+    if (typeof option === "object") {
+      const optionObject = option as ValueOption | SubmenuOption;
+      if (!("value" in optionObject)) {
+        return {
+          type: "submenu",
+          label: optionObject.label,
+          disabled: optionObject.disabled,
+          options: optionObject.options.map(normalizeOption)
+        };
+      }
+
+      return {
+        type: "option",
+        value: optionObject.value,
+        label: optionObject.label ?? String(optionObject.value),
+        disabled: optionObject.disabled
+      };
+    }
+
+    return { type: "option", value: option, label: String(option) };
+  }
+
+  let normalizedOptions = $derived(options.map(normalizeOption));
+
+  function findOption(
+    levelOptions: readonly NormalizedOption[],
+    selected: T
+  ): Extract<NormalizedOption, { type: "option" }> | undefined {
+    for (const option of levelOptions) {
+      if (option.type === "submenu") {
+        const found = findOption(option.options, selected);
+        if (found) return found;
+      } else if (Object.is(option.value, selected)) return option;
+    }
+    return undefined;
+  }
+
+  let currentLabel = $derived(
+    value === null
+      ? placeholder
+      : (selectedLabel ?? findOption(normalizedOptions, value)?.label ?? placeholder)
+  );
 
   let expanded = $state(false);
 
   function toggle() {
     expanded = !expanded;
   }
+
   function collapse() {
     expanded = false;
   }
@@ -50,24 +115,59 @@
 
   let btnEl: HTMLButtonElement | undefined = $state();
 
-  function select(v: T | null) {
-    if (v === value) return;
-
-    value = v;
-    onchange?.(v);
+  function select(nextValue: T | null) {
+    if (!Object.is(nextValue, value)) {
+      value = nextValue;
+      onchange?.(nextValue);
+    }
     collapse();
   }
 
-  function onkeydown(evt: KeyboardEvent) {
-    if (expanded || (evt.key !== "ArrowUp" && evt.key !== "ArrowDown")) return;
+  function toMenuItems(levelOptions: readonly NormalizedOption[]): MenuItem[] {
+    return levelOptions.map((option): MenuItem => {
+      if (option.type === "submenu") {
+        return {
+          type: "submenu",
+          label: option.label,
+          disabled: option.disabled,
+          items: toMenuItems(option.options)
+        };
+      }
+
+      return {
+        type: "radio",
+        label: option.label,
+        disabled: option.disabled,
+        checked: Object.is(value, option.value),
+        activate: () => select(option.value)
+      };
+    });
+  }
+
+  let menuItems = $derived.by((): MenuItem[] => {
+    const result = toMenuItems(normalizedOptions);
+    if (unselectable) {
+      result.unshift({
+        type: "radio",
+        label: placeholder,
+        checked: value === null,
+        activate: () => select(null)
+      });
+    }
+    return result;
+  });
+
+  function onkeydown(event: KeyboardEvent) {
+    if (expanded || (event.key !== "ArrowUp" && event.key !== "ArrowDown")) return;
 
     expanded = true;
-    evt.stopImmediatePropagation();
+    event.preventDefault();
+    event.stopImmediatePropagation();
   }
 
   onMount(() => {
     if (autofocus) {
-      btnEl!.focus();
+      btnEl?.focus();
       expanded = true;
     }
   });
@@ -75,10 +175,13 @@
 
 <button
   bind:this={btnEl}
+  type="button"
   class="select"
   onclick={toggle}
   onblur={collapse}
   style={`--a: ${anchorName};`}
+  aria-haspopup="menu"
+  aria-expanded={expanded}
   {onkeydown}
 >
   <div class="label">
@@ -87,16 +190,7 @@
   <Icon icon="triangle" color="#fff" size={10} />
 </button>
 {#if expanded}
-  <SelectOptions
-    {value}
-    parents={[btnEl]}
-    {select}
-    {unselectable}
-    {labelMap}
-    {anchorName}
-    {placeholder}
-    {collapse}
-  />
+  <Menu items={menuItems} parents={btnEl ? [btnEl] : []} {anchorName} {collapse} />
 {/if}
 
 <style>

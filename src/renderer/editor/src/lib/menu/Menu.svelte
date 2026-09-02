@@ -1,107 +1,223 @@
-<script lang="ts" generics="T extends null | string | number | boolean">
-  import type { KeyboardEventHandler } from "svelte/elements";
+<script lang="ts">
+  import { genId } from "@shared/genId";
   import outClickAction from "../actions/outclickaction";
   import outScrollAction from "../actions/outscrollaction";
   import { onMount } from "svelte";
+  import Item from "./Item.svelte";
+  import type { MenuButtonItem, MenuItem } from "./menu.types";
 
   let {
-    select,
-    value,
-    labelMap,
+    items,
     parents,
     anchorName,
-    collapse,
-    placeholder,
-    unselectable = false
+    collapse
   }: {
-    select: (v: T | null) => unknown;
-    value: T | null;
-    labelMap: Map<T, string>;
+    items: readonly MenuItem[];
     parents: HTMLElement[];
     anchorName: string;
     collapse: () => unknown;
-    placeholder: string;
-    unselectable?: boolean;
-  } & {} = $props();
+  } = $props();
 
-  let entries = $derived([...labelMap.entries()]);
-  let hoveringIdx = $derived(entries.findIndex(([v]) => v === value));
-  let optionEls = $derived<HTMLElement[]>(new Array(entries.length));
+  const menuId = genId();
 
-  const onkeydown: KeyboardEventHandler<HTMLElement> = (evt) => {
-    if (evt.key === "Enter" && hoveringIdx >= 0) {
-      select(entries[hoveringIdx][0]);
-      evt.preventDefault();
+  function isButtonItem(item: MenuItem): item is MenuButtonItem {
+    return item.type !== "separator";
+  }
+
+  function samePath(a: readonly number[], b: readonly number[]) {
+    return a.length === b.length && a.every((part, index) => part === b[index]);
+  }
+
+  function isPathPrefix(prefix: readonly number[], path: readonly number[]) {
+    return prefix.length <= path.length && prefix.every((part, index) => part === path[index]);
+  }
+
+  function itemsAt(parentPath: readonly number[]): readonly MenuItem[] {
+    let current = items;
+    for (const index of parentPath) {
+      const item = current[index];
+      if (item?.type !== "submenu") return [];
+      current = item.items;
     }
-    if (evt.key === "Enter" || evt.key === "Escape" || evt.key === "Tab") return collapse();
-
-    if (evt.key === "ArrowUp")
-      offsetHovering(-1); //= Math.max(0, hoveringIdx - 1);
-    else if (evt.key === "ArrowDown") offsetHovering(1); //hoveringIdx = Math.min(entries.length - 1, hoveringIdx + 1);
-  };
-
-  function offsetHovering(offset: number) {
-    hoveringIdx = Math.max(0, Math.min(entries.length - 1, hoveringIdx + offset));
-    scrollToNth(hoveringIdx);
+    return current;
   }
 
-  function onhover(idx: number) {
-    hoveringIdx = idx;
+  function itemAt(path: readonly number[]): MenuItem | undefined {
+    if (path.length === 0) return undefined;
+    const parentItems = itemsAt(path.slice(0, -1));
+    return parentItems[path.at(-1)!];
   }
 
-  function scrollToNth(n: number, center = false) {
-    optionEls[n].scrollIntoView({ block: center ? "center" : "nearest" });
+  function selectableIndices(levelItems: readonly MenuItem[]) {
+    const result: number[] = [];
+    for (const [index, item] of levelItems.entries()) {
+      if (isButtonItem(item) && !item.disabled) result.push(index);
+    }
+    return result;
+  }
+
+  function firstSelectablePath(parentPath: readonly number[]): number[] | null {
+    const first = selectableIndices(itemsAt(parentPath))[0];
+    return first === undefined ? null : [...parentPath, first];
+  }
+
+  function findCheckedPath(
+    levelItems: readonly MenuItem[],
+    parentPath: readonly number[] = []
+  ): number[] | null {
+    for (const [index, item] of levelItems.entries()) {
+      const path = [...parentPath, index];
+      if (item.type === "radio" && item.checked) return path;
+      if (item.type === "submenu") {
+        const childPath = findCheckedPath(item.items, path);
+        if (childPath) return childPath;
+      }
+    }
+    return null;
+  }
+
+  let activePath = $state<number[]>([]);
+  let openedPath = $state<number[]>([]);
+
+  function itemAnchor(path: readonly number[]) {
+    return `--menu-${menuId}-${path.join("-")}`;
+  }
+
+  function isSubmenuOpen(path: readonly number[]) {
+    return path.length > 0 && isPathPrefix(path, openedPath);
+  }
+
+  function hoverItem(path: number[], item: MenuButtonItem) {
+    if (item.disabled) return;
+    activePath = path;
+    openedPath = item.type === "submenu" ? path : path.slice(0, -1);
+  }
+
+  function openSubmenu(path: number[], focusChild: boolean) {
+    const item = itemAt(path);
+    if (item?.type !== "submenu" || item.disabled) return;
+    openedPath = path;
+    if (focusChild) activePath = firstSelectablePath(path) ?? path;
+  }
+
+  function activateItem(path: number[]) {
+    const item = itemAt(path);
+    if (!item || !isButtonItem(item) || item.disabled) return;
+
+    activePath = path;
+    if (item.type === "submenu") {
+      openSubmenu(path, false);
+      return;
+    }
+
+    if (item.type === "checkbox") item.activate?.(!item.checked);
+    else item.activate?.();
+
+    const shouldClose = item.closeOnActivate ?? item.type !== "checkbox";
+    if (shouldClose) collapse();
+  }
+
+  function moveActive(offset: -1 | 1) {
+    const parentPath = activePath.slice(0, -1);
+    const indices = selectableIndices(itemsAt(parentPath));
+    if (indices.length === 0) return;
+
+    const currentIndex = indices.indexOf(activePath.at(-1)!);
+    const nextIndex =
+      currentIndex < 0
+        ? offset > 0
+          ? 0
+          : indices.length - 1
+        : Math.max(0, Math.min(indices.length - 1, currentIndex + offset));
+    activePath = [...parentPath, indices[nextIndex]];
+  }
+
+  function closeSubmenu() {
+    const parentPath = activePath.slice(0, -1);
+    if (parentPath.length === 0) return;
+    activePath = parentPath;
+    openedPath = parentPath.slice(0, -1);
+  }
+
+  function onkeydown(event: KeyboardEvent) {
+    let handled = true;
+
+    if (event.key === "ArrowUp") moveActive(-1);
+    else if (event.key === "ArrowDown") moveActive(1);
+    else if (event.key === "ArrowRight") openSubmenu(activePath, true);
+    else if (event.key === "ArrowLeft") closeSubmenu();
+    else if (event.key === "Enter" || event.key === " ") activateItem(activePath);
+    else if (event.key === "Escape") collapse();
+    else if (event.key === "Tab") {
+      collapse();
+      handled = false;
+    } else handled = false;
+
+    if (!handled) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
   }
 
   onMount(() => {
-    if (hoveringIdx >= 0) scrollToNth(hoveringIdx, true);
+    const initialPath = findCheckedPath(items) ?? firstSelectablePath([]) ?? [];
+    activePath = initialPath;
+    openedPath = initialPath.slice(0, -1);
+
+    window.addEventListener("keydown", onkeydown, { capture: true });
+    return () => window.removeEventListener("keydown", onkeydown, { capture: true });
   });
 </script>
 
-<svelte:body {onkeydown} />
+{#snippet renderLevel(
+  levelItems: readonly MenuItem[],
+  parentPath: number[],
+  levelAnchor: string,
+  root: boolean
+)}
+  <div
+    class={["menu", root ? "root" : "submenu"]}
+    role="menu"
+    style={`--a: ${levelAnchor}; width: anchor-size(${anchorName} width);`}
+  >
+    {#each levelItems as item, index}
+      {@const path = [...parentPath, index]}
+      {#if item.type === "separator"}
+        <div class="separator" role="separator"></div>
+      {:else}
+        {@const opened = item.type === "submenu" && isSubmenuOpen(path)}
+        {@const childAnchor = itemAnchor(path)}
+        <div class="item-container">
+          <Item
+            {item}
+            anchorName={childAnchor}
+            active={samePath(activePath, path)}
+            expanded={opened}
+            onhover={() => hoverItem(path, item)}
+            onactivate={() => activateItem(path)}
+          />
+          {#if item.type === "submenu" && opened}
+            {@render renderLevel(item.items, path, childAnchor, false)}
+          {/if}
+        </div>
+      {/if}
+    {/each}
+  </div>
+{/snippet}
+
 <div
-  class="options"
-  style={`--a: ${anchorName};`}
+  class="menu-root"
   use:outClickAction={{ callback: collapse, excludes: parents }}
   use:outScrollAction={collapse}
 >
-  {#if unselectable}
-    <button
-      tabindex={-1}
-      class={["option", null === value && "selected"]}
-      onclick={() => select(null)}
-    >
-      {placeholder}
-    </button>
-  {/if}
-  {#each entries as [ov, label], idx}
-    <button
-      bind:this={optionEls[idx]}
-      tabindex={-1}
-      class={["option", ov === value && "selected", hoveringIdx === idx && "hover"]}
-      onclick={() => select(ov)}
-      onpointerdown={(evt) => evt.preventDefault()}
-      onpointerenter={() => onhover(idx)}
-    >
-      <svg
-        class="inner"
-        xmlns="http://www.w3.org/2000/svg"
-        width="6"
-        height="5"
-        fill="none"
-        viewBox="0 0 6 5"
-      >
-        <path stroke="#fff" d="m1 2 1.5 1.5L5 1" />
-      </svg>
-      <span>
-        {label}
-      </span>
-    </button>
-  {/each}
+  {@render renderLevel(items, [], anchorName, true)}
 </div>
 
 <style>
-  .options {
+  .menu-root {
+    display: contents;
+  }
+
+  .menu {
     background-color: var(--option-bg);
     padding: 5px;
     display: flex;
@@ -111,50 +227,31 @@
     border-radius: 10px;
     position: fixed;
     position-anchor: var(--a);
-    position-area: end span-end;
-    position-try-fallbacks: flip-block, --top-scrollable;
-    min-width: anchor-size(width);
     box-sizing: border-box;
     z-index: var(--contextmenu-z);
-    margin-block-start: 3px;
-
-    button {
-      border: none;
-      border-radius: 5px;
-      text-align: left;
-      padding: 2px 4px;
-      border: solid transparent 1px;
-      font-family: "Pretend";
-      font-size: 16px;
-      color: #fff;
-      font-weight: 400;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: row;
-      gap: 6px;
-      letter-spacing: 0.04em;
-      align-items: center;
-    }
-    svg {
-      width: 12px;
-      height: auto;
-      flex: 0 0 auto;
-      opacity: 0;
-      stroke-width: 0.6px;
-    }
-
-    button.hover {
-      background-color: var(--blue-dark);
-    }
-    button.selected {
-      svg {
-        opacity: 1;
-      }
-    }
   }
 
-  @position-try --bottom-scrollable {
-    align-self: stretch;
+  .menu.root {
+    position-area: end span-end;
+    position-try-fallbacks: flip-block, --top-scrollable;
+    margin-block-start: 3px;
+  }
+
+  .menu.submenu {
+    position-area: inline-end span-block-end;
+    position-try-fallbacks: flip-inline;
+    margin-inline-start: 5px;
+  }
+
+  .item-container {
+    display: contents;
+  }
+
+  .separator {
+    height: 1px;
+    margin: 4px;
+    background-color: var(--w-o2);
+    flex: 0 0 auto;
   }
 
   @position-try --top-scrollable {

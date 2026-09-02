@@ -11,6 +11,9 @@
 
   type TypeName = keyof TypePayloadMap;
   type TypePayloadValue = { type: string; payload: unknown; [key: string]: unknown };
+  type TypeOption =
+    | { value: string; label: string }
+    | { type: "submenu"; label: string; options: TypeOption[] };
 
   let {
     binding,
@@ -25,11 +28,6 @@
   } = $props();
 
   let value = $derived(binding.value);
-  let draftParts = $state(value.type ? value.type.split(".") : []);
-
-  $effect(() => {
-    draftParts = value.type ? value.type.split(".") : [];
-  });
 
   function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -43,51 +41,33 @@
     return isRecord(value) && value.$types === true;
   }
 
-  let levels = $derived.by(() => {
-    const result: string[][] = [];
-    let node: unknown = PayloadTemplates[typeName];
-    result.push(typeKeys(node));
+  function createTypeOptions(node: unknown, prefix: string[] = []): TypeOption[] {
+    if (!isRecord(node)) return [];
 
-    for (const part of draftParts) {
-      if (!isRecord(node)) break;
-      node = node[part];
-      if (isTypeGroup(node)) result.push(typeKeys(node));
-      else break;
-    }
+    return typeKeys(node).map((key) => {
+      const child = node[key];
+      const parts = [...prefix, key];
+      const path = parts.join(".");
+      const label = labelMap[key] ?? labelMap[path] ?? key;
 
-    return result;
-  });
+      if (isTypeGroup(child)) {
+        return {
+          type: "submenu",
+          label,
+          options: createTypeOptions(child, parts)
+        };
+      }
 
-  const missingNode = Symbol("missingNode");
-
-  function templateNode(parts: string[]): unknown | typeof missingNode {
-    let node: unknown = PayloadTemplates[typeName];
-
-    for (const part of parts) {
-      if (!isRecord(node) || !(part in node)) return missingNode;
-      node = node[part];
-    }
-
-    return node;
-  }
-
-  function optionsFor(levelOptions: string[], level: number): [string, string][] {
-    return levelOptions.map((option) => {
-      const path = [...draftParts.slice(0, level), option].join(".");
-      return [option, labelMap[option] ?? labelMap[path] ?? option];
+      return { value: path, label };
     });
   }
 
-  function selectPart(selected: string, level: number) {
-    const nextParts = [...draftParts.slice(0, level), selected];
-    const node = templateNode(nextParts);
-    if (node === missingNode) return;
-
-    draftParts = nextParts;
-    if (isTypeGroup(node)) return;
-
-    changeType(nextParts.join("."));
-  }
+  let typeOptions = $derived(createTypeOptions(PayloadTemplates[typeName]));
+  let selectedLabel = $derived.by(() => {
+    if (!value.type) return undefined;
+    const shortType = value.type.split(".").at(-1)!;
+    return labelMap[value.type] ?? labelMap[shortType] ?? value.type;
+  });
 
   function changeType(nextType: string) {
     if (nextType === value.type) return;
@@ -136,26 +116,23 @@
 </script>
 
 <div class="types">
-  {#each levels as levelOptions, i}
-    {#key `${i}:${draftParts.slice(0, i).join(".")}`}
-      <Select
-        value={draftParts[i] ?? null}
-        options={optionsFor(levelOptions, i)}
-        placeholder={labelMap[""] ?? "유형 선택"}
-        autofocus={i > 0 && i === draftParts.length}
-        onchange={(selected) => {
-          if (selected !== null) selectPart(selected, i);
-        }}
-      />
-    {/key}
-  {/each}
+  <Select
+    value={value.type || null}
+    options={typeOptions}
+    {selectedLabel}
+    placeholder={labelMap[""] ?? "유형 선택"}
+    onchange={(nextType) => {
+      if (nextType !== null) changeType(nextType);
+    }}
+  />
 </div>
 
 <style>
   .types {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+  }
+
+  .types :global(.select) {
+    width: 100%;
   }
 </style>

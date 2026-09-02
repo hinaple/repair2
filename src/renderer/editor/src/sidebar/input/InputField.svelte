@@ -159,7 +159,7 @@
   {:else if type === "select"}
     <Select
       {value}
-      onchange={(v) => selectChange(v || null)}
+      onchange={(v) => selectChange(v ?? null)}
       options={Array.isArray(props.options)
         ? props.options
         : Object.entries(props.options).map(([v, l]) => ({ value: v, label: l }))}
