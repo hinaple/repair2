@@ -35,6 +35,8 @@ export type PasteResult = {
   idMap: PasteIdMap;
 };
 
+type Resolver = (type: RecordKey, id: string) => string | null;
+
 function checkPastable(pastingType: Copiable, focussing: FocusData, project: ProjectInstance) {
   const pastableType = ClipboardOwnMap[pastingType];
   if (!pastableType) return false;
@@ -50,7 +52,8 @@ function checkPastable(pastingType: Copiable, focussing: FocusData, project: Pro
 
 export function paste(
   target: FocusData = get(currentFocus),
-  pos: Record<"x" | "y", number> = get(viewport.pos)
+  pos: Record<"x" | "y", number> = get(viewport.pos),
+  preserveExternalOutputs = false
 ) {
   try {
     if (!clipboard.has(ClipboardFormat)) return;
@@ -58,7 +61,7 @@ export function paste(
     const c: CopiedData = unpack(clipboard.readBuffer(ClipboardFormat));
     if (!c || !isRecord(c) || !c.type || !c.data) return;
 
-    processPasteData(c, target, pos);
+    processPasteData(c, target, pos, getProject(), preserveExternalOutputs);
   } catch (err) {
     console.error("An error occurred while pasting.", err);
   }
@@ -68,13 +71,14 @@ function processPasteData(
   data: CopiedData,
   focussing: FocusData,
   position: PastePosition | null = null,
-  project: ProjectInstance = getProject()
+  project: ProjectInstance = getProject(),
+  preserveExternalOutputs = false
 ) {
   const pasteAt = checkPastable(data.type, focussing, project);
   if (!pasteAt) return;
 
   return getMutator().transaction(() => {
-    const pasteResult = pasteInProject(data, position, project);
+    const pasteResult = pasteInProject(data, position, project, preserveExternalOutputs);
     if (typeof pasteAt === "string") {
       const cf = focussing as Exclude<FocusData, { type: "project" | "nodes" | "node" }>;
       const targetType = SINGULAR_RECORD_MAP[cf.type];
@@ -92,7 +96,8 @@ function processPasteData(
 function pasteInProject(
   data: CopiedData,
   position: PastePosition | null,
-  project: ProjectInstance
+  project: ProjectInstance,
+  preserveExternalOutputs = false
 ): PasteResult {
   const rootType = data.type === "nodes" ? "nodes" : SINGULAR_RECORD_MAP[data.type];
   const nodePositionBase = getNodePositionBase(data);
@@ -137,7 +142,7 @@ function pasteInProject(
     assignDataId(clonedData, record.newId);
     applyPastedNodePosition(record, clonedData, position, nodePositionBase);
     rewriteRelationIds(record.type, clonedData, (type, id) => {
-      return idMap.get(createPasteIdKey(type, id)) ?? id;
+      return idMap.get(createPasteIdKey(type, id)) ?? (preserveExternalOutputs ? id : null);
     });
     getMutator().add(record.type, record.newId, clonedData as never);
   }
@@ -236,21 +241,13 @@ function isRecordKey(value: string): value is RecordKey {
   return value in PROJECT_RECORDS;
 }
 
-function rewriteRelationIds(
-  type: RecordKey,
-  data: RecordValue,
-  resolve: (type: RecordKey, id: string) => string
-) {
+function rewriteRelationIds(type: RecordKey, data: RecordValue, resolve: Resolver) {
   const map = (RelationMap as RelationMapType)[type];
   if (!map) return;
   rewriteRelationMap(data, map, resolve);
 }
 
-function rewriteRelationMap(
-  data: unknown,
-  map: RelationTree,
-  resolve: (type: RecordKey, id: string) => string
-) {
+function rewriteRelationMap(data: unknown, map: RelationTree, resolve: Resolver) {
   if (!isRecord(data)) return;
 
   if (map.$dependsOn && map.$cases) {
@@ -280,7 +277,7 @@ function rewriteRelationLeaf(
   data: Record<string, unknown>,
   key: string,
   relation: RelationLeaf,
-  resolve: (type: RecordKey, id: string) => string
+  resolve: Resolver
 ) {
   const value = data[key];
   if (relation.$type === TYPE.ID) {
