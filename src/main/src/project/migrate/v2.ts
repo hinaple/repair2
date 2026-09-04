@@ -75,7 +75,9 @@ function stringifyType<P extends TypePayloads>(obj: { type: string[]; [k: string
 export function migrateToV2(appVersion: string, data: V1.Data) {
   const tempPluginPointers: Record<string, V2.PluginPointer> = {};
   const runtimePlugins = (
-    data.config.runtimePlugins?.map((p) => moveToRecord(p, tempPluginPointers)) ?? []
+    data.config.runtimePlugins
+      ?.filter((p) => p.name)
+      .map((p) => moveToRecord(p, tempPluginPointers)) ?? []
   ).filter((id): id is string => id !== null);
   const screenConfig: V2.ScreenConfigData =
     "screenConfig" in data.config
