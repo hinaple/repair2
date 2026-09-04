@@ -52,6 +52,12 @@ export const StepPayloadTemplate = {
       connectService: { type: nullDefault<string>(), name: nullDefault<string>() },
       send: { channel: nullDefault<string>(), data: [null] },
       disconnect: null
+    },
+    Mqtt: {
+      $types: true,
+      connect: { url: nullDefault<string>(), topics: [] },
+      publish: { topic: nullDefault<string>(), payload: nullDefault<string>() },
+      disconnect: null
     }
   },
   delay: { delayMs: 0 },

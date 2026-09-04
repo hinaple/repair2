@@ -195,6 +195,8 @@ export interface CommunicationApi {
   socketSend(channel: string, ...data: unknown[]): void;
   /** Fire-and-forget serial send. Delivery success is not reported to the plugin. */
   serialSend(data: string): void;
+  /** Fire-and-forget MQTT publish. Delivery success is not reported to the plugin. */
+  mqttPublish(topic: string, payload: string): void;
 }
 
 export interface StoreApi {

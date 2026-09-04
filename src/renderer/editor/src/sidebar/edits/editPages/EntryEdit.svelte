@@ -52,4 +52,11 @@
     binding={editor.at("payload", "whenDataIs")}
     placeholder="모든 데이터 수신"
   />
+{:else if data.data.type === "Communication.Mqtt.ondata"}
+  <InputField label="토픽" binding={editor.at("payload", "topic")} />
+  <InputField
+    label="일치 시 작동할 데이터"
+    binding={editor.at("payload", "data")}
+    placeholder="항상 작동"
+  />
 {/if}

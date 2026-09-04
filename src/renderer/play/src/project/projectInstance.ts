@@ -59,10 +59,7 @@ export class Project {
       if (entryType !== entryData.type) return false;
       if (typeof entryData.payload !== "object" || !entryData.payload || !data) return true;
 
-      if (
-        entryData.type === "Communication.serialData" &&
-        !entryData.payload.whenDataIs?.length
-      )
+      if (entryData.type === "Communication.serialData" && !entryData.payload.whenDataIs?.length)
         return true;
 
       if (
@@ -70,6 +67,14 @@ export class Project {
         "channel" in data &&
         entryData.payload.channel === data.channel &&
         !entryData.payload.data
+      )
+        return true;
+
+      if (
+        entryData.type === "Communication.Mqtt.ondata" &&
+        "topic" in data &&
+        entryData.payload.topic === data.topic &&
+        !entryData.payload.data?.length
       )
         return true;
 

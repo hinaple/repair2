@@ -10,6 +10,7 @@ import type { MainToEditorSendMap, MainToPlaySendMap } from "@shared/ipc.types";
 import type { NewDialogs } from "../system/dialog";
 import type ProjectFileManager from "../project/projectFileManager";
 import type { app, shell } from "electron";
+import type MqttConnector from "../communication/mqtt";
 
 export type SocketService = {
   connected: boolean;
@@ -48,6 +49,7 @@ export type MainService = {
   projectFileManager: ProjectFileManager | null;
   socket: SocketService;
   serial: SerialService;
+  mqtt: MqttConnector;
 };
 
 export type MainControllers = {

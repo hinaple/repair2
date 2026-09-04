@@ -46,8 +46,19 @@
     <InputField
       label="전송할 데이터"
       type="textarea"
-      seriesOption={{ binding: editor.at<string[]>("payload", "data"), min: 1 }}
+      seriesOption={{ binding: editor.at("payload", "data"), min: 1 }}
       autoResizeOpt={{ minHeight: 0 }}
     />
+  {/if}
+{:else if data.types[1] === "Mqtt"}
+  {#if data.types[2] === "connect"}
+    <InputField label="URL" binding={editor.at("payload", "url")} />
+    <InputField
+      label="구독할 토픽"
+      seriesOption={{ binding: editor.at("payload", "topics"), min: 0 }}
+    />
+  {:else if data.types[2] === "publish"}
+    <InputField label="토픽" binding={editor.at("payload", "topic")} />
+    <InputField label="전송할 메시지" binding={editor.at("payload", "payload")} />
   {/if}
 {/if}

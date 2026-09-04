@@ -12,7 +12,12 @@ export const EntryPayloadTemplate = {
       },
       connect: null
     },
-    serialData: { whenDataIs: nullDefault<string>() }
+    serialData: { whenDataIs: nullDefault<string>() },
+    Mqtt: {
+      $types: true,
+      ondata: { topic: nullDefault<string>(), data: nullDefault<string>() },
+      connect: null
+    }
   },
   shortcut: {
     ctrlKey: true,
