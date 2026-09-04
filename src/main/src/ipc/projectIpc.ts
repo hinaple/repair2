@@ -1,4 +1,5 @@
 import type { MainApp } from "../app/mainApp";
+import { logger } from "../logs/logger";
 import { ipc } from "./ipcMethods";
 
 export function setupProjectIpc(app: MainApp) {
@@ -13,11 +14,17 @@ export function setupProjectIpc(app: MainApp) {
     };
   });
 
-  ipc.handle("update-data", (evt, tempData) => {
+  ipc.handle("update-data", async (evt, tempData) => {
+    const saved = await app.controllers.project.saveData(tempData);
+    try {
+      await app.service.pluginManager?.mainRuntime.restart();
+    } catch (error) {
+      logger.error("Runtime plugin utility process restart failed.", error as any);
+    }
     app.message.sendToPlay("data", {
       ...tempData,
       globalStyles: app.state.project.cssCode
     });
-    return app.controllers.project.saveData(tempData);
+    return saved;
   });
 }

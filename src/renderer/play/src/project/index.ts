@@ -26,14 +26,18 @@ let onReadyProm: Promise<void> = new Promise(
 export function onReady(): Promise<void> {
   return onReadyProm;
 }
-export function updateData(data = ipc.sendSync("request-data")): Project {
+export function updateData(
+  data = ipc.sendSync("request-data"),
+  forceRuntimePluginRestart = false
+): Project {
   project = new Project(data);
   console.log(project);
   initShortcuts(project.findAllEntries("shortcut"));
   activateRuntimePlugins(
     project.data.config.runtimePlugins
       ?.map((p) => project.data.pluginPointers.get(p))
-      .filter((p): p is Types.PluginPointer => !!p) ?? []
+      .filter((p): p is Types.PluginPointer => !!p) ?? [],
+    forceRuntimePluginRestart
   );
 
   sendTotalInfo();
@@ -47,7 +51,7 @@ export function updateData(data = ipc.sendSync("request-data")): Project {
 
 ipc.on("data", (event, data) => {
   console.log(data);
-  updateData(data);
+  updateData(data, true);
 });
 
 ipc.on("global-css", (event, css) => {

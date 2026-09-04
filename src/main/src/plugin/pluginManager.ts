@@ -655,10 +655,9 @@ export class PluginManager {
     }
   }
 
-  destroy() {
+  async destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.mainRuntime.disposeAll();
-    return this.closeAllWatchers();
+    await Promise.all([this.mainRuntime.shutdown(), this.closeAllWatchers()]);
   }
 }

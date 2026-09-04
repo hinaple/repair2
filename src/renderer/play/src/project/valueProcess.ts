@@ -7,8 +7,14 @@ export function process(vp: Types.ValueProcess | undefined, string: string = "")
   if (vp.type === "replaceAll")
     return string.replaceAll(vp.payload.from ?? "", vp.payload.to ?? "");
   if (vp.type === "removeAll") return string.replaceAll(vp.payload.removing ?? "", "");
-  if (vp.type === "replaceAllRegex")
-    return string.replace(new RegExp(vp.payload.regex ?? "", "g"), vp.payload.to ?? "");
+  if (vp.type === "replaceAllRegex") {
+    try {
+      return string.replace(new RegExp(vp.payload.regex ?? "", "g"), vp.payload.to ?? "");
+    } catch (error) {
+      console.error("Custom RegExp Error", error);
+      return string;
+    }
+  }
   if (vp.type === "toLowerCase") return string.toLowerCase();
   if (vp.type === "toUpperCase") return string.toUpperCase();
   if (vp.type === "trim") return string.trim();

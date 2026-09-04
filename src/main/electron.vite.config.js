@@ -77,10 +77,8 @@ if (argv.report) {
 export default defineConfig({
   main: {
     build: {
-      lib: {
-        entry: join(__dirname, "src/index.ts")
-      },
       rollupOptions: {
+        input: join(__dirname, "src/index.ts"),
         plugins,
         output: {
           manualChunks: {

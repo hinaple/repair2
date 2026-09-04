@@ -83,5 +83,6 @@ export default class SocketConnector {
     if (!this.socket) return;
     this.socket.disconnect();
     this.socket = null;
+    this.connected = false;
   }
 }

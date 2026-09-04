@@ -3,7 +3,7 @@ import { getProject } from "../project";
 import { registerUtils } from "./repairUtils";
 import { sendChanges } from "./runtimeMonitor";
 import { registerIsPreloaded } from "../project/resource";
-import { getFileType, type FileType } from "@shared/resourceUtils";
+import { getExt, getFileType, type FileType } from "@shared/resourceUtils";
 import type { Types } from "@shared/projectData/types";
 import { registerPluginContextApi } from "./plugin/pluginContext";
 
@@ -42,7 +42,7 @@ export function genElement(resource: Types.Resource, doClone = false, onlyNew = 
     }
   }
 
-  const fileType = getFileType(resource.src);
+  const fileType = getFileType(getExt(resource.src));
   if (fileType === "image") {
     const img = document.createElement("img");
     img.src = getAssetDir(resource.src);
@@ -66,7 +66,7 @@ export function addPreload(resourceId: string) {
   const el = genElement(resource, false, true);
   if (!el) return;
 
-  const type = getFileType(resource.src);
+  const type = getFileType(getExt(resource.src));
   if (!type) return;
 
   preloads.set(resourceId, {

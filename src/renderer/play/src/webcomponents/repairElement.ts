@@ -40,9 +40,13 @@ function genEl(element: Types.Element, registerUnsubscriber: (id: string, cb: ()
     else if (
       element.payload.allowedType === "regex" &&
       typeof element.payload.allowedRegex === "string"
-    )
-      allowedRegex = new RegExp(element.payload.allowedRegex, "g");
-    else
+    ) {
+      try {
+        allowedRegex = new RegExp(element.payload.allowedRegex, "g");
+      } catch (error) {
+        console.error("Cutom RegExp Error", error);
+      }
+    } else
       allowedRegex =
         element.payload.allowedType in regexMap
           ? regexMap[element.payload.allowedType as keyof typeof regexMap]
@@ -156,7 +160,9 @@ export default class RepairElement extends HTMLElement {
     this.listeners = element.listeners.map((l) => getRef("listeners", l, false));
 
     if (element.type === "input" && element.payload.autofocus) this.willFocus = true;
-    this.realEl = genEl(element, this.registerUnsubscriber);
+    this.realEl = genEl(element, (id, cb) => {
+      this.registerUnsubscriber(id, cb);
+    });
 
     const localEvents = this.setListeners();
     if (this.realEl) {

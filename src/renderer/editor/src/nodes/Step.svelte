@@ -4,7 +4,7 @@
   import { data } from "../lib/editUtils/dataAction";
   import registerHighlight, { type HighlightData } from "../lib/highlight";
   import { startMonitoring } from "../lib/runtimeMonitor.svelte";
-  import { grabbing, reload } from "../lib/stores";
+  import { reload } from "../lib/stores";
   import { StepTypes } from "../lib/translate";
   import { getMutator } from "../project/store";
   import type { SortableProps } from "./types";

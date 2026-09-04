@@ -291,7 +291,7 @@
   .triangle {
     position: absolute;
     right: 10px;
-    bottom: -8px;
+    bottom: -7px;
     border: solid;
     border-width: 6px 6px 0 6px;
     border-color: #000 transparent transparent transparent;

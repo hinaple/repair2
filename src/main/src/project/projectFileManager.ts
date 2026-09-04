@@ -19,6 +19,21 @@ type ZipWithErrorEvent = {
   on(event: "error", handler: (err: unknown) => void): void;
 };
 
+const EMPTY_DIR_RETRY_COUNT = 20;
+const EMPTY_DIR_RETRY_DELAY_MS = 50;
+
+async function emptyProjectDir(path: string) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await emptyDir(path);
+      return;
+    } catch (error: any) {
+      if (error?.code !== "EPERM" || attempt >= EMPTY_DIR_RETRY_COUNT) throw error;
+      await new Promise((resolve) => setTimeout(resolve, EMPTY_DIR_RETRY_DELAY_MS));
+    }
+  }
+}
+
 export default class ProjectFileManager {
   exporting = false;
   importing = false;
@@ -86,7 +101,7 @@ export default class ProjectFileManager {
       this.importing = true;
       await this.#beforeImport?.();
 
-      await emptyDir(this.#app.paths.dataDir);
+      await emptyProjectDir(this.#app.paths.dataDir);
 
       const zip = new (await import("node-stream-zip")).async({
         file: filePath,

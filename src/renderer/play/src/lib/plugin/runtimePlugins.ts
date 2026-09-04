@@ -149,7 +149,7 @@ function activateRuntimePlugin(
     localGen !== myLocalGen ||
     generation !== currentRuntimePluginConfigs.get(pluginName)?.generation;
 
-  const hmrUnsub = subscribePluginHMR("runtime", pluginName, "default", ({ api, info }) => {
+  const hmrUnsub = subscribePluginHMR("runtime", pluginName, "default", ({ api: source, info }) => {
     async function setup() {
       const myLocalGen = ++localGen;
       const activationId = createActivationId(pluginName, generation, myLocalGen);
@@ -161,7 +161,7 @@ function activateRuntimePlugin(
           pluginId: pluginName,
           pluginType: "runtime"
         });
-        if (typeof api === "function") api = await api(); //plugin can be a factory
+        const api = typeof source === "function" ? await source() : source;
         if (isDeadGeneration(myLocalGen) || !api) {
           ctx.lifecycle.dispose?.();
           return;
@@ -305,14 +305,17 @@ function pointerToConfig(pointers: PluginPointer[]): RuntimePluginConfigs {
   );
 }
 
-export function activateRuntimePlugins(pointers: PluginPointer[] = []) {
+export function activateRuntimePlugins(pointers: PluginPointer[] = [], forceRestart = false) {
   const tempConfig = pointerToConfig(Array.isArray(pointers) ? pointers : []);
   const removeKeys = new Set(currentRuntimePluginConfigs.keys());
   tempConfig.forEach((config, name) => {
     if (removeKeys.delete(name)) {
       const before = currentRuntimePluginConfigs.get(name)!;
       config.generation = before.generation;
-      if (comparePayloads(config.payloads, before.payloads)) return;
+      if (comparePayloads(config.payloads, before.payloads)) {
+        if (forceRestart) activeRuntimePlugins.get(name)?.setup();
+        return;
+      }
     }
     activateRuntimePlugin(name, config.payloads, ++config.generation);
   });
