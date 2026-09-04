@@ -1,9 +1,9 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import { checkRelease, run } from "./release/check.mjs";
+import { openEditor, resolveEditor } from "./release/editor.mjs";
 import { addReleaseMarkers, genDefaultReleaseNote } from "./release/note.mjs";
 
 const git = (...args) => run("git", args).stdout.trim();
@@ -36,18 +36,6 @@ function findOpenReleasePr() {
     ]).stdout
   );
   return prs.find((pr) => pr.headRefName === "develop" && !pr.isCrossRepository);
-}
-
-function runEditor(editor, file) {
-  const quotedFile = `"${file.replaceAll('"', '""')}"`;
-  const result = spawnSync(`${editor} ${quotedFile}`, { shell: true, stdio: "inherit" });
-  if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`Editor exited with code ${result.status}.`);
-}
-
-function commandExists(command) {
-  const finder = process.platform === "win32" ? "where.exe" : "which";
-  return run(finder, [command], { allowFailure: true }).status === 0;
 }
 
 function printRelease(release) {
@@ -114,12 +102,9 @@ try {
     noteDirectory = mkdtempSync(join(tmpdir(), "repair2-release-"));
     const noteFile = join(noteDirectory, "release-note.md");
     writeFileSync(noteFile, genDefaultReleaseNote(), "utf8");
-    const editor =
-      process.env.RELEASE_EDITOR ||
-      process.env.VISUAL ||
-      process.env.EDITOR ||
-      (commandExists("code") ? "code --wait" : "notepad.exe");
-    runEditor(editor, noteFile);
+    const editor = resolveEditor();
+    console.log(`Opening release note with ${editor.command} (${editor.source}).`);
+    openEditor(editor.command, noteFile);
 
     const note = readFileSync(noteFile, "utf8").trim();
     if (!note) throw new Error("Release cancelled because the release note is empty.");
