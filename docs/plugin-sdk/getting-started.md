@@ -16,11 +16,11 @@ Your plugin package should usually be an ES module package. The version range sh
 
 ```json
 {
-    "name": "my-plugin",
-    "type": "module",
-    "devDependencies": {
-        "@fainthit/repair2-plugin-sdk": "^0.2.2"
-    }
+  "name": "my-plugin",
+  "type": "module",
+  "devDependencies": {
+    "@fainthit/repair2-plugin-sdk": "^0.2.2"
+  }
 }
 ```
 
@@ -29,7 +29,7 @@ The package is type-first. Importing types is the normal way to use it:
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default function hello({ ctx }) {
-    ctx.logger.info("hello from a function plugin");
+  ctx.logger.info("hello from a function plugin");
 }
 ```
 
@@ -68,9 +68,9 @@ Plugin manifests are JSON files. Use the schema for editor completion and author
 
 ```json
 {
-    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
-    "name": "my-plugin",
-    "type": "function"
+  "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+  "name": "my-plugin",
+  "type": "function"
 }
 ```
 
@@ -80,20 +80,20 @@ The smallest useful manifests look like this:
 
 ```json
 {
-    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
-    "name": "my-element",
-    "type": "element"
+  "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+  "name": "my-element",
+  "type": "element"
 }
 ```
 
 ```json
 {
-    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
-    "name": "my-runtime",
-    "type": "runtime",
-    "steps": {
-        "show": ["message"]
-    }
+  "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+  "name": "my-runtime",
+  "type": "runtime",
+  "steps": {
+    "show": ["message"]
+  }
 }
 ```
 
@@ -101,15 +101,15 @@ For a runtime plugin with a main-process entry, add `main`:
 
 ```json
 {
-    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
-    "name": "my-runtime-main",
-    "type": "runtime",
-    "entry": "src/renderer/index.js",
-    "outDir": "dist/renderer",
-    "main": {
-        "entry": "src/main/index.js",
-        "outDir": "dist/main"
-    }
+  "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+  "name": "my-runtime-main",
+  "type": "runtime",
+  "entry": "src/renderer/index.js",
+  "outDir": "dist/renderer",
+  "main": {
+    "entry": "src/main/index.js",
+    "outDir": "dist/main"
+  }
 }
 ```
 
@@ -119,13 +119,13 @@ Element, frame, function, and transition plugins can declare multiple renderer e
 
 ```json
 {
-    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
-    "name": "button-pack",
-    "type": "element",
-    "exports": {
-        "primary": ["label"],
-        "secondary": ["label"]
-    }
+  "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+  "name": "button-pack",
+  "type": "element",
+  "exports": {
+    "primary": ["label"],
+    "secondary": ["label"]
+  }
 }
 ```
 
@@ -162,8 +162,8 @@ TypeScript is also fine when Vite can handle your source entry. JavaScript is th
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default function run({ attributes, ctx }) {
-    ctx.logger.info("function plugin ran", attributes);
-    return true;
+  ctx.logger.info("function plugin ran", attributes);
+  return true;
 }
 ```
 
@@ -174,14 +174,14 @@ Function plugins are short-lived. If you subscribe to anything, clean it up befo
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
 export default function mount({ attributes, ctx }, { target, dispatchEvent }) {
-    target.textContent = attributes.label ?? ctx.plugin.id;
+  target.textContent = attributes.label ?? ctx.plugin.id;
 
-    const onClick = () => dispatchEvent("click");
-    target.addEventListener("click", onClick);
+  const onClick = () => dispatchEvent("click");
+  target.addEventListener("click", onClick);
 
-    return () => {
-        target.removeEventListener("click", onClick);
-    };
+  return () => {
+    target.removeEventListener("click", onClick);
+  };
 }
 ```
 
@@ -194,12 +194,12 @@ For a plugin with multiple element or frame exports, type each named export:
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
 export function primary({ attributes }, { target }) {
-    target.textContent = attributes.label ?? "Primary";
+  target.textContent = attributes.label ?? "Primary";
 }
 
 /** @type {import("@fainthit/repair2-plugin-sdk").ElementExport<{ label?: string }>} */
 export function secondary({ attributes }, { target }) {
-    target.textContent = attributes.label ?? "Secondary";
+  target.textContent = attributes.label ?? "Secondary";
 }
 ```
 

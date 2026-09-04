@@ -1,152 +1,137 @@
-<script>
-    import { get } from "svelte/store";
-    import Icon from "../assets/icons/Icon.svelte";
-    import { currentFocus, focusData } from "../sidebar/editUtils";
-    import { grabbing, reload } from "../lib/stores";
-    import { StepTypes } from "../lib/translate";
-    import Component from "./component/Component.svelte";
-    import { outClicked, rightclick } from "../lib/contextMenu/contextUtils";
-    import { onDestroy } from "svelte";
-    import registerHighlight from "../lib/highlight";
-    import { genClipboardFn } from "../lib/clipboard";
-    import { startMonitoring } from "../lib/runtimeMonitor.svelte";
+<script lang="ts">
+  import { onDestroy } from "svelte";
+  import Icon from "../assets/icons/Icon.svelte";
+  import { data } from "../lib/editUtils/dataAction";
+  import registerHighlight, { type HighlightData } from "../lib/highlight";
+  import { startMonitoring } from "../lib/runtimeMonitor.svelte";
+  import { reload } from "../lib/stores";
+  import { StepTypes } from "../lib/translate";
+  import { getMutator } from "../project/store";
+  import type { SortableProps } from "./types";
+  import Component from "./component/Component.svelte";
 
-    let {
-        item: step,
-        handle = $bindable(null),
-        el = $bindable(null),
-        remove,
-        noGrab = false,
-        nodeCountChanged
-    } = $props();
+  let {
+    id,
+    onpointerdown,
+    noGrab = false,
+    parents
+  }: SortableProps & { parents: string[] } = $props();
 
-    $effect(() => {
-        step.type;
-        step.title;
-        reload("nodeMoved");
-    });
+  const editor = $derived(getMutator().record("steps", id));
+  const step = $derived(editor.value);
 
-    const clipboardFn = genClipboardFn("step", step, remove);
+  $effect(() => {
+    step.type;
+    step.title;
+    reload("nodeMoved");
+  });
 
-    const contextmenu = [
-        // { label: "플로우 실행", click: () => {} },
-        // { label: "단독 실행", click: () => {} },
-        // { type: "seperator" },
-        {
-            label: "잘라내기",
-            click: clipboardFn.cut
-        },
-        {
-            label: "복사",
-            click: clipboardFn.copy
-        },
-        {
-            label: "붙여넣기",
-            click: clipboardFn.paste
-        },
-        { type: "seperator" },
-        {
-            label: "삭제",
-            click: () => {
-                remove();
-                return true;
-            },
-            action: "remove"
-        }
-    ];
+  let hlData = $derived.by<HighlightData>(() => {
+    if (step.type === "Others.setVariable")
+      return step.payload.variableId ? { type: "variable", data: step.payload.variableId } : null;
+    if (step.type === "Others.executePlugin") {
+      const name = getMutator().record("pluginPointers", step.payload.plugin).value.name;
+      return name ? { type: "plugin", data: name } : null;
+    }
+    if (step.type === "Others.runtimePluginStep")
+      return step.payload.pluginName ? { type: "plugin", data: step.payload.pluginName } : null;
+    return null;
+  });
 
-    let hlData = $derived.by(() => {
-        if (step.type === "Others.setVariable")
-            return { type: "variable", data: step.payload?.variableId, active: true };
-        else if (step.type === "Others.executePlugin")
-            return { type: "plugin", data: step.payload?.plugin.name, active: true };
-        else if (step.type === "Others.runtimePluginStep")
-            return { type: "plugin", data: step.payload?.pluginName, active: true };
-        return { active: false };
-    });
+  let activated = $state(false);
+  const unsubscribe = startMonitoring("steps", id, (value) => (activated = value));
+  onDestroy(unsubscribe);
 
-    let activated = $state(false);
-    const unsub = startMonitoring("steps", step.id, (f) => (activated = f));
+  let title = $derived.by(() => {
+    if (step.title) return step.title;
 
-    onDestroy(() => {
-        unsub();
-        if (get(currentFocus).obj === step) {
-            focusData("project");
-        }
-    });
+    const Default = StepTypes[step.type as keyof typeof StepTypes];
+    if (step.type === "delay") return `${Default} ${step.payload.delayMs}ms`;
+    if (step.type === "Communication.Serial.send") return `시리얼 통신: ${step.payload.data}`;
+    if (step.type === "Communication.Socket.send")
+      return (
+        `소켓 통신: ${step.payload.channel}` + (step.payload.data ? `:${step.payload.data}` : "")
+      );
+    if (step.type === "Component.remove" && step.payload.componentAlias)
+      return `${step.payload.componentAlias} ${Default}`;
+    if (step.type === "Others.eventEmit")
+      return `${step.payload.channel}` + (step.payload.data ? `:${step.payload.data}` : "");
+    if (step.type.startsWith("Audio.") && (step.payload as any).channel)
+      return `${Default}(${(step.payload as any).channel})`;
+
+    if (step.type === "") return "빈 스텝";
+    return StepTypes[step.type as keyof typeof StepTypes] || step.type;
+  });
 </script>
 
 <div
-    class={["step", $currentFocus.obj === step && "focus", activated && "activated"]}
-    bind:this={el}
-    onpointerdown={(evt) => {
-        if (evt.button || $grabbing) return;
-        evt.stopPropagation();
-        focusData("step", step, { clipboardFn });
-        outClicked();
-    }}
-    use:rightclick={contextmenu}
-    use:registerHighlight={hlData}
+  class={["step", activated && "activated"]}
+  use:data={{ type: "step", id, parents }}
+  use:registerHighlight={hlData}
 >
-    <div class="info">
-        <div class="handle" bind:this={handle}>
-            <Icon
-                icon="hamburger"
-                color={activated ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
-                size={8}
-            />
-        </div>
-        <div class="title-wrapper">
-            <div class="title">
-                {step.displayTitle ?? StepTypes[step.type] ?? "빈 스텝"}
-            </div>
-        </div>
+  <div class="info">
+    <div class="handle" {onpointerdown}>
+      <Icon
+        icon="hamburger"
+        color={activated ? "rgba(255,255,255,.5)" : "rgba(0,0,0,.5)"}
+        size={8}
+      />
     </div>
-    {#if step.type === "Component.create"}
-        <Component payload={step.payload} {noGrab} {nodeCountChanged} />
-    {/if}
+    <div class="title-wrapper">
+      <div class="title">
+        {title}
+      </div>
+    </div>
+  </div>
+  {#if step.type === "Component.create"}
+    <Component
+      id={step.payload.componentId}
+      parents={[id, ...parents]}
+      {noGrab}
+      onNodeCountChanged={() => reload("nodeMoved")}
+    />
+  {/if}
 </div>
 
 <style>
-    .step {
-        width: 100%;
-        font-weight: 600;
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-    }
-    .step.activated {
-        background-color: var(--orange);
-        color: #fff;
-    }
-    .handle {
-        box-sizing: border-box;
-        padding-inline: 6px;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: grab;
-    }
-    .info {
-        height: 30px;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        overflow-x: hidden;
-    }
-    .title-wrapper {
-        height: 100%;
-        width: calc(100% - 25px);
-        position: relative;
-    }
-    .title {
-        transform: translateY(5.5px);
-        width: 100%;
-        position: absolute;
-        text-overflow: ellipsis;
-        word-break: break-all;
-        overflow-x: hidden;
-        white-space: nowrap;
-    }
+  .step {
+    width: 100%;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+  .step.activated {
+    background-color: var(--orange);
+    color: #fff;
+  }
+  .handle {
+    box-sizing: border-box;
+    padding-inline: 6px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+  }
+  .info {
+    height: 30px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    overflow-x: hidden;
+  }
+  .title-wrapper {
+    height: 100%;
+    width: calc(100% - 25px);
+    position: relative;
+  }
+  .title {
+    transform: translateY(5.5px);
+    width: 100%;
+    position: absolute;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 </style>

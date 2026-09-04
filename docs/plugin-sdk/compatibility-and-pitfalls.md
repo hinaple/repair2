@@ -16,9 +16,9 @@ Use the JSON schema for editor support:
 
 ```json
 {
-    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
-    "name": "my-plugin",
-    "type": "runtime"
+  "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+  "name": "my-plugin",
+  "type": "runtime"
 }
 ```
 
@@ -44,13 +44,13 @@ Runtime and runtime main entries can be object exports or factory exports.
 
 ```js
 export default {
-    activate() {}
+  activate() {}
 };
 ```
 
 ```js
 export default () => ({
-    activate() {}
+  activate() {}
 });
 ```
 
@@ -58,7 +58,7 @@ Element and frame plugins are mount function exports. REPAIR2 calls the selected
 
 ```js
 export default function mount({ attributes, ctx }, options) {
-    // ...
+  // ...
 }
 ```
 
@@ -97,8 +97,9 @@ export default [{ opacity: 0 }, { opacity: 1 }];
 ```
 
 ```js
-export function fade({ component }) {
-    return [{ opacity: 0 }, { opacity: 1 }];
+export function fade({ attributes, ctx }) {
+  ctx.logger.debug("fade", ctx.component.id, attributes);
+  return [{ opacity: 0 }, { opacity: 1 }];
 }
 ```
 
@@ -110,8 +111,8 @@ If a manifest declares renderer exports, the plugin entry must export every decl
 
 ```json
 {
-    "type": "function",
-    "exports": ["check", "run"]
+  "type": "function",
+  "exports": ["check", "run"]
 }
 ```
 
@@ -128,19 +129,19 @@ Runtime step methods are looked up by name. If the manifest declares a step name
 
 ```json
 {
-    "name": "window-tools",
-    "type": "runtime",
-    "steps": {
-        "open": ["target"]
-    }
+  "name": "window-tools",
+  "type": "runtime",
+  "steps": {
+    "open": ["target"]
+  }
 }
 ```
 
 ```js
 export default {
-    open({ attributes }) {
-        // ...
-    }
+  open({ attributes }) {
+    // ...
+  }
 };
 ```
 
@@ -156,9 +157,9 @@ When renderer runtime code calls `main.foo()`, it crosses IPC. It always returns
 
 ```js
 export default {
-    async activate({ main }) {
-        const result = await main?.foo("value");
-    }
+  async activate({ main }) {
+    const result = await main?.foo("value");
+  }
 };
 ```
 

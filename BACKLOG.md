@@ -39,6 +39,8 @@
 - Add default settings for transition plugins.
 - Validate/report invalid plugin type or name for pointer-free `usePlugin()` calls.
 - Changing plugin selection should reset or reconcile `exportName`; stale exports from the previous plugin can make the new plugin look unavailable.
+- Plugin context give variable handle like component handle
+- Minimize plugin context imports and replace them with `registerPluginContextApi()`
 
 ## Editor Plugin Management
 

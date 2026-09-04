@@ -13,14 +13,14 @@ Main entries run in the Electron main process and should be treated as trusted c
 
 ```json
 {
-    "name": "bridge-plugin",
-    "type": "runtime",
-    "entry": "src/renderer/index.js",
-    "outDir": "dist/renderer",
-    "main": {
-        "entry": "src/main/index.js",
-        "outDir": "dist/main"
-    }
+  "name": "bridge-plugin",
+  "type": "runtime",
+  "entry": "src/renderer/index.js",
+  "outDir": "dist/renderer",
+  "main": {
+    "entry": "src/main/index.js",
+    "outDir": "dist/main"
+  }
 }
 ```
 
@@ -37,15 +37,15 @@ import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 import type { Attr, Main, Renderer } from "./plugin-types";
 
 const plugin: RuntimeExport<Attr, Main, Renderer> = {
-    async activate({ ctx, main }) {
-        const value = await main?.readValue();
-        ctx.logger.info(value);
-    },
-    renderer: {
-        notify(message) {
-            console.log(message);
-        }
+  async activate({ ctx, main }) {
+    const value = await main?.readValue();
+    ctx.logger.info(value);
+  },
+  renderer: {
+    notify(message) {
+      console.log(message);
     }
+  }
 };
 
 export default plugin;
@@ -62,14 +62,14 @@ import type { RuntimeMainExport } from "@fainthit/repair2-plugin-sdk";
 import type { Attr, Main, Renderer } from "./plugin-types";
 
 const main: RuntimeMainExport<Attr, Main, Renderer> = {
-    activate({ renderer }) {
-        renderer.notify("main activated");
-    },
-    main: {
-        readValue() {
-            return "value from main";
-        }
+  activate({ renderer }) {
+    renderer.notify("main activated");
+  },
+  main: {
+    readValue() {
+      return "value from main";
     }
+  }
 };
 
 export default main;
@@ -83,15 +83,15 @@ Define shared method map types and import them on both sides:
 
 ```ts
 export type Attr = {
-    label: string;
+  label: string;
 };
 
 export type Main = {
-    readValue(): string;
+  readValue(): string;
 };
 
 export type Renderer = {
-    notify(message: string): void;
+  notify(message: string): void;
 };
 ```
 
@@ -139,9 +139,9 @@ Both sides may export factories. Renderer runtime factories may be async. Runtim
 import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 
 const plugin: RuntimeExport = () => ({
-    activate({ ctx }) {
-        ctx.logger.info("renderer activated");
-    }
+  activate({ ctx }) {
+    ctx.logger.info("renderer activated");
+  }
 });
 
 export default plugin;
@@ -151,9 +151,9 @@ export default plugin;
 import type { RuntimeMainExport } from "@fainthit/repair2-plugin-sdk";
 
 const main: RuntimeMainExport = () => ({
-    activate({ ctx }) {
-        ctx.lifecycle.onDispose(() => {});
-    }
+  activate({ ctx }) {
+    ctx.lifecycle.onDispose(() => {});
+  }
 });
 
 export default main;

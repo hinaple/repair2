@@ -1,149 +1,95 @@
-<script>
-    import InputField from "../../input/InputField.svelte";
-    import { StepTypes } from "../../../lib/translate";
-    import { focusData } from "../../editUtils";
-    import Components from "./stepEdits/Components.svelte";
-    import Audios from "./stepEdits/Audios.svelte";
-    import Preloads from "./stepEdits/Preloads.svelte";
-    import Communication from "./stepEdits/Communications.svelte";
-    import { pasted } from "../../../lib/clipboard";
-    import RuntimePluginStep from "./stepEdits/RuntimePluginStep.svelte";
+<script lang="ts">
+  import { focusData } from "../../../lib/editUtils/focus";
+  import { StepTypes } from "../../../lib/translate";
+  import InputField from "../../input/InputField.svelte";
+  import Audios from "./stepEdits/Audios.svelte";
+  import Communications from "./stepEdits/Communications.svelte";
+  import Components from "./stepEdits/Components.svelte";
+  import Preloads from "./stepEdits/Preloads.svelte";
+  import RuntimePluginStep from "./stepEdits/RuntimePluginStep.svelte";
+  import type { RecordEditor } from "../../../project/mutator";
 
-    const { data } = $props();
+  const { editor }: { editor: RecordEditor<"steps"> } = $props();
+  let data = $derived(editor.value);
+  let typeParts = $derived(data.type.split("."));
+
+  function typeChanged() {
+    const current = editor.value;
+    if (current.type === "Component.create" && current.payload.componentId)
+      focusData("component", current.payload.componentId, [editor.id]);
+  }
 </script>
 
-<InputField label="스텝 이름" value={data.title} setter={(d) => (data.title = d)} />
+<InputField label="스텝 이름" binding={editor.field("title")} />
 <InputField
-    label="스텝 유형"
-    type="type"
-    value={data}
-    options={StepTypes}
-    onchange={() => {
-        if (data.type === "Component.create")
-            focusData("component", data.payload, {
-                preview: data.payload,
-                clipboardFn: {
-                    paste: () => pasted({ type: "component", obj: data.payload })
-                }
-            });
-    }}
+  label="스텝 유형"
+  type="type"
+  binding={editor}
+  typeName="step"
+  options={StepTypes}
+  onchange={typeChanged}
 />
 <hr />
-{#if data.types[0] === "Component"}
-    <Components {data} />
-{:else if data.types[0] === "Audio"}
-    <Audios {data} />
-{:else if data.types[0] === "Preload"}
-    <Preloads {data} />
-{:else if data.types[0] === "Communication"}
-    <Communication {data} />
-{:else if data.types[0] === "delay"}
-    <InputField
-        label="딜레이(ms)"
-        value={data.payload.delayMs}
-        setter={(d) => (data.payload.delayMs = d)}
-        type="number"
-        min="0"
-    />
+{#if typeParts[0] === "Component"}
+  <Components {editor} />
+{:else if typeParts[0] === "Audio"}
+  <Audios {editor} />
+{:else if typeParts[0] === "Preload"}
+  <Preloads {editor} />
+{:else if typeParts[0] === "Communication"}
+  <Communications {editor} />
+{:else if data.type === "delay"}
+  <InputField label="딜레이(ms)" binding={editor.at("payload", "delayMs")} type="number" min="0" />
 {:else if data.type === "Others.customReset"}
-    <InputField
-        label="음향 초기화"
-        value={data.payload.audios}
-        setter={(d) => (data.payload.audios = d)}
-        type="checkbox"
-    />
-    <InputField
-        label="변수 초기화"
-        value={data.payload.variables}
-        setter={(d) => (data.payload.variables = d)}
-        type="checkbox"
-    />
-    <InputField
-        label="컴포넌트 전체 삭제"
-        value={data.payload.components}
-        setter={(d) => (data.payload.components = d)}
-        type="checkbox"
-    />
-    <InputField
-        label="스텝 초기화"
-        value={data.payload.steps}
-        setter={(d) => (data.payload.steps = d)}
-        type="checkbox"
-    />
-    <InputField
-        label="프리로드 초기화"
-        value={data.payload.preloads}
-        setter={(d) => (data.payload.preloads = d)}
-        type="checkbox"
-    />
-    <InputField
-        label="활성 진입점 초기화"
-        value={data.payload.entries}
-        setter={(d) => (data.payload.entries = d)}
-        type="checkbox"
-    />
-    <InputField
-        label="런타임 플러그인 초기화"
-        value={data.payload.runtimePlugins}
-        setter={(d) => (data.payload.runtimePlugins = d)}
-        type="checkbox"
-    />
+  <InputField label="음향 초기화" binding={editor.at("payload", "audios")} type="checkbox" />
+  <InputField label="변수 초기화" binding={editor.at("payload", "variables")} type="checkbox" />
+  <InputField
+    label="컴포넌트 전체 삭제"
+    binding={editor.at("payload", "components")}
+    type="checkbox"
+  />
+  <InputField label="스텝 초기화" binding={editor.at("payload", "steps")} type="checkbox" />
+  <InputField label="프리로드 초기화" binding={editor.at("payload", "preloads")} type="checkbox" />
+  <InputField
+    label="활성 진입점 초기화"
+    binding={editor.at("payload", "entries")}
+    type="checkbox"
+  />
+  <InputField
+    label="런타임 플러그인 초기화"
+    binding={editor.at("payload", "runtimePlugins")}
+    type="checkbox"
+  />
 {:else if data.type === "Others.eventEmit"}
-    <InputField
-        label="이벤트 채널"
-        value={data.payload.channel}
-        setter={(d) => (data.payload.channel = d)}
-    />
-    <InputField
-        label="데이터"
-        value={data.payload.data}
-        setter={(d) => (data.payload.data = d)}
-        type="textarea"
-    />
+  <InputField label="이벤트 채널" binding={editor.at("payload", "channel")} />
+  <InputField label="데이터" binding={editor.at("payload", "data")} type="textarea" />
 {:else if data.type === "Others.setVariable"}
-    <InputField
-        label="수정할 변수"
-        value={data.payload.variableId}
-        setter={(d) => (data.payload.variableId = d)}
-        type="variable"
-    />
-    <InputField
-        label="수정할 값"
-        value={data.payload.value}
-        setter={(d) => (data.payload.value = d)}
-        type="input"
-    />
+  <InputField label="수정할 변수" binding={editor.at("payload", "variableId")} type="variable" />
+  <InputField label="수정할 값" binding={editor.at("payload", "value")} />
 {:else if data.type === "Others.executePlugin"}
-    <InputField
-        label="플러그인"
-        value={data.payload.plugin}
-        type="plugin"
-        pluginType="function"
-        canUnselect={false}
-    />
-    <InputField
-        label="끝날 때까지 기다리기"
-        value={data.payload.waitTillEnd}
-        setter={(d) => (data.payload.waitTillEnd = d)}
-        type="checkbox"
-    />
+  <InputField
+    label="플러그인"
+    binding={editor.at("payload", "plugin")}
+    type="plugin"
+    pluginType="function"
+    canUnselect={false}
+  />
+  <InputField
+    label="끝날 때까지 기다리기"
+    binding={editor.at("payload", "waitTillEnd")}
+    type="checkbox"
+  />
 {:else if data.type === "Others.runtimePluginStep"}
-    <RuntimePluginStep {data} />
+  <RuntimePluginStep {editor} />
 {:else if data.type === "Others.script"}
-    <InputField
-        label="스크립트 코드"
-        value={data.payload.code}
-        setter={(d) => (data.payload.code = d)}
-        type="textarea"
-        code
-        placeholder="//Enter JS script"
-        autoResizeOpt={{ minHeight: 100 }}
-    />
+  <InputField
+    label="스크립트 코드"
+    binding={editor.at("payload", "code")}
+    type="textarea"
+    code
+    placeholder="//Enter JS script"
+    autoResizeOpt={{ minHeight: 100 }}
+  />
 {:else if data.type === "Others.log"}
-    <InputField
-        label="로그 내용"
-        value={data.payload.content}
-        setter={(d) => (data.payload.content = d)}
-        type="textarea"
-    />
+  <InputField label="로그 내용" binding={editor.at("payload", "content")} type="textarea" />
 {/if}

@@ -1,0 +1,191 @@
+import type { Types } from "@shared/projectData/types";
+
+export const StepTypes = {
+  delay: "딜레이",
+
+  Component: "컴포넌트",
+  create: "생성",
+  remove: "제거",
+  modify: "수정",
+  clear: "전체 제거",
+  "Component.create": "컴포넌트 생성",
+  "Component.remove": "컴포넌트 제거",
+  "Component.modify": "컴포넌트 수정",
+  "Component.clear": "컴포넌트 전체 제거",
+
+  Audio: "오디오",
+  play: "재생",
+  pause: "일시정지",
+  resume: "재개",
+  changeVolume: "음량 변경",
+  reset: "전체 초기화",
+  "Audio.play": "오디오 재생",
+  "Audio.pause": "오디오 일시정지",
+  "Audio.resume": "오디오 재개",
+  "Audio.changeVolume": "오디오 음량 변경",
+  "Audio.reset": "오디오 전체 초기화",
+
+  Preload: "프리로드",
+  add: "추가",
+  release: "해제",
+  releaseAll: "모두 해제",
+  "Preload.add": "프리로드 추가",
+  "Preload.release": "프리로드 해제",
+  "Preload.releaseAll": "프리로드 모두 해제",
+
+  Communication: "통신",
+  Serial: "시리얼 통신",
+  Socket: "소켓 통신",
+  "Communication.Serial": "시리얼 통신",
+  "Communication.Socket": "소켓 통신",
+  open: "시작",
+  send: "전송",
+  close: " 종료",
+  connect: "연결",
+  connectService: "서비스 연결",
+  disconnect: "연결 종료",
+  "Communication.Serial.open": "시리얼 통신 시작",
+  "Communication.Serial.send": "시리얼 통신 전송",
+  "Communication.Serial.close": "시리얼 통신 종료",
+  "Communication.Socket.connect": "소켓 통신 연결",
+  "Communication.Socket.connectService": "소켓 통신 서비스 연결",
+  "Communication.Socket.send": "소켓 통신 전송",
+  "Communication.Socket.disconnect": "소켓 통신 종료",
+
+  Others: "기타",
+  customReset: "모두 초기화",
+  setVariable: "변수 값 설정",
+  resetAllVariables: "변수 전체 초기화",
+  executePlugin: "플러그인 실행",
+  runtimePluginStep: "런타임 플러그인 스텝",
+  eventEmit: "이벤트 발생",
+  script: "스크립트 실행",
+  log: "로그 작성",
+  "Others.customReset": "모두 초기화",
+  "Others.setVariable": "변수 값 설정",
+  "Others.resetAllVariables": "변수 전체 초기화",
+  "Others.executePlugin": "플러그인 실행",
+  "Others.runtimePluginStep": "런타임 플러그인",
+  "Others.eventEmit": "이벤트 발생",
+  "Others.script": "스크립트 실행",
+  "Others.log": "로그 작성"
+} as const;
+
+export const ComponentModifyTypes = {
+  visible: "표시 여부",
+  unbreakable: "보호",
+  zIndex: "Z축 위치",
+  style: "스타일"
+} as const;
+export const ComponentModifyInputData = {
+  visible: { label: "표시 여부", type: "checkbox" },
+  unbreakable: { label: "보호", type: "checkbox" },
+  zIndex: { type: "number", placeholder: "값이 클수록 앞에 보임" },
+  style: {
+    type: "textarea",
+    code: true,
+    autoResizeOpt: { minHeight: 50 },
+    placeholder: "inline CSS code"
+  }
+} as const;
+
+export const ValueProcessTypes = {
+  replaceAll: "특정 문자열 변경",
+  removeAll: "특정 문자열 삭제",
+  trim: "앞뒤 공백 제거",
+  replaceAllRegex: "정규표현식 기반 변경",
+  toLowerCase: "소문자화",
+  toUpperCase: "대문자화",
+  length: "글자 개수",
+  koToEn: "한->영 변환",
+  enToKo: "영->한 변환",
+  jsFunction: "함수"
+} as const;
+
+export const BaseValueTypes = {
+  string: "직접 입력",
+  variable: "변수"
+} as const;
+
+export const ComparisonOperatorTypes = {
+  equals: "A와 B가 동일",
+  includes: "A가 B를 포함",
+  gt: "A > B",
+  lt: "A < B",
+  gte: "A >= B",
+  lte: "A <= B",
+  jsFunction: "함수"
+} as const;
+
+export const ElementTypes = {
+  "": "요소",
+
+  empty: "빈 요소",
+  image: "이미지",
+  video: "영상",
+  input: "입력",
+  advancedInput: "고급 입력",
+  plugin: "플러그인"
+} as const;
+
+export const ElementListenerTypes = {
+  "": "리스너",
+
+  custom: "사용자 정의",
+
+  Mouse: "마우스",
+  click: "클릭",
+  down: "누름",
+  up: "뗌",
+  "Mouse.click": "마우스 클릭",
+  "Mouse.down": "마우스 누름",
+  "Mouse.up": "마우스 뗌",
+
+  input: "값 입력",
+  videoEnd: "영상 종료",
+  keyPress: "키보드 누름",
+  jsFunction: "함수",
+  Drag: "드래그",
+  released: "종료",
+  return: "복귀",
+  "Drag.released": "드래그 종료",
+  "Drag.return": "드래그 복귀",
+  plugin: "플러그인"
+} as const;
+
+export const EntryTypes = {
+  startup: "프로그램 시작",
+  event: "이벤트",
+  shortcut: "키보드 단축키",
+
+  Communication: "통신",
+  serialData: "시리얼 데이터 수신",
+  Socket: "소켓 통신",
+  "Communication.serialData": "시리얼 데이터 수신",
+  "Communication.Socket": "소켓 통신",
+  ondata: "데이터 수신",
+  connect: "연결",
+  "Communication.Socket.ondata": "소켓 데이터 수신",
+  "Communication.Socket.connect": "소켓 통신 연결"
+} as const;
+
+export const InputAllowedTypes = {
+  any: "모든 문자",
+  english: "영문",
+  number: "숫자",
+  korean: "한글",
+  regex: "정규표현식 직접 입력"
+} as const;
+
+export const ScreenConfigTypes = {
+  fullscreen: "전체화면",
+  fullMultiScreen: "다중 모니터 전체화면",
+  windowMode: "창 모드"
+} as const;
+
+export const NodeLabelMap = {
+  entry: "진입점",
+  sequence: "시퀀스",
+  branch: "분기점",
+  variableSet: "변수설정"
+} as const;
