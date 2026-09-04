@@ -27,6 +27,8 @@
       return `시리얼 데이터 수신(${entry.payload.whenDataIs})`;
     if (entry.type === "Communication.Socket.ondata" && entry.payload.channel?.length)
       return `소켓 데이터 수신(${entry.payload.channel}${entry.payload.data?.length ? `:${entry.payload.data}` : ""})`;
+    if (entry.type === "Communication.Mqtt.ondata" && entry.payload.topic)
+      return `MQTT 수신(${entry.payload.topic}${entry.payload.data?.length ? `:${entry.payload.data}` : ""})`;
     return EntryTypes[entry.type as keyof typeof EntryTypes] ?? "진입점";
   });
 

@@ -172,7 +172,8 @@ export const EntryTypes = {
   ondata: "데이터 수신",
   connect: "연결",
   "Communication.Socket.ondata": "소켓 데이터 수신",
-  "Communication.Socket.connect": "소켓 통신 연결"
+  "Communication.Socket.connect": "소켓 통신 연결",
+  "Communication.Mqtt.ondata": "MQTT 데이터 수신"
 } as const;
 
 export const InputAllowedTypes = {

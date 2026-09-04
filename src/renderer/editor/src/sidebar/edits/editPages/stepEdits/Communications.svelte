@@ -50,14 +50,14 @@
       autoResizeOpt={{ minHeight: 0 }}
     />
   {/if}
-{:else if data.types[1] === "Mqtt"}
-  {#if data.types[2] === "connect"}
+{:else if parts[1] === "Mqtt"}
+  {#if parts[2] === "connect"}
     <InputField label="URL" binding={editor.at("payload", "url")} />
     <InputField
       label="구독할 토픽"
       seriesOption={{ binding: editor.at("payload", "topics"), min: 0 }}
     />
-  {:else if data.types[2] === "publish"}
+  {:else if parts[2] === "publish"}
     <InputField label="토픽" binding={editor.at("payload", "topic")} />
     <InputField label="전송할 메시지" binding={editor.at("payload", "payload")} />
   {/if}
