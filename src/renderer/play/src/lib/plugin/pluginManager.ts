@@ -62,7 +62,7 @@ function importPlugin(pluginData: RendererPluginData) {
       pluginData.importing = null;
       pluginData.imported = p;
       console.log("PLUGIN LOADED: ", pluginData.info.name);
-      if (getProject().data.config.devMode ?? ipc.sendSync("config:is-dev")) {
+      if (ipc.sendSync("config:is-dev")) {
         const unexported = Object.keys(pluginData.info.exports).filter((e) => !(e in p));
         if (unexported.length)
           reportPluginException(

@@ -15,8 +15,20 @@ const globalStyles = document.createElement("style");
 globalStyles.id = "global-styles";
 document.head.append(globalStyles);
 
+let onReadyResolve: (() => void) | null;
+let onReadyProm: Promise<void> = new Promise(
+  (res) =>
+    (onReadyResolve = () => {
+      res();
+      onReadyResolve = null;
+    })
+);
+export function onReady(): Promise<void> {
+  return onReadyProm;
+}
 export function updateData(data = ipc.sendSync("request-data")): Project {
   project = new Project(data);
+  console.log(project);
   initShortcuts(project.findAllEntries("shortcut"));
   activateRuntimePlugins(
     project.data.config.runtimePlugins
@@ -29,6 +41,7 @@ export function updateData(data = ipc.sendSync("request-data")): Project {
   applyStyle(document.body, gamezone, data.config);
   globalStyles.textContent = data.globalStyles;
 
+  onReadyResolve?.();
   return project;
 }
 

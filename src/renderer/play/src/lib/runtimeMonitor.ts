@@ -1,7 +1,7 @@
 import { getVariables } from "./variables";
 import { getPreloads } from "./resources";
 import { WaitingSteps } from "../project/step";
-import { getProject } from "../project";
+import { getProject, onReady } from "../project";
 import { getAllComponents } from "./components";
 import type { StandbyEntry } from "../project/nodes/standbyEntry";
 import { editor } from "./msg";
@@ -40,7 +40,9 @@ function discard() {
   clear();
 }
 
-export function sendTotalInfo() {
+export async function sendTotalInfo() {
+  await onReady();
+
   if (!monitoring) return;
   discard();
 

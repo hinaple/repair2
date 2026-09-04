@@ -5,16 +5,11 @@ import { getGoto, type Goto } from "./output";
 import { Base } from "../base";
 
 export class Branch extends Base<Types.Branch> implements NodeController {
-  private valueARef?: Ref<"values">;
-  private valueBRef?: Ref<"values">;
-  private gotoT: Goto;
-  private gotoF: Goto;
-  init() {
-    this.valueARef = ref("values", this.d.valueA);
-    this.valueBRef = ref("values", this.d.valueB);
-    this.gotoT = getGoto(this.d.trueOutput);
-    this.gotoF = getGoto(this.d.falseOutput);
-  }
+  private valueARef = ref("values", this.d.valueA);
+  private valueBRef = ref("values", this.d.valueB);
+  private gotoT = getGoto(this.d.trueOutput);
+  private gotoF = getGoto(this.d.falseOutput);
+
   private compare(a: string, b: string) {
     if (this.d.operator === "equals") return a == b;
     if (this.d.operator === "includes") return a.includes(b);

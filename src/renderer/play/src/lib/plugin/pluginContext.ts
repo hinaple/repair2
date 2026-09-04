@@ -84,7 +84,6 @@ function getApi<K extends keyof ContextApi, C extends ContextApiObject[K]>(
   return Object.freeze(api as C);
 }
 export function registerPluginContextApi<K extends keyof ContextApi>(key: K, api: ContextApi[K]) {
-  if (!Object.hasOwn(registeredContextApis, key)) return false;
   registeredContextApis[key] = api;
   return true;
 }

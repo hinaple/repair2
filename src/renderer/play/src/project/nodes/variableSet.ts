@@ -6,14 +6,10 @@ import type { Ref } from "../refs";
 import { ref } from "../refs";
 
 export class VariableSet extends Base<Types.VariableSet> implements NodeController {
-  private valueRef?: Ref<"values">;
-  private variableRef?: Ref<"variables">;
-  private goto?: Goto;
-  init() {
-    this.valueRef = ref("values", this.d.value);
-    if (this.d.variable) this.variableRef = ref("variables", this.d.variable);
-    this.goto = getGoto(this.d.output);
-  }
+  private valueRef = ref("values", this.d.value);
+  private variableRef = this.d.variable ? ref("variables", this.d.variable) : undefined;
+  private goto = getGoto(this.d.output);
+
   execute() {
     const variable = this.variableRef?.();
     const value = this.valueRef?.();

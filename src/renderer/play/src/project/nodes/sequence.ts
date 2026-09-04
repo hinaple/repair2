@@ -6,13 +6,9 @@ import { getGoto } from "./output";
 import { stepExecute } from "../step";
 
 export class Sequence extends Base<Types.Sequence> implements NodeController {
-  private stepRefs: Ref<"steps">[] = [];
-  private goto?: () => void;
+  private stepRefs = this.d.steps.map((id) => ref("steps", id));
+  private goto = getGoto(this.d.output);
 
-  init() {
-    this.stepRefs = this.d.steps.map((id) => ref("steps", id));
-    this.goto = getGoto(this.d.output);
-  }
   async execute() {
     for (const step of this.stepRefs) {
       const s = step();
