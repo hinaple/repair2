@@ -41,6 +41,27 @@
   let activated = $state(false);
   const unsubscribe = startMonitoring("steps", id, (value) => (activated = value));
   onDestroy(unsubscribe);
+
+  let title = $derived.by(() => {
+    if (step.title) return step.title;
+
+    const Default = StepTypes[step.type as keyof typeof StepTypes];
+    if (step.type === "delay") return `${Default} ${step.payload.delayMs}ms`;
+    if (step.type === "Communication.Serial.send") return `시리얼 통신: ${step.payload.data}`;
+    if (step.type === "Communication.Socket.send")
+      return (
+        `소켓 통신: ${step.payload.channel}` + (step.payload.data ? `:${step.payload.data}` : "")
+      );
+    if (step.type === "Component.remove" && step.payload.componentAlias)
+      return `${step.payload.componentAlias} ${Default}`;
+    if (step.type === "Others.eventEmit")
+      return `${step.payload.channel}` + (step.payload.data ? `:${step.payload.data}` : "");
+    if (step.type.startsWith("Audio.") && (step.payload as any).channel)
+      return `${Default}(${(step.payload as any).channel})`;
+
+    if (step.type === "") return "빈 스텝";
+    return StepTypes[step.type as keyof typeof StepTypes] || step.type;
+  });
 </script>
 
 <div
@@ -58,7 +79,7 @@
     </div>
     <div class="title-wrapper">
       <div class="title">
-        {step.title || StepTypes[step.type as keyof typeof StepTypes] || "빈 스텝"}
+        {title}
       </div>
     </div>
   </div>

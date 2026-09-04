@@ -6,7 +6,7 @@
   let operation = $derived(data.type.split(".")[1]);
 </script>
 
-{#if operation}
+{#if operation && operation !== "reset"}
   <InputField label="채널명" binding={editor.at("payload", "channel")} placeholder="default" />
 {/if}
 {#if operation === "play"}

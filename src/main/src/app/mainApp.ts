@@ -2,7 +2,6 @@ import { electronApp, is } from "@electron-toolkit/utils";
 
 import { setupIpcHandlers } from "../ipc";
 import { registerLogger } from "../logs/logger";
-import { testLogs } from "../test/logContent.test";
 import { MainAppEditorSave } from "./mainAppEditorSave";
 import { GlobalKey } from "../system/globalKey";
 import { createReporter } from "./createReporter";
@@ -36,7 +35,6 @@ export class MainApp {
 
   start() {
     registerLogger(this.reportLog);
-    if (import.meta.env.DEV) testLogs();
 
     this.service.initialize(this);
     this.#registerAppLifecycle();
