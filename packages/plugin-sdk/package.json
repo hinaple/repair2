@@ -1,6 +1,6 @@
 {
   "name": "@fainthit/repair2-plugin-sdk",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Type-first authoring contracts for REPAIR2 plugins.",
   "repository": {
     "type": "git",
