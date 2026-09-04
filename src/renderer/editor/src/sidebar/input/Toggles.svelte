@@ -1,26 +1,27 @@
-<script>
-    import ToggleIcon from "./ToggleIcon.svelte";
+<script lang="ts">
+  import ToggleIcon from "./ToggleIcon.svelte";
 
-    let { toggles, style = "" } = $props();
+  let { toggles, style = "" } = $props();
 </script>
 
 <div class="toggles" {style}>
-    {#each toggles as toggle}
-        <ToggleIcon {...toggle} />
-    {/each}
+  {#each toggles as toggle}
+    <ToggleIcon {...toggle} />
+  {/each}
 </div>
 
 <style>
-    .toggles {
-        justify-content: end;
-        display: flex;
-        flex-direction: row;
-        flex: 0 0 auto;
-        gap: 3px;
-        padding: 3px;
-        border-radius: 8px;
-        background-color: var(--b-o2);
-        margin-inline: auto 0px;
-        box-sizing: border-box;
-    }
+  .toggles {
+    justify-content: end;
+    display: flex;
+    flex-direction: row;
+    flex: 0 0 auto;
+    gap: 3px;
+    padding: 3px;
+    border-radius: 20px;
+    corner-shape: squircle;
+    background-color: var(--b-o4);
+    margin-inline: auto 0px;
+    box-sizing: border-box;
+  }
 </style>

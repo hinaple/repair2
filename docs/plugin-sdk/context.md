@@ -82,11 +82,11 @@ The `repair` scope can trigger project event entries. For plugin-only communicat
 ctx.events.emit("changed", data, { scope: "plugin" });
 
 ctx.events.on(
-    "changed",
-    (event) => {
-        ctx.logger.info(event.data);
-    },
-    { scope: "plugin" }
+  "changed",
+  (event) => {
+    ctx.logger.info(event.data);
+  },
+  { scope: "plugin" }
 );
 ```
 
@@ -98,7 +98,7 @@ Services are named values shared inside the play runtime:
 
 ```js
 ctx.services.provide("my-plugin.counter", {
-    increment() {}
+  increment() {}
 });
 ```
 
@@ -140,36 +140,36 @@ Component handles are stable frozen objects. Their getters read current runtime 
 const panel = ctx.components.get("panel");
 
 ctx.events.on("toggle-panel", () => {
-    panel?.setVisible(!panel.visible);
+  panel?.setVisible(!panel.visible);
 });
 ```
 
 Handle state changes affect the live runtime only. They do not modify project source data.
 
-| Handle member | Meaning |
-| ------------- | ------- |
-| `id` | Alias when present, otherwise the real component id. |
-| `realId` | Stored project component id. |
-| `alias` | Component alias, or `null`. |
-| `visible` | Current runtime visibility. |
-| `zIndex` | Current runtime z-index. |
-| `position` | Snapshot of current runtime position. |
-| `destroyed` | Truthy after the runtime component has been disconnected and destroyed. |
-| `unbreakable` | Whether normal removal should be blocked. |
-| `hasFrame` | Whether the component currently has a frame plugin. |
-| `elementCount` | Number of runtime child elements. |
-| `node` | Live component DOM node. Use only when handle methods cannot express the behavior. |
+| Handle member  | Meaning                                                                            |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `id`           | Alias when present, otherwise the real component id.                               |
+| `realId`       | Stored project component id.                                                       |
+| `alias`        | Component alias, or `null`.                                                        |
+| `visible`      | Current runtime visibility.                                                        |
+| `zIndex`       | Current runtime z-index.                                                           |
+| `position`     | Snapshot of current runtime position.                                              |
+| `destroyed`    | Truthy after the runtime component has been disconnected and destroyed.            |
+| `unbreakable`  | Whether normal removal should be blocked.                                          |
+| `hasFrame`     | Whether the component currently has a frame plugin.                                |
+| `elementCount` | Number of runtime child elements.                                                  |
+| `node`         | Live component DOM node. Use only when handle methods cannot express the behavior. |
 
 Use handle methods for runtime state changes:
 
-| Method | Effect |
-| ------ | ------ |
-| `remove(ignoreUnbreakable?)` | Removes the component from the runtime. |
-| `setVisible(visible)` | Sets runtime visibility. |
-| `setZIndex(zIndex)` | Sets runtime z-index. |
-| `setStyle(style?)` | Replaces the runtime override CSS declaration string. |
-| `setPosition(position)` | Sets one or both position axes. |
-| `setPositionBy(delta)` | Moves from the current position by a pixel delta. |
+| Method                       | Effect                                                |
+| ---------------------------- | ----------------------------------------------------- |
+| `remove(ignoreUnbreakable?)` | Removes the component from the runtime.               |
+| `setVisible(visible)`        | Sets runtime visibility.                              |
+| `setZIndex(zIndex)`          | Sets runtime z-index.                                 |
+| `setStyle(style?)`           | Replaces the runtime override CSS declaration string. |
+| `setPosition(position)`      | Sets one or both position axes.                       |
+| `setPositionBy(delta)`       | Moves from the current position by a pixel delta.     |
 
 `setPosition` accepts partial axis data. A number or numeric string sets the axis distance. An object can set `distance`, `origin`, and `relative`:
 
@@ -177,8 +177,8 @@ Use handle methods for runtime state changes:
 const panel = ctx.components.get("panel");
 
 panel?.setPosition({
-    x: { distance: 50, origin: "start" },
-    y: { distance: 25, origin: "center", relative: true }
+  x: { distance: 50, origin: "start" },
+  y: { distance: 25, origin: "center", relative: true }
 });
 
 panel?.setPositionBy({ x: 10, y: -5 });
@@ -194,7 +194,7 @@ Objects returned by getters are read snapshots. Mutating `handle.position.x.dist
 
 ```js
 const stop = ctx.components.subscribe((components) => {
-    ctx.logger.info("component count", components.length);
+  ctx.logger.info("component count", components.length);
 });
 ```
 
@@ -213,7 +213,7 @@ You can subscribe to variable changes:
 
 ```js
 ctx.variables.subscribe("score", (value) => {
-    ctx.logger.info("score", value);
+  ctx.logger.info("score", value);
 });
 ```
 

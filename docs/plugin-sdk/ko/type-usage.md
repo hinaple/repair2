@@ -200,7 +200,8 @@ export default [{ opacity: 0 }, { opacity: 1 }];
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
-export function fade({ component }) {
+export function fade({ attributes, ctx }) {
+    ctx.logger.info(`Fading component: ${ctx.component.id}`, attributes);
     return [{ opacity: 0 }, { opacity: 1 }];
 }
 ```

@@ -19,7 +19,7 @@ Use JSDoc type imports from JavaScript plugin code:
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default function hello({ ctx }) {
-    ctx.logger.info("hello");
+  ctx.logger.info("hello");
 }
 ```
 
@@ -29,9 +29,9 @@ Or import types from TypeScript:
 import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 
 const plugin: RuntimeExport = {
-    activate({ ctx }) {
-        ctx.logger.info("runtime activated");
-    }
+  activate({ ctx }) {
+    ctx.logger.info("runtime activated");
+  }
 };
 
 export default plugin;
@@ -45,9 +45,9 @@ Use the schema in `manifest.json` for editor completion and validation:
 
 ```json
 {
-    "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
-    "name": "my-plugin",
-    "type": "function"
+  "$schema": "./node_modules/@fainthit/repair2-plugin-sdk/plugin-manifest.schema.json",
+  "name": "my-plugin",
+  "type": "function"
 }
 ```
 

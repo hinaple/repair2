@@ -1,7 +1,7 @@
-<script>
-    import logs from "./logs.ts";
+<script lang="ts">
+  import logs from "./logs";
 
-    import "./logs.scss";
+  import "./logs.scss";
 </script>
 
 <div class="logs" use:logs></div>

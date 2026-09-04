@@ -9,7 +9,7 @@ Use a JSDoc type import to keep the plugin shape visible next to the code:
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ message: string }>} */
 export default function run({ attributes, ctx }) {
-    ctx.logger.info(attributes.message);
+  ctx.logger.info(attributes.message);
 }
 ```
 
@@ -23,7 +23,7 @@ For longer generic types, define local typedefs first:
 
 /** @type {Plugin} */
 export default function check({ attributes }) {
-    return !!attributes.message;
+  return !!attributes.message;
 }
 ```
 
@@ -35,13 +35,13 @@ In TypeScript, import types directly:
 import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 
 type Attr = {
-    title: string;
+  title: string;
 };
 
 const plugin: RuntimeExport<Attr> = {
-    activate({ attributes, ctx }) {
-        ctx.logger.info(attributes.title);
-    }
+  activate({ attributes, ctx }) {
+    ctx.logger.info(attributes.title);
+  }
 };
 
 export default plugin;
@@ -53,8 +53,8 @@ export default plugin;
 
 ```ts
 type Attr = {
-    label: string;
-    count: number;
+  label: string;
+  count: number;
 };
 ```
 
@@ -70,19 +70,19 @@ Use `RuntimeStep` when you want type checking for step methods:
 import type { RuntimeExport, RuntimeStep } from "@fainthit/repair2-plugin-sdk";
 
 type Attr = {
-    label: string;
+  label: string;
 };
 
 type Steps = {
-    showLabel: RuntimeStep<Attr, boolean>;
+  showLabel: RuntimeStep<Attr, boolean>;
 };
 
 const plugin: RuntimeExport<Attr, {}, {}, Steps> = {
-    activate() {},
-    showLabel({ attributes, ctx }) {
-        ctx.logger.info(attributes.label);
-        return true;
-    }
+  activate() {},
+  showLabel({ attributes, ctx }) {
+    ctx.logger.info(attributes.label);
+    return true;
+  }
 };
 
 export default plugin;
@@ -97,15 +97,15 @@ For runtime plugins with a main entry, define shared method map types and use th
 ```ts
 // src/plugin-types.ts
 export type Attr = {
-    str: string;
+  str: string;
 };
 
 export type Main = {
-    foo(str: string): number;
+  foo(str: string): number;
 };
 
 export type Renderer = {
-    bar(value: number): void;
+  bar(value: number): void;
 };
 ```
 
@@ -116,14 +116,14 @@ import type { RuntimeExport } from "@fainthit/repair2-plugin-sdk";
 import type { Attr, Main, Renderer } from "../plugin-types";
 
 const plugin: RuntimeExport<Attr, Main, Renderer> = {
-    async activate({ main }) {
-        const value = await main?.foo("hello");
-    },
-    renderer: {
-        bar(value) {
-            console.log(value);
-        }
+  async activate({ main }) {
+    const value = await main?.foo("hello");
+  },
+  renderer: {
+    bar(value) {
+      console.log(value);
     }
+  }
 };
 
 export default plugin;
@@ -136,14 +136,14 @@ import type { RuntimeMainExport } from "@fainthit/repair2-plugin-sdk";
 import type { Attr, Main, Renderer } from "../plugin-types";
 
 const main: RuntimeMainExport<Attr, Main, Renderer> = {
-    activate({ renderer }) {
-        renderer.bar(123);
-    },
-    main: {
-        foo(str) {
-            return str.length;
-        }
+  activate({ renderer }) {
+    renderer.bar(123);
+  },
+  main: {
+    foo(str) {
+      return str.length;
     }
+  }
 };
 
 export default main;
@@ -174,9 +174,9 @@ Runtime and runtime main entries may export either an object or a factory that r
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").RuntimeExport} */
 export default () => ({
-    activate({ ctx }) {
-        ctx.logger.info("activated");
-    }
+  activate({ ctx }) {
+    ctx.logger.info("activated");
+  }
 });
 ```
 
@@ -185,7 +185,7 @@ Function and transition plugin factories are not supported. Function plugins sho
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport} */
 export default function run({ ctx }) {
-    ctx.logger.info("called");
+  ctx.logger.info("called");
 }
 ```
 
@@ -200,8 +200,9 @@ export default [{ opacity: 0 }, { opacity: 1 }];
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
-export function fade({ component }) {
-    return [{ opacity: 0 }, { opacity: 1 }];
+export function fade({ attributes, ctx }) {
+  ctx.logger.info(`Fading component: ${ctx.component.id}`, attributes);
+  return [{ opacity: 0 }, { opacity: 1 }];
 }
 ```
 
@@ -211,9 +212,9 @@ Runtime main entries can also be factories:
 import type { RuntimeMainExport } from "@fainthit/repair2-plugin-sdk";
 
 const main: RuntimeMainExport = () => ({
-    activate({ ctx }) {
-        ctx.lifecycle.onDispose(() => {});
-    }
+  activate({ ctx }) {
+    ctx.lifecycle.onDispose(() => {});
+  }
 });
 
 export default main;
@@ -230,12 +231,12 @@ Element, frame, function, and transition plugins can expose multiple renderer ex
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ value: string }, boolean>} */
 export function isFilled({ attributes }) {
-    return !!attributes.value;
+  return !!attributes.value;
 }
 
 /** @type {import("@fainthit/repair2-plugin-sdk").FunctionExport<{ value: string }>} */
 export function logValue({ attributes, ctx }) {
-    ctx.logger.info(attributes.value);
+  ctx.logger.info(attributes.value);
 }
 ```
 
@@ -245,12 +246,12 @@ In TypeScript, the export-map helper types can check a group of named exports be
 import type { FunctionExport, FunctionExports } from "@fainthit/repair2-plugin-sdk";
 
 const functions = {
-    isFilled({ attributes }) {
-        return !!attributes.value;
-    },
-    logValue({ attributes, ctx }) {
-        ctx.logger.info(attributes.value);
-    }
+  isFilled({ attributes }) {
+    return !!attributes.value;
+  },
+  logValue({ attributes, ctx }) {
+    ctx.logger.info(attributes.value);
+  }
 } satisfies FunctionExports<Record<string, FunctionExport<{ value: string }>>>;
 
 export const { isFilled, logValue } = functions;
@@ -263,21 +264,21 @@ The same pattern is available as `ElementExports`, `FrameExports`, and `Transiti
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").FrameExport<{ title?: string }>} */
 export default function mount({ attributes, ctx }, { target, children, showIntro }) {
-    target.dataset.plugin = ctx.plugin.id;
-    target.classList.toggle("intro", showIntro);
+  target.dataset.plugin = ctx.plugin.id;
+  target.classList.toggle("intro", showIntro);
 
-    const header = document.createElement("header");
-    header.textContent = attributes.title ?? "";
+  const header = document.createElement("header");
+  header.textContent = attributes.title ?? "";
 
-    const body = document.createElement("main");
-    body.append(children);
+  const body = document.createElement("main");
+  body.append(children);
 
-    target.append(header, body);
+  target.append(header, body);
 
-    return () => {
-        header.remove();
-        body.remove();
-    };
+  return () => {
+    header.remove();
+    body.remove();
+  };
 }
 ```
 
@@ -293,7 +294,7 @@ The context object is injected by REPAIR2. You should not construct it yourself.
 import type { PluginContext } from "@fainthit/repair2-plugin-sdk";
 
 function logPlugin(ctx: PluginContext) {
-    ctx.logger.info(ctx.plugin.id);
+  ctx.logger.info(ctx.plugin.id);
 }
 ```
 

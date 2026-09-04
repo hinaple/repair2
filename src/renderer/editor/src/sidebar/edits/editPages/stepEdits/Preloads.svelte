@@ -1,13 +1,14 @@
-<script>
-    import InputField from "../../../input/InputField.svelte";
-
-    const { data } = $props();
+<script lang="ts">
+  import InputField from "../../../input/InputField.svelte";
+  import type { RecordEditor } from "../../../../project/mutator";
+  const { editor }: { editor: RecordEditor<"steps"> } = $props();
+  let operation = $derived(editor.value.type.split(".")[1]);
 </script>
 
-{#if data.types[1] === "add" || data.types[1] === "release"}
-    <InputField
-        label="자원 목록"
-        type="resource"
-        seriesOption={{ array: data.payload.resourceArr }}
-    />
+{#if operation === "add" || operation === "release"}
+  <InputField
+    label="자원 목록"
+    type="resource"
+    seriesOption={{ binding: editor.at<string[]>("payload", "resourceArr") }}
+  />
 {/if}

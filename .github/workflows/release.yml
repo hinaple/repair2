@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release-pr:
+    if: github.event.action != 'closed'
+    name: release-validation
+    runs-on: windows-latest
+    steps:
+      - name: Validate release PR source
+        shell: pwsh
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if ($env:BASE_REF -ne "main" -or $env:HEAD_REF -ne "develop" -or $env:HEAD_REPOSITORY -ne $env:REPOSITORY) {
+            throw "Only a same-repository develop -> main PR may release."
+          }
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - run: npm ci
+
+      - name: Validate release versions and snapshot
+        shell: pwsh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RELEASE_PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/release/check.mjs --base $env:BASE_SHA --head $env:HEAD_SHA --registry-absent --verify-markers
+
+      - run: npm run check:editor
+      - run: npm run build:win
+
+      - name: Verify Windows installer
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          $installer = "dist/repair2-$version-setup.exe"
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+            throw "Windows installer not found: $installer"
+          }
+
+  deploy-release:
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'develop' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    name: release-deployment
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+      RELEASE_PR_BODY: ${{ github.event.pull_request.body }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - run: npm ci
+      - run: npm run build:win
+      - run: node scripts/release/deploy.mjs

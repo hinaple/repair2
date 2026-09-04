@@ -4,3 +4,8 @@ pnpm-lock.yaml
 LICENSE.md
 tsconfig.json
 tsconfig.*.json
+node_modules
+docs
+build
+reporters
+v1Data.json

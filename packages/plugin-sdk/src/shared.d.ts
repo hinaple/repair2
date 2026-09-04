@@ -16,14 +16,14 @@ export type MethodMap = Record<string, Method>;
  * Most plugin code should define a plain method object type instead of using this directly.
  */
 export type MethodShape<TMethods extends object> = {
-    [K in keyof TMethods]: Method;
+  [K in keyof TMethods]: Method;
 };
 
 export type PluginType = "runtime" | "element" | "frame" | "function" | "transition";
 export type PluginExportName = string;
 
 export interface PluginPointer<TAttributes = Attributes> {
-    name: string | null;
-    exportName?: PluginExportName | null;
-    payloads?: TAttributes;
+  name: string | null;
+  exportName?: PluginExportName | null;
+  payloads?: TAttributes;
 }

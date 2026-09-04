@@ -5,9 +5,9 @@ import type { MainControllers } from "./mainApp.types";
 import type { MainApp } from "./mainApp";
 
 export function createControllers(app: MainApp): MainControllers {
-    return {
-        pluginHmr: new PluginHmrController(app),
-        project: new ProjectController(app),
-        window: new WindowController(app)
-    };
+  return {
+    pluginHmr: new PluginHmrController(app),
+    project: new ProjectController(app),
+    window: new WindowController(app)
+  };
 }

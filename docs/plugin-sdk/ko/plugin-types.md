@@ -185,10 +185,14 @@ Keyframe을 반환하는 function도 export할 수 있습니다.
 
 ```js
 /** @type {import("@fainthit/repair2-plugin-sdk").TransitionExport} */
-export function slide({ component }) {
-    return [{ transform: "translateX(20px)" }, { transform: "translateX(0)" }];
+export function slide({ attributes, ctx }) {
+    const distance = Number(attributes.distance ?? 20);
+    ctx.logger.info(`Transitioning component: ${ctx.component.id}`);
+    return [{ transform: `translateX(${distance}px)` }, { transform: "translateX(0)" }];
 }
 ```
+
+Function은 keyframe을 동기적으로 반환해야 합니다. Promise를 반환하는 transition function은 지원하지 않습니다.
 
 호환성을 위해 REPAIR2는 `keyframes` property가 있는 객체도 계속 허용하지만, 새 플러그인에서는 deprecated 형태입니다. Transition factory는 지원하지 않으며, transition 객체의 `function` property는 무시됩니다.
 

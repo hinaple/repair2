@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["svelte", "vite/client", "electron"],
+    "allowJs": false,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@renderer/*": ["../common/*"],
+      "@shared/*": ["../../shared/*"]
+    },
+  },
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte", "**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "../../../out"]
+}

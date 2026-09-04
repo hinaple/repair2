@@ -1,209 +1,209 @@
 html,
 body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    overflow: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 body {
-    background: repeating-conic-gradient(#e7e7e7 0% 25%, #bababa 0% 50%) 50% / 16px 16px;
+  background: repeating-conic-gradient(#e7e7e7 0% 25%, #bababa 0% 50%) 50% / 16px 16px;
 }
 
 body {
-    --gamezone-width: 100vw;
-    --gamezone-height: 100vh;
+  --gamezone-width: 100vw;
+  --gamezone-height: 100vh;
 }
 
 #gamezone {
-    display: block;
-    background-color: #000;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    position: relative;
-    transform-origin: left top;
+  display: block;
+  background-color: #000;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  transform-origin: left top;
 }
 #gamezone,
 repair-component,
 #preview-zone,
 #preview-component {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #preview-zone {
-    width: 100%;
-    height: 100%;
-    position: fixed;
-    z-index: 999;
-    pointer-events: none;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  z-index: 999;
+  pointer-events: none;
 }
 #preview-component {
-    position: absolute;
+  position: absolute;
 }
 
 #preloads {
-    position: fixed;
-    left: 150vw;
-    top: 150vh;
-    display: flex;
+  position: fixed;
+  left: 150vw;
+  top: 150vh;
+  display: flex;
 }
 #preloads * {
-    max-width: var(--gamezone-width);
-    max-height: var(--gamezone-height);
+  max-width: var(--gamezone-width);
+  max-height: var(--gamezone-height);
 }
 
 @layer repair2 {
-    img,
-    video {
-        display: block;
-        -webkit-user-drag: none;
-        object-fit: fill;
-    }
+  img,
+  video {
+    display: block;
+    -webkit-user-drag: none;
+    object-fit: fill;
+  }
 
-    input,
-    textarea {
-        margin: 0;
-        display: block;
-        -webkit-user-drag: none;
-        box-sizing: border-box;
-        border: none;
-        background: none;
-    }
-    textarea {
-        resize: none;
-        overflow: hidden;
-    }
-    input:focus,
-    textarea:focus {
-        outline: none;
-    }
+  input,
+  textarea {
+    margin: 0;
+    display: block;
+    -webkit-user-drag: none;
+    box-sizing: border-box;
+    border: none;
+    background: none;
+  }
+  textarea {
+    resize: none;
+    overflow: hidden;
+  }
+  input:focus,
+  textarea:focus {
+    outline: none;
+  }
 
-    * {
-        user-select: none;
-    }
+  * {
+    user-select: none;
+  }
 }
 
 repair-component,
 repair-input,
 repair-element,
 #preview-component {
-    width: fit-content;
-    height: fit-content;
+  width: fit-content;
+  height: fit-content;
 }
 repair-element {
-    display: block;
+  display: block;
 }
 
 repair-asset {
-    display: block;
-    overflow: hidden;
+  display: block;
+  overflow: hidden;
 
-    object-fit: contain;
-    object-position: center;
+  object-fit: contain;
+  object-position: center;
 }
 
 repair-asset > :is(img, video) {
-    display: block;
-    object-fit: inherit;
-    object-position: inherit;
+  display: block;
+  object-fit: inherit;
+  object-position: inherit;
 
-    width: auto;
-    height: auto;
+  width: auto;
+  height: auto;
 }
 repair-asset[anchor="width"] > :is(img, video),
 repair-asset[sizing="width"] > :is(img, video) {
-    width: 100%;
-    height: auto;
+  width: 100%;
+  height: auto;
 }
 repair-asset[anchor="height"] > :is(img, video),
 repair-asset[sizing="height"] > :is(img, video) {
-    width: auto;
-    height: 100%;
+  width: auto;
+  height: 100%;
 }
 repair-asset[anchor="both"] > :is(img, video),
 repair-asset[sizing="both"] > :is(img, video) {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 repair-input {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 
-    .advanced-input-blink-cursor {
-        width: 1px;
-        height: 60%;
-        background-color: #000;
-        flex-shrink: 0;
-        margin-left: 1px;
+  .advanced-input-blink-cursor {
+    width: 1px;
+    height: 60%;
+    background-color: #000;
+    flex-shrink: 0;
+    margin-left: 1px;
 
-        animation: blink step-start 1s 0s infinite;
-    }
+    animation: blink step-start 1s 0s infinite;
+  }
 }
 
 #preview-component:not(.show-content) {
-    outline: dashed #2b6eff 2px;
-    background: none !important;
-    backdrop-filter: blur(5px) none;
+  outline: dashed #2b6eff 2px;
+  background: none !important;
+  backdrop-filter: blur(5px) none;
 }
 #preview-component.show-content {
-    background: repeating-linear-gradient(
-        -45deg,
-        rgba(43, 110, 255, 0.8),
-        rgba(43, 110, 255, 0.8) 5px,
-        rgba(43, 110, 255, 0.4) 5px,
-        rgba(43, 110, 255, 0.4) 10px
-    ) !important;
-    overflow: visible;
-    backdrop-filter: blur(5px) !important;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(43, 110, 255, 0.8),
+    rgba(43, 110, 255, 0.8) 5px,
+    rgba(43, 110, 255, 0.4) 5px,
+    rgba(43, 110, 255, 0.4) 10px
+  ) !important;
+  overflow: visible;
+  backdrop-filter: blur(5px) !important;
 }
 .preview-element {
-    outline: dashed #ff8000 2px;
+  outline: dashed #ff8000 2px;
 }
 .preview-element,
 .preview-element * {
-    background: none !important;
+  background: none !important;
 }
 .preview-element video {
-    pointer-events: all;
+  pointer-events: all;
 }
 
 #preview-component:not(.show-content) img,
 #preview-component:not(.show-content) video {
-    opacity: 0 !important;
+  opacity: 0 !important;
 }
 
 #repair-editor-password {
-    display: none;
-    position: fixed;
-    pointer-events: none;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    font-family: "HelveticaExt";
-    font-size: 30px;
-    padding: 10px 20px;
-    background-color: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    color: #000;
-    z-index: 9999;
-    border-radius: 10px;
-    font-weight: 500;
+  display: none;
+  position: fixed;
+  pointer-events: none;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: "HelveticaExt";
+  font-size: 30px;
+  padding: 10px 20px;
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  color: #000;
+  z-index: 9999;
+  border-radius: 10px;
+  font-weight: 500;
 }
 @keyframes blink {
-    0%,
-    100% {
-        opacity: 0;
-    }
-    50% {
-        opacity: 1;
-    }
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 @font-face {
-    font-family: "HelveticaExt";
-    src: url("./fonts/helveticaExt.woff") format("woff");
+  font-family: "HelveticaExt";
+  src: url("./fonts/helveticaExt.woff") format("woff");
 }

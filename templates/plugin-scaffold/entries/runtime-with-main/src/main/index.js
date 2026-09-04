@@ -3,19 +3,19 @@
 
 /** @returns {import("@fainthit/repair2-plugin-sdk").RuntimeMain<Record<string, unknown>, MainMethods, RendererMethods>} */
 export default function () {
-    let r = null;
-    return {
-        activate({ ctx, attributes, renderer }) {
-            console.log("MAIN ACTIVATED");
-            r = renderer;
-            return () => {
-                console.log("DISPOSED");
-            };
-        },
-        main: {
-            foo(str) {
-                r.bar(str);
-            }
-        }
-    };
+  let r = null;
+  return {
+    activate({ ctx, attributes, renderer }) {
+      console.log("MAIN ACTIVATED");
+      r = renderer;
+      return () => {
+        console.log("DISPOSED");
+      };
+    },
+    main: {
+      foo(str) {
+        r.bar(str);
+      }
+    }
+  };
 }
