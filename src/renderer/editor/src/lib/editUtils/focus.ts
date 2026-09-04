@@ -84,6 +84,13 @@ export function focusData<T extends FocusData>(
 
   let f = processFocusExpanding({ type, target: target ?? null, parents } as FocusData);
 
+  console.log(f);
+  if (f.type === "nodes") {
+    if (f.target.size === 0) return;
+    else if (f.target.size === 1)
+      f = { type: "node", target: f.target.values().next().value!, parents };
+  }
+
   if (selectNodeOnNode(cf, f)) return;
 
   if (f.type === "nodes") currentFocus.set({ type: "nodes", target: new SvelteSet(f.target) });
