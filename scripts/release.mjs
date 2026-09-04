@@ -45,6 +45,11 @@ function runEditor(editor, file) {
   if (result.status !== 0) throw new Error(`Editor exited with code ${result.status}.`);
 }
 
+function commandExists(command) {
+  const finder = process.platform === "win32" ? "where.exe" : "which";
+  return run(finder, [command], { allowFailure: true }).status === 0;
+}
+
 function printRelease(release) {
   console.log(`\nRelease v${release.appVersion}\n`);
   console.log("Changes:");
@@ -110,7 +115,10 @@ try {
     const noteFile = join(noteDirectory, "release-note.md");
     writeFileSync(noteFile, genDefaultReleaseNote(), "utf8");
     const editor =
-      process.env.RELEASE_EDITOR || process.env.VISUAL || process.env.EDITOR || "notepad.exe";
+      process.env.RELEASE_EDITOR ||
+      process.env.VISUAL ||
+      process.env.EDITOR ||
+      (commandExists("code") ? "code --wait" : "notepad.exe");
     runEditor(editor, noteFile);
 
     const note = readFileSync(noteFile, "utf8").trim();
