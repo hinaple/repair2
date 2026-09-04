@@ -31,6 +31,74 @@ export function run(name, args, options = {}) {
 const gitText = (...args) => run("git", args).stdout.trim();
 const readJsonAt = (ref, file) => JSON.parse(gitText("show", `${ref}:${file}`));
 
+function parseCommitLog(output) {
+  return output
+    .split("\x1e")
+    .map((record) => record.trim())
+    .filter(Boolean)
+    .map((record) => {
+      const [sha, shortSha, subject, body, authorName, authoredAt] = record.split("\x1f");
+      return { sha, shortSha, subject, body: body.trim(), authorName, authoredAt };
+    });
+}
+
+function parseChangedFiles(output) {
+  return output
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => {
+      const [status, firstPath, secondPath] = line.split("\t");
+      return secondPath
+        ? { status, path: secondPath, previousPath: firstPath }
+        : { status, path: firstPath };
+    });
+}
+
+function readCommits(base, head, path) {
+  const commits = parseCommitLog(
+    gitText(
+      "log",
+      "--reverse",
+      "--topo-order",
+      ...(path ? ["--full-history"] : []),
+      "--no-merges",
+      "--format=%H%x1f%h%x1f%s%x1f%b%x1f%an%x1f%aI%x1e",
+      `${base}..${head}`,
+      ...(path ? ["--", path] : [])
+    )
+  );
+  return commits.map((commit) => ({
+    ...commit,
+    changedFiles: parseChangedFiles(
+      gitText("diff-tree", "--root", "--no-commit-id", "--name-status", "-r", "-M", commit.sha)
+    )
+  }));
+}
+
+function readChanges(base, head) {
+  const changedFiles = parseChangedFiles(gitText("diff", "--name-status", "-M", base, head, "--"));
+  return gitText("diff", "--numstat", base, head, "--")
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .reduce(
+      (changes, line) => {
+        const [insertions, deletions] = line.split("\t");
+        if (insertions === "-" || deletions === "-") changes.binaryFiles += 1;
+        else {
+          changes.insertions += Number(insertions);
+          changes.deletions += Number(deletions);
+        }
+        return changes;
+      },
+      { changedFiles, files: changedFiles.length, insertions: 0, deletions: 0, binaryFiles: 0 }
+    );
+}
+
+function repositoryWebUrl(remoteUrl) {
+  const match = remoteUrl.match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?$/i);
+  return match ? `https://github.com/${match[1].replace(/\.git$/i, "")}` : null;
+}
+
 export function validateVersionIncrease(current, previous, label) {
   if (!semver.valid(previous))
     throw new Error(`main ${label} version is not valid SemVer: ${previous}`);
@@ -96,70 +164,95 @@ export function formatSdkVersionError(message, commits) {
   return `${message}\n\nSDK-changing commits:\n${list}`;
 }
 
-export function checkRelease({ base, head, requireTagAbsent = false, requireNpmAbsent = false }) {
+export function createReleaseNoteContext({ base, head }) {
   const mainPackage = readJsonAt(base, "package.json");
   const appPackage = readJsonAt(head, "package.json");
+  const tag = `v${appPackage.version}`;
+  const commits = readCommits(base, head);
+  const changes = readChanges(base, head);
+  const remoteUrl = gitText("remote", "get-url", "origin");
+  const repositoryUrl = repositoryWebUrl(remoteUrl);
+  const sdkChanged = sdkTreeChanged(base, head);
+  const mainSdk = readJsonAt(base, "packages/plugin-sdk/package.json");
+  const sdk = readJsonAt(head, "packages/plugin-sdk/package.json");
+  const sdkCommits = sdkChanged ? readCommits(base, head, "packages/plugin-sdk") : [];
+  /** @type {Parameters<typeof import("./note.mjs").genDefaultReleaseNote>[0]} */
+  const releaseNoteContext = {
+    app: {
+      previousVersion: mainPackage.version,
+      version: appPackage.version,
+      tag,
+      prerelease: semver.prerelease(appPackage.version) !== null
+    },
+    git: {
+      baseBranch: "main",
+      headBranch: "develop",
+      baseSha: base,
+      headSha: head,
+      remoteUrl,
+      repositoryUrl,
+      compareUrl: repositoryUrl ? `${repositoryUrl}/compare/${base}...${head}` : null
+    },
+    commits,
+    sdk: {
+      changed: sdkChanged,
+      name: sdk.name,
+      previousVersion: mainSdk.version,
+      version: sdk.version,
+      commits: sdkCommits,
+      changedFiles: changes.changedFiles.filter(
+        ({ path, previousPath }) =>
+          path.startsWith("packages/plugin-sdk/") ||
+          previousPath?.startsWith("packages/plugin-sdk/")
+      )
+    },
+    changes
+  };
+
+  return releaseNoteContext;
+}
+
+export function checkRelease({ base, head, requireTagAbsent = false, requireNpmAbsent = false }) {
+  const releaseNoteContext = createReleaseNoteContext({ base, head });
+  const { app, commits, sdk } = releaseNoteContext;
   const lock = readJsonAt(head, "package-lock.json");
 
-  validateVersionIncrease(appPackage.version, mainPackage.version, "app");
-  const tag = `v${appPackage.version}`;
-  if (requireTagAbsent && tagExists(tag)) throw new Error(`Git tag already exists: ${tag}`);
+  validateVersionIncrease(app.version, app.previousVersion, "app");
+  if (requireTagAbsent && tagExists(app.tag)) {
+    throw new Error(`Git tag already exists: ${app.tag}`);
+  }
+  if (commits.length === 0) throw new Error("There are no new non-merge commits to release.");
 
-  const sdkChanged = sdkTreeChanged(base, head);
-  let sdkVersion = null;
-  let sdkName = null;
-  if (sdkChanged) {
-    const mainSdk = readJsonAt(base, "packages/plugin-sdk/package.json");
-    const sdk = readJsonAt(head, "packages/plugin-sdk/package.json");
+  if (sdk.changed) {
     if (sdk.name !== "@fainthit/repair2-plugin-sdk") {
       throw new Error(`Unexpected SDK package name: ${sdk.name}`);
     }
     try {
-      validateVersionIncrease(sdk.version, mainSdk.version, "SDK");
+      validateVersionIncrease(sdk.version, sdk.previousVersion, "SDK");
     } catch (error) {
-      const sdkCommits = gitText(
-        "log",
-        "--reverse",
-        "--topo-order",
-        "--full-history",
-        "--no-merges",
-        "--format=%h%x09%s",
-        `${base}..${head}`,
-        "--",
-        "packages/plugin-sdk"
-      )
-        .split(/\r?\n/)
-        .filter(Boolean);
-      throw new Error(formatSdkVersionError(error.message, sdkCommits));
+      throw new Error(
+        formatSdkVersionError(
+          error.message,
+          sdk.commits.map((commit) => `${commit.shortSha}\t${commit.subject}`)
+        )
+      );
     }
-    sdkVersion = sdk.version;
-    sdkName = sdk.name;
-    if (requireNpmAbsent && readPublishedPackage(sdkName, sdkVersion)) {
-      throw new Error(`npm package already exists: ${sdkName}@${sdkVersion}`);
+    if (requireNpmAbsent && readPublishedPackage(sdk.name, sdk.version)) {
+      throw new Error(`npm package already exists: ${sdk.name}@${sdk.version}`);
     }
   }
 
-  validateLockVersions(lock, appPackage.version, sdkVersion, sdkChanged);
-  const commits = gitText(
-    "log",
-    "--reverse",
-    "--topo-order",
-    "--no-merges",
-    "--format=%h%x09%s",
-    `${base}..${head}`
-  )
-    .split(/\r?\n/)
-    .filter(Boolean);
-  if (commits.length === 0) throw new Error("There are no new non-merge commits to release.");
+  validateLockVersions(lock, app.version, sdk.version, sdk.changed);
 
   return {
-    appVersion: appPackage.version,
-    tag,
-    prerelease: semver.prerelease(appPackage.version) !== null,
+    appVersion: app.version,
+    tag: app.tag,
+    prerelease: app.prerelease,
     commits,
-    sdkChanged,
-    sdkName,
-    sdkVersion
+    sdkChanged: sdk.changed,
+    sdkName: sdk.changed ? sdk.name : null,
+    sdkVersion: sdk.changed ? sdk.version : null,
+    releaseNoteContext
   };
 }
 

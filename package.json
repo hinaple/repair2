@@ -8,6 +8,7 @@
   "homepage": "https://beyond-space.kr",
   "scripts": {
     "release": "node scripts/release.mjs",
+    "release:note-test": "node scripts/release/note-test.mjs",
     "format": "prettier --plugin prettier-plugin-svelte --write .",
     "postinstall": "npx --no-install install-electron --no && electron-builder install-app-deps",
     "start": "electron-vite preview --config src/main/electron.vite.config.ts ",

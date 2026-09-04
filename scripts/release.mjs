@@ -41,7 +41,7 @@ function findOpenReleasePr() {
 function printRelease(release) {
   console.log(`\nRelease v${release.appVersion}\n`);
   console.log("Changes:");
-  for (const commit of release.commits) console.log(commit);
+  for (const commit of release.commits) console.log(`${commit.shortSha}\t${commit.subject}`);
   console.log(`\nSDK changed: ${release.sdkChanged ? "yes" : "no"}`);
   if (release.sdkChanged) console.log(`SDK version: ${release.sdkVersion}`);
 }
@@ -101,7 +101,7 @@ try {
 
     noteDirectory = mkdtempSync(join(tmpdir(), "repair2-release-"));
     const noteFile = join(noteDirectory, "release-note.md");
-    writeFileSync(noteFile, genDefaultReleaseNote(), "utf8");
+    writeFileSync(noteFile, genDefaultReleaseNote(release.releaseNoteContext), "utf8");
     const editor = resolveEditor();
     console.log(`Opening release note with ${editor.command} (${editor.source}).`);
     openEditor(editor.command, noteFile);
