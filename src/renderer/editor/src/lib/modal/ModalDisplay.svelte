@@ -128,7 +128,8 @@
     background-color: #232323;
     display: flex;
     flex-direction: column;
-    border-radius: 10px;
+    border-radius: 20px;
+    corner-shape: squircle;
   }
   .title {
     padding: 15px;
@@ -174,7 +175,8 @@
   button {
     padding: 3px 8px;
     font-size: 16px;
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     border: solid var(--w-o2) 1px;
     color: #fff;
     cursor: pointer;

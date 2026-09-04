@@ -72,7 +72,8 @@
     width: 100%;
     padding: 5px 7px 5px 10px;
     box-sizing: border-box;
-    border-radius: 10px;
+    border-radius: 20px;
+    corner-shape: squircle;
     border: solid transparent 1px;
   }
   .variable:has(> :nth-child(2)) {
@@ -87,7 +88,8 @@
     border-color: var(--blue-bright);
   }
   .icon {
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     padding: 5px;
 
     opacity: 0;
@@ -126,7 +128,8 @@
   .runtime-value {
     margin: 3px 5px 0 5px;
     padding: 3px 5px;
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     background-color: rgba(247, 141, 79, 0.6);
     color: #fff;
   }

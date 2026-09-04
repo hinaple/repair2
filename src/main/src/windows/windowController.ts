@@ -96,9 +96,9 @@ export class WindowController {
         quitOnStartupError();
       }
     );
-    mainWindow.webContents.on("console-message", (event, level, message, line, sourceId) => {
-      if (level < 3) return;
-      logger.error("Play renderer error", message + `\n\tat ${sourceId}:${line}`);
+    mainWindow.webContents.on("console-message", ({ level, message, lineNumber, sourceId }) => {
+      if (level !== "error") return;
+      logger.error("Play renderer error", message + `\n\tat ${sourceId}:${lineNumber}`);
       quitOnStartupError();
     });
   }

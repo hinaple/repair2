@@ -137,7 +137,12 @@
 </script>
 
 <div
-  class={["wrapper", isLastHold && "last-hold", node.nodeType]}
+  class={[
+    "wrapper",
+    isLastHold && "last-hold",
+    node.nodeType,
+    folded && !innerOutputs.length && "folded"
+  ]}
   bind:this={nodeEl}
   onpointerdowncapture={pointerDownCapture}
   use:data={{ type: node.nodeType, id }}
@@ -145,11 +150,7 @@
 >
   <div class="node-wrapper" style={`--node-color: ${color};`}>
     <div class={["node", isFocused && "focus"]} {id} style={`min-width: ${minWidth}px;`}>
-      <div
-        class="head"
-        class:folded={folded && !innerOutputs.length}
-        use:inputNode={{ hasInput, id }}
-      >
+      <div class="head" use:inputNode={{ hasInput, id }}>
         <div class="handle" bind:this={handleEl}><span>{title}</span></div>
         {#if node.nodeType !== "entry" && node.nodeType !== "branch"}
           <FoldArrow {folded} toggle={toggleFold} />
@@ -181,7 +182,12 @@
 <style>
   .wrapper {
     position: absolute;
+    border-radius: 20px;
+    corner-shape: squircle;
+  }
+  .wrapper.folded {
     border-radius: 10px;
+    corner-shape: round;
   }
   .wrapper.last-hold {
     z-index: 2;
@@ -196,8 +202,13 @@
     display: flex;
     flex-direction: column;
     box-shadow: var(--b-o3) 3px 3px 4px;
-    border-radius: 10px;
+    border-radius: 20px;
+    corner-shape: squircle;
     background-color: var(--w-o8);
+  }
+  .folded .node {
+    border-radius: 10px;
+    corner-shape: round;
   }
   .head {
     color: #fff;
@@ -208,14 +219,16 @@
     display: flex;
     height: 30px;
     box-sizing: border-box;
-    border-radius: 10px 10px 0 0;
+    border-radius: 20px 20px 0 0;
+    corner-shape: squircle;
   }
   .entry .head {
-    border-radius: 10px;
+    border-radius: 20px;
     height: 45px;
   }
-  .head.folded {
+  .folded .head {
     border-radius: 10px;
+    corner-shape: round;
   }
   .handle {
     padding-left: 13px;

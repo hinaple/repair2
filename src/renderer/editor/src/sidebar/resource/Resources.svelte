@@ -55,7 +55,6 @@
     align-items: center;
   }
   .list {
-    border-radius: 10px;
     width: 100%;
     flex: 1 1 auto;
     overflow-y: auto;

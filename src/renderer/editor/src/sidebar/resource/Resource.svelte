@@ -61,7 +61,8 @@
     width: 100%;
     border: solid var(--w-o2) 1px;
     box-sizing: border-box;
-    border-radius: 10px;
+    border-radius: 14px;
+    corner-shape: squircle;
     overflow: hidden;
     flex: 0 0 auto;
   }
@@ -116,7 +117,8 @@
     margin-left: auto;
     padding: 5px 8px;
     background-color: var(--w-o8);
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     color: #000;
     opacity: 0.8;
     font-weight: 600;
@@ -133,7 +135,8 @@
   .remove {
     margin: 5px 0 0 auto;
     padding: 6px;
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     background-color: #ff3939;
     cursor: pointer;
     opacity: 0.8;

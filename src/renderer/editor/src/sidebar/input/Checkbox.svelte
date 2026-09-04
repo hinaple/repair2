@@ -30,7 +30,8 @@
     cursor: pointer;
     /* border: solid #000 1px; */
     box-sizing: border-box;
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
   }
   .inner {
     width: 100%;

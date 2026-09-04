@@ -188,7 +188,8 @@
 
 <style>
   .resource-selector {
-    border-radius: 5px;
+    border-radius: 16px;
+    corner-shape: squircle;
     padding-left: 5px;
     box-sizing: border-box;
     width: 100%;
@@ -267,7 +268,8 @@
   }
 
   .select-btn {
-    border-radius: 5px;
+    border-radius: 20px;
+    corner-shape: squircle;
     width: 100%;
     padding: 5px 8px 5px 5px;
     display: flex;

@@ -49,7 +49,8 @@
     border: solid #000 2px;
     border-top-width: 0;
     box-sizing: border-box;
-    border-radius: 0 0 10px 10px;
+    border-radius: 0 0 20px 20px;
+    corner-shape: squircle;
     min-width: 350px;
   }
   .values {
@@ -69,6 +70,7 @@
     align-items: center;
     justify-content: center;
     border-top: solid #000 2px;
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 16px 16px;
+    corner-shape: squircle;
   }
 </style>

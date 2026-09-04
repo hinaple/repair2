@@ -29,7 +29,8 @@
     flex-direction: column;
     gap: 8px;
     padding: 10px 10px 12px;
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     border: solid var(--w-o2) 1px;
   }
 </style>

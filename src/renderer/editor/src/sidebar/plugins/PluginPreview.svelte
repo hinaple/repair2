@@ -57,7 +57,8 @@
   .plugin {
     flex: 0 0 auto;
     width: 100%;
-    border-radius: 5px;
+    border-radius: 14px;
+    corner-shape: squircle;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -81,7 +82,8 @@
   }
   .more {
     padding: 3px 3px;
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     display: none;
     cursor: pointer;
   }

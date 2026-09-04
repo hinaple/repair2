@@ -102,7 +102,8 @@
   .tab {
     box-sizing: border-box;
     padding: 5px;
-    border-radius: 5px;
+    border-radius: 16px;
+    corner-shape: squircle;
     flex: 0 0 auto;
     margin-bottom: 3px;
   }

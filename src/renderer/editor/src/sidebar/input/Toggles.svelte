@@ -18,8 +18,9 @@
     flex: 0 0 auto;
     gap: 3px;
     padding: 3px;
-    border-radius: 8px;
-    background-color: var(--b-o2);
+    border-radius: 20px;
+    corner-shape: squircle;
+    background-color: var(--b-o4);
     margin-inline: auto 0px;
     box-sizing: border-box;
   }

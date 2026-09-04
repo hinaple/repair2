@@ -76,7 +76,8 @@
     width: 100%;
     padding: 12px 10px;
     box-sizing: border-box;
-    border-radius: 5px;
+    border-radius: 20px;
+    corner-shape: squircle;
     display: flex;
     flex-direction: column;
     flex: 0 0 auto;

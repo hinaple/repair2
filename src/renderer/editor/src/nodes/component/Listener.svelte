@@ -59,7 +59,8 @@
   }
   .container {
     position: relative;
-    border-radius: 5px 0 0 5px;
+    border-radius: 10px 0 0 10px;
+    corner-shape: squircle;
     color: #fff;
     background-color: #000;
     height: 100%;

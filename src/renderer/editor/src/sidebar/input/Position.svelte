@@ -89,18 +89,19 @@
     cursor: pointer;
     border: solid rgba(255, 255, 255, 0.4) 1px;
     box-sizing: border-box;
+    corner-shape: squircle;
   }
   .dot:nth-child(1) {
-    border-top-left-radius: 5px;
+    border-top-left-radius: 10px;
   }
   .dot:nth-child(3) {
-    border-top-right-radius: 5px;
+    border-top-right-radius: 10px;
   }
   .dot:nth-child(7) {
-    border-bottom-left-radius: 5px;
+    border-bottom-left-radius: 10px;
   }
   .dot:nth-child(9) {
-    border-bottom-right-radius: 5px;
+    border-bottom-right-radius: 10px;
   }
   .dot.current {
     border-color: var(--blue-bright);
@@ -140,7 +141,8 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
   }
   .disabled {
     width: 100%;
@@ -150,7 +152,8 @@
     justify-content: center;
     background-color: var(--w-o2);
     color: var(--w-o8);
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     font-weight: 400;
   }
 </style>

@@ -68,7 +68,6 @@
   .item {
     width: 100%;
     border: solid transparent 1px;
-    border-radius: 5px;
     padding: 2px 4px;
     color: #fff;
     font-family: "Pretend";
@@ -82,6 +81,8 @@
     gap: 6px;
     align-items: center;
     anchor-name: var(--a);
+    border-radius: 10px;
+    corner-shape: squircle;
   }
 
   .item.active {

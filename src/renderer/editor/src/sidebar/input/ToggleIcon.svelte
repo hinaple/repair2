@@ -28,13 +28,14 @@
 <style>
   button {
     padding: 5px;
-    border-radius: 5px;
+    border-radius: 10px;
+    corner-shape: squircle;
     opacity: 0.7;
     flex: 0 0 auto;
     cursor: pointer;
   }
   .true {
-    background-color: var(--w-o1);
+    background-color: var(--w-o2);
   }
   button:hover {
     opacity: 1;

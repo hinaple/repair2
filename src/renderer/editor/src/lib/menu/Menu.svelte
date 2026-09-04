@@ -260,11 +260,12 @@
     flex-direction: column;
     max-height: 300px;
     overflow-y: auto;
-    border-radius: 10px;
     position: fixed;
     position-anchor: var(--a);
     box-sizing: border-box;
     z-index: var(--contextmenu-z);
+    border-radius: 20px;
+    corner-shape: squircle;
   }
 
   .menu.root {

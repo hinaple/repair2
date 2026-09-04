@@ -13,7 +13,8 @@
   .log {
     &.error,
     &.warning {
-      border-radius: 5px;
+      border-radius: 10px;
+      corner-shape: squircle;
     }
     &.error {
       background-color: #f427;

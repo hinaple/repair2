@@ -77,6 +77,7 @@ if (argv.report) {
 export default defineConfig({
   main: {
     build: {
+      target: "node24",
       rollupOptions: {
         input: join(__dirname, "src/index.ts"),
         plugins,

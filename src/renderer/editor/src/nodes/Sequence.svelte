@@ -87,7 +87,8 @@
     border: solid #000 2px;
     border-top-width: 0;
     box-sizing: border-box;
-    border-radius: 0 0 10px 10px;
+    border-radius: 0 0 20px 20px;
+    corner-shape: squircle;
     background-color: rgba(238, 238, 238, 0.4);
   }
   .add {
