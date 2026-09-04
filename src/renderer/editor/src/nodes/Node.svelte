@@ -10,6 +10,7 @@
   import { getMutator } from "../project/store";
   import inputNode from "./lines/input";
   import outputNode from "./lines/output";
+  import { deleteNodeGeometry, setNodeSize } from "./geometry";
 
   type OutputView = {
     id: string;
@@ -115,6 +116,7 @@
     unsubs.forEach((unsubscribe) => unsubscribe());
     frameUpdater.destroy();
     grabber?.destroy?.();
+    deleteNodeGeometry(id);
   });
 
   function pointerDownCapture(event: PointerEvent) {
@@ -128,6 +130,10 @@
       editor.at<boolean>("folded").setTransient(!folded);
     reload("nodeMoved");
   }
+
+  function boxSizeUpdated([box]: ResizeObserverSize[]) {
+    setNodeSize(id, box.inlineSize, box.blockSize);
+  }
 </script>
 
 <div
@@ -135,6 +141,7 @@
   bind:this={nodeEl}
   onpointerdowncapture={pointerDownCapture}
   use:data={{ type: node.nodeType, id }}
+  bind:borderBoxSize={null, boxSizeUpdated}
 >
   <div class="node-wrapper" style={`--node-color: ${color};`}>
     <div class={["node", isFocused && "focus"]} {id} style={`min-width: ${minWidth}px;`}>

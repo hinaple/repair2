@@ -18,7 +18,7 @@ window.addEventListener(
 
     const focussingData = focusTargets.get(focusTarget)!;
     focusHandledEvents.add(evt);
-    focusData(focussingData.type, focussingData.target, focussingData.parents);
+    focusData(focussingData.type, focussingData.target, focussingData.parents, evt.shiftKey);
   },
   { capture: true }
 );

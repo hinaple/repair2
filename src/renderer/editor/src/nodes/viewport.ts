@@ -4,6 +4,7 @@ import { getProject } from "../project/store";
 import FrameUpdater from "../lib/frameUpdater";
 import { ipc } from "../lib/ipc";
 import type { Types } from "@shared/projectData/types";
+import { getAllNodeBounds } from "./geometry";
 
 export const rInfo = {
   ratio: 0,
@@ -178,35 +179,21 @@ export function fitViewportToNodes(nodes: Map<string, Types.Node>) {
     return;
   }
 
-  // Calculate bounds
-  const bounds = {
-    minX: Infinity,
-    minY: Infinity,
-    maxX: -Infinity,
-    maxY: -Infinity
-  };
-
-  nodes.forEach((node) => {
-    const pos = node.nodePos;
-    bounds.minX = Math.min(bounds.minX, pos.x);
-    bounds.minY = Math.min(bounds.minY, pos.y);
-    bounds.maxX = Math.max(bounds.maxX, pos.x);
-    bounds.maxY = Math.max(bounds.maxY, pos.y);
-  });
+  const bounds = getAllNodeBounds();
 
   // Add padding
-  bounds.minX -= padding;
-  bounds.minY -= padding;
-  bounds.maxX += padding;
-  bounds.maxY += padding;
+  bounds.x1 -= padding;
+  bounds.y1 -= padding;
+  bounds.x2 += padding;
+  bounds.y2 += padding;
 
   // Calculate center position
-  const centerX = (bounds.minX + bounds.maxX) / 2;
-  const centerY = (bounds.minY + bounds.maxY) / 2;
+  const centerX = (bounds.x1 + bounds.x2) / 2;
+  const centerY = (bounds.y1 + bounds.y2) / 2;
 
   // Calculate required scale
-  const width = bounds.maxX - bounds.minX;
-  const height = bounds.maxY - bounds.minY;
+  const width = bounds.x2 - bounds.x1;
+  const height = bounds.y2 - bounds.y1;
   const screenRect = get(viewport.screen);
   const scaleX = Math.log10(screenRect.width / width);
   const scaleY = Math.log10(screenRect.height / height);

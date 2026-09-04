@@ -24,6 +24,7 @@
   import LinesOld from "./lines/LinesOld.svelte";
   import event from "../lib/actions/eventAction";
   import { isFocusHandled } from "../lib/editUtils/dataAction";
+  import { getAllInBoundsNodes } from "./geometry";
 
   const myReadyGrab = GrabKeys.viewport;
   const myGrab = GrabKeys.viewportReady;
@@ -89,6 +90,10 @@
   }
   function pointerup(evt: PointerEvent) {
     if (selectOrigin) {
+      const p1 = getOriginalPos(selectOrigin.x1, selectOrigin.y1);
+      const p2 = getOriginalPos(selectOrigin.x2, selectOrigin.y2);
+      const selecting = getAllInBoundsNodes(p1.x, p1.y, p2.x, p2.y);
+      if (selecting.size > 0) focusData("nodes", selecting);
       selectOrigin = null;
       $grabbing = null;
       return;

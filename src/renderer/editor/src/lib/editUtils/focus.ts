@@ -78,8 +78,11 @@ function selectNodeOnNode(cf: FocusData, f: FocusData): boolean {
 export function focusData<T extends FocusData>(
   type: T["type"],
   target?: T["target"],
-  parents?: T["parents"]
+  parents?: T["parents"],
+  shift = isShiftPressed
 ): unknown {
+  if (shift !== isShiftPressed) isShiftPressed = shift;
+
   const cf = get(currentFocus);
 
   let f = processFocusExpanding({ type, target: target ?? null, parents } as FocusData);
