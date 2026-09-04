@@ -1,4 +1,4 @@
-import { currentFocus, focusData, type FocusData } from "./focus";
+import { currentFocus, focusData, removeFocusTarget, type FocusData } from "./focus";
 import { get } from "svelte/store";
 import { grabbing } from "../stores";
 import { createContextFocusData, rightclick } from "./contextMenu/contextUtils";
@@ -60,7 +60,9 @@ export const data: Action<HTMLElement, ContextMenuParam> = (node, p) => {
       contextMenuAction?.destroy?.();
       focusTargets.delete(focusNode);
       unsub();
-      if (focussing) focusData("project");
+
+      if (focussingData.type === "project") return;
+      removeFocusTarget(focussingData);
     }
   };
 };

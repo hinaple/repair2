@@ -87,7 +87,6 @@ export function focusData<T extends FocusData>(
 
   let f = processFocusExpanding({ type, target: target ?? null, parents } as FocusData);
 
-  console.log(f);
   if (f.type === "nodes") {
     if (f.target.size === 0) return;
     else if (f.target.size === 1)
@@ -98,6 +97,25 @@ export function focusData<T extends FocusData>(
 
   if (f.type === "nodes") currentFocus.set({ type: "nodes", target: new SvelteSet(f.target) });
   else currentFocus.set(f);
+}
+
+export function removeFocusTarget(focus: Exclude<FocusData, { type: "project" | "nodes" }>) {
+  const current = get(currentFocus);
+
+  if (current.type === focus.type && current.target === focus.target) {
+    currentFocus.set({ type: "project", target: null });
+    return;
+  }
+
+  if (current.type === "nodes" && focus.type === "node" && current.target.has(focus.target)) {
+    const tempSet = new SvelteSet(current.target);
+    tempSet.delete(focus.target);
+    if (tempSet.size > 1) return currentFocus.set({ type: "nodes", target: tempSet });
+    if (tempSet.size === 1)
+      return currentFocus.set({ type: "node", target: tempSet.values().next().value! });
+
+    currentFocus.set({ type: "project", target: null });
+  }
 }
 
 let isShiftPressed = false;

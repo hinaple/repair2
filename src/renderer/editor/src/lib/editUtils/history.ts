@@ -133,7 +133,6 @@ export function endGroup() {
   const completedGroup = group;
   group = null;
   if (completedGroup.items.length !== 0) {
-    console.log("NEW HISTORY GROUP", completedGroup.items);
     pushHistory(completedGroup.items);
   }
   completedGroup.res();

@@ -47,10 +47,14 @@
 
     const Default = StepTypes[step.type as keyof typeof StepTypes];
     if (step.type === "delay") return `${Default} ${step.payload.delayMs}ms`;
-    if (step.type === "Communication.Serial.send") return `시리얼 통신: ${step.payload.data}`;
+    if (step.type === "Communication.Serial.send") return `시리얼 통신(${step.payload.data})`;
     if (step.type === "Communication.Socket.send")
       return (
-        `소켓 통신: ${step.payload.channel}` + (step.payload.data ? `:${step.payload.data}` : "")
+        `소켓 통신(${step.payload.channel}` + (step.payload.data ? `:${step.payload.data})` : ")")
+      );
+    if (step.type === "Communication.Mqtt.publish")
+      return (
+        `MQTT(${step.payload.topic}` + (step.payload.payload ? `:${step.payload.payload})` : ")")
       );
     if (step.type === "Component.remove" && step.payload.componentAlias)
       return `${step.payload.componentAlias} ${Default}`;
