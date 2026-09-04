@@ -11,6 +11,7 @@
   import inputNode from "./lines/input";
   import outputNode from "./lines/output";
   import { deleteNodeGeometry, setNodeSize } from "./geometry";
+  import { withHistoryGroup } from "../lib/editUtils/history";
 
   type OutputView = {
     id: string;
@@ -104,7 +105,9 @@
         reload("sequenceMoved");
       },
       onMoveEnd: (moved) => {
-        for (const item of moving) moved ? item.session.commit() : item.session.cancel();
+        withHistoryGroup(() => {
+          for (const item of moving) moved ? item.session.commit() : item.session.cancel();
+        });
         moving = [];
         reload("sequenceMoved");
       }
