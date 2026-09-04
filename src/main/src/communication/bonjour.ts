@@ -11,11 +11,15 @@ export function findService(type: string, name: string): Promise<string[]> {
       if (service.addresses && service.name === name) {
         res(service.addresses.map((ip) => `http://${ip}:${service.port}`));
         browser.stop();
+        bonjour?.destroy();
+        bonjour = null;
         stopFinding = null;
       }
     });
     stopFinding = () => {
       browser.stop();
+      bonjour?.destroy();
+      bonjour = null;
       rej();
       stopFinding = null;
     };

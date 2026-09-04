@@ -1,16 +1,25 @@
-import { connect, type MqttClient } from "mqtt";
 import { logger } from "../logs/logger";
+
+let connect: typeof import("mqtt").connect;
+
+async function getConnect() {
+  if (!connect) connect = (await import("mqtt")).connect;
+
+  return connect;
+}
 
 type OnData = (topic: string, message: string) => unknown;
 type OnConnect = () => unknown;
 
 export default class MqttConnector {
-  private client: MqttClient | null = null;
+  private client: import("mqtt").MqttClient | null = null;
   constructor(
     private ondata: OnData,
     private onconnect: OnConnect
   ) {}
   async connect(url: string, topics: string[]) {
+    const connect = await getConnect();
+
     if (this.client) this.client.end();
 
     this.client = connect(url);

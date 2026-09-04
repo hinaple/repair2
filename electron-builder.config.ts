@@ -1,23 +1,4 @@
 import type { Configuration } from "electron-builder";
-import fs from "fs/promises";
-import { join, resolve } from "path";
-
-// async function getViteDependenciesDeps(modules = new Set(), currentModule = "vite") {
-//     try {
-//         if (modules.has(currentModule)) return;
-//         modules.add(currentModule);
-
-//         const currentDependencies = Object.keys(
-//             JSON.parse(
-//                 await fs.readFile(join("node_modules", currentModule, "package.json"), "utf8")
-//             ).dependencies
-//         );
-//         await Promise.all(
-//             currentDependencies.map((module) => getViteDependenciesDeps(modules, module))
-//         );
-//         return modules;
-//     } catch {}
-// }
 
 export default async function (): Promise<Configuration> {
   return {
@@ -26,19 +7,8 @@ export default async function (): Promise<Configuration> {
     directories: {
       buildResources: "build"
     },
-    extraFiles: ["templates/**/*", "packages/**/*"],
-    files: [
-      "!**/.vscode/*",
-      "!src/*",
-      "!*.config.{js,ts,mjs,cjs}",
-      "!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}",
-      "!{.env,.env.*,.npmrc,pnpm-lock.yaml}",
-      "!*.md",
-      "!docs/*",
-      "!packages/*",
-      "!templates/*",
-      "!vitePlugins/*"
-    ],
+    files: ["out/**/*"],
+    extraFiles: ["templates/**/*", "packages/plugin-sdk/**/*"],
     asarUnpack: ["resources/**"],
     win: {
       executableName: "repair2",

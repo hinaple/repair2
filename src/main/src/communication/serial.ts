@@ -1,11 +1,19 @@
-import { SerialPort } from "serialport";
 import { logger } from "../logs/logger";
+import type { SerialPort as SerialPortType } from "serialport";
+
+let SerialPortClass: typeof import("serialport").SerialPort | null = null;
+
+async function getSerialPort() {
+  if (!SerialPortClass) SerialPortClass = (await import("serialport")).SerialPort;
+
+  return SerialPortClass;
+}
 
 type SerialDataHandler = (data: string) => void;
 type SerialConnectHandler = (port: string) => void;
 
 export default class SerialConnector {
-  port: SerialPort | null = null;
+  port: SerialPortType | null = null;
 
   #onconnect: SerialConnectHandler;
   #ondata: SerialDataHandler;
@@ -20,15 +28,17 @@ export default class SerialConnector {
 
     let realPort = path;
 
+    const SP = await getSerialPort();
+
     if (portAlias || !path) {
-      const list = await SerialPort.list();
+      const list = await SP.list();
       realPort =
         list.find((port) => port.friendlyName?.includes(portAlias || "USB-SERIAL"))?.path ?? path;
     }
 
     if (!realPort) return;
 
-    this.port = new SerialPort({
+    this.port = new SP({
       path: realPort,
       baudRate: baudRate ?? 9600
     });
