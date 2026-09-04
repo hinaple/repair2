@@ -22,6 +22,10 @@ export function migrateProject({
     data = migrateToV2(appVersion, data);
   }
 
+  if (data.version !== 2) {
+    throw new Error("Unsupported Project Version:", data.version);
+  }
+
   return data;
 }
 
