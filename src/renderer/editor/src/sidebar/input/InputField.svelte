@@ -19,6 +19,7 @@
     max?: number;
     label?: (index: number) => string | null;
     create?: () => unknown;
+    remove?: (index: number, value: any) => unknown;
     newData?: () => any;
   };
 
@@ -102,6 +103,10 @@
       {#each array as v, i}
         {@const canRemoveNow = (seriesOption.min ?? 0) <= i}
         {@const remove = () => {
+          if (seriesOption.remove) {
+            seriesOption.remove(i, v);
+            return;
+          }
           seriesBinding.splice(i, 1);
         }}
         <div class="series-field">

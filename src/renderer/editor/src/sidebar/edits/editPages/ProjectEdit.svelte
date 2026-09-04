@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ScreenConfigTypes } from "../../../lib/translate";
   import { Factories } from "../../../project/factories";
-  import { getMutator } from "../../../project/store";
+  import { getMutator, getProject } from "../../../project/store";
   import type { ConfigEditor } from "../../../project/mutator";
   import InputField from "../../input/InputField.svelte";
 
@@ -12,6 +12,15 @@
     getMutator().transaction(() => {
       const id = Factories.pluginPointer();
       editor.field("runtimePlugins").splice(data.runtimePlugins.length, 0, id);
+    });
+  }
+
+  function removeRuntimePlugin(index: number, id: string) {
+    const mutator = getMutator();
+
+    mutator.transaction(() => {
+      editor.field("runtimePlugins").splice(index, 1);
+      mutator.delete("pluginPointers", id);
     });
   }
 </script>
@@ -59,7 +68,11 @@
 <hr />
 <InputField
   label="런타임 플러그인"
-  seriesOption={{ binding: editor.field("runtimePlugins"), create: addRuntimePlugin }}
+  seriesOption={{
+    binding: editor.field("runtimePlugins"),
+    create: addRuntimePlugin,
+    remove: removeRuntimePlugin
+  }}
   type="plugin"
   pluginType="runtime"
   canUnselect={false}
