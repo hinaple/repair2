@@ -1,3 +1,4 @@
+import type { Configuration } from "electron-builder";
 import fs from "fs/promises";
 import { join, resolve } from "path";
 
@@ -18,10 +19,7 @@ import { join, resolve } from "path";
 //     } catch {}
 // }
 
-/**
- * @return {Promise<import("electron-builder").Configuration>}
- */
-export default async function (...attr) {
+export default async function (): Promise<Configuration> {
   return {
     appId: "com.repair2.app",
     productName: "repair2",

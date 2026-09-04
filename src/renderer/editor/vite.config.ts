@@ -1,22 +1,28 @@
 import { defineConfig } from "vite";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { join } from "path";
 import renderer from "vite-plugin-electron-renderer";
-import onlyBlockPlugin from "../../vitePlugins/only-block-plugin.mjs";
 
 const classPath = join(__dirname, "../common");
 const sharedPath = join(__dirname, "../../shared");
-const outDir = join(__dirname, "../../../out/play");
-
+const outDir = join(__dirname, "../../../out/editor");
 export default defineConfig({
   root: __dirname,
-  cacheDir: join(__dirname, "../../../node_modules/.vite-play"),
-  plugins: [renderer()],
+  cacheDir: join(__dirname, "../../../node_modules/.vite-editor"),
+  plugins: [
+    svelte({
+      onwarn: (warning, handler) => {
+        if (!warning.code.startsWith("a11y") && warning.code !== "state_referenced_locally")
+          handler(warning);
+      }
+    }),
+    renderer()
+  ],
   server: {
-    port: 3100
+    port: 3101
   },
   optimizeDeps: {
-    force: true,
-    exclude: ["lit"]
+    force: true
   },
   base: "./",
   build: {

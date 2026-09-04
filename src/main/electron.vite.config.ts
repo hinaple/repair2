@@ -16,7 +16,7 @@ function resolveArgv() {
   const myArgvFrom = process.argv.indexOf("--");
   if (myArgvFrom === -1) return {};
 
-  let result = {};
+  let result: Record<string, boolean | string> = {};
   let currentKey = null;
   for (let i = myArgvFrom + 1; i < process.argv.length; i++) {
     if (process.argv[i].startsWith("--")) {
