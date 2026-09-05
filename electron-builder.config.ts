@@ -14,6 +14,7 @@ export default async function (): Promise<Configuration> {
       executableName: "repair2",
       icon: "resources/logo.png"
     },
+    electronLanguages: ["en-US"],
     nsis: {
       artifactName: "${name}-${version}-setup.${ext}",
       shortcutName: "${productName}",
