@@ -32,8 +32,8 @@
   {#snippet body()}
     <div class="body">
       <div class="values">
-        <Value pre="값A: " id={branch.valueA} parents={[id]} isValueA />
-        <Value pre="값B: " id={branch.valueB} parents={[id]} />
+        <Value pre="값A: " id={branch.valueA} parents={[id]} nodeId={id} isValueA />
+        <Value pre="값B: " id={branch.valueB} parents={[id]} nodeId={id} />
       </div>
       <div class="operator">
         {ComparisonOperatorTypes[branch.operator as keyof typeof ComparisonOperatorTypes] ?? "?"}

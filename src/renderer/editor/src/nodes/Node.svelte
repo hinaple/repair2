@@ -5,7 +5,7 @@
   import FoldArrow from "../lib/FoldArrow.svelte";
   import { data } from "../lib/editUtils/dataAction";
   import { currentFocus } from "../lib/editUtils/focus";
-  import { grabbing, GrabKeys, reload, sequenceMovedReloader } from "../lib/stores";
+  import { grabbing, GrabKeys, onNodeReload, reloadNode } from "../lib/stores";
   import type { EditSession, FieldBinding } from "../project/mutator";
   import { getMutator } from "../project/store";
   import inputNode from "./lines/input";
@@ -51,20 +51,18 @@
   let isFocused = $state(false);
   let folded = $derived("folded" in node ? node.folded : false);
 
-  $effect(() => {
-    title;
-    reload("nodeMoved");
-  });
-
-  const frameUpdater = new FrameUpdater(() => {
+  function renderNodePos() {
     if (!nodeEl) return;
     const pos = editor.value.nodePos;
     nodeEl.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
-  }, 0);
-  const applyNodePos = () => frameUpdater.draw();
+  }
+  const frameUpdater = new FrameUpdater(renderNodePos, 0);
 
   const unsubs = [
-    sequenceMovedReloader.subscribe(applyNodePos),
+    onNodeReload((nodes, all) => {
+      if (!all && !nodes.has(id)) return;
+      renderNodePos();
+    }),
     currentFocus.subscribe((focus) => {
       isFocused =
         (focus.type === "node" && focus.target === id) ||
@@ -72,9 +70,10 @@
     }),
     getMutator().subscribe({ kind: "record", type: "nodes", id }, (change) => {
       if (change.path[0] !== "nodePos") return;
-      applyNodePos();
-      if (change.direction !== "transient") reload("nodeMoved");
-    })
+      frameUpdater.draw();
+      if (change.direction !== "transient") reloadNode(id);
+    }),
+    () => frameUpdater.destroy()
   ];
 
   type MovingNode = {
@@ -84,10 +83,11 @@
   let moving: MovingNode[] = [];
 
   onMount(() => {
-    applyNodePos();
+    renderNodePos();
     grabber = new Grabber({
       container: nodeEl!,
       handle: handleEl!,
+      optimizedOnMoved: true,
       onMoveStart: () => {
         const focus = $currentFocus;
         const ids = focus.type === "nodes" && focus.target.has(id) ? [...focus.target] : [id];
@@ -101,18 +101,18 @@
           const movingEditor = getMutator().record("nodes", item.id);
           const pos = movingEditor.value.nodePos;
           item.session.update({ x: pos.x + dx, y: pos.y + dy });
+          reloadNode(item.id);
         }
-        reload("sequenceMoved");
       },
       onMoveEnd: (moved) => {
         withHistoryGroup(() => {
           for (const item of moving) moved ? item.session.commit() : item.session.cancel();
         });
         moving = [];
-        reload("sequenceMoved");
+        reloadNode(id);
       }
     });
-    reload("sequenceMoved");
+    reloadNode(id);
   });
 
   onDestroy(() => {
@@ -131,7 +131,7 @@
   function toggleFold() {
     if (node.nodeType === "sequence" || node.nodeType === "variableSet")
       editor.at<boolean>("folded").setTransient(!folded);
-    reload("nodeMoved");
+    reloadNode(id);
   }
 
   function boxSizeUpdated([box]: ResizeObserverSize[]) {
@@ -165,7 +165,7 @@
         <div class="inner-outputs">
           {#each innerOutputs as output}
             <div class="right-output-wrapper">
-              <div class="right-output" use:outputNode={output}></div>
+              <div class="right-output" use:outputNode={{ ...output, nodeId: id }}></div>
             </div>
           {/each}
         </div>
@@ -174,7 +174,7 @@
     </div>
     <div class="outputs">
       {#each outputs as output}
-        <div class="output" use:outputNode={output}>
+        <div class="output" use:outputNode={{ ...output, nodeId: id }}>
           {#if !folded && output.label}<div class="output-label">{output.label}</div>{/if}
         </div>
       {/each}

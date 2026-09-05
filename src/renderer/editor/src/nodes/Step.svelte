@@ -4,7 +4,7 @@
   import { data } from "../lib/editUtils/dataAction";
   import registerHighlight, { type HighlightData } from "../lib/highlight";
   import { startMonitoring } from "../lib/runtimeMonitor.svelte";
-  import { reload } from "../lib/stores";
+  import { reloadNode } from "../lib/stores";
   import { StepTypes } from "../lib/translate";
   import { getMutator } from "../project/store";
   import type { SortableProps } from "./types";
@@ -14,17 +14,15 @@
     id,
     onpointerdown,
     noGrab = false,
-    parents
-  }: SortableProps & { parents: string[] } = $props();
+    parents,
+    nodeId
+  }: SortableProps & {
+    parents: string[];
+    nodeId: string;
+  } = $props();
 
   const editor = $derived(getMutator().record("steps", id));
   const step = $derived(editor.value);
-
-  $effect(() => {
-    step.type;
-    step.title;
-    reload("nodeMoved");
-  });
 
   let hlData = $derived.by<HighlightData>(() => {
     if (step.type === "Others.setVariable")
@@ -92,7 +90,8 @@
       id={step.payload.componentId}
       parents={[id, ...parents]}
       {noGrab}
-      onNodeCountChanged={() => reload("nodeMoved")}
+      onNodeCountChanged={() => reloadNode(nodeId)}
+      {nodeId}
     />
   {/if}
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
   import { data } from "../../lib/editUtils/dataAction";
-  import { grabbing, reload } from "../../lib/stores";
+  import { grabbing } from "../../lib/stores";
   import { ValueProcessTypes } from "../../lib/translate";
   import { getMutator } from "../../project/store";
   import type { SortableProps } from "../types";
@@ -9,10 +9,6 @@
   let { id, onpointerdown, parents }: SortableProps & { parents: string[] } = $props();
   const editor = $derived(getMutator().record("valueProcesses", id));
   const valueProcess = $derived(editor.value);
-  $effect(() => {
-    valueProcess.type;
-    reload("nodeMoved");
-  });
 </script>
 
 <div

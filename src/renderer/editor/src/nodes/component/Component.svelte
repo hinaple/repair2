@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { grabbing, reload } from "../../lib/stores";
+  import { grabbing, reloadNode } from "../../lib/stores";
   import { focusData } from "../../lib/editUtils/focus";
   import Icon from "../../assets/icons/Icon.svelte";
   import Sortable from "../Sortable.svelte";
@@ -14,12 +14,14 @@
     id,
     noGrab = false,
     onNodeCountChanged,
-    parents
+    parents,
+    nodeId
   }: {
     id: string;
     noGrab?: boolean;
     onNodeCountChanged: () => unknown;
     parents: string[];
+    nodeId: string;
   } = $props();
 
   // svelte-ignore state_referenced_locally
@@ -27,11 +29,6 @@
 
   const editor = $derived(getMutator().record("components", id));
   const comp = $derived(editor.value);
-
-  $effect(() => {
-    comp.alias;
-    reload("nodeMoved");
-  });
 
   function addElement(evt: PointerEvent) {
     if (evt.button || $grabbing) return;
@@ -41,7 +38,7 @@
       getMutator().transaction(() => {
         const newId = Factories.element();
         editor.field("elements").splice(comp.elements.length, 0, newId);
-        reload("nodeMoved");
+        reloadNode(nodeId);
         return newId;
       }),
       myParents
@@ -66,13 +63,13 @@
     <Sortable
       binding={editor.field("elements")}
       itemType="elements"
-      onresized={() => reload("nodeMoved")}
-      onmoved={() => reload("nodeMoved")}
+      onresized={() => reloadNode(nodeId)}
+      onmoved={() => reloadNode(nodeId)}
       style="enum"
       {noGrab}
     >
       {#snippet children(props)}
-        <Element parents={myParents} {onNodeCountChanged} {...props} />
+        <Element parents={myParents} {onNodeCountChanged} {nodeId} {...props} />
       {/snippet}
     </Sortable>
   </div>

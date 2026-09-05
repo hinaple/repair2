@@ -1,3 +1,4 @@
+import { reloadNode } from "../lib/stores";
 import { getProject } from "../project/store";
 
 interface NodeSize {
@@ -9,6 +10,7 @@ const NodeSizes = new Map<string, NodeSize>();
 
 export function setNodeSize(id: string, width: number, height: number) {
   NodeSizes.set(id, { width: width, height: height });
+  reloadNode(id);
 }
 export function getNodeSize(id: string) {
   return NodeSizes.get(id);

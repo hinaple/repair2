@@ -3,7 +3,7 @@
   import { data } from "../../lib/editUtils/dataAction";
   import { focusData } from "../../lib/editUtils/focus";
   import registerHighlight from "../../lib/highlight";
-  import { grabbing, reload } from "../../lib/stores";
+  import { grabbing, reloadNode } from "../../lib/stores";
   import { BaseValueTypes } from "../../lib/translate";
   import { Factories } from "../../project/factories";
   import { getMutator } from "../../project/store";
@@ -14,12 +14,14 @@
     id,
     parents,
     pre,
+    nodeId,
     isFull = false,
     isValueA = false,
     inNodeSpace = true
   }: {
     id: string;
     parents: string[];
+    nodeId: string;
     pre: string;
     isFull?: boolean;
     isValueA?: boolean;
@@ -28,12 +30,6 @@
 
   const editor = $derived(getMutator().record("values", id));
   const value = $derived(editor.value);
-
-  if (inNodeSpace)
-    $effect(() => {
-      value.baseValue;
-      reload("nodeMoved");
-    });
 
   function addProcess(event: PointerEvent) {
     if ($grabbing) return;
@@ -44,7 +40,7 @@
       return newId;
     });
     focusData("valueProcess", processId, [id, ...parents]);
-    reload("nodeMoved");
+    reloadNode(nodeId);
   }
 
   let highlightActive = $derived(value.baseType === "variable" && !!value.baseValue);
@@ -70,7 +66,7 @@
     <Sortable
       binding={editor.field("process")}
       itemType="valueProcesses"
-      onresized={() => reload("nodeMoved")}
+      onresized={() => reloadNode(nodeId)}
     >
       {#snippet children(props)}
         <ValueProcess parents={[id, ...parents]} {...props} />

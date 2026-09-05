@@ -5,17 +5,18 @@
   import type { SortableProps } from "../types";
   import { getMutator } from "../../project/store";
   import { data } from "../../lib/editUtils/dataAction";
-  import { reload } from "../../lib/stores";
   import type { Types } from "@shared/projectData/types";
 
   let {
     id,
     onpointerdown,
     hidden = false,
-    parents
+    parents,
+    nodeId
   }: SortableProps & {
     hidden?: boolean;
     parents: string[];
+    nodeId: string;
   } = $props();
 
   const editor = $derived(getMutator().record("listeners", id));
@@ -30,7 +31,6 @@
   $effect(() => {
     listener.type;
     getChannel(listener);
-    reload("nodeMoved");
   });
 </script>
 
@@ -43,7 +43,7 @@
       {getChannel(listener) || ElementListenerTypes[listener.type]}
     </div>
     {#if !hidden}
-      <div class="output" use:outputNode={{ id, binding: editor.field("output") }}></div>
+      <div class="output" use:outputNode={{ id, nodeId, binding: editor.field("output") }}></div>
     {/if}
   </div>
 </div>

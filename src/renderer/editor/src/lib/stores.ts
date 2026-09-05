@@ -1,5 +1,6 @@
 import { typedFromEntries } from "@shared/utils.types";
 import { writable, type Writable } from "svelte/store";
+import FrameUpdater from "./frameUpdater";
 
 const Grabs = ["viewport", "viewportReady"] as const;
 export const GrabKeys = typedFromEntries(Grabs.map((g) => [g, Symbol(g)]));
@@ -18,14 +19,38 @@ grabbing.subscribe((g) => {
   }
 });
 
-type ReloaderKeys = `${"sequence" | "node"}Moved`;
-export const sequenceMovedReloader = writable(Symbol());
-export const nodeMovedReloader = writable(Symbol());
-const reloaders: Record<ReloaderKeys, Writable<Symbol>> = {
-  sequenceMoved: sequenceMovedReloader,
-  nodeMoved: nodeMovedReloader
-};
-export function reload(key: ReloaderKeys) {
-  reloaders[key].set(Symbol());
-  if (key === "sequenceMoved") reload("nodeMoved");
+type NodeReloadHandler = (ids: Set<string>, all: boolean) => unknown;
+const nodeReloadHandlers = new Set<NodeReloadHandler>();
+export function onNodeReload(handler: NodeReloadHandler) {
+  nodeReloadHandlers.add(handler);
+  return () => nodeReloadHandlers.delete(handler);
+}
+
+const movedNodes = new Set<string>();
+const fu = new FrameUpdater(() => {
+  if (gonnaReloadAll) {
+    movedNodes.clear();
+    gonnaReloadAll = false;
+    nodeReloadHandlers.forEach((cb) => cb(movedNodes, true));
+
+    return;
+  }
+
+  if (movedNodes.size <= 0) return;
+
+  nodeReloadHandlers.forEach((cb) => cb(movedNodes, false));
+  movedNodes.clear();
+});
+
+export function reloadNode(id: string) {
+  if (gonnaReloadAll) return;
+
+  movedNodes.add(id);
+  fu.draw();
+}
+
+let gonnaReloadAll = false;
+export function reloadAllNode() {
+  gonnaReloadAll = true;
+  fu.draw();
 }

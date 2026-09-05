@@ -3,15 +3,11 @@
 <script lang="ts">
   import ToastDisplay from "./lib/toast/ToastDisplay.svelte";
   import ContextMenu from "./lib/editUtils/contextMenu/ContextMenu.svelte";
-  import { redo, undo } from "./lib/editUtils/history";
   import NodeSpace from "./nodes/NodeSpace.svelte";
-  import { focusData } from "./lib/editUtils/focus";
   import SideBar from "./sidebar/SideBar.svelte";
   import { onMount } from "svelte";
-  import { reload } from "./lib/stores";
+  import { reloadAllNode } from "./lib/stores";
   import Modal from "./lib/modal/ModalDisplay.svelte";
-  import { ipc } from "./lib/ipc";
-  import { play } from "./lib/msg";
   import { setViewportSize, viewport } from "./nodes/viewport";
   import { getProject } from "./project/store";
 
@@ -38,7 +34,7 @@
   });
 
   document.fonts.ready.then(() => {
-    reload("nodeMoved");
+    reloadAllNode();
     console.log("fonts loaded");
   });
 </script>
