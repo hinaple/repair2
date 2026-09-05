@@ -46,7 +46,7 @@ function processFocusExpanding(f: FocusData): FocusData {
   return f;
 }
 
-function selectNodeOnNode(cf: FocusData, f: FocusData): boolean {
+function selectNodeOnNode(cf: FocusData, f: FocusData, isShiftPressed: boolean): boolean {
   if (!isShiftPressed && cf.type === "nodes" && f.type === "node" && cf.target.has(f.target))
     return true;
 
@@ -79,10 +79,8 @@ export function focusData<T extends FocusData>(
   type: T["type"],
   target?: T["target"],
   parents?: T["parents"],
-  shift = isShiftPressed
+  isShiftPressed: boolean = false
 ): unknown {
-  if (shift !== isShiftPressed) isShiftPressed = shift;
-
   const cf = get(currentFocus);
 
   let f = processFocusExpanding({ type, target: target ?? null, parents } as FocusData);
@@ -93,7 +91,7 @@ export function focusData<T extends FocusData>(
       f = { type: "node", target: f.target.values().next().value!, parents };
   }
 
-  if (selectNodeOnNode(cf, f)) return;
+  if (selectNodeOnNode(cf, f, isShiftPressed)) return;
 
   if (f.type === "nodes") currentFocus.set({ type: "nodes", target: new SvelteSet(f.target) });
   else currentFocus.set(f);
@@ -117,20 +115,3 @@ export function removeFocusTarget(focus: Exclude<FocusData, { type: "project" | 
     currentFocus.set({ type: "project", target: null });
   }
 }
-
-let isShiftPressed = false;
-window.addEventListener(
-  "keydown",
-  (evt) => {
-    if (evt.key === "Shift") isShiftPressed = true;
-  },
-  { passive: true }
-);
-
-window.addEventListener(
-  "keyup",
-  (evt) => {
-    if (evt.key === "Shift") isShiftPressed = false;
-  },
-  { passive: true }
-);

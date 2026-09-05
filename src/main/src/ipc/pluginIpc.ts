@@ -62,7 +62,7 @@ export function setupPluginIpc(app: MainApp) {
     return instance.callMainMethod(methodName, args);
   });
 
-  ipc.handle("plugin:create", async (evt, { name, type, isExternal }) => {
+  ipc.handle("plugin:create", async (evt, { name, type, isExternal, typescript }) => {
     let path: string | undefined;
     if (isExternal) {
       const selected = await app.system.dialog.showOpenDialog({
@@ -74,7 +74,8 @@ export function setupPluginIpc(app: MainApp) {
     }
     const createResult = await createEmptyPlugin(name, type, {
       root: path,
-      skipNameValidation: false
+      skipNameValidation: false,
+      typescript
     });
     if ("error" in createResult) return { canceled: true as const, error: createResult.error };
     if (isExternal) {

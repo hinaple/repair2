@@ -42,6 +42,7 @@ type Sequence = Override<
   {
     steps: string[];
     output: Output;
+    concurrency: "allow" | "skip";
   }
 >;
 

@@ -6,6 +6,7 @@ import pc from "picocolors";
 
 const pkg = JSON.parse(readFileSync(join(__dirname, "../../package.json"), "utf8"));
 const svelteVersion = pkg.dependencies?.svelte ?? pkg.devDependencies?.svelte ?? null;
+const typescriptVersion = pkg.devDependencies?.typescript ?? null;
 
 const sdkPkg = JSON.parse(
   readFileSync(join(__dirname, "../../packages/plugin-sdk/package.json"), "utf8")
@@ -91,6 +92,7 @@ export default defineConfig({
     define: {
       __APP_VERSION__: JSON.stringify(pkg.version),
       __SVELTE_VERSION__: JSON.stringify(svelteVersion),
+      __TS_VERSION__: JSON.stringify(typescriptVersion),
       __SDK_VERSION__: JSON.stringify(sdkVersion)
     },
     resolve: {

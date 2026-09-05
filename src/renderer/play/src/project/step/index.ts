@@ -34,7 +34,9 @@ let resetAbort = new AbortController();
 
 const actions = {
   Component: {
-    create: (s) => addComponent(s.payload.componentId!),
+    create: (s) => {
+      addComponent(s.payload.componentId, s.payload.recreate);
+    },
     remove: (s) => {
       if (s.payload.componentAlias)
         removeComponentByAlias(s.payload.componentAlias, s.payload.ignoreUnbreakable);
@@ -170,7 +172,10 @@ const actions = {
   }
 } satisfies StepAction;
 
-export const WaitingSteps = new Map();
+export const WaitingSteps = new Set<{
+  resolve: (result: boolean | undefined) => void;
+  id: string;
+}>();
 
 export function stepExecute(step: Types.Step) {
   const action = step.type
@@ -185,19 +190,23 @@ export function stepExecute(step: Types.Step) {
     return actionResult;
   }
 
-  return new Promise((resolve) => {
+  return new Promise<boolean | undefined>((resolve) => {
     sendChanges("step", "started", step.id);
-    const s = Symbol();
-    WaitingSteps.set(s, {
-      resolve,
-      id: step.id
-    });
-    actionResult.then((result) => {
-      const data = WaitingSteps.get(s);
-      if (!data) return;
+
+    const data = { resolve, id: step.id };
+    WaitingSteps.add(data);
+
+    const finish = (result: boolean | undefined) => {
+      if (!WaitingSteps.has(data)) return;
+
+      WaitingSteps.delete(data);
       data.resolve(result);
       sendChanges("step", "ended", data.id);
-      WaitingSteps.delete(s);
+    };
+
+    actionResult.then(finish, (error) => {
+      console.error(`STEP "${step.id}" ERROR`, error);
+      finish(false);
     });
   });
 }

@@ -106,6 +106,7 @@ export type RendererToMainInvokeMap = {
           | "svelte-element"
           | "svelte-frame";
         isExternal: boolean;
+        typescript: boolean;
       }
     ];
     result:

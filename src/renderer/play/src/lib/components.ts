@@ -9,7 +9,7 @@ type ComponentData = Types.Component;
 
 const gamezone = document.getElementById("gamezone")!;
 
-const components: Set<RepairComponent> = new Set();
+const components = new Set<RepairComponent>();
 
 const subscribers: Set<{
   listener: (comps: ComponentHandle[]) => unknown;
@@ -29,9 +29,11 @@ export function getComponent(aliasOrId: string) {
   return components.values().find((c) => c.componentId === aliasOrId);
 }
 
-export function addComponent(componentId: string) {
+export function addComponent(componentId: string, recreate: "allow" | "ignore") {
   const componentData = getRef("components", componentId, false);
   const duplicatedComp = getDuplicatedComponent(componentData);
+  if (recreate === "ignore" && duplicatedComp) return;
+
   if (duplicatedComp) removeComponent(duplicatedComp, false);
   const newComponent = new RepairComponent(componentData, !duplicatedComp);
   gamezone.appendChild(newComponent);

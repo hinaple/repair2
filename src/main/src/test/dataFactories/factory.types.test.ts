@@ -44,7 +44,7 @@ createVariableSet();
 createStep();
 createStep({
   type: "Component.create",
-  payload: { componentId: "existing-component" }
+  payload: { componentId: "existing-component", recreate: "allow" }
 });
 createStep({ type: "Component.create" }, registerOwned);
 // @ts-expect-error Component.create requires registration when componentId is missing.

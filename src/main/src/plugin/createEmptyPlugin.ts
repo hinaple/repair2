@@ -8,6 +8,7 @@ import { toKebabCase } from "@shared/stringUtils";
 
 declare const __SDK_VERSION__: string;
 declare const __SVELTE_VERSION__: string;
+declare const __TS_VERSION__: string;
 
 const PLUGIN_SDK_VERSION = __SDK_VERSION__;
 const SDK_NAME = "@fainthit/repair2-plugin-sdk";
@@ -51,10 +52,37 @@ const MANIFEST_ENTRIES: Partial<Record<PLUGIN_ENTRY_TYPE, { [key: string]: any }
   }
 };
 
+const TS_MANIFEST_ENTRIES: Partial<Record<PLUGIN_ENTRY_TYPE, { [key: string]: any }>> = {
+  "runtime-with-main": {
+    main: {
+      entry: "src/main/index.ts",
+      outDir: "dist/main"
+    },
+    entry: "src/renderer/index.ts"
+  }
+};
+
 function pluginNameValidate(name: string): { error: string } | { name: string } {
   name = toKebabCase(name);
   if (!name?.length) return { error: `${name} is invalid plugin name` };
   else return { name };
+}
+
+function createTsConfig(svelte: boolean) {
+  return {
+    compilerOptions: {
+      target: "ESNext",
+      module: "ESNext",
+      moduleResolution: "Bundler",
+      lib: ["ESNext", "DOM", "DOM.Iterable"],
+      strict: true,
+      noEmit: true,
+      isolatedModules: true,
+      verbatimModuleSyntax: true,
+      skipLibCheck: true
+    },
+    include: svelte ? ["src/**/*.ts", "src/**/*.svelte"] : ["src/**/*.ts"]
+  };
 }
 
 export async function createEmptyPlugin(
@@ -63,11 +91,13 @@ export async function createEmptyPlugin(
   {
     root,
     templatePath = templateDir,
-    skipNameValidation = false
+    skipNameValidation = false,
+    typescript = false
   }: {
     root?: string;
     templatePath?: string;
     skipNameValidation?: boolean;
+    typescript?: boolean;
   }
 ): Promise<{ error: string } | { dir: string }> {
   const type = ENTRY_TYPE_MAP[entry];
@@ -87,24 +117,40 @@ export async function createEmptyPlugin(
     name,
     type,
     ...DEFAULT_MANIFEST,
-    ...(MANIFEST_ENTRIES[entry] ?? {})
+    ...(typescript ? { entry: "src/index.ts" } : {}),
+    ...(MANIFEST_ENTRIES[entry] ?? {}),
+    ...(typescript ? (TS_MANIFEST_ENTRIES[entry] ?? {}) : {})
   };
   const pkg = {
     name,
     type: "module",
     devDependencies: {
       [SDK_NAME]: PLUGIN_SDK_VERSION,
+      ...(typescript ? { typescript: __TS_VERSION__ } : null),
       ...(manifest.svelte ? { svelte: __SVELTE_VERSION__ } : null)
     }
   };
   await fs.mkdir(targetDir, { recursive: true });
   const pluginTemplateDir = join(templatePath, "plugin-scaffold");
   await Promise.all([
-    fs.writeFile(join(targetDir, "package.json"), JSON.stringify(pkg, null, 4), "utf8"),
-    fs.writeFile(join(targetDir, "manifest.json"), JSON.stringify(manifest, null, 4), "utf8"),
-    fs.cp(join(pluginTemplateDir, "entries", entry), targetDir, { recursive: true }),
+    fs.writeFile(join(targetDir, "package.json"), JSON.stringify(pkg, null, 2), "utf8"),
+    fs.writeFile(join(targetDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8"),
+    fs.cp(
+      join(pluginTemplateDir, typescript ? "entries/typescript" : "entries", entry),
+      targetDir,
+      { recursive: true }
+    ),
     fs.cp(join(pluginTemplateDir, "base"), targetDir, { recursive: true }),
-    copyModule(targetDir, SDK_NAME)
+    copyModule(targetDir, SDK_NAME),
+    ...(typescript
+      ? [
+          fs.writeFile(
+            join(targetDir, "tsconfig.json"),
+            JSON.stringify(createTsConfig(!!manifest.svelte), null, 2),
+            "utf8"
+          )
+        ]
+      : [])
   ]);
   logger.info(`"${entry}" plugin created at: `, targetDir);
   return { dir: targetDir };

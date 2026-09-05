@@ -13,6 +13,7 @@ Room Escape Pc App InteRface
 - Node.js
 - serialport
 - socket.io-client
+- mqtt
 
 ## 설치
 
@@ -55,6 +56,12 @@ npm run build:win
 
 ```bash
 npm run build:unpack
+```
+
+## 배포
+
+```bash
+npm run release
 ```
 
 ## 프로젝트 파일
@@ -100,13 +107,14 @@ resources/                    앱 아이콘 및 리소스
 
 ## 주요 npm scripts
 
-| script                 | 설명                              |
-| ---------------------- | --------------------------------- |
-| `npm run dev`          | 개발 모드 실행                    |
-| `npm run start`        | 빌드 결과 preview 실행            |
-| `npm run build`        | main/editor/play/splash 전체 빌드 |
-| `npm run build:main`   | Electron main 빌드                |
-| `npm run build:editor` | editor renderer 빌드              |
-| `npm run build:play`   | play renderer 빌드                |
-| `npm run build:win`    | Windows 설치 파일 생성            |
-| `npm run build:unpack` | 압축 해제된 앱 빌드               |
+| script                 | 설명                                   |
+| ---------------------- | -------------------------------------- |
+| `npm run dev`          | 개발 모드 실행                         |
+| `npm run start`        | 빌드 결과 preview 실행                 |
+| `npm run build`        | main/editor/play/splash 전체 빌드      |
+| `npm run build:main`   | Electron main 빌드                     |
+| `npm run build:editor` | editor renderer 빌드                   |
+| `npm run build:play`   | play renderer 빌드                     |
+| `npm run build:win`    | Windows 설치 파일 생성                 |
+| `npm run build:unpack` | 압축 해제된 앱 빌드                    |
+| `npm run release`      | Main 브랜치로 머지 및 Release Tag 생성 |
