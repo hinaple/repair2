@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from "../../assets/icons/Icon.svelte";
   import { focusData } from "../../lib/editUtils/focus";
-  import { grabbing, reload } from "../../lib/stores";
+  import { grabbing, reloadNode } from "../../lib/stores";
   import { ElementTypes } from "../../lib/translate";
   import Sortable from "../Sortable.svelte";
   import Listener from "./Listener.svelte";
@@ -16,10 +16,12 @@
     noGrab = false,
     onpointerdown,
     onNodeCountChanged,
-    parents
+    parents,
+    nodeId
   }: SortableProps & {
     onNodeCountChanged: () => unknown;
     parents: string[];
+    nodeId: string;
   } = $props();
 
   // svelte-ignore state_referenced_locally
@@ -27,12 +29,6 @@
 
   const editor = $derived(getMutator().record("elements", id));
   const element = $derived(editor.value);
-
-  $effect(() => {
-    element.alias;
-    element.type;
-    reload("nodeMoved");
-  });
 
   function addListener(evt: PointerEvent) {
     if (evt.button || $grabbing) return;
@@ -42,7 +38,7 @@
       getMutator().transaction(() => {
         const newId = Factories.listener();
         editor.field("listeners").splice(element.listeners.length, 0, newId);
-        reload("nodeMoved");
+        reloadNode(nodeId);
         onNodeCountChanged();
         return newId;
       }),
@@ -88,13 +84,13 @@
       binding={editor.field("listeners")}
       itemType="listeners"
       style="listener"
-      onresized={() => reload("nodeMoved")}
-      onmoved={() => reload("nodeMoved")}
+      onresized={() => reloadNode(nodeId)}
+      onmoved={() => reloadNode(nodeId)}
       {noGrab}
       onremoved={onNodeCountChanged}
     >
       {#snippet children(props)}
-        <Listener parents={myParents} {...props} />
+        <Listener parents={myParents} {nodeId} {...props} />
       {/snippet}
     </Sortable>
   </div>

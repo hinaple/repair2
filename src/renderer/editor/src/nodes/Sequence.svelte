@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from "../assets/icons/Icon.svelte";
   import { focusData } from "../lib/editUtils/focus";
-  import { grabbing, reload } from "../lib/stores";
+  import { grabbing, reloadNode } from "../lib/stores";
   import { Factories } from "../project/factories";
   import { getMutator } from "../project/store";
   import Node from "./Node.svelte";
@@ -32,7 +32,7 @@
       return newId;
     });
     focusData("step", stepId, [id]);
-    reload("nodeMoved");
+    reloadNode(id);
   }
 
   let innerOutputs = $derived.by(() => {
@@ -68,11 +68,11 @@
       <Sortable
         binding={editor.field("steps")}
         itemType="steps"
-        onresized={() => reload("nodeMoved")}
-        onmoved={() => reload("nodeMoved")}
+        onresized={() => reloadNode(id)}
+        onmoved={() => reloadNode(id)}
       >
         {#snippet children(props)}
-          <Step parents={[id]} {...props} />
+          <Step parents={[id]} nodeId={id} {...props} />
         {/snippet}
       </Sortable>
       <div class="add" onpointerdown={addStep}><Icon color="#fff" lineWidth={2} /></div>

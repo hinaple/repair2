@@ -31,6 +31,7 @@ export const sidebar: Action<
 
   const grabber = new Grabber({
     container: resizer,
+    optimizedOnMoved: true,
     onMoveStart: () => {
       w = getCurrentWidth();
       actualSetter(0);

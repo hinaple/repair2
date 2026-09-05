@@ -30,7 +30,7 @@
   {#snippet body()}
     <div class="body">
       <div class="value-wrapper">
-        <Value pre="초기값: " isFull id={variableSet.value} parents={[id]} />
+        <Value pre="초기값: " isFull id={variableSet.value} parents={[id]} nodeId={id} />
       </div>
       <div class="variable">변수 {variableName}</div>
     </div>

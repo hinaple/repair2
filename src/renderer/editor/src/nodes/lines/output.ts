@@ -1,11 +1,11 @@
 import { getOriginalPos } from "../viewport";
 import Grabber from "../../lib/grabber";
 import { get } from "svelte/store";
-import { nodeMovedReloader } from "../../lib/stores";
-import FrameUpdater from "../../lib/frameUpdater";
+import { onNodeReload } from "../../lib/stores";
 import { writable, type Writable } from "svelte/store";
 import { getMutator, getProject } from "../../project/store";
 import type { FieldBinding } from "../../project/mutator";
+import type { Action } from "svelte/action";
 
 type Coord = Record<"x" | "y", number>;
 export interface Output {
@@ -23,8 +23,9 @@ export const hoverInput: Writable<string | null> = writable(null);
 type OutputNodeParams = {
   id: string;
   binding: FieldBinding<string | null>;
+  nodeId: string;
 };
-const outputNode = (node: HTMLElement, params: OutputNodeParams) => {
+const outputNode: Action<HTMLElement, OutputNodeParams> = (node, params) => {
   let mounted = false;
   let drawing = false;
 
@@ -95,6 +96,7 @@ const outputNode = (node: HTMLElement, params: OutputNodeParams) => {
 
   const grabber = new Grabber({
     container: node,
+    optimizedOnMoved: true,
     onMoveStart: () => {
       if (!mounted || destroyed) return;
 
@@ -123,14 +125,13 @@ const outputNode = (node: HTMLElement, params: OutputNodeParams) => {
     }
   });
 
-  const frameUpdater = new FrameUpdater(async () => {
-    if (destroyed) return;
+  const unsub = onNodeReload((nodes, all) => {
+    if (!((!destroyed && all) || nodes.has(params.nodeId) || (o.output && nodes.has(o.output))))
+      return;
 
     const rect = node.getBoundingClientRect();
     const originalPos = getOriginalPos(rect.x, rect.y);
     const currentCoord = { x: originalPos.x + 16 / 2, y: originalPos.y + 16 / 2 };
-    // if (currentCoord.x !== o.fromCoord?.x && currentCoord.y !== o.fromCoord?.y) return;
-    //Will optimize soon
 
     o.fromCoord = currentCoord;
 
@@ -143,10 +144,6 @@ const outputNode = (node: HTMLElement, params: OutputNodeParams) => {
 
     if (o.output) updateToCoord();
     if (drawing) lineUpdated("set", id);
-  }, 1);
-
-  const unsub = nodeMovedReloader.subscribe(() => {
-    frameUpdater.draw();
   });
 
   let destroyed = false;

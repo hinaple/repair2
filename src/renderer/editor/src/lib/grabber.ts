@@ -1,6 +1,7 @@
 import { get } from "svelte/store";
 import { grabbing } from "./stores";
 import { rInfo } from "../nodes/viewport";
+import FrameUpdater from "./frameUpdater";
 
 type MoveHandler = (moveData: { dx: number; dy: number; px: number; py: number }) => void;
 type MoveStartHandler = (moveData: { px: number; py: number }) => void;
@@ -14,6 +15,10 @@ export default class Grabber {
   private pointerup: (evt?: PointerEvent) => void;
   private noHandle: boolean;
 
+  private frameUpdater?: FrameUpdater;
+  private realOnmoved: (evt: PointerEvent) => void;
+  private pendingEvent?: PointerEvent | null;
+
   constructor({
     container,
     handle,
@@ -21,7 +26,8 @@ export default class Grabber {
     onMoveStart,
     onMoveEnd,
     inNodeSpace = true,
-    noHandle = false
+    noHandle = false,
+    optimizedOnMoved = false
   }: {
     container: HTMLElement;
     handle?: HTMLElement;
@@ -30,6 +36,7 @@ export default class Grabber {
     onMoveEnd?: MoveEndHandler;
     inNodeSpace?: boolean;
     noHandle?: boolean;
+    optimizedOnMoved?: boolean;
   }) {
     this.container = container;
     this.handle = handle ?? container;
@@ -67,15 +74,32 @@ export default class Grabber {
       });
       prvMouse = currentMouse;
     };
+    if (optimizedOnMoved) {
+      this.frameUpdater = new FrameUpdater(() => {
+        if (!this.pendingEvent) return;
+        this.pointermove(this.pendingEvent);
+        this.pendingEvent = null;
+      });
+
+      this.realOnmoved = (evt) => {
+        this.pendingEvent = evt;
+        this.frameUpdater!.draw();
+      };
+    } else this.realOnmoved = this.pointermove;
     this.pointerup = (evt) => {
       if (get(grabbing) !== myGrab || (evt && evt.button)) return;
+
+      if (this.pendingEvent) {
+        this.pointermove(this.pendingEvent);
+        this.pendingEvent = null;
+      }
       grabbing.set(null);
       this.container.classList.remove("grabbing");
       if (onMoveEnd) onMoveEnd(actuallyMoved);
       actuallyMoved = false;
     };
 
-    document.body.addEventListener("pointermove", this.pointermove, true);
+    document.body.addEventListener("pointermove", this.realOnmoved, true);
     document.body.addEventListener("pointerup", this.pointerup, true);
   }
   onpointerdown(evt: PointerEvent) {
@@ -84,7 +108,8 @@ export default class Grabber {
   destroy() {
     this.pointerup();
     if (!this.noHandle) this.handle.removeEventListener("pointerdown", this.pointerdown, true);
-    document.body.removeEventListener("pointermove", this.pointermove, true);
+    document.body.removeEventListener("pointermove", this.realOnmoved, true);
     document.body.removeEventListener("pointerup", this.pointerup, true);
+    this.frameUpdater?.destroy();
   }
 }

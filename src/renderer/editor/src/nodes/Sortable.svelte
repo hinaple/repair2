@@ -207,6 +207,8 @@
         }
       });
     });
+
+    onmoved?.();
   }
   function clearGrabbers() {
     $effect.root(() => {
