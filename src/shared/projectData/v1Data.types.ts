@@ -193,6 +193,7 @@ type Value = {
 };
 
 type ValueProcess = {
+  type: string[];
   [key: string]: any;
 };
 
