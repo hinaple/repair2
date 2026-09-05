@@ -11,6 +11,7 @@
   import TransitionInput from "./TransitionInput.svelte";
   import Icon from "../../assets/icons/Icon.svelte";
   import Select from "./Select.svelte";
+  import { tippy, type TippyActionParam } from "../../lib/tippy";
 
   type SeriesOption = {
     binding: ArrayFieldBinding<any>;
@@ -37,11 +38,13 @@
     background = false,
     seriesOption = null,
     style = null,
+    tippy: tippyOpt,
     ...props
   }: {
     binding?: FieldBinding<any> | null;
     value?: any;
     seriesOption?: SeriesOption | null;
+    tippy?: TippyActionParam;
     [key: string]: any;
   } = $props();
 
@@ -85,6 +88,7 @@
   onclick={() => {
     if (type === "checkbox") checkboxClick();
   }}
+  use:tippy={tippyOpt}
 >
   {#if label || oninputremove}
     <div class="label">

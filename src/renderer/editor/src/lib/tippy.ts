@@ -2,7 +2,11 @@ import type { Action } from "svelte/action";
 import type { CreateSingletonProps } from "tippy.js";
 import tippyjs, { createSingleton, type Props } from "tippy.js";
 
-export const tippy: Action<HTMLElement, Partial<Props>> = (node, opt) => {
+export type TippyActionParam = Partial<Props> | undefined;
+
+export const tippy: Action<HTMLElement, TippyActionParam> = (node, opt) => {
+  if (!opt) return;
+
   const t = tippyjs(node, opt);
 
   return {
