@@ -15,6 +15,7 @@ export type MenuAction = MenuItemBase &
   MenuCloseBehavior & {
     type?: "button";
     activate?: () => unknown;
+    shortcut?: string;
   };
 
 export type MenuCheckbox = MenuItemBase &
@@ -42,3 +43,5 @@ export type MenuButtonItem = Exclude<MenuItem, MenuSeparator>;
 
 export type MenuInitialActiveMode = "auto" | "none";
 export type MenuPointerActiveMode = "persistent" | "hover";
+
+export type MenuStyleType = "select" | "menu";

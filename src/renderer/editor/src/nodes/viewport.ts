@@ -5,6 +5,9 @@ import FrameUpdater from "../lib/frameUpdater";
 import { ipc } from "../lib/ipc";
 import type { Types } from "@shared/projectData/types";
 import { getAllNodeBounds } from "./geometry";
+import { registerMenuAction } from "../titleBar/menuActions";
+import type { Action } from "svelte/action";
+import { getTitleBarRect, TITLEBAR_HEIGHT_OFFSET } from "../titleBar/index.svelte";
 
 export const rInfo = {
   ratio: 0,
@@ -28,7 +31,14 @@ interface ScreenData {
   pixelHeight: number;
 }
 export const viewport = {
-  screen: writable({ width: 0, height: 0, x: 0, y: 0, pixelWidth: 0, pixelHeight: 0 }),
+  screen: writable<ScreenData>({
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    pixelWidth: 0,
+    pixelHeight: 0
+  }),
   size: writable(0),
   pos: writable({ x: 0, y: 0 })
 };
@@ -45,6 +55,10 @@ function applyViewportWidth() {
 }
 
 const fu = new FrameUpdater(calcRatio);
+
+export function recalcViewport() {
+  fu.draw();
+}
 
 export const SIDEBAR_WIDTH_MIN = 310;
 let SIDEBAR_WIDTH = 340;
@@ -74,7 +88,9 @@ const observer = new ResizeObserver((entries) => {
 
   fu.draw();
 });
-observer.observe(document.body);
+export const observingViewport: Action = (target) => {
+  observer.observe(target);
+};
 
 function calcRatio() {
   if (!screenRect) return;
@@ -82,11 +98,12 @@ function calcRatio() {
   const viewportWidth = screenRect.width - SIDEBAR_WIDTH;
   const pw = screenRect.pixelWidth;
   const pwr = pw / screenRect.width;
+  const titlebarRect = getTitleBarRect();
   const screenObj = {
     width: viewportWidth,
     height: screenRect.height,
     x: SIDEBAR_WIDTH,
-    y: 0,
+    y: titlebarRect.height + titlebarRect.y + TITLEBAR_HEIGHT_OFFSET,
     pixelWidth: viewportWidth * pwr,
     pixelHeight: screenRect.pixelHeight
   };
@@ -210,11 +227,9 @@ export function getViewportCenter() {
 }
 
 ipc.on("zoom", (_, step) => {
-  const screenSize = get(viewport.screen);
-  const center = { x: screenSize.width / 2 + SIDEBAR_WIDTH, y: screenSize.height / 2 };
+  const scr = get(viewport.screen);
+  const center = { x: scr.width / 2 + scr.x, y: scr.height / 2 + scr.y };
   resizeViewport(step, center);
 });
 
-ipc.on("zoom-fit", () => {
-  fitViewportToNodes(getProject().nodes);
-});
+registerMenuAction("view:zoom-fit", () => fitViewportToNodes(getProject().nodes));

@@ -17,3 +17,5 @@ export const storePath = join(userDataPath, "store");
 export const root = is.dev ? join(__dirname, "../..") : join(app.getPath("exe"), "..");
 export const templateDir = join(root, "templates");
 export const sdkDir = join(root, "packages/plugin-sdk");
+
+export const appResource = join(app.getAppPath(), "assets");

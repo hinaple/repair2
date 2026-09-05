@@ -1,4 +1,4 @@
-import { get } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { beforeSave, setBeforeHistoryChange, updateSaveIdx } from "../lib/editUtils/history";
 import { viewport } from "../nodes/viewport";
 import { showToast } from "../lib/toast/toast.svelte";
@@ -38,6 +38,8 @@ export async function saveData() {
   }
   return saved;
 }
+
+export const unsaved = writable(false);
 
 ipc.on("request-save", async (event, request) => {
   let saved = false;

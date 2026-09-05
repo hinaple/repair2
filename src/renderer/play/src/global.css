@@ -205,5 +205,5 @@ repair-input {
 }
 @font-face {
   font-family: "HelveticaExt";
-  src: url("./fonts/helveticaExt.woff") format("woff");
+  src: url("app-resource://fonts/helveticaExt.woff") format("woff");
 }

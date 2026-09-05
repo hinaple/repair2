@@ -179,5 +179,5 @@ button {
 
 @font-face {
   font-family: "Pretend";
-  src: url(./assets/fonts/PretendardVariable.woff2) format("woff2-variations");
+  src: url("app-resource://fonts/PretendardVariable.woff2") format("woff2-variations");
 }

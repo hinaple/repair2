@@ -1,4 +1,5 @@
 import type { MainApp } from "../app/mainApp";
+import { logger } from "../logs/logger";
 import { checkVscodeInstalled, openVsCode } from "../system/vscodeUtils";
 import { ipc } from "./ipcMethods";
 
@@ -29,5 +30,13 @@ export function setupEditorIpc(app: MainApp) {
 
   ipc.on("request-save:done", (_evt, { requestId, saved }) => {
     app.editorSave.resolveEditorSaveRequest(requestId, saved);
+  });
+
+  ipc.on("editor-menu-action", (_evt, action) => {
+    if (!(action in app.editorAction)) {
+      logger.error("Undefined Action In Main Process:", action);
+      return;
+    }
+    app.editorAction[action as keyof typeof app.editorAction]();
   });
 }

@@ -25,10 +25,10 @@ function clearContextMenuClass() {
   rightNode = null;
 }
 
-function showContextMenu(menu: ContextMenu, source: HTMLElement) {
+function showContextMenu(menu: ContextMenu, source: HTMLElement, addClass = true) {
   clearContextMenuClass();
   rightNode = source;
-  rightNode.classList.add("contextmenu");
+  if (addClass) rightNode.classList.add("contextmenu");
   contextMenu.set(menu);
 }
 
@@ -50,7 +50,11 @@ export const rightclick: Action<HTMLElement, ContextMenuParam> = (node, p) => {
       focusData: createContextFocusData(param)
     };
 
-    showContextMenu({ position, items: createContextMenuItems(context) }, node);
+    showContextMenu(
+      { position, items: createContextMenuItems(context) },
+      node,
+      p.type !== "project"
+    );
     evt.preventDefault();
     evt.stopPropagation();
   };

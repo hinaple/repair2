@@ -15,10 +15,10 @@
     items={$contextMenu.items}
     parents={[]}
     {anchorName}
-    width="150px"
     initialActive="none"
     pointerActive="hover"
     collapse={closeContextMenu}
+    style="menu"
   />
 {/if}
 

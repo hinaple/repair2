@@ -114,17 +114,26 @@ export class WindowController {
     const editorWindow = new BrowserWindow({
       width: 1200,
       height: 800,
+      minWidth: 750,
+      minHeight: 500,
       show: false,
       webPreferences: {
         sandbox: false,
         nodeIntegration: true,
         contextIsolation: false,
         webSecurity: false
+      },
+      titleBarStyle: "hidden",
+      titleBarOverlay: {
+        color: "#1b1c1d",
+        symbolColor: "rgba(255, 255, 255, 0.6)",
+        height: 36
       }
     });
     state.window.editor = editorWindow;
 
     editorWindow.setMenu(createEditorMenu(this.#app));
+    editorWindow.setMenuBarVisibility(false);
 
     editorWindow.on("ready-to-show", () => {
       editorWindow.show();
