@@ -68,7 +68,8 @@
       realGrabbing = true;
       prvMouse = { x: evt.screenX, y: evt.screenY };
       evt.preventDefault();
-    } else if (evt.button === 0 && (!$grabbing || readyToGrab)) focusData("project");
+    } else if (evt.button === 0 && (!$grabbing || readyToGrab) && !evt.shiftKey)
+      focusData("project");
   }
   function pointermove(evt: PointerEvent) {
     if (selectOrigin && selectBoxEl) {
@@ -93,7 +94,7 @@
       const p1 = getOriginalPos(selectOrigin.x1, selectOrigin.y1);
       const p2 = getOriginalPos(selectOrigin.x2, selectOrigin.y2);
       const selecting = getAllInBoundsNodes(p1.x, p1.y, p2.x, p2.y);
-      if (selecting.size > 0) focusData("nodes", selecting);
+      if (selecting.size > 0) focusData("nodes", selecting, undefined, evt.shiftKey);
       selectOrigin = null;
       $grabbing = null;
       return;

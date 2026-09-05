@@ -11,21 +11,6 @@
   import { setViewportSize, viewport } from "./nodes/viewport";
   import { getProject } from "./project/store";
 
-  function onkeydown(evt: KeyboardEvent) {
-    // if (
-    //   evt.ctrlKey &&
-    //   evt.target &&
-    //   evt.target instanceof HTMLElement &&
-    //   evt.target.tagName !== "INPUT" &&
-    //   evt.target.tagName !== "TEXTAREA" &&
-    //   (evt.key == "z" || evt.key == "y")
-    // ) {
-    //   evt.preventDefault();
-    //   if (evt.key === "z" && evt.shiftKey) redo();
-    //   else if (evt.key === "z") undo();
-    // }
-  }
-
   onMount(() => {
     const project = getProject();
 
@@ -39,7 +24,6 @@
   });
 </script>
 
-<svelte:window {onkeydown} />
 <div class="info">REPAIR v{__APP_VERSION__}</div>
 <ContextMenu />
 <ToastDisplay />

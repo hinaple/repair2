@@ -1,6 +1,6 @@
 import { get } from "svelte/store";
 import { beforeSave, setBeforeHistoryChange, updateSaveIdx } from "../lib/editUtils/history";
-import { setViewportSize, viewport } from "../nodes/viewport";
+import { viewport } from "../nodes/viewport";
 import { showToast } from "../lib/toast/toast.svelte";
 import { ipc } from "../lib/ipc";
 import { ProjectInstance } from "./project";
