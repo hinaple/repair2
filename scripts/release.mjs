@@ -2,9 +2,10 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { checkRelease, run } from "./release/check.mjs";
+import { checkRelease, createReleaseNoteContext, run } from "./release/check.mjs";
 import { openEditor, resolveEditor } from "./release/editor.mjs";
 import { addReleaseMarkers, genDefaultReleaseNote } from "./release/note.mjs";
+import { prepareReleaseVersions } from "./release/versions.mjs";
 
 const git = (...args) => run("git", args).stdout.trim();
 
@@ -38,6 +39,22 @@ function findOpenReleasePr() {
   return prs.find((pr) => pr.headRefName === "develop" && !pr.isCrossRepository);
 }
 
+function readDevelopDivergence() {
+  return git("rev-list", "--left-right", "--count", "HEAD...origin/develop")
+    .split(/\s+/)
+    .map(Number);
+}
+
+function requireDevelopNotBehind(localOnly, remoteOnly) {
+  if (remoteOnly > 0) {
+    throw new Error(
+      localOnly > 0
+        ? "Local and origin/develop have diverged."
+        : "Local develop is behind origin/develop."
+    );
+  }
+}
+
 function printRelease(release) {
   console.log(`\nRelease v${release.appVersion}\n`);
   console.log("Changes:");
@@ -61,23 +78,17 @@ try {
   const openPr = findOpenReleasePr();
   if (openPr) throw new Error(`A develop -> main release PR is already open: ${openPr.url}`);
 
-  const [localOnly, remoteOnly] = git(
-    "rev-list",
-    "--left-right",
-    "--count",
-    "HEAD...origin/develop"
-  )
-    .split(/\s+/)
-    .map(Number);
-  if (remoteOnly > 0) {
-    throw new Error(
-      localOnly > 0
-        ? "Local and origin/develop have diverged."
-        : "Local develop is behind origin/develop."
-    );
-  }
+  let [localOnly, remoteOnly] = readDevelopDivergence();
+  requireDevelopNotBehind(localOnly, remoteOnly);
 
   const baseSha = git("rev-parse", "origin/main");
+  if (!dryRun) {
+    const context = createReleaseNoteContext({ base: baseSha, head: git("rev-parse", "HEAD") });
+    await prepareReleaseVersions(context);
+    [localOnly, remoteOnly] = readDevelopDivergence();
+    requireDevelopNotBehind(localOnly, remoteOnly);
+  }
+
   const headSha = git("rev-parse", "HEAD");
   const release = checkRelease({
     base: baseSha,
