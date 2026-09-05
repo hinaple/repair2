@@ -24,6 +24,7 @@
     "src/index.js",
     "src/index.d.ts",
     "src/shared.d.ts",
+    "src/elements.d.ts",
     "src/context.d.ts",
     "src/plugin.d.ts",
     "src/runtime.d.ts",

@@ -114,7 +114,7 @@
 <style>
   .modal-wrapper {
     z-index: var(--modal-z);
-    position: fixed;
+    position: absolute;
     left: 0;
     top: 0;
     width: 100%;

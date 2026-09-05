@@ -131,7 +131,7 @@
     </span>{$unsaved ? "*" : ""}
   </div>
   <div class="side right">
-    <div class="info">v{__APP_VERSION__}</div>
+    <div class="info">v{__APP_VERSION__}{import.meta.env.DEV ? "(DEV)" : ""}</div>
     <div class="spacer"></div>
   </div>
 </div>
