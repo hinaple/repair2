@@ -76,6 +76,9 @@ export function genDefaultReleaseNote(context) {
   const others = [];
 
   context.commits.forEach((c) => {
+    const trimmedBody = c.body.trim().toLowerCase();
+    if (trimmedBody.endsWith("#nn") || trimmedBody.endsWith("#nonote")) return;
+
     const arr = c.subject.split(/\s*:\s*/, 2);
     const [convention, subject] =
       arr.length >= 2 && !arr[0].trim().match(/[^a-zA-Z]/)
