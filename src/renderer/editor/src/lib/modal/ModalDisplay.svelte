@@ -11,7 +11,11 @@
 
   $effect(() => {
     if (!modal.currentModal) values = null;
-    else values = Array.from(modal.currentModal.fields, (f) => f.value ?? null);
+    else
+      values = Array.from(
+        modal.currentModal.fields,
+        (f) => f.value ?? (f.type === "checkbox" ? false : null)
+      );
   });
 
   let confirmable: boolean = $derived(
@@ -76,7 +80,7 @@
 
                   const target = evt.currentTarget;
                   values[i] = f.filter?.(target.value) ?? target.value;
-                  target.value = values![i] ?? "";
+                  target.value = values[i] ?? "";
                 }}
                 placeholder={f.placeholder}
                 use:autofocus={f.autofocus}

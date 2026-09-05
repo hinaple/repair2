@@ -119,7 +119,7 @@ ipc.on("plugin:show-create-modal", async () => {
     fields: [
       {
         label: "name",
-        filter: toKebabCase,
+        filter: (str) => toKebabCase(str, false),
         autofocus: true,
         required: true
       },
@@ -139,6 +139,7 @@ ipc.on("plugin:show-create-modal", async () => {
         value: "runtime",
         required: true
       },
+      { label: "Typescript", type: "checkbox" },
       { label: "External location", type: "checkbox" }
     ],
     buttons: [{ label: "취소" }, { label: "생성" }] as const
@@ -146,7 +147,7 @@ ipc.on("plugin:show-create-modal", async () => {
   if (modalResult.canceled) return;
 
   const {
-    fields: [name, type, isExternal]
+    fields: [name, type, typescript, isExternal]
   } = modalResult;
 
   showToast({
@@ -155,7 +156,7 @@ ipc.on("plugin:show-create-modal", async () => {
     duration: 0,
     closable: false
   });
-  const createResult = await ipc.invoke("plugin:create", { name, type, isExternal });
+  const createResult = await ipc.invoke("plugin:create", { name, type, isExternal, typescript });
   if ("dir" in createResult) {
     showToast({
       id: "pluginCreate",
