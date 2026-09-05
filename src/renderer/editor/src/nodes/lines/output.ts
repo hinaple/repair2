@@ -89,7 +89,6 @@ const outputNode: Action<HTMLElement, OutputNodeParams> = (node, params) => {
       change.path.length === binding.path.length &&
       change.path.every((part, index) => part === binding.path[index])
     ) {
-      console.log("MUTATOR");
       if (o.output && updateToCoord()) positiveUpdate();
       else negativeUpdate();
     }
@@ -130,14 +129,9 @@ const outputNode: Action<HTMLElement, OutputNodeParams> = (node, params) => {
     if (!((!destroyed && all) || nodes.has(params.nodeId) || (o.output && nodes.has(o.output))))
       return;
 
-    // console.log(id, o.output, nodes, all);
-    // const ParentSize = getNodeSize(id)
     const rect = node.getBoundingClientRect();
     const originalPos = getOriginalPos(rect.x, rect.y);
-    // const originalPos =
     const currentCoord = { x: originalPos.x + 16 / 2, y: originalPos.y + 16 / 2 };
-    // if (currentCoord.x !== o.fromCoord?.x && currentCoord.y !== o.fromCoord?.y) return;
-    //Will optimize soon
 
     o.fromCoord = currentCoord;
 

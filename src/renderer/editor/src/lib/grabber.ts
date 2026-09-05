@@ -88,6 +88,11 @@ export default class Grabber {
     } else this.realOnmoved = this.pointermove;
     this.pointerup = (evt) => {
       if (get(grabbing) !== myGrab || (evt && evt.button)) return;
+
+      if (this.pendingEvent) {
+        this.pointermove(this.pendingEvent);
+        this.pendingEvent = null;
+      }
       grabbing.set(null);
       this.container.classList.remove("grabbing");
       if (onMoveEnd) onMoveEnd(actuallyMoved);

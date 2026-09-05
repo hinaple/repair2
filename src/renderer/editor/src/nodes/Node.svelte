@@ -109,7 +109,6 @@
           for (const item of moving) moved ? item.session.commit() : item.session.cancel();
         });
         moving = [];
-        reloadNode(id);
       }
     });
     reloadNode(id);
