@@ -17,7 +17,6 @@ function newEl(
 }
 
 export function createLogElement(log: LogEntry) {
-  console.log(log);
   const container = newEl(".log-wrapper", [
     ...(log.count > 1 ? [newEl(["div", "count"], log.count.toString())] : []),
     newEl(
