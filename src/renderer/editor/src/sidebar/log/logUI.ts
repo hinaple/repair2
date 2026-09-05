@@ -17,8 +17,9 @@ function newEl(
 }
 
 export function createLogElement(log: LogEntry) {
-  const container = newEl(
-    ".log-wrapper",
+  console.log(log);
+  const container = newEl(".log-wrapper", [
+    ...(log.count > 1 ? [newEl(["div", "count"], log.count.toString())] : []),
     newEl(
       ["div", "log", log.level],
       log.content.map((c) => {
@@ -30,7 +31,7 @@ export function createLogElement(log: LogEntry) {
         return createResult.el;
       })
     )
-  );
+  ]);
 
   return container;
 }
