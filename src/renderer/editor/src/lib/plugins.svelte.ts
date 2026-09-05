@@ -9,6 +9,7 @@ import type {
   PluginRendererInfo,
   PluginType
 } from "@shared/plugin.types";
+import { registerMenuAction } from "../titleBar/menuActions";
 
 /**
  * @typedef {import("@shared/plugin.types").PluginType} PluginType
@@ -113,7 +114,7 @@ function updateManifestErrors(manifestErrors: ManifestErrorForRenderer[]) {
   });
 }
 
-ipc.on("plugin:show-create-modal", async () => {
+registerMenuAction("plugin:create-plugin", async () => {
   const modalResult = await showModalPromise({
     title: "새로운 플러그인 생성",
     fields: [

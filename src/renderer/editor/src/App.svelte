@@ -8,8 +8,9 @@
   import { onMount } from "svelte";
   import { reloadAllNode } from "./lib/stores";
   import Modal from "./lib/modal/ModalDisplay.svelte";
-  import { setViewportSize, viewport } from "./nodes/viewport";
+  import { observingViewport, setViewportSize, viewport } from "./nodes/viewport";
   import { getProject } from "./project/store";
+  import TitleBar from "./titleBar/TitleBar.svelte";
 
   onMount(() => {
     const project = getProject();
@@ -24,25 +25,30 @@
   });
 </script>
 
-<div class="info">REPAIR v{__APP_VERSION__}</div>
-<ContextMenu />
-<ToastDisplay />
-<Modal />
-<div class="screen">
-  <SideBar />
-  <NodeSpace />
+<div class="root">
+  <TitleBar />
+  <ContextMenu />
+  <ToastDisplay />
+  <div class="window" use:observingViewport>
+    <Modal />
+    <div class="screen">
+      <SideBar />
+      <NodeSpace />
+    </div>
+  </div>
 </div>
 
 <style>
-  .info {
-    position: fixed;
-    right: 5px;
-    top: 5px;
-    color: #000;
-    font-size: 12px;
-    opacity: 0.8;
-    pointer-events: none;
-    z-index: var(--info-z);
+  .root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .window {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
   }
   .screen {
     width: 100%;

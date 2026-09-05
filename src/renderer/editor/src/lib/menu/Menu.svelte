@@ -8,25 +8,30 @@
     MenuButtonItem,
     MenuInitialActiveMode,
     MenuItem,
-    MenuPointerActiveMode
+    MenuPointerActiveMode,
+    MenuStyleType
   } from "./menu.types";
 
   let {
     items,
     parents,
     anchorName,
-    width,
+    width = "auto",
+    minWidth,
     initialActive = "auto",
     pointerActive = "persistent",
+    style = "select",
     collapse
   }: {
     items: readonly MenuItem[];
     parents: HTMLElement[];
     anchorName: string;
     width?: string;
+    minWidth?: string;
     initialActive?: MenuInitialActiveMode;
     pointerActive?: MenuPointerActiveMode;
-    collapse: () => unknown;
+    style?: MenuStyleType;
+    collapse: (blurred: boolean) => unknown;
   } = $props();
 
   const menuId = genId();
@@ -127,9 +132,10 @@
 
   function openSubmenu(path: number[], focusChild: boolean) {
     const item = itemAt(path);
-    if (item?.type !== "submenu" || item.disabled) return;
+    if (item?.type !== "submenu" || item.disabled) return false;
     openedPath = path;
     if (focusChild) activePath = firstSelectablePath(path) ?? path;
+    return true;
   }
 
   function activateItem(path: number[]) {
@@ -146,7 +152,7 @@
     else item.activate?.();
 
     const shouldClose = item.closeOnActivate ?? item.type !== "checkbox";
-    if (shouldClose) collapse();
+    if (shouldClose) collapse(false);
   }
 
   function moveActive(offset: -1 | 1) {
@@ -166,9 +172,10 @@
 
   function closeSubmenu() {
     const parentPath = activePath.slice(0, -1);
-    if (parentPath.length === 0) return;
+    if (parentPath.length === 0) return false;
     activePath = parentPath;
     openedPath = parentPath.slice(0, -1);
+    return true;
   }
 
   function onkeydown(event: KeyboardEvent) {
@@ -176,12 +183,12 @@
 
     if (event.key === "ArrowUp") moveActive(-1);
     else if (event.key === "ArrowDown") moveActive(1);
-    else if (event.key === "ArrowRight") openSubmenu(activePath, true);
-    else if (event.key === "ArrowLeft") closeSubmenu();
+    else if (event.key === "ArrowRight") handled = openSubmenu(activePath, true);
+    else if (event.key === "ArrowLeft") handled = closeSubmenu();
     else if (event.key === "Enter" || event.key === " ") activateItem(activePath);
-    else if (event.key === "Escape") collapse();
+    else if (event.key === "Escape") collapse(false);
     else if (event.key === "Tab") {
-      collapse();
+      collapse(true);
       handled = false;
     } else handled = false;
 
@@ -201,6 +208,7 @@
   });
 </script>
 
+<svelte:window onblur={() => collapse(true)} />
 {#snippet renderLevel(
   levelItems: readonly MenuItem[],
   parentPath: number[],
@@ -210,7 +218,8 @@
   <div
     class={["menu", root ? "root" : "submenu"]}
     role="menu"
-    style={`--a: ${levelAnchor}; width: ${menuWidth};`}
+    style={`--a: ${levelAnchor}; width: ${menuWidth};` +
+      (minWidth ? `min-width: ${minWidth};` : "")}
   >
     {#each levelItems as item, index}
       {@const path = [...parentPath, index]}
@@ -228,6 +237,7 @@
             onhover={() => hoverItem(path, item)}
             onleave={() => leaveItem(path)}
             onactivate={() => activateItem(path)}
+            {style}
           />
           {#if item.type === "submenu" && opened}
             {@render renderLevel(item.items, path, childAnchor, false)}
@@ -239,11 +249,11 @@
 {/snippet}
 
 <div
-  class="menu-root"
+  class={["menu-root", `style-${style}`]}
   role="presentation"
   onpointerout={leaveMenuTree}
-  use:outClickAction={{ callback: collapse, excludes: parents }}
-  use:outScrollAction={collapse}
+  use:outClickAction={{ callback: () => collapse(true), excludes: parents }}
+  use:outScrollAction={() => collapse(true)}
 >
   {@render renderLevel(items, [], anchorName, true)}
 </div>
@@ -266,6 +276,11 @@
     z-index: var(--contextmenu-z);
     border-radius: 20px;
     corner-shape: squircle;
+  }
+
+  .style-menu,
+  .style-menu .menu {
+    gap: 2px;
   }
 
   .menu.root {

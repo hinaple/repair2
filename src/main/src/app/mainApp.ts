@@ -14,6 +14,7 @@ import { createSystem } from "./mainAppSystem";
 import { paths } from "./mainAppPaths";
 import { LogStore } from "../logs/logStore";
 import { Store } from "../system/store";
+import { createEditorAction } from "./editorActions";
 
 declare const __APP_VERSION__: string;
 export class MainApp {
@@ -32,6 +33,7 @@ export class MainApp {
   readonly globalKey = new GlobalKey();
   readonly store = new Store(this.paths.storePath);
   readonly config = this.store.makeConfig();
+  readonly editorAction = createEditorAction(this);
 
   start() {
     registerLogger(this.reportLog);

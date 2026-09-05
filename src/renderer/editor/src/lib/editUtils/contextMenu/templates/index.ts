@@ -16,25 +16,29 @@ function createClipboardMenuItems(
     if (canRemove)
       items.push({
         label: "잘라내기",
-        activate: () => cutData(context.focusData)
+        activate: () => cutData(context.focusData),
+        shortcut: "Ctrl+X"
       });
     items.push({
       label: "복사",
-      activate: () => copy(context.focusData)
+      activate: () => copy(context.focusData),
+      shortcut: "Ctrl+C"
     });
   }
   if (canPaste)
     items.push({
       label: "붙여넣기",
       activate: () =>
-        paste(context.focusData, getOriginalPos(context.position.x, context.position.y))
+        paste(context.focusData, getOriginalPos(context.position.x, context.position.y)),
+      shortcut: "Ctrl+V"
     });
   if (canRemove)
     items.push(
       { type: "separator" },
       {
         label: "삭제",
-        activate: () => removeData(context.focusData)
+        activate: () => removeData(context.focusData),
+        shortcut: "Delete"
       }
     );
 

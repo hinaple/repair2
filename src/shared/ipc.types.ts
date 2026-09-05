@@ -15,6 +15,7 @@ import type {
   PluginType
 } from "./plugin.types";
 import type { GlobalKeyEvent } from "./globalKeyEvent.types";
+import type { EditorMenuAction } from "./editorMenu";
 
 export type IpcNoArgs = [];
 
@@ -157,6 +158,7 @@ export type RendererToMainSendMap = {
   "play-win-ready": IpcNoArgs;
   "message-port:ready": IpcNoArgs;
   "request-save:done": [payload: { requestId: number; saved: boolean }];
+  "editor-menu-action": [action: EditorMenuAction];
 };
 
 export type RendererToMainSyncMap = {
@@ -197,13 +199,10 @@ export interface MainToEditorSendMap extends MainToRendererSharedSendMap {
   "serial-connected": [port: string];
   exporting: [progress: number | null];
   exported: [filePath: string];
-  undo: IpcNoArgs;
-  redo: IpcNoArgs;
   zoom: [step: number];
-  "zoom-fit": IpcNoArgs;
   "log:changed": [change: LogChange];
   "plugin:manifest-error": [errors: ManifestErrorForRenderer[]];
-  "plugin:show-create-modal": IpcNoArgs;
+  "menu-action": [action: EditorMenuAction];
 }
 
 export interface MainToPlaySendMap extends MainToRendererSharedSendMap {

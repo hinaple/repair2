@@ -5,6 +5,9 @@ import FrameUpdater from "../lib/frameUpdater";
 import { ipc } from "../lib/ipc";
 import type { Types } from "@shared/projectData/types";
 import { getAllNodeBounds } from "./geometry";
+import { registerMenuAction } from "../titleBar/menuActions";
+import type { Action } from "svelte/action";
+import { getTitleBarRect, TITLEBAR_HEIGHT_OFFSET } from "../titleBar/index.svelte";
 
 export const rInfo = {
   ratio: 0,
@@ -46,6 +49,10 @@ function applyViewportWidth() {
 
 const fu = new FrameUpdater(calcRatio);
 
+export function recalcViewport() {
+  fu.draw();
+}
+
 export const SIDEBAR_WIDTH_MIN = 310;
 let SIDEBAR_WIDTH = 340;
 export function getSidebarWidth() {
@@ -74,7 +81,9 @@ const observer = new ResizeObserver((entries) => {
 
   fu.draw();
 });
-observer.observe(document.body);
+export const observingViewport: Action = (target) => {
+  observer.observe(target);
+};
 
 function calcRatio() {
   if (!screenRect) return;
@@ -82,11 +91,12 @@ function calcRatio() {
   const viewportWidth = screenRect.width - SIDEBAR_WIDTH;
   const pw = screenRect.pixelWidth;
   const pwr = pw / screenRect.width;
+  const titlebarRect = getTitleBarRect();
   const screenObj = {
     width: viewportWidth,
     height: screenRect.height,
     x: SIDEBAR_WIDTH,
-    y: 0,
+    y: titlebarRect.height + titlebarRect.x + TITLEBAR_HEIGHT_OFFSET,
     pixelWidth: viewportWidth * pwr,
     pixelHeight: screenRect.pixelHeight
   };
@@ -215,6 +225,4 @@ ipc.on("zoom", (_, step) => {
   resizeViewport(step, center);
 });
 
-ipc.on("zoom-fit", () => {
-  fitViewportToNodes(getProject().nodes);
-});
+registerMenuAction("view:zoom-fit", () => fitViewportToNodes(getProject().nodes));

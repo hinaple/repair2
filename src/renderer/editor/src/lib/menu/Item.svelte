@@ -1,11 +1,12 @@
 <script lang="ts">
-  import type { MenuButtonItem } from "./menu.types";
+  import type { MenuButtonItem, MenuStyleType } from "./menu.types";
 
   let {
     item,
     active = false,
     expanded = false,
     anchorName,
+    style = "select",
     onhover,
     onleave,
     onactivate
@@ -14,6 +15,7 @@
     active?: boolean;
     expanded?: boolean;
     anchorName: string;
+    style?: MenuStyleType;
     onhover: () => unknown;
     onleave: () => unknown;
     onactivate: () => unknown;
@@ -40,7 +42,13 @@
   bind:this={el}
   type="button"
   tabindex={-1}
-  class={["item", selected && "selected", (active || expanded) && "active"]}
+  class={[
+    "item",
+    `style-${style}`,
+    selectable && "selectable",
+    selected && "selected",
+    (active || expanded) && "active"
+  ]}
   style={`--a: ${anchorName};`}
   {role}
   disabled={item.disabled}
@@ -61,6 +69,8 @@
     <svg class="submenu-icon" width="5" height="7" viewBox="0 0 5 7" fill="none">
       <path d="M0.353546 0.353577L3.35355 3.35358L0.353546 6.35358" stroke="currentColor" />
     </svg>
+  {:else if (!item.type || item.type === "button") && item.shortcut}
+    <span class="shortcut">{item.shortcut}</span>
   {/if}
 </button>
 
@@ -68,7 +78,7 @@
   .item {
     width: 100%;
     border: solid transparent 1px;
-    padding: 2px 4px;
+    padding: 2px 22px 2px 4px;
     color: #fff;
     font-family: "Pretend";
     font-size: 16px;
@@ -78,11 +88,11 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: row;
-    gap: 6px;
     align-items: center;
     anchor-name: var(--a);
     border-radius: 10px;
     corner-shape: squircle;
+    gap: 6px;
   }
 
   .item.active {
@@ -124,6 +134,13 @@
   .submenu-icon {
     width: 7px;
     height: auto;
+    flex: 0 0 auto;
+  }
+
+  .shortcut {
+    opacity: 0.5;
+    font-size: 12px;
+    margin-left: 30px;
     flex: 0 0 auto;
   }
 </style>

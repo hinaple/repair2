@@ -1,3 +1,5 @@
+import { unsaved } from "../../project/store";
+import { registerMenuAction } from "../../titleBar/menuActions";
 import { ipc } from "../ipc";
 
 const MaxHistoryLen = 50;
@@ -60,7 +62,9 @@ function setCurrentCursor(v: number) {
 }
 
 function notifySaveState() {
-  ipc.send(currentCursor !== saveIdx || pendingChangeCount > 0 ? "unsaved" : "saved");
+  const v = currentCursor !== saveIdx || pendingChangeCount > 0;
+  unsaved.set(v);
+  ipc.send(v ? "unsaved" : "saved");
 }
 
 export function beginPendingHistoryChange() {
@@ -245,5 +249,5 @@ export function updateSaveIdx() {
   notifySaveState();
 }
 
-ipc.on("undo", undo);
-ipc.on("redo", redo);
+registerMenuAction("edit:undo", undo);
+registerMenuAction("edit:redo", redo);
