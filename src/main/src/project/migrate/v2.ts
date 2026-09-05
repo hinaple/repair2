@@ -138,7 +138,10 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
         );
       }
       if (node.type === "sequence") {
-        return nodeType(resolveOutput(removeAndMoveArr(node, tempSteps, "steps"), "output"));
+        return {
+          ...nodeType(resolveOutput(removeAndMoveArr(node, tempSteps, "steps"), "output")),
+          concurrency: "allow"
+        };
       }
       if (node.type === "variableSet") {
         return nodeType(resolveOutput(removeAndMove(node, tempValues, "value"), "output"));
@@ -152,7 +155,11 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
     const joinedType = joinType(step.type);
     if (joinedType === "Component.create") {
       const componentId = moveToRecord(step.payload as V1.Component, tempComponents);
-      v2.steps[step.id] = { ...step, type: joinedType, payload: { componentId } };
+      v2.steps[step.id] = {
+        ...step,
+        type: joinedType,
+        payload: { componentId, recreate: "allow" }
+      };
       return;
     }
     if (joinedType === "Others.executePlugin") {

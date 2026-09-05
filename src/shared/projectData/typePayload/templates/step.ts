@@ -1,12 +1,12 @@
 import { createComponent } from "../../factories/component";
 import { createPluginPointer } from "../../factories/pluginPointer";
 import { owns } from "../../factories/factory";
-import { nullDefault, type TypePayloadUnion } from "./union.types";
+import { nullDefault, oneOf, type TypePayloadUnion } from "./union.types";
 
 export const StepPayloadTemplate = {
   Component: {
     $types: true,
-    create: { componentId: owns(createComponent) },
+    create: { componentId: owns(createComponent), recreate: oneOf<"ignore" | "allow">("allow") },
     remove: { componentAlias: nullDefault<string>(), ignoreUnbreakable: true },
     clear: { ignoreUnbreakable: false },
     modify: {

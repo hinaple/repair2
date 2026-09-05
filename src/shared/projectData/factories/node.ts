@@ -25,7 +25,8 @@ export const createSequence = createFactory<Types.Sequence>({
   folded: false,
   inputColor: "#000",
   steps: () => [],
-  output: null
+  output: null,
+  concurrency: "allow"
 });
 
 export const createBranch = createFactory<Types.Branch>()({

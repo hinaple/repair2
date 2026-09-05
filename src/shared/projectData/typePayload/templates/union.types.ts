@@ -10,21 +10,23 @@ type JoinPath<Prefix extends string, Key extends string> = Prefix extends ""
 type PayloadFromTemplate<T> =
   T extends NullDefault<infer U>
     ? U | null
-    : T extends Owning
-      ? string
-      : T extends string
-        ? string | null
-        : T extends number
-          ? number | null
-          : T extends boolean
-            ? boolean
-            : T extends null
-              ? string | number | null
-              : T extends readonly (infer U)[]
-                ? PayloadFromTemplate<U>[]
-                : T extends object
-                  ? { -readonly [K in keyof T]: PayloadFromTemplate<T[K]> }
-                  : T;
+    : T extends OneOf<infer U>
+      ? U
+      : T extends Owning
+        ? string
+        : T extends string
+          ? string | null
+          : T extends number
+            ? number | null
+            : T extends boolean
+              ? boolean
+              : T extends null
+                ? string | number | null
+                : T extends readonly (infer U)[]
+                  ? PayloadFromTemplate<U>[]
+                  : T extends object
+                    ? { -readonly [K in keyof T]: PayloadFromTemplate<T[K]> }
+                    : T;
 
 type NextTemplate<T, Prefix extends string> = {
   [K in TemplateKey<T>]: TP<T[K], JoinPath<Prefix, K>, false>;
@@ -46,3 +48,8 @@ type NullDefault<T> = {
   readonly __defaultNullType?: T;
 };
 export const nullDefault = <T>() => null as unknown as NullDefault<T>;
+
+type OneOf<T extends string> = {
+  readonly __unionType?: T;
+};
+export const oneOf = <T extends string>(v: T) => v as unknown as OneOf<T>;
