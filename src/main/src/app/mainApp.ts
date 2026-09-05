@@ -15,6 +15,7 @@ import { paths } from "./mainAppPaths";
 import { LogStore } from "../logs/logStore";
 import { Store } from "../system/store";
 import { createEditorAction } from "./editorActions";
+import { handleProtocol, registerProtocol } from "../system/customProtocol";
 
 declare const __APP_VERSION__: string;
 export class MainApp {
@@ -36,6 +37,7 @@ export class MainApp {
   readonly editorAction = createEditorAction(this);
 
   start() {
+    registerProtocol();
     registerLogger(this.reportLog);
 
     this.service.initialize(this);
@@ -83,9 +85,10 @@ export class MainApp {
       await this.#appOpenedWithProject(argv, true);
     });
 
-    this.system.app.on("ready", async () => {
+    this.system.app.once("ready", async () => {
       electronApp.setAppUserModelId("com.repair2");
 
+      handleProtocol();
       setupIpcHandlers(this);
 
       if (!(await this.#appOpenedWithProject(process.argv, false))) {

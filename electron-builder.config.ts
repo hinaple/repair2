@@ -7,7 +7,7 @@ export default async function (): Promise<Configuration> {
     directories: {
       buildResources: "build"
     },
-    files: ["out/**/*"],
+    files: ["out/**/*", "assets/**/*"],
     extraFiles: ["templates/**/*", "packages/plugin-sdk/**/*"],
     asarUnpack: ["resources/**"],
     win: {
