@@ -31,7 +31,14 @@ interface ScreenData {
   pixelHeight: number;
 }
 export const viewport = {
-  screen: writable({ width: 0, height: 0, x: 0, y: 0, pixelWidth: 0, pixelHeight: 0 }),
+  screen: writable<ScreenData>({
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    pixelWidth: 0,
+    pixelHeight: 0
+  }),
   size: writable(0),
   pos: writable({ x: 0, y: 0 })
 };
@@ -96,7 +103,7 @@ function calcRatio() {
     width: viewportWidth,
     height: screenRect.height,
     x: SIDEBAR_WIDTH,
-    y: titlebarRect.height + titlebarRect.x + TITLEBAR_HEIGHT_OFFSET,
+    y: titlebarRect.height + titlebarRect.y + TITLEBAR_HEIGHT_OFFSET,
     pixelWidth: viewportWidth * pwr,
     pixelHeight: screenRect.pixelHeight
   };
@@ -220,8 +227,8 @@ export function getViewportCenter() {
 }
 
 ipc.on("zoom", (_, step) => {
-  const screenSize = get(viewport.screen);
-  const center = { x: screenSize.width / 2 + SIDEBAR_WIDTH, y: screenSize.height / 2 };
+  const scr = get(viewport.screen);
+  const center = { x: scr.width / 2 + scr.x, y: scr.height / 2 + scr.y };
   resizeViewport(step, center);
 });
 

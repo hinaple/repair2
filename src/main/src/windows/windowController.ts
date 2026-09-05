@@ -123,7 +123,6 @@ export class WindowController {
         contextIsolation: false,
         webSecurity: false
       },
-      autoHideMenuBar: true,
       titleBarStyle: "hidden",
       titleBarOverlay: {
         color: "#1b1c1d",

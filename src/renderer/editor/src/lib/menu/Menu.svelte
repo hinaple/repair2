@@ -16,7 +16,7 @@
     items,
     parents,
     anchorName,
-    width = "auto",
+    width,
     minWidth,
     initialActive = "auto",
     pointerActive = "persistent",
@@ -94,7 +94,9 @@
 
   let activePath = $state<number[]>([]);
   let openedPath = $state<number[]>([]);
-  let menuWidth = $derived(width ?? `anchor-size(${anchorName} width)`);
+  let menuWidth = $derived(
+    width ?? (style === "menu" ? "auto" : `anchor-size(${anchorName} width)`)
+  );
 
   function itemAnchor(path: readonly number[]) {
     return `--menu-${menuId}-${path.join("-")}`;

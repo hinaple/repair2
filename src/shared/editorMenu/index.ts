@@ -137,7 +137,7 @@ type EditorMenuItem =
       type: "separator";
     };
 
-export type EditorManuTopId = (typeof EditorMenu)[number]["id"];
+export type EditorMenuTopId = (typeof EditorMenu)[number]["id"];
 
 export type EditorMenuAction = {
   [
