@@ -1,4 +1,5 @@
 {
+  "html.customData": ["./.vscode/repair2.html-data.json"],
   "svelte.plugin.svelte.compilerWarnings": {
     "a11y_aria_attributes": "ignore",
     "a11y_incorrect_aria_attribute_type": "ignore",

@@ -141,6 +141,9 @@ export async function createEmptyPlugin(
       { recursive: true }
     ),
     fs.cp(join(pluginTemplateDir, "base"), targetDir, { recursive: true }),
+    ...(manifest.svelte
+      ? [fs.cp(join(pluginTemplateDir, "common/svelte"), targetDir, { recursive: true })]
+      : []),
     copyModule(targetDir, SDK_NAME),
     ...(typescript
       ? [

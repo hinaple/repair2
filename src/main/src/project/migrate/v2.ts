@@ -215,6 +215,13 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
   Object.entries(tempListeners).forEach(([id, listener]) => {
     const l: V2.Listener = stringifyType(resolveOutput(listener, "output"));
     l.id = id;
+    if ((l.type as string) === "click") l.type = "Mouse.click";
+    else if ((l.type as string) === "globalKeyPress") {
+      l.type = "keyPress";
+      l.global = true;
+      l.useCapture = !!(l.payload as any)?.useCapture;
+    } else if ((l.type as string) === "released") l.type = "Drag.released";
+
     if (l.type === "plugin")
       l.payload = {
         plugin: moveToRecord(listener.payload.plugin as V1.PluginPointer, v2.pluginPointers),
@@ -223,11 +230,16 @@ export function migrateToV2(appVersion: string, data: V1.Data) {
     v2.listeners[id] = l;
   });
 
+  const tempValueProcesses: Record<string, V1.ValueProcess> = {};
   Object.entries(tempValues).forEach(([id, value]) => {
-    v2.values[id] = removeAndMoveArr(value, v2.valueProcesses, "process");
+    v2.values[id] = removeAndMoveArr(value, tempValueProcesses, "process");
   });
 
-  Object.entries(v2.valueProcesses).forEach(([id, vp]) => (vp.id = id));
+  Object.entries(tempValueProcesses).forEach(([id, vp]) => {
+    const v: V2.ValueProcess = stringifyType(vp);
+    v.id = id;
+    v2.valueProcesses[id] = v;
+  });
 
   return v2;
 }

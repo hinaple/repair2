@@ -65,7 +65,11 @@ export class MainAppServices implements MainService {
       importProgress: app.startup.sendStartupInfo,
       afterImport: async () => {
         logger.info("IMPORTING DONE");
-        await app.controllers.project.loadData();
+
+        if (!(await app.controllers.project.loadData())) {
+          throw new Error("Imported project data could not be loaded.");
+        }
+
         if (app.state.window.main) {
           app.state.window.main.webContents.reloadIgnoringCache();
         } else {

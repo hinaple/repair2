@@ -19,6 +19,7 @@ export function migrateProject({
     data = makeEmptyProjectData(appVersion);
   }
   if (!("version" in data)) {
+    logger.info("Migrating project data to V2...");
     data = migrateToV2(appVersion, data);
   }
 
