@@ -29,7 +29,7 @@ export default class RepairAsset extends HTMLElement {
     );
     if (prevResourceElement !== this.resourceElement) delete this.amplifier;
   }
-  attributeChangedCallback(attr: string, oldVal: string, newVal: string) {
+  attributeChangedCallback(attr: string, oldVal: string | null, newVal: string | null) {
     this.attr(attr, newVal);
     if (!this.isConnected) return;
     if (attr === "src" && oldVal?.trim?.() !== newVal?.trim?.()) {
@@ -63,8 +63,7 @@ export default class RepairAsset extends HTMLElement {
     return typeof value === "string" && value !== "false";
   }
   attr(param0: string, param1?: string | null) {
-    if (!this._attr) this._attr = {};
-    if (typeof param1 !== undefined) this._attr[param0] = param1;
+    if (typeof param1 !== "undefined") this._attr[param0] = param1;
     else return this._attr[param0];
   }
   connectedCallback() {
