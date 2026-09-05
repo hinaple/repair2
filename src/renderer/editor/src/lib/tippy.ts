@@ -11,7 +11,7 @@ export const tippy: Action<HTMLElement, TippyActionParam> = (node, opt) => {
 
   return {
     update(props) {
-      t.setProps(props);
+      if (props) t.setProps(props);
     },
     destroy() {
       t.destroy();
