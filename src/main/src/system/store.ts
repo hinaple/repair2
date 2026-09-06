@@ -47,7 +47,7 @@ export class Store {
   async #setData(k: string, value: any) {
     this.#stores.set(k, value);
     try {
-      await writeFile(join(this.#storePath, `${k}.json`), JSON.stringify(value), "utf8");
+      await writeFile(join(this.#storePath, `${k}.json`), JSON.stringify(value, null, 2), "utf8");
     } catch (err: any) {
       logger.source("store").error("An error occurred while storing data: ", err);
     }
@@ -56,14 +56,14 @@ export class Store {
     const [k, p] = keyAndPath(key, true);
     let result: any = await this.#getData(k, forceUpdate);
     for (const current of p) {
-      if (!result || !(k in result)) return undefined;
+      if (!result || !(current in result)) return undefined;
       result = result[current];
     }
     return result;
   }
-  set(key: string | string[], value: any) {
+  async set(key: string | string[], value: any) {
     const [k, p] = keyAndPath(key, true);
-    return this.#setData(k, setPropertyAt(this.#getData(k, false), p, value));
+    return this.#setData(k, setPropertyAt(await this.#getData(k, false), p, value));
   }
   makeConfig() {
     const getConfig = (keys: string | string[], forceUpdate: boolean = false) => {
