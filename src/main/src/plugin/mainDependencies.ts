@@ -152,7 +152,7 @@ export async function updateMainDependencies({
     if (!forceUpdate && oldFingerprint === newFingerprint) return {}; // No dependencies, no target modules
 
     return withPluginsStopped(async () => {
-      logger.debug("Removing unsused dependencies...");
+      logger.debug("Removing unused dependencies...");
       const targetNodeModules = join(targetDir, "node_modules");
       const rmError = await rmDir(targetNodeModules).catch((err) => err);
       if (rmError) {
@@ -177,7 +177,7 @@ export async function updateMainDependencies({
 
   if (!getNpmExists()) return { error: "Cannot find NPM" };
 
-  logger.debug("Creating temporal dependencies directory...");
+  logger.debug("Creating temporary dependencies directory...");
   const stagingDir = join(targetDir, STAGING_DIR);
   await rmDir(stagingDir);
   await fs.mkdir(stagingDir, { recursive: true });
@@ -201,7 +201,7 @@ export async function updateMainDependencies({
     if (npmResult.error) {
       return { error: npmResult, message: "NPM install error" };
     }
-    console.log(npmResult.message);
+    logger.debug("npm result", npmResult.message);
 
     logger.debug("Rebuilding dependencies...");
     const rebuild = (await import("@electron/rebuild")).rebuild;
