@@ -1,7 +1,7 @@
 import { electronApp, is } from "@electron-toolkit/utils";
 
 import { setupIpcHandlers } from "../ipc";
-import { registerLogger } from "../logs/logger";
+import { logger, registerLogger } from "../logs/logger";
 import { MainAppEditorSave } from "./mainAppEditorSave";
 import { GlobalKey } from "../system/globalKey";
 import { createReporter } from "./createReporter";
@@ -36,14 +36,15 @@ export class MainApp {
   readonly store = new Store(this.paths.storePath);
   readonly config = this.store.makeConfig();
   readonly editorAction = createEditorAction(this);
+  private readonly readyToStart: Promise<unknown> = checkExternalTools(this.state).then(() =>
+    logger.debug("READY TO START")
+  );
 
-  start() {
+  async start() {
     registerProtocol();
     registerLogger(this.reportLog);
-
-    checkExternalTools(this.state);
-
     this.service.initialize(this);
+
     this.#registerAppLifecycle();
 
     this.system.app.on("window-all-closed", () => {
@@ -88,6 +89,8 @@ export class MainApp {
 
       handleProtocol();
       setupIpcHandlers(this);
+
+      await this.readyToStart;
 
       if (!(await this.#appOpenedWithProject(process.argv, false))) {
         this.startup.showSplash();

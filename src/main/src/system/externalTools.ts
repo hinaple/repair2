@@ -21,7 +21,6 @@ function cmdTest(command: string): Promise<boolean> {
 export async function checkExternalTools(state: MainState): Promise<ExternalTools> {
   const [vscode, npm] = await Promise.all([cmdTest("code -v"), cmdTest("npm -v")]);
   state.externalTools = { vscode, npm };
-  console.log("EXTERNAL TOOLS UPDATED");
   return state.externalTools;
 }
 
