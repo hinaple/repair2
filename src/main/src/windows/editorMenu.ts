@@ -3,7 +3,7 @@ import type { MainApp } from "../app/mainApp";
 import { fromEditorMenu, type EditorMenuAction } from "@shared/editorMenu";
 
 export function createEditorMenu(app: MainApp) {
-  function sendMenuAction(action: EditorMenuAction) {
+  function sendMenuAction(action: EditorMenuAction<"editor">) {
     app.message.sendToEditor("menu-action", action);
   }
 
@@ -15,8 +15,8 @@ export function createEditorMenu(app: MainApp) {
             label: item.label,
             click: action
               ? action in app.editorAction
-                ? app.editorAction[action as keyof typeof app.editorAction]
-                : () => sendMenuAction(action)
+                ? app.editorAction[action as EditorMenuAction<"main">]
+                : () => sendMenuAction(action as EditorMenuAction<"editor">)
               : undefined,
             accelerator: item.shortcut
               ? item.shortcut.replace(/Ctrl/g, "CommandOrControl")
