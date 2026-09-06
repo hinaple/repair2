@@ -16,6 +16,7 @@ type DepsData = {
 type PackageJson = {
   dependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
 };
 
 function depsFingerprint(pkg: PackageJson, pkgLock: string = "{}") {
@@ -23,6 +24,7 @@ function depsFingerprint(pkg: PackageJson, pkgLock: string = "{}") {
     JSON.stringify([
       pkg.dependencies ?? {},
       pkg.optionalDependencies ?? {},
+      pkg.peerDependencies ?? {},
       pkgLock,
       process.versions.electron,
       process.platform,
@@ -56,7 +58,11 @@ function isEmptyRecord(obj: Record<string, any> | undefined | null) {
 }
 
 function noDependencies(pkg: PackageJson) {
-  return isEmptyRecord(pkg.dependencies) && isEmptyRecord(pkg.optionalDependencies);
+  return (
+    isEmptyRecord(pkg.dependencies) &&
+    isEmptyRecord(pkg.optionalDependencies) &&
+    isEmptyRecord(pkg.peerDependencies)
+  );
 }
 
 function writeDepsData(targetDir: string, fingerprint: string) {
