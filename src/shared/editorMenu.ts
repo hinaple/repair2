@@ -72,7 +72,8 @@ const EditorMenu = [
       },
       {
         label: "플레이 콘솔",
-        action: "toggle-player-devtools"
+        action: "toggle-player-devtools",
+        shortcut: "Ctrl+I"
       }
     ]
   },
@@ -120,6 +121,11 @@ const EditorMenu = [
         label: "편집기 새로고침",
         action: "reload-editor",
         shortcut: "Ctrl+R"
+      },
+      {
+        label: "플레이 창 새로고침",
+        action: "reload-play",
+        shortcut: "Ctrl+Shift+R"
       }
     ]
   }

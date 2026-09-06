@@ -50,6 +50,7 @@ export function createEditorAction(app: MainApp) {
       await app.service.pluginManager.updateAllPluginInfo({ forceBuild: true });
     },
 
-    "view:reload-editor": () => app.state.window.editor?.webContents.reloadIgnoringCache()
+    "view:reload-editor": () => app.state.window.editor?.webContents.reloadIgnoringCache(),
+    "view:reload-play": () => app.state.window.main?.webContents.reloadIgnoringCache()
   } satisfies Record<EditorMenuAction<"main">, () => unknown>;
 }
