@@ -154,6 +154,8 @@
 
 <style>
   .title-bar {
+    position: relative;
+    z-index: var(--titlebar-z);
     background-color: var(--darkgray);
     flex: 0 0 auto;
     app-region: drag;
