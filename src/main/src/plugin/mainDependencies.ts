@@ -3,6 +3,7 @@ import { hashString } from "../lib/hash";
 import fs from "fs/promises";
 import { pathExists } from "../system/pathExists";
 import { spawnPromise } from "../system/externalTools";
+import { logger } from "../logs/logger";
 
 const DEPS_DATA = ".deps.json";
 const STAGING_DIR = ".deps-staging";
@@ -145,6 +146,7 @@ export async function updateMainDependencies({
     if (!forceUpdate && oldFingerprint === newFingerprint) return {}; // No dependencies, no target modules
 
     return withPluginsStopped(async () => {
+      logger.debug("Removing unsused dependencies...");
       const targetNodeModules = join(targetDir, "node_modules");
       const rmError = await rmDir(targetNodeModules).catch((err) => err);
       if (rmError) {
@@ -169,6 +171,7 @@ export async function updateMainDependencies({
 
   if (!getNpmExists()) return { error: "Cannot find NPM" };
 
+  logger.debug("Creating temporal dependencies directory...");
   const stagingDir = join(targetDir, STAGING_DIR);
   await rmDir(stagingDir);
   await fs.mkdir(stagingDir, { recursive: true });
@@ -180,6 +183,7 @@ export async function updateMainDependencies({
       srcLock ? fs.writeFile(stagingLockPath, srcLock) : null
     ]);
 
+    logger.debug("Installing dependencies...");
     const npmResult = await spawnPromise(
       srcLock
         ? ["npm", "ci", "--omit=dev"]
@@ -193,6 +197,7 @@ export async function updateMainDependencies({
     }
     console.log(npmResult.message);
 
+    logger.debug("Rebuilding dependencies...");
     const rebuild = (await import("@electron/rebuild")).rebuild;
     const rebuildErr = await rebuild({
       buildPath: stagingDir,
@@ -204,6 +209,7 @@ export async function updateMainDependencies({
     }
 
     return await withPluginsStopped(async () => {
+      logger.debug("Moving staged dependencies files...");
       const moveResult = await safeApplyNodeModules(stagingDir, targetDir, targetModulesExists);
       if (moveResult.error) {
         await restoreTargetDir(targetDir, targetModulesExists, moveResult.bakDir);
@@ -227,6 +233,8 @@ export async function updateMainDependencies({
 
       if (targetModulesExists) await rmDir(moveResult.bakDir);
       await writeDepsData(targetDir, newFingerprint);
+
+      logger.debug("Dependencies updated.");
       return {};
     });
   } finally {

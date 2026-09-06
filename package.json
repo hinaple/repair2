@@ -22,7 +22,7 @@
     "build:play": "vite build --config src/renderer/play/vite.config.ts",
     "build:splash": "xcopy src\\renderer\\splash out\\splash /E /I /Y",
     "build": "npm-run-all --parallel build:main build:editor build:play build:splash",
-    "build:only:unpack": "electron-builder --dir --config electron-builder.config.ts",
+    "build:only:unpack": "electron-builder --dir --config electron-builder.config.ts --config.asar=false",
     "build:only:win": "electron-builder --win --config electron-builder.config.ts",
     "build:unpack": "npm run build && npm run build:only:unpack",
     "build:win": "npm run build && npm run build:only:win"
