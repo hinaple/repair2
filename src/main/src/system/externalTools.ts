@@ -36,7 +36,7 @@ export function openVsCode(dir: string) {
   }).unref();
 }
 
-function spawnPromise(
+export function spawnPromise(
   args: string[],
   options: SpawnOptions
 ): Promise<{ error: any; message: string }> {

@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@electron-toolkit/utils": "^4.0.0",
+    "@electron/rebuild": "^4.2.0",
     "@fainthit/repair2-plugin-sdk": "file:packages/plugin-sdk",
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@types/yazl": "^3.3.1",

@@ -4,13 +4,13 @@ import { builtinModules } from "node:module";
 import childProcess from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
-import { createHash } from "node:crypto";
 
 import type { Plugin } from "vite";
 import type { PluginInfo, WatchData } from "./type";
 import type { RollupWatcher } from "rollup";
 import type { svelte as Svelte } from "@sveltejs/vite-plugin-svelte";
 import type { build as Build } from "vite";
+import { hashString } from "../lib/hash";
 
 if (!is.dev) {
   // patch spawn() to fix esbuild EPIPE error
@@ -68,14 +68,6 @@ function getSvelteResolvePlugin(): null | Plugin | Promise<Plugin | null> {
   return creatingSvResolver;
 }
 
-function hashText(value: string) {
-  return createHash("sha256")
-    .update(String(value.length))
-    .update("\0")
-    .update(value, "utf8")
-    .digest("hex");
-}
-
 function styleInjectPlugin(pluginInfo: PluginInfo, data?: WatchData): Plugin {
   const styleKey = `${pluginInfo.type}:${pluginInfo.name}`;
 
@@ -101,8 +93,8 @@ function styleInjectPlugin(pluginInfo: PluginInfo, data?: WatchData): Plugin {
         chunk.code = `${injectCode}\n${chunk.code}`;
       }
       if (data) {
-        const cssHash = hashText(css);
-        const jsHash = hashText(jsCode);
+        const cssHash = hashString(css);
+        const jsHash = hashString(jsCode);
         data.updated = jsHash !== data.jsHash ? "all" : cssHash !== data.cssHash ? "css" : "none";
 
         data.cssHash = cssHash;
