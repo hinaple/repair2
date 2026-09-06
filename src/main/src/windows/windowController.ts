@@ -1,7 +1,6 @@
 import { BrowserWindow, ipcMain, type IpcMainEvent } from "electron";
 import { join } from "path";
 import { createEditorMenu } from "./editorMenu";
-import { checkVscodeInstalled } from "../system/vscodeUtils";
 import type { MainApp } from "../app/mainApp";
 import { logger } from "../logs/logger";
 import { ipc } from "../ipc/ipcMethods";
@@ -107,10 +106,6 @@ export class WindowController {
   createEditorWindow() {
     const { state, editorSave, message, system } = this.#app;
     if (state.window.editor) return;
-
-    if (state.device.isVscodeInstalled === null) {
-      checkVscodeInstalled().then((r) => (state.device.isVscodeInstalled = r));
-    }
 
     const editorWindow = new BrowserWindow({
       width: 1200,

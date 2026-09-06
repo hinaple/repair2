@@ -1,7 +1,6 @@
 import { utilityProcess, type UtilityProcess } from "electron";
 import { join } from "path";
 import { logger } from "../logs/logger";
-import type { MainMessage } from "../app/mainApp.types";
 import type { PluginDiagnostics } from "./pluginDiagnostics";
 import type { PluginInfo } from "./type";
 import runtimeMainHostPath from "./runtimeMainHost?modulePath";
@@ -11,6 +10,7 @@ import {
   type RuntimeHostMessage,
   type RuntimeHostRequest
 } from "./runtimeMainProtocol";
+import type { MainAppMessage } from "../app/mainAppMessage";
 
 const DISPOSE_TIMEOUT_MS = 2_000;
 const EXIT_TIMEOUT_MS = 5_000;
@@ -104,7 +104,7 @@ export default class MainRuntimePluginEngine {
   private readonly pluginDir: string;
   private readonly plugins: Map<string, RuntimePluginData> = new Map();
   private readonly pluginDiagnostics: PluginDiagnostics;
-  private readonly message: MainMessage;
+  private readonly message: MainAppMessage;
   private readonly pendingRequests: Map<string, PendingRequest> = new Map();
 
   private child: UtilityProcess | null = null;
@@ -113,7 +113,7 @@ export default class MainRuntimePluginEngine {
   private restartPromise: Promise<void> | null = null;
 
   constructor(
-    message: MainMessage,
+    message: MainAppMessage,
     {
       pluginDir,
       pluginDiagnostics

@@ -1,6 +1,6 @@
 import type { MainApp } from "../app/mainApp";
 import { logger } from "../logs/logger";
-import { checkVscodeInstalled, openVsCode } from "../system/vscodeUtils";
+import { openVsCode } from "../system/externalTools";
 import { ipc } from "./ipcMethods";
 
 export function setupEditorIpc(app: MainApp) {
@@ -22,7 +22,7 @@ export function setupEditorIpc(app: MainApp) {
     editorWindow.setTitle("Editor");
   });
 
-  ipc.handle("vscode:is-installed", () => checkVscodeInstalled());
+  ipc.handle("vscode:is-installed", () => app.state.externalTools.vscode);
 
   ipc.on("vscode:open", (_, src) => {
     openVsCode(src);

@@ -16,6 +16,7 @@ import { LogStore } from "../logs/logStore";
 import { Store } from "../system/store";
 import { createEditorAction } from "./editorActions";
 import { handleProtocol, registerProtocol } from "../system/customProtocol";
+import { checkExternalTools } from "../system/externalTools";
 
 declare const __APP_VERSION__: string;
 export class MainApp {
@@ -39,6 +40,8 @@ export class MainApp {
   start() {
     registerProtocol();
     registerLogger(this.reportLog);
+
+    checkExternalTools(this.state);
 
     this.service.initialize(this);
     this.#registerAppLifecycle();
@@ -74,11 +77,6 @@ export class MainApp {
   }
 
   #registerAppLifecycle() {
-    if (!this.system.app.requestSingleInstanceLock()) {
-      this.system.app.quit();
-      return;
-    }
-
     this.system.app.on("second-instance", async (_event, argv) => {
       if (!this.state.window.main) return;
 

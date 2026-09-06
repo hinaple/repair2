@@ -1,7 +1,7 @@
 import type { MainToEditorSendMap, MainToPlaySendMap } from "@shared/ipc.types";
-import type { MainMessage, MainState } from "./mainApp.types";
+import type { MainState } from "./state";
 
-export class MainAppMessage implements MainMessage {
+export class MainAppMessage {
   #state: MainState;
 
   constructor(state: MainState) {

@@ -4,6 +4,7 @@ import { logger } from "../logs/logger";
 import { ipc } from "./ipcMethods";
 import type { PluginManager } from "../plugin/pluginManager";
 import type { MainApp } from "../app/mainApp";
+import { openVsCode } from "../system/externalTools";
 
 function requirePluginManager(app: MainApp): PluginManager;
 function requirePluginManager(app: MainApp, soft: boolean): PluginManager | null;
@@ -72,11 +73,21 @@ export function setupPluginIpc(app: MainApp) {
       if (selected.canceled) return { canceled: true as const };
       path = selected.filePaths[0] as string;
     }
-    const createResult = await createEmptyPlugin(name, type, {
-      root: path,
-      skipNameValidation: false,
-      typescript
-    });
+    const createResult = await createEmptyPlugin(
+      name,
+      type,
+      {
+        root: path,
+        typescript
+      },
+      {
+        skipNameValidation: false,
+        npmInstalled: app.state.externalTools.npm,
+        status(status) {
+          logger.info(`[${name}]: ${status}`);
+        }
+      }
+    );
     if ("error" in createResult) return { canceled: true as const, error: createResult.error };
     if (isExternal) {
       const linkResult = await requirePluginManager(app).pluginLinkService.addPluginLink(
@@ -85,9 +96,10 @@ export function setupPluginIpc(app: MainApp) {
       );
       if (!linkResult) return { canceled: true as const };
     }
-    app.system.shell.openPath(createResult.dir);
+    if (app.state.externalTools.vscode) openVsCode(createResult.dir);
+    else app.system.shell.openPath(createResult.dir);
     await requirePluginManager(app).updateAllPluginInfo();
-    return { dir: createResult.dir };
+    return { dir: createResult.dir, warning: createResult.warning };
   });
 
   ipc.handle("plugin:runtime-error", (_, payload) => {

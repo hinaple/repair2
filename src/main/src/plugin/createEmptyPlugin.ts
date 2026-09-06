@@ -5,6 +5,7 @@ import { pathExists } from "../system/pathExists";
 import type { RawManifest } from "./type";
 import { logger } from "../logs/logger";
 import { toKebabCase } from "@shared/stringUtils";
+import { npmInstall } from "../system/externalTools";
 
 declare const __SDK_VERSION__: string;
 declare const __SVELTE_VERSION__: string;
@@ -91,15 +92,22 @@ export async function createEmptyPlugin(
   {
     root,
     templatePath = templateDir,
-    skipNameValidation = false,
     typescript = false
   }: {
     root?: string;
     templatePath?: string;
-    skipNameValidation?: boolean;
     typescript?: boolean;
+  },
+  {
+    skipNameValidation = false,
+    npmInstalled,
+    status
+  }: {
+    skipNameValidation?: boolean;
+    npmInstalled: boolean;
+    status?: (status: string) => unknown;
   }
-): Promise<{ error: string } | { dir: string }> {
+): Promise<{ error: string } | { dir: string; warning?: string }> {
   const type = ENTRY_TYPE_MAP[entry];
   if (!type) return { error: `Unknown plugin type: ${entry}` };
 
@@ -110,6 +118,7 @@ export async function createEmptyPlugin(
   }
 
   const targetDir = join(root ?? pluginDir, name);
+
   const alreadyExists = await pathExists(targetDir);
   if (alreadyExists) return { error: `${targetDir} is already exists` };
   const manifest: RawManifest & { $schema: string } = {
@@ -130,8 +139,12 @@ export async function createEmptyPlugin(
       ...(manifest.svelte ? { svelte: __SVELTE_VERSION__ } : null)
     }
   };
+
+  status?.("Creating Plugin Directory...");
   await fs.mkdir(targetDir, { recursive: true });
   const pluginTemplateDir = join(templatePath, "plugin-scaffold");
+
+  status?.("Copying Files...");
   await Promise.all([
     fs.writeFile(join(targetDir, "package.json"), JSON.stringify(pkg, null, 2), "utf8"),
     fs.writeFile(join(targetDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8"),
@@ -155,7 +168,15 @@ export async function createEmptyPlugin(
         ]
       : [])
   ]);
-  logger.info(`"${entry}" plugin created at: `, targetDir);
+  if (npmInstalled && (manifest.svelte || typescript)) {
+    status?.("Installing NPM Modules...");
+    const npmResult = await npmInstall(targetDir);
+    console.log(npmResult);
+    if (npmResult.error) {
+      logger.error("NPM INSTALL ERROR", npmResult.error, npmResult.message);
+      return { dir: targetDir, warning: "Npm Install Error" };
+    }
+  }
   return { dir: targetDir };
 }
 

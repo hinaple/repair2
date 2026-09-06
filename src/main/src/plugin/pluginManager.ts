@@ -25,7 +25,7 @@ import type {
 } from "./type";
 import type { PluginErrorPayload, PluginRunningTarget } from "@shared/plugin.types";
 import type { RollupError } from "rollup";
-import type { MainMessage } from "../app/mainApp.types";
+import type { MainAppMessage } from "../app/mainAppMessage";
 
 function closeViteWatchers(data: PluginData) {
   if (data.watchers && data.watchers.length)
@@ -46,7 +46,7 @@ export class PluginManager {
   plugins: Map<string, PluginInfoData>;
   manifestErrors: Map<string, ManifestError> = new Map();
   constructor(
-    message: MainMessage,
+    message: MainAppMessage,
     { devMode = false, onupdate }: { devMode: boolean; onupdate: UpdateHandler }
   ) {
     this.sendUpdate = createSender(this, onupdate);

@@ -1,7 +1,7 @@
-import type { MainEditorSave, MainState } from "./mainApp.types";
 import type { MainAppMessage } from "./mainAppMessage";
+import type { MainState } from "./state";
 
-export class MainAppEditorSave implements MainEditorSave {
+export class MainAppEditorSave {
   #message: MainAppMessage;
   #state: MainState;
   #nextRequestId: number = 1;

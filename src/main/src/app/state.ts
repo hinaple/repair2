@@ -1,4 +1,24 @@
-import type { MainState } from "./mainApp.types";
+import type { BrowserWindow } from "electron";
+import type { RuntimeProjectData } from "@shared/projectData/types";
+import type { SetHmrActive } from "../system/hmrs";
+import type { ExternalTools } from "../system/externalTools";
+
+export type MainState = {
+  project: {
+    data: RuntimeProjectData | null;
+    cssCode: string;
+  };
+  window: {
+    main: BrowserWindow | null;
+    editor: BrowserWindow | null;
+  };
+  hmr: {
+    setter: SetHmrActive | null;
+    importing: Promise<unknown> | null;
+    isActive: boolean;
+  };
+  externalTools: ExternalTools;
+};
 
 export function createMainAppState(): MainState {
   return {
@@ -15,8 +35,9 @@ export function createMainAppState(): MainState {
       importing: null,
       isActive: false
     },
-    device: {
-      isVscodeInstalled: null
+    externalTools: {
+      vscode: false,
+      npm: false
     }
   };
 }

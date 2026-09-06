@@ -126,7 +126,9 @@ export type RendererToMainInvokeMap = {
           error?: string;
         }
       | {
+          canceled?: false;
           dir: string;
+          warning?: string;
         };
   };
   "plugin:runtime-error": {

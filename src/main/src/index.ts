@@ -1,4 +1,8 @@
+import { app } from "electron";
 import { MainApp } from "./app/mainApp";
 
-const mainApp = new MainApp();
-mainApp.start();
+if (!app.requestSingleInstanceLock()) app.quit();
+else {
+  const mainApp = new MainApp();
+  mainApp.start();
+}
