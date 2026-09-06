@@ -113,7 +113,10 @@
           style={`--a: ${nthMenuBtnAnchor(i)};`}
           bind:this={btnEls[i]}
           class={["menu-btn", focussing === i && (showItems ? "hover" : "focussed")]}
-          onclick={() => clickMenuBtn(i)}
+          onclick={() => {
+            if (focussing === i && showItems) unfocus();
+            else clickMenuBtn(i);
+          }}
           onpointerenter={() => {
             if (!showItems) return;
             showItems = 1;
