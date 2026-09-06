@@ -49,6 +49,18 @@ export type RendererToMainInvokeMap = {
     args: [key: string];
     result: unknown;
   };
+  "set-store": {
+    args: [key: string, value: unknown];
+    result: void;
+  };
+  "get-config": {
+    args: [path: string | string[]];
+    result: unknown;
+  };
+  "set-config": {
+    args: [path: string | string[], value: unknown];
+    result: void;
+  };
   "update-data": {
     args: [data: RuntimeProjectData];
     result: boolean;
@@ -131,7 +143,6 @@ export type RendererToMainInvokeMap = {
 
 export type RendererToMainSendMap = {
   getDataDir: IpcNoArgs;
-  "set-store": [key: string, value: unknown];
   "log:report": [
     payload: Omit<LogEntryInput, "createdAt" | "updatedAt" | "count"> & {
       log?: boolean;
