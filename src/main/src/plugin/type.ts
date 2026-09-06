@@ -62,6 +62,7 @@ export type PluginInfoData = {
 
 export type PluginData = {
   building?: Promise<boolean>;
+  dependenciesUpdating?: Promise<boolean>;
   ready?: boolean;
   watchers?: RollupWatcher[];
   sourceWatcher?: ManifestWatcher;
@@ -88,4 +89,5 @@ export type WatchData = {
   cssHash?: string;
   cssCode?: string;
   updated?: "all" | "css" | "none";
+  dependenciesChanged?: boolean;
 };

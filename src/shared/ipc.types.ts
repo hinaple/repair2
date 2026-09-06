@@ -220,6 +220,7 @@ export interface MainToPlaySendMap extends MainToRendererSharedSendMap {
   data: [data: EditorInitialData];
   "global-css": [css: string];
   "global-key-event": [type: "keydown" | "keyup", event: GlobalKeyEvent];
+  "plugin:runtime:restart": [];
   "plugin:runtime:to-renderer": [payload: IpcPluginRuntimeCallPayload];
 }
 

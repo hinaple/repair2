@@ -340,6 +340,8 @@ export function restartRuntimePlugins() {
   });
 }
 
+ipc.on("plugin:runtime:restart", () => restartRuntimePlugins());
+
 ipc.on("plugin:runtime:to-renderer", (evt, { pluginName, activationId, methodName, args }) => {
   const target = activeRuntimePlugins.get(pluginName);
   if (!target) return;

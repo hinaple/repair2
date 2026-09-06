@@ -61,7 +61,10 @@ export function createEditorAction(app: MainApp) {
 
     "plugin:rebuild-all-plugins": async () => {
       if (!app.service.pluginManager) return;
-      await app.service.pluginManager.updateAllPluginInfo({ forceBuild: true });
+      await app.service.pluginManager.updateAllPluginInfo({
+        forceBuild: true,
+        forceDependencies: true
+      });
     },
 
     "view:reload-editor": () => app.state.window.editor?.webContents.reloadIgnoringCache(),

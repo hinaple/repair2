@@ -26,6 +26,7 @@ import type {
 import type { PluginErrorPayload, PluginRunningTarget } from "@shared/plugin.types";
 import type { RollupError } from "rollup";
 import type { MainAppMessage } from "../app/mainAppMessage";
+import { updateMainDependencies } from "./mainDependencies";
 
 function closeViteWatchers(data: PluginData) {
   if (data.watchers && data.watchers.length)
@@ -37,6 +38,7 @@ export class PluginManager {
   private updated: boolean;
   private pluginDiagnostics: PluginDiagnostics;
   private sendUpdate: UpdateSender;
+  private getNpmExists: () => boolean;
 
   destroyed: boolean = false;
 
@@ -47,11 +49,16 @@ export class PluginManager {
   manifestErrors: Map<string, ManifestError> = new Map();
   constructor(
     message: MainAppMessage,
-    { devMode = false, onupdate }: { devMode: boolean; onupdate: UpdateHandler }
+    {
+      devMode = false,
+      getNpmExists,
+      onupdate
+    }: { devMode: boolean; getNpmExists: () => boolean; onupdate: UpdateHandler }
   ) {
     this.sendUpdate = createSender(this, onupdate);
     this.plugins = new Map();
     this.devMode = devMode;
+    this.getNpmExists = getNpmExists;
     this.updated = false;
     this.pluginDiagnostics = createPluginDiagnostics();
     this.pluginLinkService = createPluginLinkService({
@@ -218,7 +225,7 @@ export class PluginManager {
 
   private async updatePluginFromDir(
     dir: string,
-    { forceBuild = false, forceUpdateSource = false } = {}
+    { forceBuild = false, forceUpdateSource = false, forceDependencies = false } = {}
   ): Promise<
     | { status: "succeed"; plugin: PluginInfoData; builtNow: boolean }
     | { status: "manifest-error"; reason: string; sourcePath?: string }
@@ -264,14 +271,20 @@ export class PluginManager {
     const plugin = { info, data: {}, error: {} };
     this.plugins.set(info.name, plugin);
     this.watchFineManifest(plugin);
-    const readyResult = await this.ready(plugin, forceBuild, this.devMode);
+    const readyResult = await this.ready(plugin, forceBuild, this.devMode, forceDependencies);
     return {
       status: "succeed",
       plugin,
       builtNow: readyResult.builtNow
     };
   }
-  async updateAllPluginInfo(forceOpt: { forceBuild?: boolean; forceUpdateSource?: boolean } = {}) {
+  async updateAllPluginInfo(
+    forceOpt: {
+      forceBuild?: boolean;
+      forceUpdateSource?: boolean;
+      forceDependencies?: boolean;
+    } = {}
+  ) {
     this.updated = false;
     await this.closeAllWatchers();
     this.plugins.clear();
@@ -460,13 +473,18 @@ export class PluginManager {
   private async ready(
     plugin: PluginInfoData,
     forceBuild = false,
-    watch = this.devMode
+    watch = this.devMode,
+    forceDependencies = false
   ): Promise<{ builtNow: boolean }> {
     if (!plugin) return { builtNow: false };
 
     const { info, data } = plugin;
     if (data.building) {
       await data.building;
+      if (forceBuild && !this.destroyed) {
+        const current = this.plugins.get(info.name);
+        if (current?.data === data) return this.ready(current, true, watch, forceDependencies);
+      }
       return { builtNow: false };
     }
 
@@ -476,12 +494,12 @@ export class PluginManager {
       return { builtNow: false };
     }
     if (!forceBuild && (data.ready || (await this.isBuilt(info)))) {
-      data.ready = true;
-      this.mainRuntime.updatePlugin(info);
+      data.ready = await this.ensureMainDependencies(plugin, forceDependencies);
+      if (data.ready) this.mainRuntime.updatePlugin(info);
       return { builtNow: false };
     }
     data.ready = false;
-    const builtNow = await this.buildPlugin(plugin, watch);
+    const builtNow = await this.buildPlugin(plugin, watch, forceDependencies);
 
     return { builtNow };
   }
@@ -492,7 +510,39 @@ export class PluginManager {
       .then(() => true)
       .catch(() => false);
   }
-  private async buildPlugin(plugin: PluginInfoData, watch = this.devMode): Promise<boolean> {
+  private async ensureMainDependencies(plugin: PluginInfoData, forceUpdate = false) {
+    const { info, data } = plugin;
+    if (info.type !== "runtime" || !info.main || !info.linked?.linked) return true;
+
+    const updating = (data.dependenciesUpdating ?? Promise.resolve()).then(async () => {
+      const result = await updateMainDependencies({
+        getNpmExists: this.getNpmExists,
+        withPluginsStopped: (work) => this.mainRuntime.withPluginsStopped(work),
+        sourceDir: info.linked!.sourcePath,
+        targetDir: info.path,
+        forceUpdate
+      }).catch((error) => ({ error, message: "Main dependency update failed" }));
+      if (!result.error) return true;
+
+      this.reportPluginError("main", "build", {
+        name: info.name,
+        type: info.type,
+        title: `"${info.name}" main dependency error`,
+        summary: result.message ?? "Main dependency update failed",
+        error: result.error
+      });
+      return false;
+    });
+    data.dependenciesUpdating = updating;
+    return updating.finally(() => {
+      if (data.dependenciesUpdating === updating) delete data.dependenciesUpdating;
+    });
+  }
+  private async buildPlugin(
+    plugin: PluginInfoData,
+    watch = this.devMode,
+    forceDependencies = false
+  ): Promise<boolean> {
     const { info, data } = plugin;
     await closeViteWatchers(data);
     if (!data.building) {
@@ -512,6 +562,7 @@ export class PluginManager {
           if (buildResult) buildResult.watchers.forEach((w) => w.close());
           return false;
         }
+        if (!(await this.ensureMainDependencies(plugin, forceDependencies))) return false;
         this.mainRuntime.updatePlugin(info, true);
 
         data.ready = true;
@@ -588,9 +639,16 @@ export class PluginManager {
 
               logger.info(`VITE HMR: ${plugin.info.name}`);
 
-              if (i === 1 && !errorInThisCycle)
+              if (i === 1 && !errorInThisCycle) {
+                const dependenciesChanged = watchData?.dependenciesChanged;
+                if (dependenciesChanged) watchData.dependenciesChanged = false;
+                if (dependenciesChanged && !(await this.ensureMainDependencies(plugin))) {
+                  watchData.dependenciesChanged = true;
+                  plugin.data.ready = false;
+                  return;
+                }
                 await this.mainRuntime.updatePlugin(plugin.info, true);
-
+              }
               callHmr(i === 0 && watchData?.updated === "css" ? watchData.cssCode : null);
             });
             w.on("close", () => {

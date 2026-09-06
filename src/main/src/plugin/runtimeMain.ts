@@ -111,6 +111,8 @@ export default class MainRuntimePluginEngine {
   private destroyed = false;
   private requestId = 0;
   private restartPromise: Promise<void> | null = null;
+  private restartRendererRequested = false;
+  private stoppedWorkQueue: Promise<void> = Promise.resolve();
 
   constructor(
     message: MainAppMessage,
@@ -417,18 +419,25 @@ export default class MainRuntimePluginEngine {
     if (this.child === child) this.child = null;
   }
 
-  restart() {
-    if (this.destroyed) return Promise.resolve();
-    if (this.restartPromise) return this.restartPromise;
-
+  private startRestart<T>(work: () => Promise<T>) {
     this.plugins.forEach((plugin) => {
       plugin.instance?.markDisposed();
       delete plugin.instance;
       plugin.ready = false;
       plugin.importing = null;
     });
-    this.restartPromise = (async () => {
+
+    let result!: T;
+    let workError: unknown;
+    let hasWorkError = false;
+    const restart = async () => {
       await this.stopChild();
+      try {
+        result = await work();
+      } catch (error) {
+        workError = error;
+        hasWorkError = true;
+      }
       if (this.destroyed || this.plugins.size === 0) return;
 
       const child = this.spawnChild();
@@ -454,10 +463,41 @@ export default class MainRuntimePluginEngine {
           });
         })
       );
-    })().finally(() => {
+      if (this.restartRendererRequested) this.message.sendToPlay("plugin:runtime:restart");
+    };
+    let completion: Promise<void>;
+    completion = restart().finally(() => {
+      if (this.restartPromise !== completion) return;
+      this.restartRendererRequested = false;
       this.restartPromise = null;
     });
-    return this.restartPromise;
+    this.restartPromise = completion;
+    return completion.then(() => {
+      if (hasWorkError) throw workError;
+      return result;
+    });
+  }
+
+  restart(restartRenderer = false) {
+    if (this.destroyed) return Promise.resolve();
+    this.restartRendererRequested ||= restartRenderer;
+    if (this.restartPromise) return this.restartPromise;
+    return this.startRestart(async () => undefined);
+  }
+
+  withPluginsStopped<T>(work: () => Promise<T>): Promise<T> {
+    const run = async () => {
+      if (this.restartPromise) await this.restartPromise.catch(() => undefined);
+      if (this.destroyed) throw new Error("Runtime plugin engine has been destroyed.");
+      this.restartRendererRequested = true;
+      return this.startRestart(work);
+    };
+    const queued = this.stoppedWorkQueue.then(run, run);
+    this.stoppedWorkQueue = queued.then(
+      () => undefined,
+      () => undefined
+    );
+    return queued;
   }
 
   async shutdown() {

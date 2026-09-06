@@ -1,5 +1,5 @@
 import { is } from "@electron-toolkit/utils";
-import { dirname, posix, join } from "node:path";
+import { dirname, posix, join, resolve } from "node:path";
 import { builtinModules } from "node:module";
 import childProcess from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -137,9 +137,8 @@ export async function buildPlugin(
     if (svResolver) rendererPlugins.push(svResolver);
     rendererPlugins.push((await getSveltePlugin())());
   }
-  let watchData: WatchData | undefined;
+  const watchData: WatchData | undefined = watch ? {} : undefined;
   if (isFrameOrElement) {
-    watchData = watch ? {} : undefined;
     rendererPlugins.push(styleInjectPlugin(pluginInfo, watchData));
   }
 
@@ -172,10 +171,27 @@ export async function buildPlugin(
     return watch ? { watchers: [result as RollupWatcher], watchData } : undefined;
   }
 
+  const mainPlugins: Plugin[] = [];
+  if (watch && pluginInfo.type === "runtime" && pluginInfo.linked?.linked) {
+    const dependencyFiles = new Set(
+      ["package.json", "package-lock.json"].map((file) => resolve(pluginPath, file))
+    );
+    mainPlugins.push({
+      name: "repair-main-dependencies-watch",
+      buildStart() {
+        dependencyFiles.forEach((file) => this.addWatchFile(file));
+      },
+      watchChange(id) {
+        if (dependencyFiles.has(resolve(id))) watchData!.dependenciesChanged = true;
+      }
+    });
+  }
+
   const mainBuild = build({
     configFile: false,
     root: pluginPath,
     logLevel: "error",
+    plugins: mainPlugins,
     ssr: {
       target: "node",
       external: true
@@ -197,5 +213,5 @@ export async function buildPlugin(
   });
 
   const result = await Promise.all([rendererBuild, mainBuild]);
-  return watch ? { watchers: result as RollupWatcher[] } : undefined;
+  return watch ? { watchers: result as RollupWatcher[], watchData } : undefined;
 }

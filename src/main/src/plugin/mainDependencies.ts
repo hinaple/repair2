@@ -2,9 +2,7 @@ import { join, resolve } from "path";
 import { hashString } from "../lib/hash";
 import fs from "fs/promises";
 import { pathExists } from "../system/pathExists";
-import type { MainApp } from "../app/mainApp";
 import { spawnPromise } from "../system/externalTools";
-import { logger } from "../logs/logger";
 
 const DEPS_DATA = ".deps.json";
 const STAGING_DIR = ".deps-staging";
@@ -115,18 +113,19 @@ async function safeApplyNodeModules(
   return { error: moveError, bakDir };
 }
 
-export async function updateMainDependencies(
-  app: MainApp,
-  {
-    sourceDir,
-    targetDir,
-    forceUpdate = false
-  }: {
-    sourceDir: string;
-    targetDir: string;
-    forceUpdate?: boolean;
-  }
-): Promise<{ error?: any; message?: string; reloadRequired?: boolean }> {
+export async function updateMainDependencies({
+  getNpmExists,
+  withPluginsStopped,
+  sourceDir,
+  targetDir,
+  forceUpdate = false
+}: {
+  getNpmExists: () => boolean;
+  withPluginsStopped: <T>(work: () => Promise<T>) => Promise<T>;
+  sourceDir: string;
+  targetDir: string;
+  forceUpdate?: boolean;
+}): Promise<{ error?: any; message?: string }> {
   if (resolve(sourceDir) === resolve(targetDir)) {
     return { error: "Plugin source directory must be different from target directory" };
   }
@@ -145,28 +144,30 @@ export async function updateMainDependencies(
 
     if (!forceUpdate && oldFingerprint === newFingerprint) return {}; // No dependencies, no target modules
 
-    const targetNodeModules = join(targetDir, "node_modules");
-    const rmError = await rmDir(targetNodeModules).catch((err) => err);
-    if (rmError) {
-      return { error: rmError, message: `Failed to remove ${targetNodeModules}` };
-    }
+    return withPluginsStopped(async () => {
+      const targetNodeModules = join(targetDir, "node_modules");
+      const rmError = await rmDir(targetNodeModules).catch((err) => err);
+      if (rmError) {
+        return { error: rmError, message: `Failed to remove ${targetNodeModules}` };
+      }
 
-    await Promise.all([
-      fs.copyFile(srcPkgPath, join(targetDir, "package.json")),
-      srcLock
-        ? fs.copyFile(srcPkgLockPath, join(targetDir, "package-lock.json"))
-        : fs.rm(join(targetDir, "package-lock.json"), { force: true })
-    ]);
+      await Promise.all([
+        fs.copyFile(srcPkgPath, join(targetDir, "package.json")),
+        srcLock
+          ? fs.copyFile(srcPkgLockPath, join(targetDir, "package-lock.json"))
+          : fs.rm(join(targetDir, "package-lock.json"), { force: true })
+      ]);
 
-    await writeDepsData(targetDir, newFingerprint);
-    return { reloadRequired: true };
+      await writeDepsData(targetDir, newFingerprint);
+      return {};
+    });
   }
 
   const newFingerprint = depsFingerprint(srcPkg, srcLock);
   const targetModulesExists = await pathExists(join(targetDir, "node_modules"));
   if (!forceUpdate && oldFingerprint === newFingerprint && targetModulesExists) return {}; // Already updated
 
-  if (!app.state.externalTools.npm) return { error: "Cannot find NPM" };
+  if (!getNpmExists()) return { error: "Cannot find NPM" };
 
   const stagingDir = join(targetDir, STAGING_DIR);
   await rmDir(stagingDir);
@@ -202,32 +203,33 @@ export async function updateMainDependencies(
       return { error: rebuildErr, message: "Electron rebuild error" };
     }
 
-    const moveResult = await safeApplyNodeModules(stagingDir, targetDir, targetModulesExists);
-    if (moveResult.error) {
-      await restoreTargetDir(targetDir, targetModulesExists, moveResult.bakDir);
-      return { error: moveResult.error, message: "Failed to move node_modules" };
-    }
+    return await withPluginsStopped(async () => {
+      const moveResult = await safeApplyNodeModules(stagingDir, targetDir, targetModulesExists);
+      if (moveResult.error) {
+        await restoreTargetDir(targetDir, targetModulesExists, moveResult.bakDir);
+        return { error: moveResult.error, message: "Failed to move node_modules" };
+      }
 
-    const copyError = await fs
-      .copyFile(srcPkgPath, join(targetDir, "package.json"))
-      .then(() =>
-        fs.copyFile(
-          srcLock ? srcPkgLockPath : stagingLockPath,
-          join(targetDir, "package-lock.json")
+      const copyError = await fs
+        .copyFile(srcPkgPath, join(targetDir, "package.json"))
+        .then(() =>
+          fs.copyFile(
+            srcLock ? srcPkgLockPath : stagingLockPath,
+            join(targetDir, "package-lock.json")
+          )
         )
-      )
-      .catch((err) => err);
-    if (copyError) {
-      await rmDir(join(targetDir, "node_modules"));
-      await restoreTargetDir(targetDir, targetModulesExists, moveResult.bakDir);
-      return { error: copyError, message: "Package files copy error" };
-    }
+        .catch((err) => err);
+      if (copyError) {
+        await rmDir(join(targetDir, "node_modules"));
+        await restoreTargetDir(targetDir, targetModulesExists, moveResult.bakDir);
+        return { error: copyError, message: "Package files copy error" };
+      }
 
-    if (targetModulesExists) await rmDir(moveResult.bakDir);
+      if (targetModulesExists) await rmDir(moveResult.bakDir);
+      await writeDepsData(targetDir, newFingerprint);
+      return {};
+    });
   } finally {
     await rmDir(stagingDir);
   }
-
-  await writeDepsData(targetDir, newFingerprint);
-  return { reloadRequired: true };
 }

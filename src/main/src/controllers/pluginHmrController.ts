@@ -88,6 +88,7 @@ export class PluginHmrController {
     if (service.pluginManager) await this.destroyPluginManager();
     const pluginManager = new PluginManager(message, {
       devMode,
+      getNpmExists: () => this.#app.state.externalTools.npm,
       onupdate: ({ type, updateData }) => {
         if (type === "single") {
           message.sendToEditor("plugin:update", updateData);
