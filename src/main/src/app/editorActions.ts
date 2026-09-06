@@ -50,8 +50,6 @@ export function createEditorAction(app: MainApp) {
       await app.service.pluginManager.updateAllPluginInfo({ forceBuild: true });
     },
 
-    "view:zoom-in": () => app.message.sendToEditor("zoom", 1),
-    "view:zoom-out": () => app.message.sendToEditor("zoom", -1),
     "view:reload-editor": () => app.state.window.editor?.webContents.reloadIgnoringCache()
-  } satisfies Partial<Record<EditorMenuAction, () => unknown>>;
+  } satisfies Record<EditorMenuAction<"main">, () => unknown>;
 }

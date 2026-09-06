@@ -17,8 +17,6 @@ import type {
 import type { GlobalKeyEvent } from "./globalKeyEvent.types";
 import type { EditorMenuAction } from "./editorMenu";
 
-export type IpcNoArgs = [];
-
 export type IpcSocketIncomeArgs = [channel: string, data: unknown, url?: string];
 
 export type IpcPluginRuntimeCallPayload = {
@@ -30,7 +28,7 @@ export type IpcPluginRuntimeCallPayload = {
 
 export type RendererToMainInvokeMap = {
   "request-version": {
-    args: IpcNoArgs;
+    args: [];
     result: string;
   };
   selectFile: {
@@ -74,11 +72,11 @@ export type RendererToMainInvokeMap = {
     result: LogEntry | null;
   };
   "plugin:get-list": {
-    args: IpcNoArgs;
+    args: [];
     result: PluginList;
   };
   "plugin:get-manifest-errors": {
-    args: IpcNoArgs;
+    args: [];
     result: ManifestErrorForRenderer[];
   };
   "plugin:runtime:activate": {
@@ -136,13 +134,13 @@ export type RendererToMainInvokeMap = {
     result: void;
   };
   "vscode:is-installed": {
-    args: IpcNoArgs;
+    args: [];
     result: boolean;
   };
 };
 
 export type RendererToMainSendMap = {
-  getDataDir: IpcNoArgs;
+  getDataDir: [];
   "log:report": [
     payload: Omit<LogEntryInput, "createdAt" | "updatedAt" | "count"> & {
       log?: boolean;
@@ -152,37 +150,38 @@ export type RendererToMainSendMap = {
   "socket-connect": [urls: string | string[]];
   "socket-connect-service": [type: string, name: string];
   "socket-send": [channel: string, ...data: unknown[]];
-  "socket-disconnect": IpcNoArgs;
+  "socket-disconnect": [];
   "serial-open": [alias?: string, port?: string, baudRate?: number];
   "serial-send": [data: unknown];
-  "serial-close": IpcNoArgs;
+  "serial-close": [];
   "mqtt-connect": [url: string, topics: string[]];
   "mqtt-publish": [topic: string, message: string];
   "mqtt-disconnect": [];
-  "plugin:runtime:deactivate-all": IpcNoArgs;
-  "editor-on": IpcNoArgs;
-  unsaved: IpcNoArgs;
-  saved: IpcNoArgs;
+  "plugin:runtime:deactivate-all": [];
+  "editor-on": [];
+  unsaved: [];
+  saved: [];
   "vscode:open": [sourcePath: string];
   "open-dir": [dir: string];
   "custom-log": [content: any];
-  "play-win-ready": IpcNoArgs;
-  "message-port:ready": IpcNoArgs;
+  "play-win-ready": [];
+  "editor-win-ready": [];
+  "message-port:ready": [];
   "request-save:done": [payload: { requestId: number; saved: boolean }];
-  "editor-menu-action": [action: EditorMenuAction];
+  "editor-menu-action": [action: EditorMenuAction<"main">];
 };
 
 export type RendererToMainSyncMap = {
   getDataDir: {
-    args: IpcNoArgs;
+    args: [];
     result: string;
   };
   "config:is-dev": {
-    args: IpcNoArgs;
+    args: [];
     result: boolean;
   };
   "request-data": {
-    args: IpcNoArgs;
+    args: [];
     result: EditorInitialData;
   };
 };
@@ -206,14 +205,13 @@ export interface MainToRendererSharedSendMap {
 
 export interface MainToEditorSendMap extends MainToRendererSharedSendMap {
   "request-save": [request: { requestId: number }];
-  "socket-failed": IpcNoArgs;
+  "socket-failed": [];
   "serial-connected": [port: string];
   exporting: [progress: number | null];
   exported: [filePath: string];
-  zoom: [step: number];
   "log:changed": [change: LogChange];
   "plugin:manifest-error": [errors: ManifestErrorForRenderer[]];
-  "menu-action": [action: EditorMenuAction];
+  "menu-action": [action: EditorMenuAction<"editor">];
 }
 
 export interface MainToPlaySendMap extends MainToRendererSharedSendMap {

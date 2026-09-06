@@ -2,7 +2,6 @@ import { get, writable } from "svelte/store";
 import { closeContextMenu } from "../lib/editUtils/contextMenu/contextUtils";
 import { getProject } from "../project/store";
 import FrameUpdater from "../lib/frameUpdater";
-import { ipc } from "../lib/ipc";
 import type { Types } from "@shared/projectData/types";
 import { getAllNodeBounds } from "./geometry";
 import { registerMenuAction } from "../titleBar/menuActions";
@@ -226,10 +225,16 @@ export function getViewportCenter() {
   return { x: vp.x, y: vp.y };
 }
 
-ipc.on("zoom", (_, step) => {
+// ipc.on("zoom", (_, step) => {
+// });
+
+function zoom(step: number) {
+  console.log(123);
   const scr = get(viewport.screen);
   const center = { x: scr.width / 2 + scr.x, y: scr.height / 2 + scr.y };
   resizeViewport(step, center);
-});
+}
 
+registerMenuAction("view:zoom-in", () => zoom(1));
+registerMenuAction("view:zoom-out", () => zoom(-1));
 registerMenuAction("view:zoom-fit", () => fitViewportToNodes(getProject().nodes));

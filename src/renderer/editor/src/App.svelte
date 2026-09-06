@@ -11,17 +11,20 @@
   import { observingViewport, setViewportSize, viewport } from "./nodes/viewport";
   import { getProject } from "./project/store";
   import TitleBar from "./titleBar/TitleBar.svelte";
+  import { ipc } from "./lib/ipc";
 
-  onMount(() => {
+  onMount(async () => {
     const project = getProject();
 
     viewport.pos.set(project.viewport.pos);
     setViewportSize(project.viewport.size);
-  });
 
-  document.fonts.ready.then(() => {
-    reloadAllNode();
+    await document.fonts.ready;
     console.log("fonts loaded");
+
+    reloadAllNode();
+
+    ipc.send("editor-win-ready");
   });
 </script>
 

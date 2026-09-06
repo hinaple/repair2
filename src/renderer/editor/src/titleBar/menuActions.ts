@@ -3,9 +3,9 @@
 import { EditorMenuAction } from "@shared/editorMenu";
 import { ipc } from "../lib/ipc";
 
-const ActionHandlerMap = new Map<EditorMenuAction, () => unknown>();
+const ActionHandlerMap = new Map<EditorMenuAction<"editor">, () => unknown>();
 
-export function registerMenuAction(action: EditorMenuAction, handler: () => unknown) {
+export function registerMenuAction(action: EditorMenuAction<"editor">, handler: () => unknown) {
   ActionHandlerMap.set(action, handler);
 
   return () => {
@@ -23,8 +23,8 @@ ipc.on("menu-action", (_evt, action) => {
   handler();
 });
 
-export function clickMenuButton(action: EditorMenuAction) {
-  const handler = ActionHandlerMap.get(action);
-  if (!handler) ipc.send("editor-menu-action", action);
+export function clickMenuButton(action: EditorMenuAction<"editor" | "main">) {
+  const handler = ActionHandlerMap.get(action as EditorMenuAction<"editor">);
+  if (!handler) ipc.send("editor-menu-action", action as EditorMenuAction<"main">);
   else handler();
 }

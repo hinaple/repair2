@@ -32,7 +32,14 @@ function on(channel: string, listener: (event: IpcMainEvent, ...args: unknown[])
   ipcMain.on(channel, listener);
 }
 
+function off<K extends keyof RendererToMainSendMap>(channel: K, listener: SendListener<K>): void;
+function off<K extends keyof RendererToMainSyncMap>(channel: K, listener: SyncListener<K>): void;
+function off(channel: string, listener: (event: IpcMainEvent, ...args: unknown[]) => void) {
+  ipcMain.off(channel, listener);
+}
+
 export const ipc = {
   handle,
-  on
+  on,
+  off
 };
