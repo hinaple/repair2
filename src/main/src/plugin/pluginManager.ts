@@ -472,10 +472,12 @@ export class PluginManager {
 
     if (info.linked && !info.linked.linked) {
       data.ready = (!forceBuild && data.ready) || (await this.isBuilt(info));
+      if (data.ready) this.mainRuntime.updatePlugin(info);
       return { builtNow: false };
     }
     if (!forceBuild && (data.ready || (await this.isBuilt(info)))) {
       data.ready = true;
+      this.mainRuntime.updatePlugin(info);
       return { builtNow: false };
     }
     data.ready = false;
